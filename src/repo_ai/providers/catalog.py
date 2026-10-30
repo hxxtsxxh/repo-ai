@@ -13,6 +13,8 @@ from importlib import resources
 from pathlib import Path
 from typing import Any
 
+from .discovery import _repo_owned
+
 SCHEMA = "repo-ai.provider-catalog/1"
 REPO_AI_STATES = ("EXECUTION", "BLOCKED", "PLANNED", "UNSUPPORTED")
 UPSTREAM = ("HEADLESS_CLI", "HOST_ONLY", "CONTEXT_SKILLS_ONLY", "REMOTE_SERVICE", "DISCONTINUED", "UNKNOWN")
@@ -61,11 +63,10 @@ def detect(root: Path, catalog: dict[str, Any] | None = None) -> list[dict[str, 
             path = shutil.which(name)
             if not path:
                 continue
-            resolved = Path(os.path.abspath(path)).resolve()
-            if resolved == root or root in resolved.parents:
+            if _repo_owned(path, root):
                 untrusted = True
                 continue
-            found = str(resolved)
+            found = str(Path(os.path.abspath(path)).resolve())
             break
         if found and entry["repo_ai"] in {"EXECUTION", "BLOCKED"}:
             presence = "INSTALLED"

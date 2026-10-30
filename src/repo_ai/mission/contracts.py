@@ -9,6 +9,7 @@ from pathlib import PurePosixPath
 from typing import Any, ClassVar
 
 MAX_SOURCE_FILE = 25_000_000  # bytes per tracked file a mission reads; the whole source stays bounded at 50 MB
+MAX_PARSE_FILE = 2_000_000    # bytes of one Python file a mission parses (an AST of a huge module costs gigabytes)
 
 
 def canonical(value: Any) -> str:

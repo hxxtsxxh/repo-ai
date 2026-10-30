@@ -24,10 +24,11 @@ from ..locks import file_lock
 from ..providers.discovery import PROVIDERS
 from ..paths import resolve_layout
 from ..security import redact_text, sanitize_provider_text, source_contains_secret
-from ..verify import engine, evidence, isolate
+from ..verify import engine, evidence, isolate, results
 from ..verify.execute import get_executor, release
 from .context import build_context
 from .contracts import (
+    MAX_PARSE_FILE,
     MAX_SOURCE_FILE,
     EvidenceRecord,
     ExecutionDAG,
@@ -760,7 +761,11 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                     for rel in current['files']:
                         if not rel.endswith('.py'):
                             continue
-                        data = isolate.read_inside(candidate, rel, MAX_SOURCE_FILE)
+                        try:
+                            data = isolate.read_inside(candidate, rel, MAX_PARSE_FILE)
+                        except isolate.ReportTooLarge:  # ast.parse of a 24 MB module took ~13 GB (measured)
+                            dynamic.append(rel + ': too large to parse; static attribution incomplete')
+                            continue
                         if data is None:
                             raise ValueError('static investigation source disappeared')
                         try:
@@ -934,7 +939,8 @@ def status(root: Path, mission: str, *, _depth: int = 0) -> dict[str, Any]:
     if isinstance(base_inputs, dict) and not freshness_reasons:
         for rel_test, pinned_sha in base_inputs.items():
             try:
-                data = isolate.read_inside(root, rel_test, 2_000_000)
+                # the same bound the pin was taken with: a larger limit here would read every big fixture as changed
+                data = isolate.read_inside(root, rel_test, results.MAX_REPORT_BYTES)
             except Exception:
                 data = None
             if data is None or hashlib.sha256(data).hexdigest() != pinned_sha:
@@ -990,7 +996,7 @@ def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
     pinned = ((state.get('baseline') or {}).get('pin') or {}).get('test_inputs')
     for rel in sorted(pinned if isinstance(pinned, dict) else {})[:64]:
         try:
-            data = isolate.read_inside(root, rel, 2_000_000)
+            data = isolate.read_inside(root, rel, MAX_SOURCE_FILE)
         except Exception:  # noqa: BLE001 - unreadable test text only lowers the claim
             data = None
         if data is not None:

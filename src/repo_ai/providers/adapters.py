@@ -15,6 +15,7 @@ import math
 import os
 import shutil
 import sys
+import re
 import tempfile
 import uuid
 from dataclasses import asdict, dataclass
@@ -23,7 +24,7 @@ from typing import Any
 
 from ..security import redact_text, source_contains_secret
 from . import claude_auth, opencode_cfg
-from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env, _sandbox_prefix
+from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env, _repo_owned, _sandbox_prefix
 
 STAGES = (
     "NOT_INSTALLED",
@@ -571,15 +572,18 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             read_rule = _agy_live_read_rules(workspace, scratch)
         elif provider == "opencode" and live:
             read_rule = _home_read_only_rules([workspace, scratch, *([executable] if executable else [])])
+        elif provider == "codex" and live:
+            # Codex's token is copied into scratch (CODEX_HOME); ~/.codex itself, other agents' state and every other
+            # file under HOME stay unreadable to a model that has a shell and the network
+            read_rule = _home_read_only_rules([workspace, scratch, *_codex_install_roots(executable), *_node_roots()])
+            net_rule += _unix_socket_rule(sc_str)
         elif claude_live:
             assert claude_plan is not None
             read_rule, extra_write = claude_auth.seatbelt_rules(workspace, scratch, executable, claude_plan,
                                                                 extra_read=_node_roots())
             # the API needs the network, but no local service does: unix sockets only for DNS and the scratch dir
             # (otherwise e.g. a container engine socket or ssh-agent would be reachable)
-            net_rule += ('(deny network-outbound (remote unix-socket))'
-                         '(allow network-outbound (remote unix-socket (path-literal "/private/var/run/mDNSResponder")))'
-                         f"(allow network-outbound (remote unix-socket (subpath {json.dumps(sc_str)})))")
+            net_rule += _unix_socket_rule(sc_str)
         # `open` (LaunchServices) and Apple events would start programs outside this sandbox and outside the sweep
         profile = (
             f"(version 1)(allow default)(deny lsopen)(deny appleevent-send){net_rule}{read_rule}(deny file-write*)"
@@ -610,6 +614,11 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                 "/",
                 "/",
             ])
+            if provider == "codex" and live:
+                home = str(Path.home().resolve())
+                cmd.extend(["--tmpfs", home])
+                for root_dir in [*_codex_install_roots(executable), *_node_roots()]:
+                    cmd.extend(["--ro-bind", str(root_dir), str(root_dir)])
             if claude_live:
                 # hide the whole HOME (credentials, other projects) and re-expose only what Claude needs
                 assert claude_plan is not None
@@ -638,6 +647,28 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             ])
             return cmd
     return None
+
+
+def _unix_socket_rule(scratch: str) -> str:
+    """Networked providers need DNS, but no local service: unix sockets only for mDNSResponder and the scratch dir
+    (otherwise a container-engine socket or ssh-agent would be reachable)."""
+    return ('(deny network-outbound (remote unix-socket))'
+            '(allow network-outbound (remote unix-socket (path-literal "/private/var/run/mDNSResponder")))'
+            f"(allow network-outbound (remote unix-socket (subpath {json.dumps(scratch)})))")
+
+
+def _codex_install_roots(executable: Path | None) -> list[Path]:
+    """The Codex release directory (`…/releases/<version>/` for the standalone install, which lives inside ~/.codex
+    next to the token) or the binary's own directory — never ~/.codex itself or anything broader."""
+    if executable is None:
+        located = shutil.which("codex")
+        if not located:
+            return []
+        executable = Path(located)
+    exe = executable.resolve()
+    roots = [exe.parent.parent if exe.parent.name == "bin" else exe.parent]
+    personal = (Path.home() / ".codex").resolve()
+    return [r for r in roots if r != personal and r not in personal.parents and not claude_auth.too_broad(r)] or [exe]
 
 
 def _home_read_only_rules(allowed: list[Path]) -> str:
@@ -681,12 +712,15 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
         elif provider == "codex":
             # Codex needs its token file, and its shell tool can read it (disclosed). A dedicated repo-ai login
             # (`CODEX_HOME=<dir> codex login`) makes that a separate, revocable session; otherwise ~/.codex is used.
-            dedicated = codex_home()
-            src_dir = dedicated if (dedicated / "auth.json").is_file() else real_home / ".codex"
+            source = codex_login_source()
+            if source in {"none", "invalid"}:
+                return  # an explicit dedicated login that is missing or unsafe never falls back to ~/.codex
+            src_dir = codex_home() if source == "dedicated" else real_home / ".codex"
             dst_dir = scratch_home / ".codex"
             dst_dir.mkdir(parents=True, exist_ok=True)
-            if (src_dir / "auth.json").is_file():
-                shutil.copy2(src_dir / "auth.json", dst_dir / "auth.json")
+            auth = src_dir / "auth.json"
+            if auth.is_file() and not auth.is_symlink():
+                shutil.copyfile(auth, dst_dir / "auth.json", follow_symlinks=False)
             sanitized = _codex_config_subset(src_dir / "config.toml")
             if sanitized:
                 (dst_dir / "config.toml").write_text(sanitized, encoding="utf-8")
@@ -782,8 +816,7 @@ def run_provider(
     raw = Path(os.path.abspath(exe_str))
     try:
         resolved = raw.resolve(strict=True)
-        parent_resolved = raw.parent.resolve(strict=True) / raw.name
-        if _inside(raw, root) or _inside(resolved, root) or _inside(parent_resolved, root):
+        if _repo_owned(raw, root):
             return {
                 "provider": provider,
                 "stage": "BLOCKED",
@@ -1026,6 +1059,7 @@ CODEX_HOME_ENV = "REPO_AI_CODEX_HOME"
 
 
 CODEX_CONFIG_KEYS = ("model", "model_reasoning_effort", "model_provider", "preferred_auth_method", "model_verbosity")
+_CODEX_VALUE = re.compile(r"[A-Za-z0-9._:/@+-]{1,128}")
 
 
 def _codex_config_subset(path: Path) -> str:
@@ -1042,8 +1076,8 @@ def _codex_config_subset(path: Path) -> str:
     lines = []
     for key in CODEX_CONFIG_KEYS:
         value = data.get(key)
-        if isinstance(value, str) and len(value) <= 128 and value.isprintable():
-            lines.append(f"{key} = {json.dumps(value)}")
+        if isinstance(value, str) and _CODEX_VALUE.fullmatch(value):  # also valid TOML: no escapes needed at all
+            lines.append(f'{key} = "{value}"')
     return "\n".join(lines) + ("\n" if lines else "")
 
 
@@ -1057,10 +1091,22 @@ def codex_home() -> Path:
 
 
 def codex_login_source() -> str:
-    """`dedicated` when a separate repo-ai Codex login exists, `personal` (~/.codex) otherwise, `none` if neither."""
-    if (codex_home() / "auth.json").is_file():
+    """`dedicated` (a separate repo-ai Codex login), `personal` (~/.codex), `none`, or `invalid` (an explicit override
+    that is relative, is ~/.codex itself, or whose auth.json is not a regular file). An explicit override never falls
+    back to the personal login."""
+    explicit = bool(os.environ.get(CODEX_HOME_ENV))
+    home = codex_home()
+    personal = Path.home() / ".codex"
+    if explicit and (not home.is_absolute() or home.resolve() == personal.resolve()):
+        return "invalid"
+    auth = home / "auth.json"
+    if auth.is_symlink():
+        return "invalid"
+    if auth.is_file():
         return "dedicated"
-    return "personal" if (Path.home() / ".codex" / "auth.json").is_file() else "none"
+    if explicit:
+        return "none"
+    return "personal" if (personal / "auth.json").is_file() and not (personal / "auth.json").is_symlink() else "none"
 
 
 def setup_problems(provider: str) -> list[str]:

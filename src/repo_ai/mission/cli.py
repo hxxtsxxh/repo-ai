@@ -344,9 +344,11 @@ def _agents_setup(args) -> int:
                  'dedicated_dir': str(adapters.codex_home()), 'model_invoked': False, 'credential_read': False}
         if args.json:
             print(json.dumps(value, indent=2, sort_keys=True))
-            return 0 if source != 'none' else 2
+            return 0 if source in {'dedicated', 'personal'} else 2
         print({'dedicated': f'codex: dedicated repo-ai login at {value["dedicated_dir"]}',
                'personal': 'codex: your personal ~/.codex login',
+               'invalid': f'codex: REPO_AI_CODEX_HOME ({value["dedicated_dir"]}) must be an absolute path other than '
+                          '~/.codex whose auth.json is a regular file; nothing will be used',
                'none': 'codex: no login found'}[source])
         print('  Codex needs its token file inside the sandbox and its shell tool can read it: a prompt-injected '
               'repository could try to send it out.')
@@ -354,7 +356,7 @@ def _agents_setup(args) -> int:
             print(f'  Recommended: a separate login just for repo-ai, revocable on its own:\n'
                   f'    CODEX_HOME={value["dedicated_dir"]} codex login')
         print('No model was invoked and no credential was read.')
-        return 0 if source != 'none' else 2
+        return 0 if source in {'dedicated', 'personal'} else 2
     if args.provider != 'claude':
         raise ValueError('agents setup currently explains: claude, opencode, codex (other providers authenticate as '
                          'documented in docs/engineering/INTEGRATIONS.md)')
