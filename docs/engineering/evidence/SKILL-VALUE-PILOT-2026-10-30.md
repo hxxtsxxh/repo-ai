@@ -1,6 +1,8 @@
 # C10 skill-value pilot, 2026-10-30: INCONCLUSIVE (predeclared rule)
 
-Protocol predeclared in `EXPERIMENTS.md` and pushed (commit `263b24d`) before the first live call. Everything needed to
+Protocol predeclared in `EXPERIMENTS.md` and pushed to the public repository as commit `263b24d` (branch created
+19:00:03Z, GitHub activity log) before the harness started the first live call (19:00:50Z). After a rebase onto the 0.11.1 merge, the same text is commit `2e25d87`; `263b24d`
+is still fetchable from GitHub by its hash, and `EXPERIMENTS.md` is identical in both. Everything needed to
 re-run is in `c10-pilot/`: the fixture (`base/`), the skill (`skill/`), the hidden oracle (`oracle/`), the harness
 (`pilot.py`, `grade.sh`), the random arm assignment (`mapping.json`), per-run results (`results.json`) and each run's
 candidate diff (`candidates/`).
