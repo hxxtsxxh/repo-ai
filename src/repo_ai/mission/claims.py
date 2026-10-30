@@ -12,9 +12,10 @@ correct. This module adds an additive, deterministic disclosure on top of the ex
   task_correct is always CLAIM_UNVERIFIED: repo-ai never certifies task correctness.
 
 Requirement erasure: a candidate that deletes documentation stating a requirement (a docstring or comment line with
-words such as "raise", "must", "never", "only", "reject") is named, and a clean PASS drops to ASSURANCE_PARTIAL.
+words such as "raise", "must", "never", "reject") is named, and a clean PASS drops to ASSURANCE_PARTIAL.
 Observed live: a local model dropped "Raise ValueError if lo > hi" from a docstring together with the behaviour, and
-the visible tests passed. Read from the unified diff only; a docstring that starts before a hunk's context is a blind
+the visible tests passed. Python lines are placed with the parser on the base file when the runtime supplies it;
+otherwise (and for JS/TS) a diff-only heuristic is used, for which a docstring opened before a hunk's context is a blind
 spot.
 
 The requirement-to-test mapping is a lexical heuristic (words of each stated requirement versus words of the
@@ -131,6 +132,7 @@ _REQUIREMENT_WORDS = re.compile(
     r"(?i)\b(raises?|raising|throws?|must|shall|never|always|reject\w*|invalid|forbid\w*|required|"
     r"at (?:least|most)|no (?:more|less|fewer) than)\b")
 _NOTE_PREFIX = re.compile(r"(?i)^(todo|fixme|xxx|hack|note)\b")
+_SECTION_HEADER = re.compile(r"(?i)^(raises|throws|exceptions|errors|returns?|args|arguments|parameters|yields)\s*:?$|^[-=]{3,}$")
 _PY_FILES = (".py", ".pyi")
 _JS_FILES = (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx")
 _DOC_OPEN = re.compile(r"""^[rRbBuUfF]{0,2}("{3}|'{3})""")
@@ -143,13 +145,41 @@ def _plain(text: str) -> str:
     return " ".join(_DECORATION.sub("", text).split()).lower()
 
 
-def removed_requirement_text(diff: str) -> list[dict[str, str]]:
+def python_doc_lines(source: str) -> set[int] | None:
+    """1-based line numbers of docstrings (module, class, function) and comments in Python source, or None if it
+    does not parse. Used to place removed lines exactly instead of guessing from the hunk."""
+    import ast
+    import io
+    import tokenize
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError):
+        return None
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and node.body:
+            first = node.body[0]
+            if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+                lines.update(range(first.lineno, (first.end_lineno or first.lineno) + 1))
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(source).readline):
+            if tok.type == tokenize.COMMENT:
+                lines.add(tok.start[0])
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        pass
+    return lines
+
+
+def removed_requirement_text(diff: str, base_source=None) -> list[dict[str, str]]:
     """Documentation lines a candidate removed (docstrings, comments) that state a requirement and whose text does not
     reappear among the file's added lines. Heuristic, from the diff alone; a prompt for a human, never evidence.
 
     Python docstrings are recognised only when they open as the first statement after a `def`/`class` line (or at the
     top of the file) inside the hunk; a hunk that starts inside a docstring is not guessed at (a blind spot, like a
-    docstring opened before the hunk's context)."""
+    docstring opened before the hunk's context). With ``base_source(path) -> str | None`` (the file at the mission's
+    base), Python lines are placed exactly with the parser instead, which removes that blind spot."""
+    exact: dict[str, set[int] | None] = {}
+    old_no = 0
     removed: list[tuple[str, str]] = []
     added: dict[str, list[str]] = {}
     path = ""
@@ -173,6 +203,7 @@ def removed_requirement_text(diff: str) -> list[dict[str, str]]:
             else:
                 m = _HUNK.match(line)
                 if m:
+                    old_no = int(line[4:].split(",")[0].split(" ")[0]) - 1
                     old_left = int(m.group(1) or 1)
                     new_left = int(m.group(2) or 1)
                     in_doc, doc_quote, prev_old = False, "", ""
@@ -189,13 +220,25 @@ def removed_requirement_text(diff: str) -> list[dict[str, str]]:
             old_left = new_left = 0
             continue
         old_left -= 1
+        old_no += 1
         if mark == " ":
             new_left -= 1
         if not path.endswith(_PY_FILES + _JS_FILES):
             continue
         stripped = text.strip()
         is_doc = False
-        if path.endswith(_PY_FILES):
+        if path.endswith(_PY_FILES) and base_source is not None and path not in exact:
+            base_text: str | None
+            try:
+                base_text = base_source(path)
+            except Exception:  # noqa: BLE001 - an unreadable base only falls back to the heuristic
+                base_text = None
+            exact[path] = python_doc_lines(base_text) if isinstance(base_text, str) else None
+        known = exact.get(path) if path.endswith(_PY_FILES) else None
+        if known is not None:
+            is_doc = old_no in known
+            is_comment = False
+        elif path.endswith(_PY_FILES):
             if in_doc:
                 is_doc = True
                 if doc_quote in stripped:
@@ -214,13 +257,14 @@ def removed_requirement_text(diff: str) -> list[dict[str, str]]:
             prev_old = text
         if mark == "-" and (is_doc or is_comment) and _REQUIREMENT_WORDS.search(stripped):
             body = _DECORATION.sub("", stripped).strip()
-            if body and not _NOTE_PREFIX.match(body):
+            if body and not _NOTE_PREFIX.match(body) and not _SECTION_HEADER.match(body):
                 removed.append((path, body))
     found: list[dict[str, str]] = []
     seen: set[tuple[str, str]] = set()
+    # moved text counts as kept anywhere in the change (a function moved to another module keeps its docstring)
+    blob = " ".join(t for texts in added.values() for t in texts if t)
     for file, body in removed:
         key = (file, " ".join(body.split()))
-        blob = " ".join(added.get(file, []))
         if key in seen or _plain(body) in blob:
             continue
         seen.add(key)
@@ -231,9 +275,9 @@ def removed_requirement_text(diff: str) -> list[dict[str, str]]:
 
 
 def assess(objective: str, tests: dict[str, str], *, verdict: str, freshness: str,
-           exercise: dict[str, Any] | None, diff: str = "") -> dict[str, Any]:
+           exercise: dict[str, Any] | None, diff: str = "", base_source=None) -> dict[str, Any]:
     rows = requirements(objective, tests) if tests else []
-    erased = removed_requirement_text(diff) if diff else []
+    erased = removed_requirement_text(diff, base_source) if diff else []
     notes: list[str] = ["repo-ai does not certify that the task is correct; it reports what the frozen tests observed"]
     for item in erased:  # first after the disclaimer: the CLI shows only the leading notes
         notes.append(f"the candidate removed documentation that states a requirement ({item['file']}): {item['text']!r}; "

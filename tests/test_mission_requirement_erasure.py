@@ -63,3 +63,69 @@ def test_multiline_docstrings_opened_inside_the_hunk_are_tracked():
 
 def test_non_source_files_are_ignored():
     assert claims.removed_requirement_text(_diff("-You must never do this.", path="README.md")) == []
+
+
+# ---------------------------------------------------------------- parser placement (base file supplied)
+
+GOOGLE_BASE = '''def clamp(x, lo, hi):
+    """Limit x to [lo, hi].
+
+    Args:
+        x: value.
+        lo: lower bound.
+        hi: upper bound.
+
+    Raises:
+        ValueError: If lo > hi, the call must fail.
+    """
+    if lo > hi:
+        raise ValueError("lo > hi")
+    return max(lo, min(x, hi))
+'''
+# git's default 3-line context starts this hunk inside the docstring: the diff alone cannot place it
+GOOGLE_DIFF = '''diff --git a/m.py b/m.py
+--- a/m.py
++++ b/m.py
+@@ -7,8 +7,5 @@ def clamp(x, lo, hi):
+         hi: upper bound.
+ 
+-    Raises:
+-        ValueError: If lo > hi, the call must fail.
+     """
+-    if lo > hi:
+-        raise ValueError("lo > hi")
+     return max(lo, min(x, hi))
+'''
+
+
+def test_a_raises_section_far_below_the_def_is_found_with_the_base_file():
+    assert claims.removed_requirement_text(GOOGLE_DIFF) == []  # diff-only: the documented blind spot
+    found = claims.removed_requirement_text(GOOGLE_DIFF, {"m.py": GOOGLE_BASE}.get)
+    assert [f["text"] for f in found] == ["ValueError: If lo > hi, the call must fail."]
+
+
+def test_with_the_base_file_code_lines_are_never_documentation():
+    base = 'def f(x):\n    """Doc:\n    """\n    raise ValueError("lo must never exceed hi")\n'
+    diff = ('diff --git a/m.py b/m.py\n--- a/m.py\n+++ b/m.py\n@@ -3,2 +3,1 @@\n     """\n'
+            '-    raise ValueError("lo must never exceed hi")\n')
+    assert claims.removed_requirement_text(diff, {"m.py": base}.get) == []
+
+
+def test_a_reflow_with_a_blank_line_and_a_cross_file_move_are_not_flagged():
+    reflow = ('diff --git a/m.py b/m.py\n--- a/m.py\n+++ b/m.py\n@@ -1,2 +1,5 @@\n def f(x):\n'
+              '-    """Return x. Raise ValueError if x is negative."""\n'
+              '+    """Return x.\n+\n+    Raise ValueError if x is negative.\n+    """\n')
+    assert claims.removed_requirement_text(reflow) == []
+    move = ('diff --git a/a.py b/a.py\n--- a/a.py\n+++ b/a.py\n@@ -1,2 +0,0 @@\n-def f(x):\n'
+            '-    """Raise ValueError if x is negative."""\n'
+            'diff --git a/b.py b/b.py\n--- a/b.py\n+++ b/b.py\n@@ -0,0 +1,2 @@\n+def f(x):\n'
+            '+    """Raise ValueError if x is negative."""\n')
+    assert claims.removed_requirement_text(move) == []
+
+
+def test_an_unparseable_or_unreadable_base_falls_back_to_the_heuristic():
+    assert claims.removed_requirement_text(OBSERVED, {"mathutil.py": "def (:"}.get)  # syntax error: heuristic
+
+    def boom(path):
+        raise OSError("gone")
+    assert claims.removed_requirement_text(OBSERVED, boom)
