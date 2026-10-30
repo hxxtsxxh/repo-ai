@@ -320,3 +320,50 @@ def test_claude_profile_denies_foreign_unix_sockets(tmp_path):
         server.close()
         import shutil
         shutil.rmtree(tempfile_dir, ignore_errors=True)
+
+
+# ---------------------------------------------------------------- isolation probe (init event before any inference)
+
+def _probe_claude(tmp_path, init: dict) -> Path:
+    marker = tmp_path / "ws" / "inferred"  # inside the workspace: the only place the sandbox lets it write
+    body = ('for a in "$@"; do if [ "$a" = "repo-ai-isolation-probe-not-a-model" ]; then\n'
+            f"  echo '{json.dumps(init)}'; exit 1; fi; done\n"
+            f"touch {marker}\n"
+            'echo \'{"type":"result","is_error":false,"result":"ok","session_id":"s","total_cost_usd":0.01}\'')
+    return _fake_claude(tmp_path, FULL_HELP, body)
+
+
+CLEAN_INIT = {"type": "system", "subtype": "init", "session_id": "s", "tools": ["Edit", "Glob", "Grep", "Read", "Write"],
+              "mcp_servers": [], "skills": [], "slash_commands": [],
+              "plugins": [{"name": "cc-plugin-agents-md", "path": "builtin"}]}
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="exercises the seatbelt path")
+@pytest.mark.parametrize("leak", [
+    {"mcp_servers": [{"name": "plugin:desktop-commander:desktop-commander", "status": "connected"}]},
+    {"tools": ["Read", "Edit", "Bash"]},
+    {"plugins": [{"name": "desktop-commander"}]},
+    {"skills": ["pin-tests"]},
+])
+def test_isolation_probe_refuses_a_session_that_would_load_more_than_requested(tmp_path, monkeypatch, leak):
+    exe = _probe_claude(tmp_path, {**CLEAN_INIT, **leak})
+    res = _run_live(tmp_path, exe, monkeypatch, {"CLAUDE_CODE_OAUTH_TOKEN": "t", "USER": "u"})
+    assert res["stage"] == "BLOCKED" and res["capture_status"] == "isolation_probe_failed"
+    assert not (tmp_path / "ws" / "inferred").exists()
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="exercises the seatbelt path")
+def test_isolation_probe_passes_a_clean_session_and_the_real_run_proceeds(tmp_path, monkeypatch):
+    exe = _probe_claude(tmp_path, CLEAN_INIT)
+    res = _run_live(tmp_path, exe, monkeypatch, {"CLAUDE_CODE_OAUTH_TOKEN": "t", "USER": "u"})
+    assert res["capture_status"] != "isolation_probe_failed" and (tmp_path / "ws" / "inferred").exists()
+
+
+def test_account_sync_cache_is_left_to_the_isolation_probe_but_user_skills_are_refused(tmp_path):
+    cfg = tmp_path / "cfg"
+    (cfg / "skills" / "synced" / "bucket").mkdir(parents=True)
+    (cfg / "skills" / "synced" / "bucket" / "SKILL.md").write_text("x")
+    assert claude_auth.plan({"REPO_AI_CLAUDE_CONFIG_DIR": str(cfg), "USER": "u"}).usable
+    (cfg / "skills" / "mine").mkdir()
+    (cfg / "skills" / "mine" / "SKILL.md").write_text("x")
+    assert not claude_auth.plan({"REPO_AI_CLAUDE_CONFIG_DIR": str(cfg), "USER": "u"}).usable

@@ -98,7 +98,9 @@ def audit_config_dir(path: Path) -> list[str]:
         return [f"{path} is your personal Claude config; repo-ai needs its own: {login_command(default_config_dir())}"]
     for sub in ("skills", "agents", "commands", "output-styles", "hooks", "rules"):
         d = path / sub
-        if d.is_dir() and any(p.is_file() for p in d.rglob("*")):
+        # `<sub>/synced` is the account's own sync cache (any non-safe-mode session of the account fills it); whether
+        # anything from it would load is checked per run by the isolation probe, which reads the session's init event
+        if d.is_dir() and any(p.is_file() and "synced" not in p.relative_to(d).parts[:1] for p in d.rglob("*")):
             problems.append(f"{path}/{sub} is not empty; repo-ai's Claude login must carry no customisations")
     try:
         installed = json.loads((path / "plugins" / "installed_plugins.json").read_text("utf-8"))

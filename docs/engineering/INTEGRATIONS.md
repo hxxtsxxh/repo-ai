@@ -147,3 +147,27 @@ start the detached service; repo-ai's discovery probes do not (checked).
 
 Live re-verification after the fixes (2026-10-30T05:48Z): Claude `run_provider` READY (`dedicated_config`, tools
 Read+Edit, $0.014114, correct edit); OpenCode READY (read+edit, $0, correct edit); no `opencode` process left.
+
+## Account sync reaches every login; a per-run isolation probe checks it (2026-10-30)
+
+A Claude Code login carries what its **account** syncs: in a host-mode (non `--safe-mode`) session from the dedicated
+repo-ai login, the init event listed plugins `desktop-commander` (shell), `engineering`, `design`, … and claude.ai
+connectors (Gmail, Drive, Calendar connected). `--tools` restricts built-in tools only; the model in that host-mode
+run used desktop-commander's `start_process`. That session also wrote the account's sync cache into the login dir
+(`skills/synced`, `plugins/synced`). The config-dir audit cannot see account-level state.
+
+repo-ai's provider invocation removes all of it (`--safe-mode`, `--strict-mcp-config`, `--restricted`); this is now
+**checked on every live run**: before the real run, repo-ai starts the exact invocation with a model name Claude Code
+rejects locally (no API request; `total_cost_usd` 0) and reads the init event. Any tool beyond the requested set,
+any MCP server, any non-built-in plugin, or any skill/command refuses the run (`isolation_probe_failed`). Observed on
+the real CLI with the sync cache present: the probe passed (tools `Edit, Glob, Grep, Read, Write` only) and the run
+succeeded (call #16, $0.010517). The audit now leaves `*/synced` to the probe and still refuses user-authored
+skills, hooks, agents and commands.
+
+Lesson for experiments: host-mode skill trials must use a login separate from the provider login.
+
+## Claude `--max-budget-usd` overshoot
+
+The CLI checks its budget between turns: two host-mode runs capped at $0.30 ended at $0.320 and $0.383 (stopped
+before finishing). repo-ai already fails a run whose reported cost exceeds the ceiling; budgets should assume one
+turn of overshoot.

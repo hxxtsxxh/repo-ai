@@ -914,6 +914,15 @@ def run_provider(
             log_file=scratch / "agy.log",
             read_only=not write_paths,
         )
+        if claude_plan is not None:
+            unexpected = _claude_isolation_probe([*prefix, *argv], workspace, env, read_only=not write_paths)
+            if unexpected:
+                return {
+                    "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+                    "returncode": -1, "capture_status": "isolation_probe_failed", "identity_sha256": identity_before,
+                    "cost_usd": 0.0, "cost_status": "UNKNOWN", "auth_mode": claude_plan.mode, "events": {},
+                    "reasons": unexpected,
+                }
         # OpenCode's events embed whole tool inputs/outputs (observed 68 KB for a 28-edit local run)
         limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
         result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
@@ -1006,6 +1015,46 @@ def setup_problems(provider: str) -> list[str]:
         return ["set GEMINI_API_KEY (or GOOGLE_API_KEY) in repo-ai's environment; repo-ai no longer copies ~/.gemini "
                 "(OAuth tokens and other agents' state) into the sandbox"]
     return []
+
+
+ISOLATION_PROBE_MODEL = "repo-ai-isolation-probe-not-a-model"
+
+
+def _claude_isolation_probe(cmd: list[str], workspace: Path, env: dict[str, str], *, read_only: bool) -> list[str]:
+    """Start the exact live invocation with a model name Claude Code rejects before any API request, and read what the
+    session loaded from its init event. A login's account can sync plugins, MCP connectors and skills into every
+    session (observed: a dedicated login carrying shell and mail connectors); the flags should remove them, and this
+    checks that they did before the model ever runs. Returns reasons to refuse (empty means as requested)."""
+    split = cmd.index("--") if "--" in cmd else len(cmd)
+    probe = [*cmd[:split], "--model", ISOLATION_PROBE_MODEL, *cmd[split:]]
+    result = _capture(probe, workspace, env, timeout=60.0, max_timeout=60.0, separate_stderr=True)
+    init: dict[str, Any] = {}
+    for line in result.output.decode("utf-8", "replace").splitlines():
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict) and obj.get("type") == "system" and obj.get("subtype") == "init":
+            init = obj
+            break
+    if not init:
+        return ["claude isolation probe produced no init event; what the session would load is unknown"]
+    allowed = set((claude_auth.READ_TOOLS if read_only else claude_auth.EDIT_TOOLS).split(","))
+    tools = [str(t) for t in init.get("tools") or []]
+    plugins = [str(p.get("name", p)) if isinstance(p, dict) else str(p) for p in init.get("plugins") or []]
+    reasons = []
+    if set(tools) - allowed:
+        reasons.append("claude would load tools repo-ai did not request: " + ", ".join(sorted(set(tools) - allowed)))
+    if init.get("mcp_servers"):
+        names = [str(m.get("name", m)) if isinstance(m, dict) else str(m) for m in init["mcp_servers"]]
+        reasons.append("claude would connect MCP servers: " + ", ".join(names[:8]))
+    extra_plugins = [p for p in plugins if not p.startswith("cc-plugin-")]
+    if extra_plugins:
+        reasons.append("claude would load plugins: " + ", ".join(extra_plugins[:8]))
+    if init.get("skills") or init.get("slash_commands"):
+        reasons.append("claude would load skills or commands: "
+                       + ", ".join([str(s) for s in [*(init.get("skills") or []), *(init.get("slash_commands") or [])]][:8]))
+    return [f"isolation probe refused the run: {r}" for r in reasons]
 
 
 def _reap_provider_run(run_marker: str | None) -> list[str]:
