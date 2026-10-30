@@ -85,11 +85,19 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
         outcome = event.get("o")
         # A skipped *test* is recorded and must be skipped identically at base and candidate (`comparability`);
         # a skipped file or suite hides which tests it holds, and xfail inverts the outcome: both stay refused.
-        if (outcome == "skip" and any(event.get(k) is True for k in ("file", "suite", "collect"))) \
+        if (outcome == "skip" and any(event.get(k) is True for k in ("suite", "collect"))) \
                 or event.get("xfail") is True:
-            reasons.append("a test file or suite was skipped, or a test was expected to fail")
+            reasons.append("a test suite was skipped, or a test was expected to fail")
         if event.get("collect") is True:
             reasons.append("test collection did not complete normally")
+        if outcome == "skip" and event.get("file") is True and not event.get("collect"):
+            # a file skipped as a whole is one recorded entry, held to the same base == candidate rule as a test
+            whole = mapper.file(event)
+            if whole:
+                outcomes[f"{whole}::<module skipped>"] = "skip"
+            else:
+                reasons.append("a skipped test file has no unambiguous identity")
+            continue
         if any(event.get(k) is True for k in ("file", "suite", "collect", "sub")):
             continue
         file, tid = mapper.file(event), event.get("id")

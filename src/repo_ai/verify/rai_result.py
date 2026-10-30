@@ -343,6 +343,11 @@ class _PytestPlugin:
             nodeid = report.nodeid or ""
             self.out.emit(e="end", id=nodeid, mod="", path=self._path(nodeid.split("::")[0]), o="error",
                           msg=_report_msg(report) or "collection error", dur=None, collect=True)
+        elif report.skipped and nodeid and "::" not in nodeid and nodeid.endswith(".py"):
+            # a whole file skipped at collection (`pytest.skip(allow_module_level=True)`, `importorskip`): say so,
+            # instead of its tests silently not existing
+            self.out.emit(e="end", id=nodeid, mod="", path=self._path(nodeid), o="skip",
+                          msg=_report_msg(report) or "module skipped", dur=None, file=True)
 
 
 def main(argv):

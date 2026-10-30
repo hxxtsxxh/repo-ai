@@ -28,6 +28,7 @@ CLASSIFICATIONS = {
     ('pass', 'fail'): 'NEW_FAILURE',
     ('pass', 'error'): 'NEW_FAILURE',
     ('pass', 'pass'): 'UNCHANGED_PASS',
+    ('skip', 'skip'): 'SKIPPED_BOTH',
 }
 
 
