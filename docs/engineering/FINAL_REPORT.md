@@ -1,7 +1,7 @@
 # Omniprovider mission — report
 
-Status: **in progress** (draft written 2026-10-30 before the 0.10.0 tag; release facts are filled in after
-publication and re-verified from the public hosts). Controlling order: the owner's omniprovider mission (kept
+Status: **0.10.0 publicly shipped and verified (2026-10-30)**; the mission continues (see [QUEUE.md](QUEUE.md)). Release
+facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider mission (kept
 outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [evidence/](evidence/).
@@ -56,7 +56,15 @@ Live calls under the owner's 2026-10-30 authorization (25 calls / $5): see [EXPE
 Claude stream cost is notional on a Max subscription; Codex/agy/Gemini UNKNOWN; OpenCode $0. CI on the public
 repository is free.
 
-## Release
+## Release (verified after publication)
 
-_To be filled after the v0.10.0 tag: public `main` SHA, PR list, CI runs, PyPI files and sha256, re-download check,
-clean-install transcript, Pages deployment and served-page checks._
+| What | Value |
+|---|---|
+| Public `main` at the tag | `f53d027416e1983bd04dfa7f4e437ff969f42cad` = tag `v0.10.0` (annotated, `18d2f0c2…`) |
+| Merged PRs | #3 providers (`90a3b94`), #4 skills (`f33e9fb`), #6 release (`f53d027`); #5 site after the release |
+| CI | every required check green on each PR (Linux py3.10–3.14, Windows py3.10/3.13, docker and bwrap sandboxes, lint, offline eval, benchmark) |
+| macOS full suite (freeze, `434a659`, `src/` identical to the tag) | 2,467 passed, 4 skipped, 9 xfailed, 1 failed (stale plugin bundle, fixed in `9c5f52f`, re-run green) |
+| Release workflow | <https://github.com/hxxtsxxh/repo-ai/actions/runs/41030084295>: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
+| PyPI | <https://pypi.org/project/repo-ai-cli/0.10.0/>: wheel `aa8278061511a26ea0d947b80af825711d073462ea6d74fcb6d63ff963eb51cf`, sdist `4cdcb886067eb59bbdeb54434af46b454a510297aa57f6d35dde6365a3c6bec3` |
+| Re-download check | PyPI and GitHub release files byte-identical; `SHA256SUMS` OK (wheel, sdist, SBOM); `gh attestation verify` exit 0 |
+| Clean install | `sh scripts/release_smoke.sh 'repo-ai-cli==0.10.0' 0.10.0` from the default index on macOS: **SMOKE PASS** (offline first run, sandboxed verify, privacy audit, uninstall keeping user edits) |

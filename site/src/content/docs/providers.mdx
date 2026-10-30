@@ -1,0 +1,100 @@
+---
+title: Providers
+description: Which coding-agent CLIs repo-ai can drive in a mission, what has actually been observed with each, and how each one is set up and isolated.
+---
+
+import ProviderMatrix from '../../components/evidence/ProviderMatrix.astro';
+
+No provider is needed for indexing, context, impact, `verify` or `coverage`. Providers matter only for live
+[missions](/repo-ai/docs/missions/), [tournaments](/repo-ai/docs/tournaments/) and
+[handoffs](/repo-ai/docs/handoff/). This page records observations, not endorsements.
+
+## Matrix
+
+<ProviderMatrix />
+
+The table is rendered from `site/src/data/providers.json` in the source tree. Every `EXECUTION` row rests on small
+samples: n = 1 per journey, synthetic tasks, macOS. For Claude Code, Codex, agy and OpenCode the latest journeys ran on
+the published 0.10.0 wheel; Bob's on an earlier pre-release. It says the path functions, not that results are good
+or better than using the provider directly (one OpenCode run passed the visible tests and failed a hidden case). The claims behind it are also in the
+[Evidence Lab](/repo-ai/docs/evidence/).
+
+:::note[Claude Code as a host]
+Claude Code is fully usable as a **host** for repo-ai's context: `repo-ai init --agent claude` writes a marked
+`CLAUDE.md` block, path-scoped rules, curated skills and hooks that attach ranked context to prompts. From 0.10.0
+repo-ai can also launch Claude as an isolated mission provider (see the notes below); the two are independent.
+:::
+
+## Checking providers locally
+
+```sh
+repo-ai agents list      # is an executable present? no subprocess, no model call
+repo-ai agents doctor    # sandboxed --help/--version probes; no login check, no model call
+repo-ai agents route     # what --agent auto would choose, with a status class
+repo-ai agents setup claude|opencode|codex   # how that provider authenticates inside repo-ai; no model call
+repo-ai agents catalog   # 24 coding agents and what repo-ai can honestly do with each
+```
+
+`agents route` reports a `status_class` such as `NOT_INSTALLED`, `NOT_AUTHORIZED`, `BLOCKED_AUTH`, `BLOCKED_QUOTA`,
+`BLOCKED_SANDBOX`, `UNSUPPORTED` or `ISOLATED_READY`. There is no "host ready" state: repo-ai has no un-isolated
+execution path. Routing checks offline whether a provider has any login repo-ai's isolation can use (`SETUP_REQUIRED`,
+reported as `BLOCKED_AUTH`) without reading credentials; it does not check quota before a live run.
+
+## Per-provider notes
+
+### IBM Bob
+
+Last live-verified on an earlier pre-release; not re-run on 0.9.0 or 0.10.0, and its account entitlement was not
+re-checked. Install and log in to Bob as its documentation describes. repo-ai passes your `--max-cost-usd` to Bob's own cost cap,
+so a positive ceiling is enforced by the provider. Cost figures are provider-reported, not billing records.
+
+### Codex CLI
+
+Log in with Codex's own flow; better, give repo-ai a separate login (`CODEX_HOME=<dir> codex login`, see
+`repo-ai agents setup codex`). repo-ai runs Codex with a scratch `HOME` holding only that login's token and the
+model-selection keys of your config (no MCP servers or `notify`), under repo-ai's outer sandbox, which from 0.10.0
+hides the rest of your `HOME`. The token copy itself is readable by Codex's model, which has a shell and the network:
+a prompt-injected repository could try to send it out, which is why a separate, revocable login is recommended. Because nested sandboxes are not supported on macOS, repo-ai passes Codex's
+`--dangerously-bypass-approvals-and-sandbox` **only after** confirming its outer sandbox is active for that run; if it
+is not, the run is refused. The outer sandbox is then the only write boundary. Codex has no hard USD flag, so a
+positive `--max-cost-usd` is refused and cost is recorded as `UNKNOWN`, never `0`. Bound runs with `--max-seconds`.
+
+### Antigravity (`agy`, macOS only)
+
+agy has no scratch-HOME login, so it runs with the real `HOME`, but the seatbelt profile denies reads under `HOME`
+except its own state directory (minus history), `~/.gemini/config`, `~/.local` and the two keychain database files it
+needs to authenticate. Those files are encrypted, but the agy process can read them and has network access. repo-ai
+runs it headless with edits only, shell actions denied, and never with `--dangerously-skip-permissions`. If that
+exposure is unacceptable to you, do not use `--agent agy`.
+
+### Claude Code
+
+From 0.10.0 an isolated mission provider (macOS live-verified; Linux by tests only). It uses Claude Code's own login
+and nothing is copied: either `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`; not yet live-verified) or a
+separate repo-ai login (`CLAUDE_CONFIG_DIR=<dir> claude auth login`; `repo-ai agents setup claude` prints the exact
+command). The model gets file tools only, with no shell, web, MCP, skills or hooks; before every live run repo-ai
+starts the session once with a model name Claude Code rejects locally and refuses the run if anything else would load
+(an account can sync plugins and connectors into every login). `--max-cost-usd` maps to Claude's own cap, which is
+checked between turns: one turn of overshoot was observed. Claude is also a **host** (`repo-ai init --agent claude`).
+
+### OpenCode (local model, macOS only)
+
+Account-free: OpenCode runs against a loopback model endpoint such as Ollama (`ollama pull qwen3:8b`, then
+`export REPO_AI_OPENCODE_MODEL=qwen3:8b`; `repo-ai agents setup opencode`). The sandbox allows network to loopback
+only, a deny-by-default tool policy allows read, edit, glob, grep and list, project configuration is ignored and
+cloud-routed models are refused. Small local models are weak at this: in recorded journeys several attempts failed
+(repo-ai refused them) and one passed the visible tests while dropping a requirement that no test pinned.
+
+### Gemini CLI
+
+The tested account was rejected (exit 41, 2026-10-30). From 0.10.0 repo-ai no longer copies `~/.gemini` into the
+sandbox; live Gemini needs `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+
+## What every live run shares
+
+- Live calls happen only with `--run --allow-live-provider`.
+- The task text and the workspace files the agent opens go to that provider, under that provider's terms.
+- Network is allowed for the provider process (the model API needs it), so it can send what it can read.
+- Subscription quota and unknown dollar cost are separate from any spending ceiling you set.
+
+Details: [Security & privacy](/repo-ai/docs/security/#live-provider-runs).

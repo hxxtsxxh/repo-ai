@@ -3,7 +3,10 @@ import Landing from '../layouts/Landing.astro';
 import InstallCommand from '../components/InstallCommand.astro';
 import Terminal from '../components/landing/Terminal.astro';
 import Architecture from '../components/landing/Architecture.astro';
-import { site, sourceLabel } from '../config';
+import EvidenceLab from '../components/evidence/EvidenceLab.astro';
+import ProviderMatrix from '../components/evidence/ProviderMatrix.astro';
+import { site, sourceLabel, pypi } from '../config';
+import { evidence } from '../data/facts';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const docs = (p = '') => `${base}docs/${p}`;
@@ -75,13 +78,13 @@ const useCases = [
     title: 'Let an agent attempt a fix without touching your checkout',
     cmd: 'repo-ai do "…" --agent codex --allow-live-provider --run --allow-write src/x.py',
     what: 'The candidate is produced in an isolated worktree, checked by the same engine, and applied only by `repo-ai apply`.',
-    backed: 'Live, independently re-verified changes from IBM Bob, Codex CLI and Antigravity on small tasks. Small n.',
+    backed: 'Live, independently re-verified changes from Codex CLI and Antigravity on the 0.9.0 freeze build (2026-10-29, n = 1 per journey), and from IBM Bob in an earlier pre-release. Small tasks, small n.',
   },
   {
     title: 'Hand unfinished work to a different agent',
     cmd: 'repo-ai handoff ID --to bob --json > capsule.json',
     what: 'An integrity-checked capsule; validated partial progress is re-derived from the local store and re-verified from the frozen base.',
-    backed: 'Demonstrated live once from agy to Codex, on a constructed scenario (n = 1).',
+    backed: 'Observed live on constructed scenarios, n = 1 each (experimental): Codex to agy on 2026-10-29 (hidden oracle 714/714), and agy to Codex earlier.',
   },
 ];
 ---
@@ -108,7 +111,13 @@ const useCases = [
           <a class="btn" href={docs('install/')}>Install options</a>
         </div>
         <p class="hero__meta">
-          {site.pypiPublished ? `On PyPI as repo-ai ${site.version}.` : `${site.version} ships as a wheel on the GitHub release, not on PyPI yet.`}
+          {site.pypiPublished ? (
+            <>
+              On PyPI as <a href={pypi.url} rel="noopener">{site.distribution} {site.version}</a>; the command is <code>{site.command}</code>.
+            </>
+          ) : (
+            `${site.version} ships as a wheel on the GitHub release, not on PyPI yet.`
+          )}
           {' '}No daemon, no telemetry.
         </p>
       </div>
@@ -175,7 +184,7 @@ const useCases = [
         <p class="eyebrow">A real session</p>
         <h2 id="walk-title">Six commands on a small Python and TypeScript project</h2>
         <p class="section__lede">
-          Captured on macOS on {site.factsAsOf} with the 0.9.0 release candidate (it reports itself as 0.9.0.dev4), in a throwaway copy of
+          Captured on macOS on 2026-10-29 with the 0.9.0 release candidate (it reports itself as 0.9.0.dev4), in a throwaway copy of
           the test fixture that ships in the repository. Lines are removed where marked, paths shortened; nothing is added.
         </p>
       </header>
@@ -248,46 +257,7 @@ const useCases = [
         </p>
       </header>
 
-      <div class="table-wrap" role="region" aria-labelledby="providers-caption" tabindex="0">
-        <table class="matrix">
-          <caption id="providers-caption">Coding agents as repo-ai execution providers (<code>repo-ai do --agent …</code>)</caption>
-          <thead>
-            <tr><th scope="col">Provider</th><th scope="col">Status</th><th scope="col">What we observed</th><th scope="col">Cost reporting</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">IBM Bob</th>
-              <td data-label="Status"><span class="chip chip--pass">works</span></td>
-              <td data-label="What we observed">Live, model-generated changes, independently re-verified through <code>repo-ai do</code>. Small tasks, small n.</td>
-              <td data-label="Cost reporting">Provider-reported; hard USD cap via Bob’s own flag</td>
-            </tr>
-            <tr>
-              <th scope="row">OpenAI Codex CLI</th>
-              <td data-label="Status"><span class="chip chip--pass">works</span></td>
-              <td data-label="What we observed">Same, on small tasks. Runs inside repo-ai’s outer sandbox with Codex’s own sandbox bypassed, only once the outer one is confirmed.</td>
-              <td data-label="Cost reporting"><span class="chip chip--unknown">UNKNOWN</span> under subscription</td>
-            </tr>
-            <tr>
-              <th scope="row">Google Antigravity <code>agy</code></th>
-              <td data-label="Status"><span class="chip chip--pass">works</span> <span class="matrix__note">macOS only</span></td>
-              <td data-label="What we observed">Same, on small tasks. Must read the encrypted login keychain files to authenticate; refused on other platforms.</td>
-              <td data-label="Cost reporting"><span class="chip chip--unknown">UNKNOWN</span> under subscription</td>
-            </tr>
-            <tr>
-              <th scope="row">Claude Code</th>
-              <td data-label="Status"><span class="chip chip--fail">blocked</span> <span class="matrix__note">as a provider</span></td>
-              <td data-label="What we observed">Works as a <em>host</em> for repo-ai’s context and hooks (<code>repo-ai init --agent claude</code>). As an execution provider it cannot authenticate in repo-ai’s isolated scratch HOME.</td>
-              <td data-label="Cost reporting">—</td>
-            </tr>
-            <tr>
-              <th scope="row">Gemini CLI</th>
-              <td data-label="Status"><span class="chip chip--fail">rejected</span></td>
-              <td data-label="What we observed">Rejected for the account we tested. Not retried.</td>
-              <td data-label="Cost reporting">—</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <ProviderMatrix captionId="providers-caption" legend={false} />
 
       <div class="table-wrap" role="region" aria-labelledby="platforms-caption" tabindex="0">
         <table class="matrix">
@@ -306,11 +276,11 @@ const useCases = [
             </tr>
             <tr>
               <th scope="row">Missions (<code>repo-ai do</code> execution)</th>
-              <td data-label="macOS">yes (seatbelt)</td><td data-label="Linux">yes, needs bubblewrap</td><td data-label="Windows">not supported</td>
+              <td data-label="macOS">yes (seatbelt; live-verified)</td><td data-label="Linux">bubblewrap path covered by tests, no live mission recorded; agy and OpenCode refused</td><td data-label="Windows">not supported</td>
             </tr>
             <tr>
               <th scope="row">Measured on fresh held-out data</th>
-              <td data-label="macOS, Linux" colspan="2">held-out-7, in podman containers</td><td data-label="Windows">never</td>
+              <td data-label="macOS, Linux" colspan="2">held-out-7, in podman (Linux) containers only</td><td data-label="Windows">never</td>
             </tr>
           </tbody>
         </table>
@@ -318,7 +288,7 @@ const useCases = [
       <p class="matrix__foot">
         Python 3.10–3.14. Runtime dependencies: <code>pathspec</code>, plus <code>tomli</code> on 3.10. Test runners split per file:
         <code>pytest</code>, <code>unittest</code>, <code>node --test</code>. Jest, Vitest and Mocha run only as an opaque full suite.{' '}
-        <a href={docs('providers/')}>Provider setup notes</a> · <a href={docs('status/')}>Full status matrix</a>
+        <a href={docs('providers/')}>Provider labels and setup notes</a> · <a href={docs('status/')}>Full status matrix</a>
       </p>
     </div>
   </section>
@@ -351,58 +321,20 @@ const useCases = [
   <section class="section" id="evidence" aria-labelledby="ev-title">
     <div class="wrap">
       <header class="section__head">
-        <p class="eyebrow">Methods &amp; caveats</p>
+        <p class="eyebrow">Evidence Lab</p>
         <h2 id="ev-title">What we have and haven’t shown</h2>
         <p class="section__lede">
-          A tool that checks claims should be strict about its own. These are the measured results we stand behind, with their scope,
-          and the questions that are still open.
+          A tool that checks claims should be strict about its own. Every claim below carries its status, date, sample size, method and
+          source, negative results included. The full ledger has {evidence.length} entries, with their limits.
         </p>
       </header>
-      <div class="ledger">
-        <section class="ledger__col" aria-labelledby="shown-title">
-          <h3 id="shown-title" class="ledger__title"><span class="chip chip--pass">shown</span> with its scope</h3>
-          <ul>
-            <li>
-              <span class="stat">0</span> false assurances in <span class="stat">127</span> failing states
-              <span class="ledger__scope">Held-out-7: frozen, independently labelled, 5 projects, pytest and <code>node --test</code>, in podman containers, build <code>903984a</code>. Runtime no-miss 96.7%.</span>
-            </li>
-            <li>
-              Working tree unchanged in <span class="stat">234 / 234</span> runs
-              <span class="ledger__scope">Same evaluation. The integrity check also fails any run that touches it.</span>
-            </li>
-            <li>
-              Live agent candidates, independently re-verified
-              <span class="ledger__scope">IBM Bob, Codex CLI and Antigravity through <code>repo-ai do</code>, on small synthetic tasks. Small n.</span>
-            </li>
-          </ul>
-        </section>
-        <section class="ledger__col" aria-labelledby="notshown-title">
-          <h3 id="notshown-title" class="ledger__title"><span class="chip chip--unknown">not shown</span> yet</h3>
-          <ul>
-            <li>
-              Lift over a standalone agent
-              <span class="ledger__scope">Four small preregistered studies (abc-v1 to v4). In v2–v4 the bare provider already solved every task, so nothing could separate the arms; in v1 (n = 4) the one-task difference is consistent with noise. Verdict: NOT_YET_DEMONSTRATED.</span>
-            </li>
-            <li>
-              Better task success for Claude Code with repo-ai context
-              <span class="ledger__scope">150 preregistered runs: plain 92%, Core 90%, Full 88%. All differences inconclusive.</span>
-            </li>
-            <li>
-              Speed
-              <span class="ledger__scope">On held-out-7, slower than the native suite on 3 of 5 projects (1.44–2.31×). Value on small suites is the classification, not time.</span>
-            </li>
-            <li>
-              Windows, on fresh data
-              <span class="ledger__scope">Unit tests pass in CI; no held-out run.</span>
-            </li>
-          </ul>
-        </section>
-      </div>
+      <EvidenceLab variant="landing" level={3} />
       <p class="ledger__method">
-        <strong>How these were measured.</strong> Manifests frozen before any live call, hidden graders kept out of the agent’s workspace,
-        free controls (untouched FAIL, reference CORRECT, decoy FALSE_GREEN) for every task. The tasks, hidden tests and harness were
-        written by an AI agent, and the samples are small: these are not independent evaluations.{' '}
-        <a href={docs('evaluation/')}>Full methodology</a>
+        <strong>How these were measured.</strong> Each card states its own method, sample and limits. The abc studies froze
+        manifests before any live call and used free controls (untouched FAIL, reference CORRECT, decoy FALSE_GREEN); the provider
+        and skill journeys are n = 1 demonstrations without such controls. Most tasks, hidden tests and harnesses were written by an
+        AI agent, and the samples are small: these are not independent evaluations.{' '}
+        <a href={docs('evidence/')}>All {evidence.length} entries</a> · <a href={docs('evaluation/')}>Full methodology</a>
       </p>
     </div>
   </section>

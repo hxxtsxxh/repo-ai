@@ -85,6 +85,7 @@ export default defineConfig({
           label: 'Trust',
           items: [
             { label: 'Security & privacy', slug: 'docs/security' },
+            { label: 'Evidence Lab', slug: 'docs/evidence' },
             { label: 'Evaluation & methodology', slug: 'docs/evaluation' },
             { label: 'Status matrix', slug: 'docs/status' },
           ],

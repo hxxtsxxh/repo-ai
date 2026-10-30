@@ -1,0 +1,117 @@
+{
+  "schema": "repo-ai.providers/1",
+  "as_of": "2026-10-30",
+  "about": "Provider compatibility matrix rendered on the landing page and /docs/providers/. Edit by hand when a provider's state changes, then run `python scripts/site_facts.py` (it validates this file) and rebuild the site. `label` is the row's overall state; `execution.status` is the isolated `repo-ai do` path only. label EXECUTION requires execution.status EXECUTION with a dated, versioned observation.",
+  "labels": {
+    "EXECUTION": "repo-ai runs it as an isolated mission provider (repo-ai do), and a live, independently re-verified change has been observed.",
+    "HOST_ONLY": "repo-ai wires context, rules, skills and hooks into it (repo-ai init), but cannot run it as an isolated provider.",
+    "CONTEXT_SKILLS_ONLY": "repo-ai writes context and skills files the tool can read; no hooks and no isolated execution.",
+    "PLANNED": "Intended, not implemented. Nothing on this site claims it works.",
+    "BLOCKED": "Tried, and stopped by an external blocker (authentication, account or terms) that is named.",
+    "UNSUPPORTED": "Not supported, and not planned for now."
+  },
+  "providers": [
+    {
+      "id": "codex",
+      "name": "OpenAI Codex CLI",
+      "agent": "codex",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact), with the 0.10.0 sandbox that hides the rest of HOME. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Disclosed: the login token copied into its sandbox is readable by a model with shell access; use a separate repo-ai login (repo-ai agents setup codex).",
+        "verified_on": "2026-10-30",
+        "version": "0.165.0",
+        "sample": "n = 1 per journey",
+        "platforms": "macOS (seatbelt) verified live; Linux bubblewrap path covered by tests, no live mission this cycle",
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
+      },
+      "host": "Not wired as a host by repo-ai init.",
+      "cost": "UNKNOWN under subscription; a positive --max-cost-usd is refused (no hard USD flag)"
+    },
+    {
+      "id": "agy",
+      "name": "Google Antigravity (agy)",
+      "agent": "agy",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact); earlier tournament and handoff journeys on 0.9.0. Must read the encrypted login keychain files to authenticate; refused on other platforms.",
+        "verified_on": "2026-10-30",
+        "version": "1.4.9",
+        "sample": "n = 1 per journey",
+        "platforms": "macOS only",
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
+      },
+      "host": "Not wired as a host by repo-ai init.",
+      "cost": "UNKNOWN under subscription"
+    },
+    {
+      "id": "bob",
+      "name": "IBM Bob",
+      "agent": "bob",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "Live, model-generated changes independently re-verified through repo-ai do on an earlier pre-release (including abc-v1). Not re-run on 0.9.0 or 0.10.0; account entitlement not re-checked.",
+        "verified_on": "2026-10",
+        "version": "2.0.9",
+        "sample": "small tasks, small n (abc-v1: 4 tasks, one run per cell)",
+        "platforms": "macOS",
+        "source": "benchmarks/abc-v1/RESULTS.md"
+      },
+      "host": "repo-ai init --agent bob (also the default when --agent is omitted) writes .bob/ skills, rules, commands and hooks and an AGENTS.md block.",
+      "cost": "Provider-reported USD; hard cap through Bob's own flag"
+    },
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "agent": "claude",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "Live, independently re-verified changes through repo-ai do on the published 0.10.0 wheel (2026-10-30): mission PASS, hidden oracle 17/17, apply and undo byte-exact, and a hostile-repository run whose injected instructions were not followed. Uses Claude Code's own login, nothing copied: a separate repo-ai login (live-verified) or CLAUDE_CODE_OAUTH_TOKEN from claude setup-token (not yet live-verified). The model gets file tools only, and every live run first checks, at no cost, that the session would load nothing else.",
+        "verified_on": "2026-10-30",
+        "version": "2.1.314",
+        "sample": "n = 1 per journey (2 journeys on 0.10.0)",
+        "platforms": "macOS (seatbelt) verified live; Linux bubblewrap profile covered by tests, not live-verified",
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
+      },
+      "host": "Fully supported as a host: repo-ai init --agent claude writes a marked CLAUDE.md block, path-scoped rules, curated skills and hooks that attach ranked context to prompts.",
+      "cost": "Claude's own USD cap via --max-cost-usd, checked between turns (one turn of overshoot observed); on a subscription the reported cost is notional"
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode (local model)",
+      "agent": "opencode",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "OpenCode against a local, loopback-only model endpoint (Ollama), account-free. On the published 0.10.0 wheel (2026-10-30) with qwen3:8b: one attempt refused (broken edit), one PASS of the visible tests that a hidden case failed (the model dropped a docstring requirement no test pinned); on development builds 1 of 4 passed. repo-ai refused every broken candidate. Deny-by-default tools, network to loopback only.",
+        "verified_on": "2026-10-30",
+        "version": "2.2.1 with qwen3:8b via Ollama 0.40",
+        "sample": "7 attempts across builds",
+        "platforms": "macOS only (no tested restriction elsewhere: refused)",
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
+      },
+      "host": "Reads repo-ai-installed skills from .agents/skills (observed 2026-10-30).",
+      "cost": "$0 (local model); cloud-routed models are refused"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini CLI",
+      "agent": "gemini",
+      "label": "BLOCKED",
+      "execution": {
+        "status": "BLOCKED",
+        "observed": "Rejected for the tested account (exit 41, authentication) on 2026-10-30. From 0.10.0 repo-ai no longer copies ~/.gemini into the sandbox; live Gemini needs GEMINI_API_KEY or GOOGLE_API_KEY.",
+        "verified_on": "2026-10-30",
+        "version": "0.65.0",
+        "sample": "1 bounded retry",
+        "platforms": "macOS",
+        "source": "docs/engineering/INTEGRATIONS.md"
+      },
+      "host": "Not wired as a host by repo-ai init.",
+      "cost": "—"
+    }
+  ]
+}
