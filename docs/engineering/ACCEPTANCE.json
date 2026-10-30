@@ -311,7 +311,7 @@
    "title": "Distribution/release",
    "status": "PASS",
    "owner": "principal",
-   "code_sha": "f53d027",
+   "code_sha": "218461a",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
@@ -324,19 +324,22 @@
   {
    "id": "C21",
    "title": "Real adopter proof",
-   "status": "PASS_WITH_LIMITS",
+   "status": "EXPERIMENTAL",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
-    "first-run bug (init then do) found on the published 0.11.0 and fixed (PR #11)"
+    "first-run bug (init then do) found on the published 0.11.0; fix in PR #11, not yet released"
    ],
    "limits": [
-    "one real repository; regression injected by the author; second real project not yet done"
+    "one real repository; regression injected by the author",
+    "the passing run used a development build (PR #11); 0.11.0 refused it",
+    "post-apply 0-failure vs sandbox 20-failure discrepancy unexplained",
+    "second real project not yet done"
    ],
-   "next_action": "second real project; owner re-login for the Claude provider"
+   "next_action": "ship the PR #11 fix; second real project; owner re-login for the Claude provider"
   },
   {
    "id": "C22",

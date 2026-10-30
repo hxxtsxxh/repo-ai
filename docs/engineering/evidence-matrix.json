@@ -361,11 +361,11 @@
       "title": "A fix verified on a real repository with unrelated failures",
       "status": "EXPERIMENTAL",
       "stat": "PASS_WITH_PRE_EXISTING_FAILURES",
-      "result": "On un33k/python-slugify (a deliberate regression committed as a bad commit), a live Codex candidate was verified through a scoped mission (--expect-fix with the three tests the regression broke): the declared tests went from failing to passing, nothing that passed at the base failed, 20 unrelated failures were listed; the candidate is byte-identical to the upstream line. The same candidate could not be verified by an unscoped mission.",
+      "result": "On un33k/python-slugify (a deliberate regression committed as a bad commit), a live Codex candidate was verified through a scoped mission (--expect-fix with the three tests the regression broke): the declared tests went from failing to passing, nothing that passed at the base failed, 20 unrelated failures were listed; the candidate is byte-identical to the upstream line. An unscoped mission on an equivalent candidate (Claude's recorded fix, replayed) could not be verified because of the 20 unrelated failures.",
       "date": "2026-10-30",
-      "sample_size": "1 real repository, 1 live run",
+      "sample_size": "1 real repository; 1 successful live run (after 3 failed attempts on 0.11.0)",
       "method": "repo-ai do --agent codex --expect-fix … on a development build of the init-then-do fix (0.11.0 itself refused the run because of that first-run bug).",
-      "limits": "One repository, one task, regression injected by the author; the claim stays ASSURANCE_PARTIAL; a first-run bug in 0.11.0 is fixed after the release.",
+      "limits": "One repository, one task, regression injected by the author; the claim stays ASSURANCE_PARTIAL. The passing run used a development build of the init-then-do fix (PR #11, unreleased): 0.11.0 itself refused the run. The Claude provider attempt was blocked by a revoked login. The post-apply run in the real checkout reported 0 failures where the sandbox saw 20 (unexplained).",
       "source": "docs/engineering/evidence/REAL-PROJECT-2026-10-30.md",
       "featured": true
     }

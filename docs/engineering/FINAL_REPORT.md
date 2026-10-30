@@ -62,10 +62,10 @@ repository is free.
 |---|---|
 | Public `main` at the tag | `218461a352d3d6cee72610e4ecb861d13f0b4baa` = tag `v0.11.0` (tree identical to the frozen `0ebe88a`) |
 | Contents | requirement erasure (#7), `--expect-fix` for real suites (#9), each independently reviewed with findings fixed |
-| Qualification | required CI green (#10); macOS full suite 2,551 passed, 4 skipped, 11 xfailed, 0 failed |
+| Qualification | required CI green (#10); macOS full suite run locally on `0ebe88a` (2026-10-30T12:05–13:04Z, tree identical to the tag): 2,551 passed, 4 skipped, 11 xfailed, 0 failed |
 | Release workflow | run 41092530934: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
 | PyPI | wheel `5a28fd1787a18b7098635cefd86c079ef83e49f538d3961b0c8b8e293657874e`, sdist `95316697ad2e160260c2367d55a67ae55b230fb2198c8f551cca5718d56adaa9`; identical to the GitHub assets; `SHA256SUMS` OK; attestation verified; clean-install smoke PASS |
-| Found after release | an init-then-do first-run bug (fixed in PR #11, live-verified on a real repository) |
+| Found after release | an init-then-do first-run bug (fix in PR #11, unreleased; live-verified on a development build against a real repository) |
 
 ## Release 0.10.0 (verified after publication)
 
