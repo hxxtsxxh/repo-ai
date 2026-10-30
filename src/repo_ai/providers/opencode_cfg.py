@@ -91,7 +91,9 @@ def environment(environ: Mapping[str, str] | None = None, *, read_only: bool) ->
     environ = os.environ if environ is None else environ
     model = environ.get(MODEL_ENV, "")
     return {"OPENCODE_CONFIG_CONTENT": config_content(model, base_url(environ), read_only=read_only),
-            "OPENCODE_DISABLE_PROJECT_CONFIG": "1", "OPENCODE_DISABLE_AUTOUPDATE": "1"}
+            "OPENCODE_DISABLE_PROJECT_CONFIG": "1", "OPENCODE_DISABLE_AUTOUPDATE": "1",
+            # its Claude-compatibility mode would load the repository's CLAUDE.md and .claude/skills as instructions
+            "OPENCODE_DISABLE_CLAUDE_CODE": "1"}
 
 
 def model_ref(environ: Mapping[str, str] | None = None) -> str:

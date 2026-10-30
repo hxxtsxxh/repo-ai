@@ -573,6 +573,11 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             assert claude_plan is not None
             read_rule, extra_write = claude_auth.seatbelt_rules(workspace, scratch, executable, claude_plan,
                                                                 extra_read=_node_roots())
+            # the API needs the network, but no local service does: unix sockets only for DNS and the scratch dir
+            # (otherwise e.g. a container engine socket or ssh-agent would be reachable)
+            net_rule += ('(deny network-outbound (remote unix-socket))'
+                         '(allow network-outbound (remote unix-socket (path-literal "/private/var/run/mDNSResponder")))'
+                         f"(allow network-outbound (remote unix-socket (subpath {json.dumps(sc_str)})))")
         profile = (
             f"(version 1)(allow default){net_rule}{read_rule}(deny file-write*)"
             f"(allow file-write* (subpath {json.dumps(ws_str)}))"

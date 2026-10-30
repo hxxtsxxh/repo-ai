@@ -226,3 +226,30 @@ def test_gemini_without_an_api_key_is_setup_required_and_never_started(tmp_path,
     assert res["stage"] == "BLOCKED" and res["capture_status"] == "not_configured" and not marker.exists()
     monkeypatch.setenv("GEMINI_API_KEY", "k")
     assert adapters.setup_problems("gemini") == []
+
+
+# ---------------------------------------------------------------- review findings (2026-10-30)
+
+@pytest.mark.parametrize("model", ["qwen3-coder:480b-cloud", "gpt-oss:120b-cloud", "cloud"])
+def test_cloud_routed_ollama_models_are_refused(model):
+    assert opencode_cfg.setup_problems({opencode_cfg.MODEL_ENV: model})
+
+
+def test_claude_compat_loading_is_disabled():
+    assert opencode_cfg.environment({opencode_cfg.MODEL_ENV: "m"}, read_only=False)["OPENCODE_DISABLE_CLAUDE_CODE"] == "1"
+
+
+def test_long_opencode_streams_are_not_failed_by_the_default_line_bound():
+    events = [_ev("step_start")] + [_ev("tool_use", tool="read", state={"status": "completed"})] * 600 + \
+        [_ev("step_finish", reason="stop", cost=0, tokens={"input": 1, "output": 1}), _ev("text", text="done")]
+    ev = adapters.parse_event_stream("opencode", _stream(*events))
+    assert ev["protocol_valid"]
+
+
+def test_executables_directly_in_home_expose_only_themselves(tmp_path, monkeypatch):
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+    exe = tmp_path / "opencode"
+    exe.write_text("x")
+    rules = adapters._home_read_only_rules([exe])
+    assert f"(allow file-read* (literal {json.dumps(str(exe.resolve()))}))" in rules
+    assert f"(allow file-read* (subpath {json.dumps(str(tmp_path.resolve()))}))" not in rules
