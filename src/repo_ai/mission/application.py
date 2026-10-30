@@ -247,9 +247,10 @@ def apply(root: Path, mission: str) -> dict[str, Any]:
             rec['phase'] = 'VERIFYING'
             _save(path, rec)
             obs = verification.observe(root, state['contract']['acceptance'][0])
-            verdict, reasons = verification.compare(state['baseline'], obs)
+            scoped = list(state['contract'].get('expect_fix') or [])
+            verdict, reasons = verification.compare(state['baseline'], obs, expect_fix=scoped)
             if (verdict != 'PASS' or not obs.get('complete') or type(obs.get('ran')) is not int
-                    or obs['ran'] <= 0 or obs.get('failed') != 0):
+                    or obs['ran'] <= 0 or (not scoped and obs.get('failed') != 0)):
                 raise ValueError('post-apply verification failed: ' + '; '.join(reasons))
             for rel, item in files.items():
                 if read_inside(root, rel, LIMIT) != base64.b64decode(item['after']):

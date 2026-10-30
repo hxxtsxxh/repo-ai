@@ -923,6 +923,7 @@ plan an outcome offline; run an isolated replay or authorized live provider cand
 | `--max-parallel` `MAX_PARALLEL` | ceiling 1–4; P0 executes one writer sequentially |
 | `--max-seconds` `MAX_SECONDS` | wall-clock limit per provider run (default: 120) |
 | `--test-command` `TEST_COMMAND` | one of `python -m pytest`, `node --test` |
+| `--expect-fix` `TEST` | a test id the task must fix (repeatable; e.g. tests/test_x.py::test_y). With it, tests that already fail at the base and are not declared may keep failing; they are listed, and the result is PASS_WITH_PRE_EXISTING_FAILURES, never a plain whole-suite PASS |
 | `--role` `ROLE` | opt-in separate read-only provider process; refused for trivial changes; advisory, never a verdict (one of `investigator`, `adversary`) |
 | `--resume` `ID` | inspect/recover an interrupted checkpoint; no automatic model retry |
 

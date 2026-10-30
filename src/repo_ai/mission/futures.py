@@ -132,7 +132,12 @@ def analyze_futures(
             base_outcomes = (mission_state.get('baseline') or {}).get('outcomes') or {}
             skipped_now = {t for t, o in (obs.get('outcomes') or {}).items() if o == 'skip'}
             skipped_base = {t for t, o in base_outcomes.items() if o == 'skip'}
-            passed = bool(obs.get('complete') and obs.get('failed', 0) == 0 and skipped_now == skipped_base)
+            scope = list((mission_state.get('contract') or {}).get('expect_fix') or [])
+            if scope:  # a scoped mission is rehearsed by the same per-test rule it was verified with
+                from .verification import compare as _compare
+                passed = _compare(mission_state.get('baseline') or {}, obs, expect_fix=scope)[0] == 'PASS'
+            else:
+                passed = bool(obs.get('complete') and obs.get('failed', 0) == 0 and skipped_now == skipped_base)
             rehearsal_summary = {
                 'rehearsed': True,
                 'verdict': 'PASS' if passed else 'FALSIFIED',

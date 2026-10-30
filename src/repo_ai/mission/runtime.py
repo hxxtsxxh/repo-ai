@@ -230,7 +230,8 @@ def _classify_orchestration_and_broker(task: str, context: dict[str, Any], max_p
 def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] | None = None,
          execute_local: bool = False, max_cost_usd: float = 0, max_parallel: int = 1,
          max_seconds: float = 120, command: str = 'python -m pytest',
-         allow_live: bool = False, roles: list[str] | None = None) -> dict[str, Any]:
+         allow_live: bool = False, roles: list[str] | None = None,
+         expect_fix: list[str] | None = None) -> dict[str, Any]:
     root = root.resolve()
     if agent not in {'auto', 'none', 'replay', *LIVE_PROVIDERS}:
         raise ValueError('unknown agent')
@@ -281,6 +282,7 @@ def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] |
         zone=zone,
         policy_sha256=policy,
         roles=granted_roles,
+        expect_fix=sorted(set(expect_fix or [])),
     )
     contract.validate()
 
@@ -399,7 +401,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
             allow_live: bool = False, seed: dict[str, Any] | None = None) -> dict[str, Any]:
     from ..providers.adapters import contract_for, run_provider, validate_workspace_edits
     from ..providers.discovery import _identity, _inside
-    from .verification import compare, observe
+    from .verification import compare, observe, pre_existing_failures
     root = root.resolve()
     contract = decode(planned['contract'])
     if not isinstance(contract, IntentContract) or not contract.execute or not contract.approvals:
@@ -804,9 +806,17 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 state['regression'] = nodes['review']['artifact']
                 state['diff'] = nodes['edit']['artifact']['diff']
                 state['diff_sha256'] = nodes['edit']['artifact']['sha256']
-                observed, reasons = compare(state['baseline'], state['candidate'])
-                if state['regression'].get('verdict') != 'selected-and-full-suite-passed':
+                scoped = list(getattr(contract, 'expect_fix', []) or [])
+                observed, reasons = compare(state['baseline'], state['candidate'], expect_fix=scoped)
+                accepted = {'selected-and-full-suite-passed'}
+                if scoped:  # failures that also fail at the base are allowed only when the task set is declared
+                    accepted.add('failing (all failures pre-existing at the base)')
+                if state['regression'].get('verdict') not in accepted:
                     reasons.append('fresh whole-change regression verification did not pass')
+                if scoped and not reasons:
+                    state['scoped'] = pre_existing_failures(state['baseline'], state['candidate'], scoped)
+                scoped_unclear = bool(scoped and observed == 'PASS' and state['regression'].get('verdict')
+                                      == 'failing (tests that fail at the base now fail differently)')
                 if not state['regression'].get('source_tree', {}).get('unchanged'):
                     reasons.append('candidate integrity check failed')
                 if identity(root, require_clean=True)['fingerprint'] != current['fingerprint']:
@@ -822,6 +832,12 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         reasons.append('independent acceptance inventory disagrees with observed test bytes')
                 observations = [digest(state[k]) for k in ('baseline', 'candidate', 'regression')]
                 verdict = 'PASS' if not reasons else ('FAIL' if state['candidate'].get('failed', 0) else 'INCONCLUSIVE')
+                if verdict == 'FAIL' and scoped_unclear and len(reasons) == 1:
+                    # the declared tests were fixed and nothing regressed by test outcome; only a pre-existing
+                    # failure's message changed: that cannot be judged either way here
+                    verdict = 'INCONCLUSIVE'
+                if scoped:
+                    state['standing'] = (state.get('scoped') or {}).get('standing', verdict) if verdict == 'PASS' else verdict
                 if verdict == 'PASS':
                     from .exercise import measure as measure_exercise
                     try:
@@ -1017,10 +1033,21 @@ def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
             data = None
         if data is not None:
             texts[rel] = data.decode('utf-8', 'replace')
-    return claims.assess((state.get('contract') or {}).get('objective', ''), texts,
-                         verdict=state['effective_verdict'], freshness=state['freshness'],
-                         exercise=state.get('exercise'), diff=state.get('diff') or '',
-                         base_source=_base_source(root, (state.get('source') or {}).get('head')))
+    value = claims.assess((state.get('contract') or {}).get('objective', ''), texts,
+                          verdict=state['effective_verdict'], freshness=state['freshness'],
+                          exercise=state.get('exercise'), diff=state.get('diff') or '',
+                          base_source=_base_source(root, (state.get('source') or {}).get('head')))
+    scoped = state.get('scoped') or {}
+    remaining = scoped.get('pre_existing_failures') or []
+    if remaining:
+        if value['headline'] in {'OBSERVED_TESTS_PASS', 'ASSURANCE_PARTIAL'}:
+            value['headline'] = 'ASSURANCE_PARTIAL'
+        from .coverage import display_test_id
+        count = scoped.get('pre_existing_count', len(remaining))
+        value['notes'].insert(1, f"{count} test(s) already failed at the base and still fail (scoped by "
+                                 "--expect-fix; not part of this result): "
+                                 + ', '.join(display_test_id(t) for t in remaining[:5]))
+    return value
 
 
 RECOVERY_CLASSES = (
@@ -1295,6 +1322,7 @@ def continue_from_handoff(
     allow_live: bool = False,
     max_cost_usd: float | None = None,
     extra_write_paths: list[str] | None = None,
+    expect_fix: list[str] | None = None,
 ) -> dict[str, Any]:
     """Continue an interrupted or provider-blocked mission using a verified HandoffCapsule.
 
@@ -1321,19 +1349,23 @@ def continue_from_handoff(
             return _continue_verified_handoff(root, capsule_data, agent=agent, replay_path=replay_path,
                                               provider_executable=provider_executable,
                                               allow_live=allow_live, max_cost_usd=max_cost_usd,
-                                              extra_write_paths=extra_write_paths)
+                                              extra_write_paths=extra_write_paths, expect_fix=expect_fix)
 
 
 def _continue_verified_handoff(
     root: Path, capsule_data: dict[str, Any], *, agent: str | None,
     replay_path: Path | None, provider_executable: Path | None,
     allow_live: bool, max_cost_usd: float | None, extra_write_paths: list[str] | None = None,
+    expect_fix: list[str] | None = None,
 ) -> dict[str, Any]:
     ver = verify_handoff(root, capsule_data)
     if not ver['valid']:
         raise ValueError('cannot continue from invalid or stale handoff capsule: ' + '; '.join(ver['reasons']))
     orig = status(root, capsule_data['mission'])
     orig_contract = orig['contract']
+    if expect_fix and sorted(set(expect_fix)) != sorted(orig_contract.get('expect_fix') or []):
+        raise ValueError('a continuation keeps the original --expect-fix scope exactly; '
+                         f"it was {sorted(orig_contract.get('expect_fix') or []) or 'none'}")
     if orig.get('continuation_started'):
         raise ValueError('continuation already attempted; inspect recorded child or create a fresh approved plan')
     recovery = classify_recovery(orig)
@@ -1397,6 +1429,7 @@ def _continue_verified_handoff(
         max_seconds=rem_seconds,
         command=orig_contract['acceptance'][0],
         allow_live=allow_live and target_agent in LIVE_PROVIDERS,
+        expect_fix=list(orig_contract.get('expect_fix') or []),  # a continuation keeps the declared scope exactly
     )
     # Claim the attempt durably before any external side effect. A crash requires
     # inspecting the child; re-exporting cannot replay the parent's allowance.
