@@ -685,10 +685,11 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
             src_dir = dedicated if (dedicated / "auth.json").is_file() else real_home / ".codex"
             dst_dir = scratch_home / ".codex"
             dst_dir.mkdir(parents=True, exist_ok=True)
-            for fname in ("auth.json", "config.toml"):
-                f = src_dir / fname
-                if f.is_file():
-                    shutil.copy2(f, dst_dir / fname)
+            if (src_dir / "auth.json").is_file():
+                shutil.copy2(src_dir / "auth.json", dst_dir / "auth.json")
+            sanitized = _codex_config_subset(src_dir / "config.toml")
+            if sanitized:
+                (dst_dir / "config.toml").write_text(sanitized, encoding="utf-8")
         elif provider == "claude":
             pass  # nothing is copied: see claude_auth (token in the environment, or a dedicated repo-ai login)
         elif provider == "agy":
@@ -1022,6 +1023,28 @@ def run_provider(
 
 GEMINI_KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
 CODEX_HOME_ENV = "REPO_AI_CODEX_HOME"
+
+
+CODEX_CONFIG_KEYS = ("model", "model_reasoning_effort", "model_provider", "preferred_auth_method", "model_verbosity")
+
+
+def _codex_config_subset(path: Path) -> str:
+    """Only plain model-selection keys of the user's Codex config. Never tables or commands: `mcp_servers` would start
+    servers inside the sandbox, `notify` runs a program, `projects` carries trust decisions."""
+    try:
+        import tomllib
+    except ModuleNotFoundError:  # Python 3.10
+        import tomli as tomllib  # type: ignore[no-redef]
+    try:
+        data = tomllib.loads(path.read_text("utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return ""
+    lines = []
+    for key in CODEX_CONFIG_KEYS:
+        value = data.get(key)
+        if isinstance(value, str) and len(value) <= 128 and value.isprintable():
+            lines.append(f"{key} = {json.dumps(value)}")
+    return "\n".join(lines) + ("\n" if lines else "")
 
 
 def codex_home() -> Path:
