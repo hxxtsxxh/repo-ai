@@ -24,8 +24,15 @@ Every live call is listed here; none is deleted, including failures.
 Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call budget): see
 `evidence/OPENCODE-JOURNEY-2026-10-30.md` (1 pass in 4 end-to-end attempts) plus probes.
 
+| 12 | 2026-10-30T06:00Z | claude / sonnet (host mode) | skill pair, skill arm | `Skill(pin-tests)` invoked; stopped at cap before writing | $0.319960 | same |
+| 13 | 2026-10-30T06:00Z | claude / sonnet (host mode) | skill pair, control | stopped at cap before writing | $0.382882 | same |
+| 14 | 2026-10-30T06:01Z | claude / haiku (host mode) | skill pair, skill arm | skill invoked; 2/2 tests carry `PIN:` | $0.024161 | same |
+| 15 | 2026-10-30T06:01Z | claude / haiku (host mode) | skill pair, control | 0/2 `PIN:` | $0.007736 | same |
+| 16 | 2026-10-30T06:04Z | claude / sonnet | isolation probe, first live check | READY | $0.010517 | same |
+| 17 | 2026-10-30T06:17Z | claude / sonnet | strict probe + live-init re-check | READY | $0.010507 | same |
+
 **Authorization (owner, 2026-10-30):** up to 25 live provider calls, $5 notional total, Claude ≤ $0.50 per run.
-Used: 7 of 25 calls; Claude $0.09167 notional, Codex/agy/Gemini UNKNOWN (calls 1–4 preceded the authorization: $0.0203).
+Used: 13 of 25 calls; Claude $0.846 notional (cap $5), Codex/agy/Gemini UNKNOWN (calls 1–4 preceded the authorization: $0.0203).
 
 ## Open experiment protocols (not run)
 
