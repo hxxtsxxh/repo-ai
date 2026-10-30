@@ -62,11 +62,10 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
         relevance = max(relevance, float(g["strength"]))
         reasons.append(f"addresses gap '{g['title']}' ({'; '.join(g['evidence'][:2])})")
     desc = str(candidate.get("description", ""))
-    # A skill written for this repository (it names one of the repository's own packages) carries project
-    # knowledge no gap detector can see. Only a local skill the user pointed at counts: a network candidate
-    # could name the package to promote itself.
-    text = f"{candidate.get('name', '')} {desc}".lower()
-    project = sorted(p for p in profile.get("own_packages", []) if re.search(rf"\b{re.escape(p)}\b", text))
+    # A skill written for this repository (its description names one of the repository's own packages) carries
+    # project knowledge no gap detector can see. Only a local skill the user pointed at counts: a network candidate
+    # could name the package to promote itself. The name alone is not enough (it is just the directory name).
+    project = names_packages(desc, profile.get("own_packages", []))
     if project and candidate.get("provider") == "local":
         relevance = max(relevance, PROJECT_RELEVANCE)
         reasons.append(f"written for this repository: names its package {', '.join(project)}")
@@ -118,6 +117,23 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
                           recommended, reasons, matched, overlaps, tokens, evidence_status, perms[:6], project)
 
 
+def names_packages(text: str, packages: list[str]) -> list[str]:
+    """Packages named as whole words; `ledger_core`, `ledger-core` and `ledger core` all name `ledger_core`."""
+    tokens = re.split(r"[^a-z0-9]+", text.lower())
+    found = []
+    for pkg in packages:
+        parts = pkg.lower().split("_")
+        if any(tokens[i:i + len(parts)] == parts for i in range(len(tokens) - len(parts) + 1)):
+            found.append(pkg)
+    return sorted(found)
+
+
+def autopilot_wants(rec: dict[str, Any]) -> bool:
+    """Autopilot acts on a recommendation only when it fills an evidence-backed gap. A skill recommended because it
+    names this repository's package is advice for `explain`/`recommend`: autopilot installs it only when named."""
+    return bool(rec.get("install_recommended")) and bool(rec.get("gaps"))
+
+
 def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any]],
               profile: dict[str, Any], existing: dict[str, str],
               trials: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -134,9 +150,8 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
                 if gap not in chosen:
                     chosen[gap] = r
     picked = {r.candidate_id for r in chosen.values()}
-    # project skills fill no shared gap, so each stands on its own
-    project_only = {r.candidate_id for r in recs if r.install_recommended and r.project_packages and not r.gaps}
-    project_only -= picked
+    # a project skill stands on its own, even when a stronger candidate took a gap it also matched
+    project_only = {r.candidate_id for r in recs if r.install_recommended and r.project_packages} - picked
     picked |= project_only
     for r in recs:
         if r.install_recommended and r.candidate_id not in picked:
@@ -145,8 +160,9 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
     summary = ("No additional skills are necessary: " + (
         "no evidence-backed capability gap was found" if not profile.get("gaps") else
         "no eligible candidate addresses a gap strongly enough")) if not picked else \
-        f"{len(picked)} skill(s) recommended for {len(chosen)} gap(s)" + (
-            f" and {len(project_only)} written for this repository" if project_only else "")
+        f"{len(picked)} skill(s) recommended for {len(chosen)} gap(s)" if not project_only else \
+        f"{len(picked)} skill(s) recommended: {len(picked) - len(project_only)} for {len(chosen)} gap(s), " \
+        f"{len(project_only)} written for this repository"
     return {"summary": summary, "recommendations": [r.to_json() for r in recs],
             "gaps_without_candidates": sorted(set(g["id"] for g in profile.get("gaps", [])) -
                                               {g for r in recs for g in r.gaps})}

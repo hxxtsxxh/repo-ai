@@ -225,8 +225,12 @@ def build_profile(root: Path, facts: dict[str, Any], index, episodes: list[dict[
 
 
 # too generic to show that a skill was written for this repository
-_GENERIC_PACKAGES = {"src", "app", "apps", "lib", "core", "utils", "util", "common", "main", "test", "tests",
-                     "docs", "scripts", "examples", "tools", "config", "api", "server", "client", "cli"}
+_GENERIC_PACKAGES = {
+    "src", "app", "apps", "lib", "core", "utils", "util", "common", "main", "test", "tests", "docs", "scripts",
+    "examples", "tools", "config", "settings", "api", "server", "client", "cli", "data", "model", "models", "user",
+    "users", "auth", "admin", "base", "shared", "helpers", "services", "service", "views", "schemas", "types",
+    "internal", "plugins", "storage", "store", "tasks", "jobs", "workers", "static", "templates", "migrations",
+    "database", "web", "site", "package", "project", "python", "source", "modules", "components", "handlers"}
 
 
 def own_packages(paths: Iterable[str]) -> list[str]:
