@@ -14,6 +14,8 @@ Each provider also gets an explicit ``readiness`` state:
   NOT_INSTALLED             no executable on PATH
   INSTALLED_UNPROBED        installed and isolatable; authentication/quota never observed (the honest default)
   AVAILABLE_BUT_UNAUTHORIZED  usable, but the user has not consented to live use
+  SETUP_REQUIRED            the provider has no login repo-ai's isolation can use (checked offline: whether a
+                            token variable is set or a dedicated login directory exists; no credential is read)
   AUTHORIZED_BUT_UNREADY    a recent live attempt showed missing/failed login
   USAGE_LIMITED             a recent live attempt hit a quota/rate limit (expires)
   ACCOUNT_INELIGIBLE        a recent live attempt showed the account/tier is not entitled
@@ -40,20 +42,20 @@ from .adapters import _execution_sandbox_prefix, contract_for
 from .discovery import PROVIDERS, discover
 
 POLICY_SCHEMA = "repo-ai.provider-policy/1"
-DEFAULT_ORDER = ("bob", "claude", "codex", "agy", "gemini")
+DEFAULT_ORDER = ("bob", "claude", "codex", "agy", "gemini", "opencode")
 COOLDOWN_SECONDS = 3600.0
 OBSERVATION_TTL = {"READY": 86_400.0, "USAGE_LIMITED": COOLDOWN_SECONDS, "AUTHORIZED_BUT_UNREADY": 3600.0,
                    "ACCOUNT_INELIGIBLE": 43_200.0}
-READINESS_STATES = ("NOT_INSTALLED", "INSTALLED_UNPROBED", "AVAILABLE_BUT_UNAUTHORIZED", "AUTHORIZED_BUT_UNREADY",
+READINESS_STATES = ("NOT_INSTALLED", "INSTALLED_UNPROBED", "SETUP_REQUIRED", "AVAILABLE_BUT_UNAUTHORIZED", "AUTHORIZED_BUT_UNREADY",
                     "USAGE_LIMITED", "ACCOUNT_INELIGIBLE", "RUNTIME_UNSUPPORTED", "ISOLATION_BLOCKED", "READY", "UNKNOWN")
-_BLOCKING = frozenset({"NOT_INSTALLED", "AUTHORIZED_BUT_UNREADY", "USAGE_LIMITED", "ACCOUNT_INELIGIBLE",
+_BLOCKING = frozenset({"NOT_INSTALLED", "SETUP_REQUIRED", "AUTHORIZED_BUT_UNREADY", "USAGE_LIMITED", "ACCOUNT_INELIGIBLE",
                        "RUNTIME_UNSUPPORTED", "ISOLATION_BLOCKED", "UNKNOWN"})
 # Stable coarse vocabulary for scripts. ``readiness`` stays authoritative and unchanged. ISOLATED_READY means
 # installed and containable by repo-ai's sandbox; it is NOT proof of login or quota (see ``not_evaluated``).
 # repo-ai has no un-isolated "host" execution path, so there is deliberately no HOST_READY.
 STATUS_CLASS = {
     "NOT_INSTALLED": "NOT_INSTALLED", "AVAILABLE_BUT_UNAUTHORIZED": "NOT_AUTHORIZED",
-    "AUTHORIZED_BUT_UNREADY": "BLOCKED_AUTH", "ACCOUNT_INELIGIBLE": "BLOCKED_AUTH", "USAGE_LIMITED": "BLOCKED_QUOTA",
+    "SETUP_REQUIRED": "BLOCKED_AUTH", "AUTHORIZED_BUT_UNREADY": "BLOCKED_AUTH", "ACCOUNT_INELIGIBLE": "BLOCKED_AUTH", "USAGE_LIMITED": "BLOCKED_QUOTA",
     "ISOLATION_BLOCKED": "BLOCKED_SANDBOX", "RUNTIME_UNSUPPORTED": "UNSUPPORTED",
     "INSTALLED_UNPROBED": "ISOLATED_READY", "READY": "ISOLATED_READY", "UNKNOWN": "UNKNOWN",
 }
@@ -160,8 +162,14 @@ def _isolated_ready(provider: str) -> bool:
         return _execution_sandbox_prefix(base, base, allow_network=True, provider=provider, live=True) is not None
 
 
+def setup_problems(provider: str) -> list[str]:
+    """Offline: what stops repo-ai's isolation from authenticating this provider at all. Reads no secret."""
+    from .adapters import setup_problems as adapter_setup_problems
+    return adapter_setup_problems(provider)
+
+
 def _readiness(name: str, prof: dict[str, Any], installed: bool, isolated: bool, limited: bool,
-               obs: dict[str, Any] | None, consented: bool) -> str:
+               obs: dict[str, Any] | None, consented: bool, setup_missing: bool = False) -> str:
     if not prof:
         return "UNKNOWN"
     stage = prof.get("stage")
@@ -172,7 +180,10 @@ def _readiness(name: str, prof: dict[str, Any], installed: bool, isolated: bool,
     if not installed:
         return "UNKNOWN"
     if not isolated:
-        return "RUNTIME_UNSUPPORTED" if name == "agy" and not sys.platform == "darwin" else "ISOLATION_BLOCKED"
+        return ("RUNTIME_UNSUPPORTED" if name in {"agy", "opencode"} and not sys.platform == "darwin"
+                else "ISOLATION_BLOCKED")
+    if setup_missing:
+        return "SETUP_REQUIRED"
     if limited or (obs and obs["state"] == "USAGE_LIMITED"):
         return "USAGE_LIMITED"
     if obs and obs["state"] in {"ACCOUNT_INELIGIBLE", "AUTHORIZED_BUT_UNREADY"}:
@@ -226,7 +237,9 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
             consented = not policy["authorized"] or name in policy["authorized"]
         else:
             consented = name in policy["authorized"]
-        readiness = _readiness(name, prof, installed, bool(ready), limited, obs, consented)
+        setup = setup_problems(name) if installed else []
+        reasons.extend(f"setup required: {p}" for p in setup)
+        readiness = _readiness(name, prof, installed, bool(ready), limited, obs, consented, bool(setup))
         if obs and obs["state"] in _BLOCKING:
             reasons.append(f"recent live observation: {obs['state']}")
         capable = (installed and ready and not limited and readiness not in _BLOCKING
@@ -260,4 +273,4 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
 
 
 __all__ = ["DEFAULT_ORDER", "READINESS_STATES", "STATUS_CLASS", "authorize", "classify_failure", "load_policy", "note_observation",
-           "note_rate_limited", "revoke", "route", "policy_path"]
+           "note_rate_limited", "revoke", "route", "policy_path", "setup_problems"]

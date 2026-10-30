@@ -175,6 +175,8 @@ def test_cli_tournament_requires_live_authorization_and_dry_run_starts_nothing(b
 from repo_ai.mission import shortlist as sl  # noqa: E402
 from repo_ai.mission.tournament import inspect_comparison  # noqa: E402
 
+pytestmark = pytest.mark.usefixtures('claude_fake_login')
+
 TWO = 'def charge(amount, retries):\n    return amount * 1\n'
 
 

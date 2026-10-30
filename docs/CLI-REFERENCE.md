@@ -910,7 +910,7 @@ plan an outcome offline; run an isolated replay or authorized live provider cand
 | `--from-handoff` `FILE` | continue an interrupted/failed mission from a verified handoff capsule JSON file |
 | `--apply` | apply the candidate diff to the working tree after fresh PASS verification |
 | `--json` | machine-readable JSON output |
-| `--agent` `AGENT` | one of `auto`, `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy` |
+| `--agent` `AGENT` | one of `auto`, `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode` |
 | `--replay` `FILE` | explicitly simulated bounded JSON edit proposal; never a live agent |
 | `--provider-executable` `FILE` | local non-billable provider executable for contract simulation |
 | `--candidate` `FILE` | opt-in tournament: repeat for 2–3 isolated simulated proposals |
@@ -932,8 +932,8 @@ local provider availability; doctor runs sandboxed help/version only
 | `-C`, `--path` `DIR` | repository directory (default: cwd) |
 | `-v`, `--verbose` | more detail; on an error, print the traceback |
 | `-q`, `--quiet` | less output |
-| `action` | one of `list`, `doctor`, `route`, `authorize`, `revoke` |
-| `provider` | provider name for authorize/revoke |
+| `action` | one of `list`, `doctor`, `route`, `authorize`, `revoke`, `setup` |
+| `provider` | provider name for authorize/revoke/setup |
 | `--prefer` | with authorize: also prefer this provider in routing |
 | `--allow-live-provider` | route: evaluate as if this run were authorized |
 | `--max-cost-usd` `MAX_COST_USD` | route: require an enforceable USD ceiling when &gt; 0 |
@@ -992,7 +992,7 @@ local mission handoff; no provider disclosure
 | `id` | mission ID |
 | `--json` | machine-readable JSON output |
 | `--format` `FORMAT` | one of `text`, `json` |
-| `--to` `TO` | optional target provider for local handoff adaptation (one of `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`) |
+| `--to` `TO` | optional target provider for local handoff adaptation (one of `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode`) |
 | `--verify` `FILE` | verify a local handoff capsule JSON file against current repository state |
 
 ## `repo-ai replay`

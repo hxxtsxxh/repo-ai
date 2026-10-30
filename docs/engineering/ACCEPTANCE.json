@@ -1,0 +1,347 @@
+{
+ "schema": "repo-ai.omniprovider-acceptance/1",
+ "updated": "2026-10-30",
+ "statuses": [
+  "PASS",
+  "PASS_AT_0.9.0",
+  "EXPERIMENTAL",
+  "NOT_YET_DEMONSTRATED",
+  "NEGATIVE_RESULT",
+  "INCONCLUSIVE",
+  "BLOCKED_EXTERNAL",
+  "NOT_TESTED",
+  "NOT_STARTED"
+ ],
+ "gates": [
+  {
+   "id": "C01",
+   "title": "Public alignment",
+   "status": "PASS_AT_0.9.0",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "public main 21fd3c6; PyPI repo-ai-cli 0.9.0 wheel b351d80e\u2026; site 200 (2026-10-30)"
+   ],
+   "limits": [],
+   "next_action": "re-verify after next release; site/release-facts specialist audits drift"
+  },
+  {
+   "id": "C02",
+   "title": "Zero-provider onboarding",
+   "status": "PASS_AT_0.9.0",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "release_smoke.sh on clean python:3.12-slim (0.9.0 launch)"
+   ],
+   "limits": [],
+   "next_action": "re-run on next release wheel"
+  },
+  {
+   "id": "C03",
+   "title": "Claude provider",
+   "status": "PASS",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": "tests/test_provider_claude_isolation.py",
+   "environment": "macOS Darwin 25.5 arm64, seatbelt, Claude Code 2.1.314, dedicated_config",
+   "observations": [
+    "mission b59182197873f2b6a602afd6 PASS LIVE_CANDIDATE_VERIFIED; hidden oracle 17/17; apply/undo byte-exact",
+    "hostile repo journey PASS, no exfiltration; boundary verified by direct seatbelt probes (model never attempted it)"
+   ],
+   "limits": [
+    "n=1 synthetic tasks, single author",
+    "token_env mode and Linux not live-verified",
+    "in-sandbox token refresh not re-observed"
+   ],
+   "next_action": "re-observe token refresh; token_env live check if owner creates a setup-token",
+   "evidence": "docs/engineering/evidence/CLAUDE-JOURNEY-2026-10-30.md"
+  },
+  {
+   "id": "C04",
+   "title": "Provider breadth (5 live paths)",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "installed: claude, codex, agy, bob, gemini; codex+agy live n=1 at 0.9.0; gemini rejected"
+   ],
+   "limits": [],
+   "next_action": "research Tier-1; find an account-free new agent path"
+  },
+  {
+   "id": "C05",
+   "title": "Extensible provider SDK",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [],
+   "limits": [],
+   "next_action": "ProviderManifest + conformance kit"
+  },
+  {
+   "id": "C06",
+   "title": "Adaptive routing",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "route: zero/one/many, consent, cooldown, USD policy; SETUP_REQUIRED added"
+   ],
+   "limits": [],
+   "next_action": "measure decisions"
+  },
+  {
+   "id": "C07",
+   "title": "Skill Radar",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "capability recommendation top-3 recall 0.385 vs 0.80 gate (historical)"
+   ],
+   "limits": [],
+   "next_action": "skills specialist"
+  },
+  {
+   "id": "C08",
+   "title": "Skill/Plugin/MCP security",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "plugin inspection fresh validation FAILED (historical)"
+   ],
+   "limits": [],
+   "next_action": "skills specialist: unseen adversarial corpus"
+  },
+  {
+   "id": "C09",
+   "title": "Two-host skills integration",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [],
+   "limits": [],
+   "next_action": "after translators land"
+  },
+  {
+   "id": "C10",
+   "title": "Skill value evidence",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [],
+   "limits": [],
+   "next_action": "paired trials need live spend authorization"
+  },
+  {
+   "id": "C11",
+   "title": "Requirement/evidence graph",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "coverage names unpinned requirements (0.9.0)"
+   ],
+   "limits": [],
+   "next_action": "review"
+  },
+  {
+   "id": "C12",
+   "title": "Tournament quality",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "live abstain + byte-identical tie at 0.9.0"
+   ],
+   "limits": [],
+   "next_action": "behaviourally different live tie"
+  },
+  {
+   "id": "C13",
+   "title": "Handoff/recovery",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "codex\u2192agy live handoff PASS, hidden oracle 714/714 (0.9.0)"
+   ],
+   "limits": [],
+   "next_action": "Claude as a handoff target"
+  },
+  {
+   "id": "C14",
+   "title": "Independent study",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "abc-v1..v4 at ceiling; abc-v5 calibration only"
+   ],
+   "limits": [],
+   "next_action": "blinded authors + budget"
+  },
+  {
+   "id": "C15",
+   "title": "Claude-context effect",
+   "status": "NEGATIVE_RESULT_HISTORICAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "150 preregistered runs: plain 92%, Core 90%, Full 88%"
+   ],
+   "limits": [],
+   "next_action": "fresh study needs budget"
+  },
+  {
+   "id": "C16",
+   "title": "Performance",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "verify 1.44\u20132.31x slower than native in 3/5 held-out cases (historical)"
+   ],
+   "limits": [],
+   "next_action": "profile"
+  },
+  {
+   "id": "C17",
+   "title": "Windows",
+   "status": "NOT_TESTED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "CI unit tests only"
+   ],
+   "limits": [],
+   "next_action": "public CI is free now: run Windows jobs"
+  },
+  {
+   "id": "C18",
+   "title": "Security/privacy",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "credential copying removed for Claude"
+   ],
+   "limits": [],
+   "next_action": "independent adversarial review of this cycle"
+  },
+  {
+   "id": "C19",
+   "title": "Website/docs",
+   "status": "PASS_AT_0.9.0",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "Playwright/axe at launch"
+   ],
+   "limits": [],
+   "next_action": "evidence lab + source-of-truth facts"
+  },
+  {
+   "id": "C20",
+   "title": "Distribution/release",
+   "status": "PASS_AT_0.9.0",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "Trusted Publishing, SBOM, attestations"
+   ],
+   "limits": [],
+   "next_action": "next release"
+  },
+  {
+   "id": "C21",
+   "title": "Real adopter proof",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [],
+   "limits": [],
+   "next_action": "two clean-environment real-project journeys"
+  },
+  {
+   "id": "C22",
+   "title": "Product credibility",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [],
+   "limits": [],
+   "next_action": "positioning after features land"
+  },
+  {
+   "id": "C23",
+   "title": "Community/reliability",
+   "status": "PASS_AT_0.9.0",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "community files, branch protection"
+   ],
+   "limits": [],
+   "next_action": "keep"
+  },
+  {
+   "id": "C24",
+   "title": "Final launch report",
+   "status": "NOT_STARTED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [],
+   "limits": [],
+   "next_action": "FINAL_REPORT.md at the end"
+  }
+ ]
+}

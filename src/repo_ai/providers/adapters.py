@@ -16,12 +16,14 @@ import os
 import shutil
 import sys
 import tempfile
+import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
 from ..security import redact_text, source_contains_secret
-from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env
+from . import claude_auth, opencode_cfg
+from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env, _sandbox_prefix
 
 STAGES = (
     "NOT_INSTALLED",
@@ -73,14 +75,13 @@ PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
             "--verbose",
             "--output-format",
             "stream-json",
-            "--permission-mode",
-            "acceptEdits",
             "--no-session-persistence",
+            *claude_auth.invocation_flags(read_only=False),
         ),
         event_format="claude-stream-json",
         event_flag="--output-format",
         workspace_flag=None,
-        sandbox_flags=("--permission-mode", "acceptEdits"),
+        sandbox_flags=tuple(claude_auth.invocation_flags(read_only=False)),
         cost_limit_flag="--max-budget-usd",
         turn_limit_flag=None,
         enforces_hard_usd_budget=True,
@@ -112,6 +113,19 @@ PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
         event_flag="--output-format",
         workspace_flag=None,
         sandbox_flags=("--mode", "accept-edits"),
+        cost_limit_flag=None,
+        turn_limit_flag=None,
+        enforces_hard_usd_budget=False,
+    ),
+    # OpenCode 2.2.1 against a loopback model endpoint (see opencode_cfg): `opencode run --standalone --format json`.
+    # Cost is what the stream reports per step (0 for a local model); there is no USD flag.
+    "opencode": ProviderContract(
+        provider="opencode",
+        headless_argv=("run", "--standalone", "--format", "json"),
+        event_format="opencode-json",
+        event_flag="--format",
+        workspace_flag=None,
+        sandbox_flags=("OPENCODE_CONFIG_CONTENT permission *=deny", "OPENCODE_DISABLE_PROJECT_CONFIG=1"),
         cost_limit_flag=None,
         turn_limit_flag=None,
         enforces_hard_usd_budget=False,
@@ -156,12 +170,15 @@ def build_invocation(
     simulated: bool = False,
     externally_sandboxed: bool = False,
     log_file: Path | str | None = None,
+    read_only: bool = False,
 ) -> list[str]:
     """Build an explicit non-interactive argv list without invoking a shell.
 
     ``externally_sandboxed`` states that the caller wraps the process in repo-ai's own OS write boundary
     (seatbelt/bwrap). Codex cannot apply its inner sandbox from inside another sandbox, so only then is its
-    own sandbox disabled; it is never disabled otherwise."""
+    own sandbox disabled; it is never disabled otherwise.
+
+    ``read_only`` (Claude) removes the edit tools for advisory roles that must not change files."""
     contract = contract_for(provider)
     if max_cost_usd < 0 or max_turns < 1 or max_turns > 32:
         raise ValueError("invalid provider budget or turn bounds")
@@ -181,9 +198,8 @@ def build_invocation(
             "--verbose",
             "--output-format",
             "stream-json",
-            "--permission-mode",
-            "acceptEdits",
             "--no-session-persistence",
+            *claude_auth.invocation_flags(read_only=read_only),
         ]
         if max_cost_usd > 0:
             argv.extend(["--max-budget-usd", f"{max_cost_usd:.4f}"])
@@ -197,6 +213,9 @@ def build_invocation(
         if log_file is not None:
             argv.extend(["--log-file", str(log_file)])
         return argv
+    if provider == "opencode":
+        # the tool policy and model endpoint travel in the environment (opencode_cfg.environment)
+        return [exe, "run", "--standalone", "--format", "json", "--model", opencode_cfg.model_ref(), "--", safe_prompt]
     if provider == "gemini":
         return [
             exe,
@@ -258,11 +277,12 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     except UnicodeDecodeError:
         protocol_errors.append("event stream is not valid UTF-8")
 
-    if len(lines) > 500:
+    max_lines = 4000 if provider == "opencode" else 500
+    if len(lines) > max_lines:
         non_json_lines += 1
-        errors.append("provider event stream exceeded 500-line bound")
+        errors.append(f"provider event stream exceeded {max_lines}-line bound")
 
-    for line in lines[:500]:
+    for line in lines[:max_lines]:
         try:
             obj = json.loads(line)
         except json.JSONDecodeError:
@@ -280,6 +300,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         stats: dict[str, Any] = raw_stats if isinstance(raw_stats, dict) else {}
         sid = (
             obj.get("session_id")
+            or obj.get("sessionID")
             or obj.get("thread_id")
             or obj.get("conversation_id")
             or stats.get("task_id")
@@ -292,6 +313,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         expected_terminal = {
             "codex": {"turn.completed", "turn.failed"},
             "claude": {"result"}, "gemini": {"result"}, "bob": {"result"}, "agy": {"result"},
+            "opencode": {"text"},
         }[provider]
         if etype in expected_terminal:
             terminal = True
@@ -397,6 +419,58 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                     summary = redact_text(txt)[:240]
                     report = redact_text(txt)[:6000]
 
+        if provider == "claude":
+            message = obj.get("message")
+            content = message.get("content") if isinstance(message, dict) else None
+            if etype == "assistant" and isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "tool_use" and isinstance(block.get("name"), str):
+                        tool_calls.append(redact_text(block["name"])[:80])
+            if etype == "result":
+                for d in obj.get("permission_denials") or []:
+                    if isinstance(d, dict):
+                        denied_actions.append(redact_text(str(d.get("tool_name") or "tool"))[:80])
+
+        if provider == "opencode":
+            raw_part = obj.get("part")
+            part: dict[str, Any] = raw_part if isinstance(raw_part, dict) else {}
+            if etype == "step_finish":
+                turns += 1
+                step_cost = part.get("cost")
+                if isinstance(step_cost, (int, float)) and not isinstance(step_cost, bool) and math.isfinite(step_cost) \
+                        and step_cost >= 0:
+                    cost_reported = True
+                    cost_usd += float(step_cost)
+                toks = part.get("tokens")
+                if isinstance(toks, dict):
+                    for key, name in (("input", "in"), ("output", "out")):
+                        v = toks.get(key)
+                        if isinstance(v, int) and not isinstance(v, bool) and v >= 0:
+                            if name == "in":
+                                input_tokens += v
+                            else:
+                                output_tokens += v
+            elif etype == "tool_use":
+                name = redact_text(str(part.get("tool") or "tool"))[:80]
+                state_raw = part.get("state")
+                state: dict[str, Any] = state_raw if isinstance(state_raw, dict) else {}
+                if state.get("status") == "error":
+                    tool_errors.append(name)
+                    if "permission denied" in str(state.get("error", "")).lower():
+                        denied_actions.append(name)
+                else:
+                    tool_calls.append(name)
+            elif etype == "text" and isinstance(part.get("text"), str) and part["text"]:
+                summary = redact_text(part["text"])[:240]
+                report = redact_text(part["text"])[:6000]
+            elif etype == "error":
+                raw_err = obj.get("error")
+                msg_text = raw_err.get("message") if isinstance(raw_err, dict) else raw_err
+                if isinstance(msg_text, str) and msg_text:
+                    errors.append(redact_text(msg_text)[:200])
+                    if any(k in msg_text.lower() for k in ("rate limit", "quota", "usage limit")):
+                        rate_limited = True
+
         item = obj.get("item")
         if provider == "codex" and etype == "item.completed" and isinstance(item, dict):
             if item.get("type") == "agent_message" and isinstance(item.get("text"), str):
@@ -405,7 +479,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                 tool_calls.append(str(item["type"]))
 
         msg = obj.get("result") or obj.get("summary") or obj.get("last_message") or obj.get("message")
-        if isinstance(msg, str) and msg:
+        if isinstance(msg, str) and msg and provider != "opencode":
             summary = redact_text(msg)[:240]
             report = redact_text(msg)[:6000]
 
@@ -467,27 +541,61 @@ def _agy_live_read_rules(workspace: Path, scratch: Path) -> str:
 
 
 def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: bool = False,
-                              provider: str | None = None, live: bool = False) -> list[str] | None:
-    """Restrict writes strictly to the disposable candidate workspace and scratch dir."""
+                              provider: str | None = None, live: bool = False,
+                              executable: Path | None = None,
+                              claude_plan: claude_auth.ClaudeAuthPlan | None = None,
+                              run_marker: str | None = None) -> list[str] | None:
+    """Restrict writes strictly to the disposable candidate workspace and scratch dir (plus, for a live Claude
+    run with a dedicated login, that login's own state; see ``claude_auth``)."""
+    claude_live = provider == "claude" and live
+    if claude_live:
+        claude_plan = claude_plan or claude_auth.plan()
+        located = shutil.which("claude")
+        executable = executable or (Path(located) if located else None)
     ws_str = str(workspace.resolve())
     sc_str = str(scratch.resolve())
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
         net_rule = "" if allow_network else "(deny network*)"
+        if provider == "opencode" and live:
+            # a local model only: the provider may reach loopback (its own server and the model endpoint), nothing else
+            # (`(allow network* (local ip "localhost:*"))` would also admit outbound connections to any host: observed)
+            net_rule = ('(deny network*)(allow network-outbound (remote ip "localhost:*"))'
+                        '(allow network-inbound (local ip "localhost:*"))(allow network-bind (local ip "localhost:*"))'
+                        f"(allow network-outbound (remote unix-socket (subpath {json.dumps(str(scratch.resolve()))})))")
         home = Path.home().resolve()
         # A live provider has network access, so the host's credential stores are unreadable to it.
         secret_dirs = ("/.ssh", "/.aws", "/.gnupg", "/.config/gh", "/.netrc", "/Library/Keychains")
         read_rule = "".join(f"(deny file-read* (subpath {json.dumps(str(home) + d)}))" for d in secret_dirs)
+        extra_write = ""
         if provider == "agy" and live:
             read_rule = _agy_live_read_rules(workspace, scratch)
+        elif provider == "opencode" and live:
+            read_rule = _home_read_only_rules([workspace, scratch, *([executable] if executable else [])])
+        elif claude_live:
+            assert claude_plan is not None
+            read_rule, extra_write = claude_auth.seatbelt_rules(workspace, scratch, executable, claude_plan,
+                                                                extra_read=_node_roots())
+            # the API needs the network, but no local service does: unix sockets only for DNS and the scratch dir
+            # (otherwise e.g. a container engine socket or ssh-agent would be reachable)
+            net_rule += ('(deny network-outbound (remote unix-socket))'
+                         '(allow network-outbound (remote unix-socket (path-literal "/private/var/run/mDNSResponder")))'
+                         f"(allow network-outbound (remote unix-socket (subpath {json.dumps(sc_str)})))")
+        # `open` (LaunchServices) and Apple events would start programs outside this sandbox and outside the sweep
         profile = (
-            f"(version 1)(allow default){net_rule}{read_rule}(deny file-write*)"
+            f"(version 1)(allow default)(deny lsopen)(deny appleevent-send){net_rule}{read_rule}(deny file-write*)"
             f"(allow file-write* (subpath {json.dumps(ws_str)}))"
             f"(allow file-write* (subpath {json.dumps(sc_str)}))"
             '(allow file-write* (literal "/dev/null"))'
+            f"{extra_write}"
         )
+        if run_marker:
+            # identity for the post-run sweep (`_seatbelt_procs`): every descendant inherits this profile, even after
+            # setsid or a double fork, and is found by "this preference domain allowed, other run domains denied"
+            profile += ('(deny user-preference-read (preference-domain-regex #"^com\\.repo-ai\\.run\\."))'
+                        f'(allow user-preference-read (preference-domain "{run_marker}"))')
         return ["/usr/bin/sandbox-exec", "-p", profile]
-    if provider == "agy" and live:
-        return None  # no tested HOME read-restriction for agy outside macOS seatbelt: refuse, do not weaken
+    if provider in {"agy", "opencode"} and live:
+        return None  # no tested read/network restriction for these outside macOS seatbelt: refuse, do not weaken
     if sys.platform.startswith("linux"):
         bwrap = shutil.which("bwrap", path=os.defpath)
         if bwrap:
@@ -497,9 +605,25 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             cmd.extend([
                 "--die-with-parent",
                 "--new-session",
+                "--unshare-pid",  # descendants (even setsid'd ones) die with the namespace when the run ends
                 "--ro-bind",
                 "/",
                 "/",
+            ])
+            if claude_live:
+                # hide the whole HOME (credentials, other projects) and re-expose only what Claude needs
+                assert claude_plan is not None
+                home = str(Path.home().resolve())
+                cmd.extend(["--tmpfs", home])
+                if executable is not None:
+                    for root_dir in claude_auth._install_roots(executable):
+                        cmd.extend(["--ro-bind", str(root_dir), str(root_dir)])
+                for node_root in _node_roots():
+                    cmd.extend(["--ro-bind", str(node_root), str(node_root)])
+                if claude_plan.mode == "dedicated_config" and claude_plan.config_dir is not None:
+                    cfg = str(claude_plan.config_dir.resolve())
+                    cmd.extend(["--bind", cfg, cfg])
+            cmd.extend([
                 "--bind",
                 ws_str,
                 ws_str,
@@ -514,6 +638,35 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             ])
             return cmd
     return None
+
+
+def _home_read_only_rules(allowed: list[Path]) -> str:
+    """Deny every read under HOME except the given paths (and, for an executable, its installation directory)."""
+    home = Path.home().resolve()
+    q = json.dumps
+    rules = [f"(deny file-read* (subpath {q(str(home))}))", f"(allow file-read* (literal {q(str(home))}))",
+             f"(allow file-read-metadata (subpath {q(str(home))}))"]
+    for path in allowed:
+        target = path.resolve()
+        if target.is_file():
+            kind, target = ("literal", target) if claude_auth.too_broad(target.parent) else ("subpath", target.parent)
+        else:
+            kind = "subpath"
+            if claude_auth.too_broad(target):
+                raise ValueError(f"refusing to expose {target} to a provider")
+        rules.append(f"(allow file-read* ({kind} {q(str(target))}))")
+    return "".join(rules)
+
+
+def _node_roots() -> list[Path]:
+    """The installation prefix of the `node` runtime on PATH when it lives under HOME (nvm, volta): an npm-installed
+    CLI cannot start without it. Never a repository directory (callers also check executables)."""
+    node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
+    if not node:
+        return []
+    binary = Path(node).resolve()
+    home = Path.home().resolve()
+    return [binary] if home in binary.parents else []
 
 
 def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
@@ -534,23 +687,13 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
                 if f.is_file():
                     shutil.copy2(f, dst_dir / fname)
         elif provider == "claude":
-            src_dir = real_home / ".claude"
-            dst_dir = scratch_home / ".claude"
-            dst_dir.mkdir(parents=True, exist_ok=True)
-            for fname in (".credentials.json", "settings.json"):
-                f = src_dir / fname
-                if f.is_file():
-                    shutil.copy2(f, dst_dir / fname)
-            claude_json = real_home / ".claude.json"
-            if claude_json.is_file():
-                shutil.copy2(claude_json, scratch_home / ".claude.json")
+            pass  # nothing is copied: see claude_auth (token in the environment, or a dedicated repo-ai login)
         elif provider == "agy":
             pass  # nothing is copied: agy authenticates from the real HOME under a read-restricted sandbox
         elif provider == "gemini":
-            src_dir = real_home / ".gemini"
-            dst_dir = scratch_home / ".gemini"
-            if src_dir.is_dir():
-                shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+            # nothing is copied: ~/.gemini holds OAuth tokens, account lists and other agents' state (agy's
+            # conversation history lives under ~/.gemini/antigravity-cli). Live Gemini needs an API key variable.
+            pass
     except OSError:
         pass
 
@@ -573,7 +716,7 @@ def live_constraint_prompt(provider: str, prompt: str, allowed: str, workspace: 
     read-only there; a "no shell" rule makes it decline the task (observed)."""
     base = (f"{prompt}\n\nCONSTRAINTS: Edit ONLY {allowed} inside {workspace}. "
             "Do not modify test files, configuration files, or create untracked files. ")
-    if provider == "agy":
+    if provider in {"agy", "opencode"}:
         return base + ("Use only your file view and edit tools. Shell commands are not available and will be denied; "
                        "do not try to run tests.")
     if provider in {"codex", "claude", "gemini"}:
@@ -666,6 +809,35 @@ def run_provider(
             "reasons": [redact_text(str(exc))[:200]],
         }
 
+    live_run = not simulated and allow_live
+    if provider in {"opencode", "gemini"} and live_run:
+        problems = setup_problems(provider)
+        if problems:
+            return {
+                "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+                "returncode": -1, "capture_status": "not_configured", "identity_sha256": identity_before,
+                "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
+                "reasons": [f"{provider} not configured for isolated execution: {p}" for p in problems],
+            }
+    claude_plan = claude_auth.plan() if provider == "claude" and live_run else None
+    if claude_plan is not None:
+        blocked = _claude_preflight(resolved, claude_plan)
+        if blocked:
+            return {
+                "provider": provider,
+                "stage": "BLOCKED",
+                "simulated": False,
+                "verification_label": "BLOCKED",
+                "returncode": -1,
+                "capture_status": blocked[0],
+                "identity_sha256": identity_before,
+                "cost_usd": 0.0,
+                "cost_status": "UNKNOWN",
+                "auth_mode": claude_plan.mode,
+                "events": {},
+                "reasons": blocked[1],
+            }
+
     bounded_timeout = provider_timeout(timeout, simulated)
     with tempfile.TemporaryDirectory(prefix=f"repo-ai-provider-run-{provider}-") as directory:
         scratch = Path(directory).resolve()
@@ -673,8 +845,10 @@ def run_provider(
             (scratch / name).mkdir(exist_ok=True)
         if not simulated and allow_live:
             _seed_live_provider_auth(provider, scratch / "home")
-        live_run = not simulated and allow_live
-        prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run)
+        from .. import sandbox as _sandbox
+        run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex if sys.platform == "darwin" else None
+        prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run,
+                                           executable=resolved, claude_plan=claude_plan, run_marker=run_marker)
         if prefix is None:
             return {
                 "provider": provider,
@@ -695,12 +869,19 @@ def run_provider(
             # agy's login is in the real HOME (no supported scratch-HOME auth). Run with the real HOME, but
             # read-restricted and write-denied by the seatbelt profile above; no credential is copied.
             env["HOME"] = env["USERPROFILE"] = str(Path.home())
+        if claude_plan is not None and claude_plan.mode == "dedicated_config":
+            # the login lives in the user's keychain under this config dir and $USER; HOME stays read-restricted
+            assert claude_plan.config_dir is not None
+            env["HOME"] = env["USERPROFILE"] = str(Path.home())
+            env["CLAUDE_CONFIG_DIR"] = str(claude_plan.config_dir)
+        if provider == "opencode":
+            env.update(opencode_cfg.environment(read_only=not write_paths))
         env["REPO_AI_WORKSPACE"] = str(workspace)
         env["REPO_AI_WRITE_PATHS"] = ",".join(write_paths)
         if not simulated and allow_live:
             auth_vars = {
                 "bob": ("BOB_API_KEY", "USER"),
-                "claude": ("ANTHROPIC_API_KEY", "USER"),
+                "claude": (*claude_auth.TOKEN_ENV_VARS, "USER", "ANTHROPIC_MODEL"),
                 "codex": ("OPENAI_API_KEY", "USER"),
                 "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY", "USER"),
             }.get(provider, ())
@@ -732,9 +913,30 @@ def run_provider(
             simulated=simulated,
             externally_sandboxed=True,  # prefix is non-None here: the outer sandbox is the write boundary
             log_file=scratch / "agy.log",
+            read_only=not write_paths,
         )
-        result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=MAX_OUTPUT,
-                          separate_stderr=True, max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
+        is_seatbelt = prefix[:1] == ["/usr/bin/sandbox-exec"]
+        if claude_plan is not None:
+            try:
+                unexpected = _claude_isolation_probe(prefix, argv, workspace, env, read_only=not write_paths)
+            finally:  # the probe runs under the same profile and marker: nothing it started may outlive it
+                probe_cleanup = _reap_provider_run(run_marker) if is_seatbelt else []
+            unexpected += probe_cleanup
+            if unexpected:
+                return {
+                    "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+                    "returncode": -1, "capture_status": "isolation_probe_failed", "identity_sha256": identity_before,
+                    "cost_usd": 0.0, "cost_status": "UNKNOWN", "auth_mode": claude_plan.mode, "events": {},
+                    "reasons": unexpected,
+                }
+        # OpenCode's events embed whole tool inputs/outputs (observed 68 KB for a 28-edit local run)
+        limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
+        try:
+            result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
+                              separate_stderr=True,
+                              max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
+        finally:  # also on an exception or Ctrl-C: setsid'd descendants are not in the process group
+            cleanup_problems = _reap_provider_run(run_marker) if is_seatbelt else []
         try:
             unchanged = raw.resolve(strict=True) == resolved and _identity(resolved) == identity_before
         except (OSError, RuntimeError, ValueError):
@@ -765,8 +967,18 @@ def run_provider(
     reasons: list[str] = []
     if result.status != "complete":
         reasons.append(f"provider process capture terminated early: {result.status}")
+    if cleanup_problems and not simulated:
+        reasons.extend(cleanup_problems)
+    if claude_plan is not None:
+        # the same checks on the real session's own init event (account state could change after the probe)
+        init = _claude_init_event(result.output)
+        reasons.extend(f"live session: {r}" for r in
+                       (_claude_init_problems(init, read_only=not write_paths) if init else
+                        ["no init event; what the session loaded is unknown"]))
     if result.returncode != 0:
         reasons.append(f"provider process exited with code {result.returncode}")
+    if provider == "gemini" and result.returncode == 41:  # Gemini CLI's documented authentication-failure exit code
+        reasons.append("gemini not authenticated for isolated execution (exit 41): check GEMINI_API_KEY / GOOGLE_API_KEY")
     if not events["valid_jsonl"]:
         reasons.append("provider output did not conform to structured JSONL event contract")
     if not simulated and not events["protocol_valid"]:
@@ -789,6 +1001,7 @@ def run_provider(
         "stage": stage,
         "simulated": simulated,
         "verification_label": "SIMULATED" if simulated else ("LIVE_READY" if not reasons else "LIVE_FAILED"),
+        **({"auth_mode": claude_plan.mode} if claude_plan is not None else {}),
         "executable": resolved.name,
         "identity_sha256": identity_before,
         "returncode": result.returncode,
@@ -802,6 +1015,147 @@ def run_provider(
         "events": events,
         "reasons": reasons,
     }
+
+
+GEMINI_KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
+
+
+def setup_problems(provider: str) -> list[str]:
+    """Offline: what stops repo-ai's isolation from authenticating this provider at all. Reads no secret value."""
+    if provider == "claude":
+        return list(claude_auth.plan().problems)
+    if provider == "opencode":
+        return opencode_cfg.setup_problems()
+    if provider == "gemini" and not any(os.environ.get(v) for v in GEMINI_KEY_VARS):
+        return ["set GEMINI_API_KEY (or GOOGLE_API_KEY) in repo-ai's environment; repo-ai no longer copies ~/.gemini "
+                "(OAuth tokens and other agents' state) into the sandbox"]
+    return []
+
+
+ISOLATION_PROBE_MODEL = "repo-ai-isolation-probe-not-a-model"
+BUILTIN_AGENTS = frozenset({"claude", "Explore", "general-purpose", "Plan"})
+
+
+def _claude_init_event(output: bytes) -> dict[str, Any]:
+    for line in output.decode("utf-8", "replace").splitlines():
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict) and obj.get("type") == "system" and obj.get("subtype") == "init":
+            return obj
+    return {}
+
+
+def _claude_init_problems(init: dict[str, Any], *, read_only: bool) -> list[str]:
+    """What a Claude session loaded beyond repo-ai's request. Missing or renamed fields are problems, not passes."""
+    problems = []
+    for key in ("tools", "mcp_servers", "plugins", "skills", "slash_commands", "agents"):
+        if not isinstance(init.get(key), list):
+            problems.append(f"init event has no `{key}` list; cannot confirm isolation")
+    if problems:
+        return problems
+    wanted = set((claude_auth.READ_TOOLS if read_only else claude_auth.EDIT_TOOLS).split(","))
+    tools = {str(t) for t in init["tools"]}
+    if tools != wanted:
+        problems.append(f"tools {sorted(tools)} differ from the requested {sorted(wanted)}")
+    if init["mcp_servers"]:
+        problems.append("MCP servers: " + ", ".join(str(m.get("name", m)) if isinstance(m, dict) else str(m)
+                                                     for m in init["mcp_servers"][:8]))
+    foreign = [str(p.get("name", p)) if isinstance(p, dict) else str(p) for p in init["plugins"]
+               if not (isinstance(p, dict) and str(p.get("name", "")).startswith("cc-plugin-")
+                       and p.get("path") == "builtin")]
+    if foreign:
+        problems.append("plugins: " + ", ".join(foreign[:8]))
+    if init["skills"] or init["slash_commands"]:
+        problems.append("skills or commands: " + ", ".join(str(x) for x in [*init["skills"], *init["slash_commands"]][:8]))
+    agents = {str(a.get("name", a)) if isinstance(a, dict) else str(a) for a in init["agents"]}
+    if agents - BUILTIN_AGENTS:
+        problems.append("custom agents: " + ", ".join(sorted(agents - BUILTIN_AGENTS)[:8]))
+    if init.get("output_style", "default") != "default":
+        problems.append(f"output style {init.get('output_style')!r}")
+    return problems
+
+
+def _workspace_snapshot(workspace: Path) -> list[tuple[str, int, int]]:
+    out = []
+    for path in sorted(workspace.rglob("*")):
+        try:
+            st = path.lstat()
+        except OSError:
+            continue
+        out.append((path.relative_to(workspace).as_posix(), st.st_size, st.st_mtime_ns))
+    return out
+
+
+def _claude_isolation_probe(prefix: list[str], argv: list[str], workspace: Path, env: dict[str, str], *,
+                            read_only: bool) -> list[str]:
+    """Start the exact live invocation with a model name Claude Code rejects before any API request, and read what the
+    session loaded from its init event. A login's account can sync plugins, MCP connectors and skills into every
+    session (observed: a dedicated login carrying shell and mail connectors); the flags should remove them, and this
+    checks that they did before the model ever runs. The probe must also provably stop before inference (error result,
+    zero cost, no model turn, workspace untouched). Returns reasons to refuse (empty means as requested)."""
+    probe = [*prefix, argv[0], "--model", ISOLATION_PROBE_MODEL, *argv[1:]]  # right after the executable
+    before = _workspace_snapshot(workspace)
+    result = _capture(probe, workspace, env, timeout=60.0, max_timeout=60.0, separate_stderr=True)
+    problems: list[str] = []
+    if _workspace_snapshot(workspace) != before:
+        problems.append("the probe changed the workspace")
+    events = []
+    for line in result.output.decode("utf-8", "replace").splitlines():
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict):
+            events.append(obj)
+    init = next((e for e in events if e.get("type") == "system" and e.get("subtype") == "init"), {})
+    final = next((e for e in reversed(events) if e.get("type") == "result"), {})
+    inferred = any(e.get("type") == "assistant" and isinstance(e.get("message"), dict)
+                   and e["message"].get("model") != "<synthetic>" for e in events)
+    if inferred or final.get("is_error") is not True or final.get("total_cost_usd") not in (0, 0.0):
+        problems.append("the probe did not stop before inference (its model name was accepted?)")
+    problems += _claude_init_problems(init, read_only=read_only) if init else ["the probe produced no init event"]
+    return [f"isolation probe refused the run: {r}" for r in problems]
+
+
+def _reap_provider_run(run_marker: str | None) -> list[str]:
+    """Kill every process the provider run left behind (setsid, double fork, reparented to launchd) before anything
+    is verified, so nothing can change the workspace afterwards. Returns why that could not be confirmed."""
+    if not run_marker:
+        return ["provider run was not tagged for cleanup; its descendants could not be confirmed stopped"]
+    from .. import sandbox as _sandbox
+    why_not = _sandbox._identification_problem()
+    if why_not:
+        return [f"provider descendants could not be enumerated ({why_not}); cleanup not confirmed"]
+    _, problems = _sandbox._procs.sweep({run_marker}, _sandbox._CONTROL)
+    return [f"provider cleanup not confirmed: {p}" for p in problems]
+
+
+def _claude_preflight(executable: Path, plan: claude_auth.ClaudeAuthPlan) -> tuple[str, list[str]] | None:
+    """Refuse a live Claude run that could not authenticate, or whose CLI lacks an isolation flag. No model call:
+    only `claude --help`, network-denied, in a scratch HOME."""
+    if not plan.usable:
+        return "not_authenticated", [f"claude not authenticated for isolated execution: {p}" for p in plan.problems] or [
+            "claude not authenticated for isolated execution: set CLAUDE_CODE_OAUTH_TOKEN (claude setup-token) or "
+            f"run once: {claude_auth.login_command(claude_auth.default_config_dir())}"]
+    with tempfile.TemporaryDirectory(prefix="repo-ai-claude-help-") as directory:
+        scratch = Path(directory).resolve()
+        for name in ("home", "tmp", "home/.claude"):
+            (scratch / name).mkdir()
+        prefix = _sandbox_prefix(scratch)
+        if prefix is None:
+            return "no_sandbox", ["no supported execution sandbox on this host"]
+        env = _probe_env(scratch)
+        env["PATH"] = os.pathsep.join([*(str(r.parent) for r in _node_roots()), env["PATH"]])
+        result = _capture([*prefix, str(executable), "--help"], scratch, env, timeout=20.0, max_timeout=30.0)
+    if result.status != "complete" or result.returncode != 0:
+        return "help_probe_failed", ["claude --help failed; isolation flags could not be confirmed"]
+    missing = claude_auth.missing_flags(result.output.decode("utf-8", "replace"))
+    if missing:
+        return "unsupported_version", [
+            "this Claude Code lacks flags repo-ai's isolated mode requires (" + ", ".join(missing) + "); update Claude Code"]
+    return None
 
 
 def validate_workspace_edits(

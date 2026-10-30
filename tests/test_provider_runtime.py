@@ -22,6 +22,8 @@ from repo_ai.providers import (
 )
 from test_mission_runtime import bug as bug_fixture
 
+pytestmark = pytest.mark.usefixtures('claude_fake_login')
+
 
 @pytest.fixture
 def bug(tmp_path: Path) -> Path:
@@ -48,7 +50,8 @@ def test_provider_contracts_and_lifecycle_stages_are_complete(tmp_path: Path) ->
         "FAILED",
         "VERIFIED",
     )
-    assert set(PROVIDER_CONTRACTS) == {"codex", "claude", "gemini", "bob", "agy"}
+    assert set(PROVIDER_CONTRACTS) == {"codex", "claude", "gemini", "bob", "agy", "opencode"}
+    assert contract_for("opencode").enforces_hard_usd_budget is False
     assert contract_for("claude").enforces_hard_usd_budget is True
     assert contract_for("bob").enforces_hard_usd_budget is True
     assert contract_for("codex").enforces_hard_usd_budget is False

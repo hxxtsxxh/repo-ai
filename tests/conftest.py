@@ -149,3 +149,15 @@ def pytest_collection_modifyitems(config, items):
                                        "covered by the sandbox-bwrap CI job")
         for item in targets:
             item.add_marker(skip)
+
+
+@pytest.fixture()
+def claude_fake_login(monkeypatch):
+    """For tests that drive a *fake* `claude` in live mode: give it a token-mode login and skip the real
+    `--help` flag preflight (covered by tests/test_provider_claude_isolation.py)."""
+    from repo_ai.providers import adapters
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "fake-token-for-tests")
+    monkeypatch.setattr(adapters, "_claude_preflight", lambda executable, plan: None)
+    monkeypatch.setattr(adapters, "_claude_isolation_probe", lambda *a, **k: [])
+    monkeypatch.setattr(adapters, "_claude_init_problems", lambda init, read_only: [])
+    monkeypatch.setattr(adapters, "_claude_init_event", lambda output: {"fake": True})

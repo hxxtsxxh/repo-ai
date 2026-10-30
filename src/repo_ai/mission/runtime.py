@@ -131,7 +131,10 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     changes = git(root, 'status', '--porcelain=v1', '-z', '--untracked-files=all').split('\0')
     dirty = [p for p in changes if p and not (p.startswith('?? ' + state_rel + '/'))]
     if require_clean and dirty:
-        raise ValueError('dirty checkout: commit or preserve edits before isolated execution')
+        shown = [redact_text(p[3:])[:120] for p in dirty if len(p) > 3][:5]
+        more = f' and {len(dirty) - len(shown)} more' if len(dirty) > len(shown) else ''
+        raise ValueError('dirty checkout: commit or preserve edits before isolated execution (' + ', '.join(shown)
+                         + more + ')')
     contents = {}
     total = 0
     for path in tracked:
@@ -1074,13 +1077,16 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
             'reasons': negatives,
         }
     provider_errors = ' | '.join(n for n in negatives if 'provider error event' in n).lower()
-    if any(k in provider_errors for k in ('authentication_failed', 'not logged in', 'please run /login', 'invalid api key')):
+    if any(k in provider_errors for k in ('authentication_failed', 'not logged in', 'please run /login', 'invalid api key',
+                                          'failed to authenticate', 'not authenticated for isolated execution')) or \
+            any('not authenticated for isolated execution' in n for n in negatives):
         # the same isolated login fails the same way: a resume would only repeat it
         return {
             'category': 'provider_unavailable',
             'recoverable': True,
-            'action': ('the provider is not authenticated inside repo-ai\'s isolated HOME; retrying will fail the same '
-                       'way. Switch provider via handoff --to <provider> and continue with do --from-handoff <capsule.json>'),
+            'action': ('the provider is not authenticated inside repo-ai\'s isolation; retrying will fail the same way. '
+                       'See `repo-ai agents setup <provider>`, or switch provider via handoff --to <provider> and '
+                       'continue with do --from-handoff <capsule.json>'),
             'reasons': negatives,
         }
     if pstage == 'NOT_INSTALLED':
