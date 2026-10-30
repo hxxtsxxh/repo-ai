@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fixed (found on python-humanize): `repo-ai verify --run --full` printed "0 passed" when no test file was selected,
+  although the full suite ran 738 passing tests. The summary now says "N selected test file(s) passed" and, for
+  pytest, quotes pytest's own final line ("full suite, as pytest printed it: 1 failed, 738 passed, 112 skipped"), only when it agrees with repo-ai's per-test report (test code could print a look-alike); counts
+  are never derived, so other runners show none. The JSON `passed` field keeps its meaning (selected files);
+  `full_suite_counts` is new.
 - Changed: `repo-ai skills recommend` / `explain` count a local skill (`discover --from-path`) as relevant when its
   description names one of this repository's own Python packages (common names such as `app` or `data` excluded).
   Before, a skill written for the repository's own conventions was advised against ("matches no evidence-backed
