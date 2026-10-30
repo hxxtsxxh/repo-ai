@@ -83,8 +83,11 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
         if event.get("e") != "end":
             continue
         outcome = event.get("o")
-        if outcome == "skip" or event.get("xfail") is True:
-            reasons.append("a test or suite was skipped or expected to fail")
+        # A skipped *test* is recorded and must be skipped identically at base and candidate (`comparability`);
+        # a skipped file or suite hides which tests it holds, and xfail inverts the outcome: both stay refused.
+        if (outcome == "skip" and any(event.get(k) is True for k in ("file", "suite", "collect"))) \
+                or event.get("xfail") is True:
+            reasons.append("a test file or suite was skipped, or a test was expected to fail")
         if event.get("collect") is True:
             reasons.append("test collection did not complete normally")
         if any(event.get(k) is True for k in ("file", "suite", "collect", "sub")):
@@ -104,6 +107,8 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
             reasons.append("a test errored during setup or teardown rather than demonstrating a failing assertion")
     if not outcomes:
         reasons.append("no actual test outcomes were reported")
+    elif all(o == "skip" for o in outcomes.values()):
+        reasons.append("every test was skipped")
     if runner.kind == "pytest":
         if not att.collected or any(not att.complete(f) for f in att.collected):
             reasons.append("not every collected test completed")
@@ -242,10 +247,13 @@ def _problems(record: object, label: str) -> list[str]:
     outcomes, ids = record.get("outcomes"), record.get("test_ids")
     if (not isinstance(outcomes, dict) or not outcomes or not isinstance(ids, list)
             or not all(isinstance(i, str) and i for i in ids) or len(ids) != len(set(ids))
-            or set(ids) != set(outcomes) or any(o not in {"pass", "fail"} for o in outcomes.values())):
-        problems.append("nonempty, unique, unskipped real test outcomes are required")
+            or set(ids) != set(outcomes) or any(o not in {"pass", "fail", "skip"} for o in outcomes.values())
+            or all(o == "skip" for o in outcomes.values())):
+        problems.append("nonempty, unique, real pass/fail test outcomes are required")
     else:
-        expected = {"ran": len(outcomes), "failed": sum(o == "fail" for o in outcomes.values()), "skipped": 0}
+        expected = {"ran": sum(o != "skip" for o in outcomes.values()),
+                    "failed": sum(o == "fail" for o in outcomes.values()),
+                    "skipped": sum(o == "skip" for o in outcomes.values())}
         if any(type(record.get(k)) is not int or record[k] != v for k, v in expected.items()):
             problems.append("test counts do not agree with outcomes")
     expected_exit = 1 if record.get("failed", 0) else 0
@@ -276,6 +284,11 @@ def comparability(baseline: dict, candidate: dict) -> list[str]:
     for key in ("command", "runner", "test_inputs"):
         if baseline["pin"].get(key) != candidate["pin"].get(key):
             reasons.append(f"baseline and candidate have different pinned {key}")
+    skipped = {side: {t for t, o in record["outcomes"].items() if o == "skip"}
+               for side, record in (("baseline", baseline), ("candidate", candidate))}
+    if skipped["baseline"] != skipped["candidate"]:
+        # a candidate must not make a test skip (or un-skip one) to change the verdict
+        reasons.append("baseline and candidate skip different tests")
     return reasons
 
 
@@ -290,6 +303,6 @@ def compare(baseline: dict, candidate: dict) -> tuple[str, list[str]]:
         return "FAIL", reasons
     if baseline["failed"] < 1:
         reasons.append("baseline did not demonstrate a real failing test")
-    if candidate["failed"] or any(o != "pass" for o in candidate["outcomes"].values()):
+    if candidate["failed"] or any(o not in {"pass", "skip"} for o in candidate["outcomes"].values()):
         reasons.append("candidate did not pass every test")
     return ("FAIL", reasons) if reasons else ("PASS", [])
