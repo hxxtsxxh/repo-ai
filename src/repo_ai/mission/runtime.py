@@ -134,8 +134,10 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
         raise ValueError('mission scope exceeds 5000 tracked files')
     state_rel = store.layout.state_dir.relative_to(root).as_posix()
     changes = git(root, 'status', '--porcelain=v1', '-z', '--untracked-files=all').split('\0')
-    # repo-ai's own directory (created by `repo-ai init`) never makes the checkout dirty for a mission
-    dirty = [p for p in changes if p and not p[3:].startswith(('.repo-ai/', state_rel + '/'))]
+    # repo-ai's own directory (created by `repo-ai init`) never makes the checkout dirty for a mission; a configured
+    # state_dir elsewhere is exempt only for UNTRACKED entries (it can be set by configuration, so tracked source under
+    # it must still count: otherwise state_dir = "lib" would hide a real edit to lib/)
+    dirty = [p for p in changes if p and not (p[3:].startswith('.repo-ai/') or p.startswith('?? ' + state_rel + '/'))]
     if require_clean and dirty:
         shown = [redact_text(p[3:])[:120] for p in dirty if len(p) > 3][:5]
         more = f' and {len(dirty) - len(shown)} more' if len(dirty) > len(shown) else ''
