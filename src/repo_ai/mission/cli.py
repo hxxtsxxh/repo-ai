@@ -278,6 +278,8 @@ def cmd_agents(args) -> int:
             print('Authorized providers for this project: ' + (', '.join(policy['authorized']) or 'none'))
             print('Authorization only permits selection; each live run still needs --allow-live-provider.')
         return 0
+    if args.action == 'setup':
+        return _agents_setup(args)
     if args.action == 'route':
         decision = registry.route(root, max_cost_usd=args.max_cost_usd, run_authorized=args.allow_live_provider)
         if args.json:
@@ -296,6 +298,36 @@ def cmd_agents(args) -> int:
             print(f"{value['provider']}: {value['status']} | {value['version'] or 'version not probed'} | auth {value['authentication']}")
         print('No model was invoked. Installed executable does not establish authenticated runnable availability.')
     return 0
+
+
+def _agents_setup(args) -> int:
+    """Offline: how this provider authenticates inside repo-ai's isolation, and the one command that fixes it."""
+    if args.provider != 'claude':
+        raise ValueError('agents setup currently explains: claude (other providers authenticate as documented in '
+                         'docs/engineering/INTEGRATIONS.md)')
+    from ..providers import claude_auth
+    plan = claude_auth.plan()
+    value = {'schema': 'repo-ai.provider-setup/1', 'provider': 'claude', **plan.to_json(), 'ready_to_try': plan.usable,
+             'login_command': claude_auth.login_command(claude_auth.default_config_dir()),
+             'model_invoked': False, 'credential_read': False}
+    if args.json:
+        print(json.dumps(value, indent=2, sort_keys=True))
+        return 0 if plan.usable else 2
+    modes = {'token_env': 'token from the environment (' + ', '.join(plan.env_vars) + '); scratch HOME, no keychain',
+             'dedicated_config': f'dedicated repo-ai login at {plan.config_dir}; HOME read-restricted',
+             'none': 'no login repo-ai can use'}
+    print(f'claude: {modes[plan.mode]}')
+    for problem in plan.problems:
+        print(f'  - {problem}')
+    if plan.usable:
+        print('Ready to try. A live run still needs --allow-live-provider (or agents authorize claude) and is checked '
+              'by its result, not by this command.')
+    else:
+        print('Fix it once, either way:')
+        print(f'  1. {value["login_command"]}   (a separate login just for repo-ai; your ~/.claude is untouched)')
+        print('  2. export CLAUDE_CODE_OAUTH_TOKEN=...   (from `claude setup-token`; strongest isolation)')
+    print('No model was invoked and no credential was read.')
+    return 0 if plan.usable else 2
 
 
 def cmd_mission(args) -> int:
@@ -508,8 +540,8 @@ def register(sub, common) -> None:
     p.add_argument('--resume', metavar='ID', help='inspect/recover an interrupted checkpoint; no automatic model retry')
     p.set_defaults(func=cmd_do)
     p = sub.add_parser('agents', parents=[common], help='local provider availability; doctor runs sandboxed help/version only')
-    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke'])
-    p.add_argument('provider', nargs='?', help='provider name for authorize/revoke')
+    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke', 'setup'])
+    p.add_argument('provider', nargs='?', help='provider name for authorize/revoke/setup')
     p.add_argument('--prefer', action='store_true', help='with authorize: also prefer this provider in routing')
     p.add_argument('--allow-live-provider', action='store_true', help='route: evaluate as if this run were authorized')
     p.add_argument('--max-cost-usd', type=float, default=0, help='route: require an enforceable USD ceiling when > 0')

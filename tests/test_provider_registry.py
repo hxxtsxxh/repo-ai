@@ -266,3 +266,34 @@ def test_zero_providers_never_selects_a_phantom_first_choice(repo: Path) -> None
     r = registry.route(repo, run_authorized=True, profiles=_profiles(), preferred=["bob"])
     assert r["outcome"] == "NO_AGENT" and r["selected"] is None
     assert not any(c["eligible"] for c in r["considered"])
+
+
+def test_claude_without_a_usable_login_is_setup_required_not_selected(repo: Path, monkeypatch: pytest.MonkeyPatch,
+                                                                      tmp_path: Path) -> None:
+    for var in ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY"):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv("REPO_AI_CLAUDE_CONFIG_DIR", str(tmp_path / "no-login"))
+    r = registry.route(repo, run_authorized=True, profiles=_profiles("claude", "codex"))
+    row = next(c for c in r["considered"] if c["provider"] == "claude")
+    if not row["isolated_ready"]:
+        pytest.skip("no execution sandbox on this host")
+    assert row["readiness"] == "SETUP_REQUIRED" and row["status_class"] == "BLOCKED_AUTH"
+    assert any("claude auth login" in reason for reason in row["reasons"])
+    assert r["selected"] == "codex"
+
+
+def test_claude_with_a_token_or_dedicated_login_is_selectable(repo: Path, monkeypatch: pytest.MonkeyPatch,
+                                                             tmp_path: Path) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "t")
+    r = registry.route(repo, run_authorized=True, profiles=_profiles("claude"))
+    row = r["considered"][0] if r["considered"][0]["provider"] == "claude" else \
+        next(c for c in r["considered"] if c["provider"] == "claude")
+    if not row["isolated_ready"]:
+        pytest.skip("no execution sandbox on this host")
+    assert row["readiness"] == "INSTALLED_UNPROBED" and r["selected"] == "claude"
+    monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN")
+    (tmp_path / "login").mkdir()
+    monkeypatch.setenv("REPO_AI_CLAUDE_CONFIG_DIR", str(tmp_path / "login"))
+    monkeypatch.setenv("USER", "someone")
+    assert registry.route(repo, run_authorized=True, profiles=_profiles("claude"))["selected"] == "claude"

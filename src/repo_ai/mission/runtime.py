@@ -1074,13 +1074,16 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
             'reasons': negatives,
         }
     provider_errors = ' | '.join(n for n in negatives if 'provider error event' in n).lower()
-    if any(k in provider_errors for k in ('authentication_failed', 'not logged in', 'please run /login', 'invalid api key')):
+    if any(k in provider_errors for k in ('authentication_failed', 'not logged in', 'please run /login', 'invalid api key',
+                                          'failed to authenticate', 'not authenticated for isolated execution')) or \
+            any('not authenticated for isolated execution' in n for n in negatives):
         # the same isolated login fails the same way: a resume would only repeat it
         return {
             'category': 'provider_unavailable',
             'recoverable': True,
-            'action': ('the provider is not authenticated inside repo-ai\'s isolated HOME; retrying will fail the same '
-                       'way. Switch provider via handoff --to <provider> and continue with do --from-handoff <capsule.json>'),
+            'action': ('the provider is not authenticated inside repo-ai\'s isolation; retrying will fail the same way. '
+                       'See `repo-ai agents setup <provider>`, or switch provider via handoff --to <provider> and '
+                       'continue with do --from-handoff <capsule.json>'),
             'reasons': negatives,
         }
     if pstage == 'NOT_INSTALLED':

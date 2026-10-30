@@ -21,7 +21,8 @@ from pathlib import Path
 from typing import Any
 
 from ..security import redact_text, source_contains_secret
-from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env
+from . import claude_auth
+from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env, _sandbox_prefix
 
 STAGES = (
     "NOT_INSTALLED",
@@ -73,14 +74,13 @@ PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
             "--verbose",
             "--output-format",
             "stream-json",
-            "--permission-mode",
-            "acceptEdits",
             "--no-session-persistence",
+            *claude_auth.invocation_flags(read_only=False),
         ),
         event_format="claude-stream-json",
         event_flag="--output-format",
         workspace_flag=None,
-        sandbox_flags=("--permission-mode", "acceptEdits"),
+        sandbox_flags=tuple(claude_auth.invocation_flags(read_only=False)),
         cost_limit_flag="--max-budget-usd",
         turn_limit_flag=None,
         enforces_hard_usd_budget=True,
@@ -156,12 +156,15 @@ def build_invocation(
     simulated: bool = False,
     externally_sandboxed: bool = False,
     log_file: Path | str | None = None,
+    read_only: bool = False,
 ) -> list[str]:
     """Build an explicit non-interactive argv list without invoking a shell.
 
     ``externally_sandboxed`` states that the caller wraps the process in repo-ai's own OS write boundary
     (seatbelt/bwrap). Codex cannot apply its inner sandbox from inside another sandbox, so only then is its
-    own sandbox disabled; it is never disabled otherwise."""
+    own sandbox disabled; it is never disabled otherwise.
+
+    ``read_only`` (Claude) removes the edit tools for advisory roles that must not change files."""
     contract = contract_for(provider)
     if max_cost_usd < 0 or max_turns < 1 or max_turns > 32:
         raise ValueError("invalid provider budget or turn bounds")
@@ -181,9 +184,8 @@ def build_invocation(
             "--verbose",
             "--output-format",
             "stream-json",
-            "--permission-mode",
-            "acceptEdits",
             "--no-session-persistence",
+            *claude_auth.invocation_flags(read_only=read_only),
         ]
         if max_cost_usd > 0:
             argv.extend(["--max-budget-usd", f"{max_cost_usd:.4f}"])
@@ -397,6 +399,18 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                     summary = redact_text(txt)[:240]
                     report = redact_text(txt)[:6000]
 
+        if provider == "claude":
+            message = obj.get("message")
+            content = message.get("content") if isinstance(message, dict) else None
+            if etype == "assistant" and isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "tool_use" and isinstance(block.get("name"), str):
+                        tool_calls.append(redact_text(block["name"])[:80])
+            if etype == "result":
+                for d in obj.get("permission_denials") or []:
+                    if isinstance(d, dict):
+                        denied_actions.append(redact_text(str(d.get("tool_name") or "tool"))[:80])
+
         item = obj.get("item")
         if provider == "codex" and etype == "item.completed" and isinstance(item, dict):
             if item.get("type") == "agent_message" and isinstance(item.get("text"), str):
@@ -467,8 +481,16 @@ def _agy_live_read_rules(workspace: Path, scratch: Path) -> str:
 
 
 def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: bool = False,
-                              provider: str | None = None, live: bool = False) -> list[str] | None:
-    """Restrict writes strictly to the disposable candidate workspace and scratch dir."""
+                              provider: str | None = None, live: bool = False,
+                              executable: Path | None = None,
+                              claude_plan: claude_auth.ClaudeAuthPlan | None = None) -> list[str] | None:
+    """Restrict writes strictly to the disposable candidate workspace and scratch dir (plus, for a live Claude
+    run with a dedicated login, that login's own state; see ``claude_auth``)."""
+    claude_live = provider == "claude" and live
+    if claude_live:
+        claude_plan = claude_plan or claude_auth.plan()
+        located = shutil.which("claude")
+        executable = executable or (Path(located) if located else None)
     ws_str = str(workspace.resolve())
     sc_str = str(scratch.resolve())
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
@@ -477,13 +499,19 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
         # A live provider has network access, so the host's credential stores are unreadable to it.
         secret_dirs = ("/.ssh", "/.aws", "/.gnupg", "/.config/gh", "/.netrc", "/Library/Keychains")
         read_rule = "".join(f"(deny file-read* (subpath {json.dumps(str(home) + d)}))" for d in secret_dirs)
+        extra_write = ""
         if provider == "agy" and live:
             read_rule = _agy_live_read_rules(workspace, scratch)
+        elif claude_live:
+            assert claude_plan is not None
+            read_rule, extra_write = claude_auth.seatbelt_rules(workspace, scratch, executable, claude_plan,
+                                                                extra_read=_node_roots())
         profile = (
             f"(version 1)(allow default){net_rule}{read_rule}(deny file-write*)"
             f"(allow file-write* (subpath {json.dumps(ws_str)}))"
             f"(allow file-write* (subpath {json.dumps(sc_str)}))"
             '(allow file-write* (literal "/dev/null"))'
+            f"{extra_write}"
         )
         return ["/usr/bin/sandbox-exec", "-p", profile]
     if provider == "agy" and live:
@@ -500,6 +528,21 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                 "--ro-bind",
                 "/",
                 "/",
+            ])
+            if claude_live:
+                # hide the whole HOME (credentials, other projects) and re-expose only what Claude needs
+                assert claude_plan is not None
+                home = str(Path.home().resolve())
+                cmd.extend(["--tmpfs", home])
+                if executable is not None:
+                    for root_dir in claude_auth._install_roots(executable):
+                        cmd.extend(["--ro-bind", str(root_dir), str(root_dir)])
+                for node_root in _node_roots():
+                    cmd.extend(["--ro-bind", str(node_root), str(node_root)])
+                if claude_plan.mode == "dedicated_config" and claude_plan.config_dir is not None:
+                    cfg = str(claude_plan.config_dir.resolve())
+                    cmd.extend(["--bind", cfg, cfg])
+            cmd.extend([
                 "--bind",
                 ws_str,
                 ws_str,
@@ -514,6 +557,17 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             ])
             return cmd
     return None
+
+
+def _node_roots() -> list[Path]:
+    """The installation prefix of the `node` runtime on PATH when it lives under HOME (nvm, volta): an npm-installed
+    CLI cannot start without it. Never a repository directory (callers also check executables)."""
+    node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
+    if not node:
+        return []
+    prefix = Path(node).resolve().parent.parent
+    home = Path.home().resolve()
+    return [prefix] if prefix != home and home in prefix.parents else []
 
 
 def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
@@ -534,16 +588,7 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
                 if f.is_file():
                     shutil.copy2(f, dst_dir / fname)
         elif provider == "claude":
-            src_dir = real_home / ".claude"
-            dst_dir = scratch_home / ".claude"
-            dst_dir.mkdir(parents=True, exist_ok=True)
-            for fname in (".credentials.json", "settings.json"):
-                f = src_dir / fname
-                if f.is_file():
-                    shutil.copy2(f, dst_dir / fname)
-            claude_json = real_home / ".claude.json"
-            if claude_json.is_file():
-                shutil.copy2(claude_json, scratch_home / ".claude.json")
+            pass  # nothing is copied: see claude_auth (token in the environment, or a dedicated repo-ai login)
         elif provider == "agy":
             pass  # nothing is copied: agy authenticates from the real HOME under a read-restricted sandbox
         elif provider == "gemini":
@@ -666,6 +711,26 @@ def run_provider(
             "reasons": [redact_text(str(exc))[:200]],
         }
 
+    live_run = not simulated and allow_live
+    claude_plan = claude_auth.plan() if provider == "claude" and live_run else None
+    if claude_plan is not None:
+        blocked = _claude_preflight(resolved, claude_plan)
+        if blocked:
+            return {
+                "provider": provider,
+                "stage": "BLOCKED",
+                "simulated": False,
+                "verification_label": "BLOCKED",
+                "returncode": -1,
+                "capture_status": blocked[0],
+                "identity_sha256": identity_before,
+                "cost_usd": 0.0,
+                "cost_status": "UNKNOWN",
+                "auth_mode": claude_plan.mode,
+                "events": {},
+                "reasons": blocked[1],
+            }
+
     bounded_timeout = provider_timeout(timeout, simulated)
     with tempfile.TemporaryDirectory(prefix=f"repo-ai-provider-run-{provider}-") as directory:
         scratch = Path(directory).resolve()
@@ -673,8 +738,8 @@ def run_provider(
             (scratch / name).mkdir(exist_ok=True)
         if not simulated and allow_live:
             _seed_live_provider_auth(provider, scratch / "home")
-        live_run = not simulated and allow_live
-        prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run)
+        prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run,
+                                           executable=resolved, claude_plan=claude_plan)
         if prefix is None:
             return {
                 "provider": provider,
@@ -695,12 +760,17 @@ def run_provider(
             # agy's login is in the real HOME (no supported scratch-HOME auth). Run with the real HOME, but
             # read-restricted and write-denied by the seatbelt profile above; no credential is copied.
             env["HOME"] = env["USERPROFILE"] = str(Path.home())
+        if claude_plan is not None and claude_plan.mode == "dedicated_config":
+            # the login lives in the user's keychain under this config dir and $USER; HOME stays read-restricted
+            assert claude_plan.config_dir is not None
+            env["HOME"] = env["USERPROFILE"] = str(Path.home())
+            env["CLAUDE_CONFIG_DIR"] = str(claude_plan.config_dir)
         env["REPO_AI_WORKSPACE"] = str(workspace)
         env["REPO_AI_WRITE_PATHS"] = ",".join(write_paths)
         if not simulated and allow_live:
             auth_vars = {
                 "bob": ("BOB_API_KEY", "USER"),
-                "claude": ("ANTHROPIC_API_KEY", "USER"),
+                "claude": (*claude_auth.TOKEN_ENV_VARS, "USER", "ANTHROPIC_MODEL"),
                 "codex": ("OPENAI_API_KEY", "USER"),
                 "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY", "USER"),
             }.get(provider, ())
@@ -732,6 +802,7 @@ def run_provider(
             simulated=simulated,
             externally_sandboxed=True,  # prefix is non-None here: the outer sandbox is the write boundary
             log_file=scratch / "agy.log",
+            read_only=not write_paths,
         )
         result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=MAX_OUTPUT,
                           separate_stderr=True, max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
@@ -789,6 +860,7 @@ def run_provider(
         "stage": stage,
         "simulated": simulated,
         "verification_label": "SIMULATED" if simulated else ("LIVE_READY" if not reasons else "LIVE_FAILED"),
+        **({"auth_mode": claude_plan.mode} if claude_plan is not None else {}),
         "executable": resolved.name,
         "identity_sha256": identity_before,
         "returncode": result.returncode,
@@ -802,6 +874,32 @@ def run_provider(
         "events": events,
         "reasons": reasons,
     }
+
+
+def _claude_preflight(executable: Path, plan: claude_auth.ClaudeAuthPlan) -> tuple[str, list[str]] | None:
+    """Refuse a live Claude run that could not authenticate, or whose CLI lacks an isolation flag. No model call:
+    only `claude --help`, network-denied, in a scratch HOME."""
+    if not plan.usable:
+        return "not_authenticated", [f"claude not authenticated for isolated execution: {p}" for p in plan.problems] or [
+            "claude not authenticated for isolated execution: set CLAUDE_CODE_OAUTH_TOKEN (claude setup-token) or "
+            f"run once: {claude_auth.login_command(claude_auth.default_config_dir())}"]
+    with tempfile.TemporaryDirectory(prefix="repo-ai-claude-help-") as directory:
+        scratch = Path(directory).resolve()
+        for name in ("home", "tmp", "home/.claude"):
+            (scratch / name).mkdir()
+        prefix = _sandbox_prefix(scratch)
+        if prefix is None:
+            return "no_sandbox", ["no supported execution sandbox on this host"]
+        env = _probe_env(scratch)
+        env["PATH"] = os.pathsep.join([*(str(r / "bin") for r in _node_roots()), env["PATH"]])
+        result = _capture([*prefix, str(executable), "--help"], scratch, env, timeout=20.0, max_timeout=30.0)
+    if result.status != "complete" or result.returncode != 0:
+        return "help_probe_failed", ["claude --help failed; isolation flags could not be confirmed"]
+    missing = claude_auth.missing_flags(result.output.decode("utf-8", "replace"))
+    if missing:
+        return "unsupported_version", [
+            "this Claude Code lacks flags repo-ai's isolated mode requires (" + ", ".join(missing) + "); update Claude Code"]
+    return None
 
 
 def validate_workspace_edits(
