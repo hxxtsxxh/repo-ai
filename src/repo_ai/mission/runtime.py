@@ -170,26 +170,32 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
 
 
 def _without_init_block(text: str, state_rel: str) -> str | None:
-    """`.gitignore` text with `repo-ai init`'s managed block removed (line endings normalized), or None when the
-    block ignores anything but repo-ai's own state: a pattern there could hide real files from the dirty check."""
+    """`.gitignore` text with `repo-ai init`'s managed block removed, compared line by line (line endings
+    normalized), or None when the block ignores anything but repo-ai's own state, a marker is malformed or a block is
+    unterminated: a pattern there could hide real files from the dirty check."""
     from ..adapters.base import GITIGNORE_BEGIN, GITIGNORE_END
-    from ..fsutil import remove_block
-    text = text.replace('\r\n', '\n')
     own = (*isolate.STATE_PREFIXES, state_rel.rstrip('/') + '/')
+    out: list[str] = []
     inside = False
-    for line in text.split('\n'):
+    for line in text.replace('\r\n', '\n').split('\n'):
         entry = line.strip()
-        if entry == GITIGNORE_BEGIN:
-            inside = True
-        elif entry == GITIGNORE_END:
-            inside = False
-        elif inside and entry and not entry.startswith('#') and not (entry.startswith(own) or entry + '/' in own):
-            return None
-    while True:
-        stripped = remove_block(text, GITIGNORE_BEGIN, GITIGNORE_END)
-        if stripped == text:
-            return text
-        text = stripped
+        if entry in (GITIGNORE_BEGIN, GITIGNORE_END):
+            if (entry == GITIGNORE_BEGIN) == inside:
+                return None  # nested or unmatched marker
+            inside = entry == GITIGNORE_BEGIN
+            if inside and out and not out[-1].strip():
+                out.pop()  # the blank line init writes before its block
+            continue
+        if 'repo-ai managed' in line:
+            return None  # a marker with extra text: never guess where a block starts or ends
+        if inside:
+            if entry and not entry.startswith('#') and not (entry.startswith(own) or entry + '/' in own):
+                return None
+            continue
+        out.append(line)
+    if inside:
+        return None
+    return '\n'.join(out).rstrip('\n')
 
 
 def _only_managed_blocks(root: Path, path: str, state_rel: str) -> bool:

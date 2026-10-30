@@ -184,3 +184,38 @@ def test_apply_after_an_uncommitted_init_leaves_the_users_gitignore_alone(tmp_pa
     apply(root, result['id'])
     assert (root / '.gitignore').read_bytes() == before
     assert (root / 'charge.py').read_text() == 'def charge(amount, retries):\n    return amount\n'
+
+
+def test_a_marker_with_extra_text_is_never_read_as_a_block(tmp_path):
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    with open(root / '.gitignore', 'a') as fh:
+        fh.write('\n# >>> repo-ai managed >>> x\n*.py\n# <<< repo-ai managed <<<\n')
+    p = plan(root, 'Fix duplicate charge', agent='replay', write_paths=['charge.py'], execute_local=True)
+    assert p['decision'] == 'BLOCKED'
+
+
+def test_without_init_block_is_line_exact():
+    from repo_ai.mission.runtime import _without_init_block
+    begin, end = '# >>> repo-ai managed >>>', '# <<< repo-ai managed <<<'
+    assert _without_init_block(f'a\n\n{begin}\n.repo-ai/state/\n{end}\n', '.repo-ai/state') == 'a'
+    assert _without_init_block(f'a\n{begin}\n.repo-ai/state/\n', '.repo-ai/state') is None  # unterminated
+    assert _without_init_block(f'{end}\na\n', '.repo-ai/state') is None  # unmatched end
+    assert _without_init_block(f'{begin}\n{begin}\n{end}\n', '.repo-ai/state') is None  # nested
+    assert _without_init_block(f'{begin}\nsrc/\n{end}\n', '.repo-ai/state') is None  # ignores source
+
+
+def test_a_workspace_copy_with_crlf_is_not_a_provider_edit(tmp_path, monkeypatch):
+    """git archive applies core.autocrlf, so the workspace may hold CRLF where HEAD's blob is LF."""
+    from repo_ai.mission import runtime
+    from test_provider_runtime import _make_fake_cli
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    cli = _make_fake_cli(tmp_path, 'codex', (
+        "import json, os, pathlib\n"
+        "ws = pathlib.Path(os.environ['REPO_AI_WORKSPACE'])\n"
+        "g = ws / '.gitignore'\n"
+        "g.write_bytes(g.read_bytes().replace(b'\\r\\n', b'\\n').replace(b'\\n', b'\\r\\n'))\n"
+        "(ws / 'charge.py').write_text('def charge(amount, retries):\\n    return amount\\n')\n"
+        "print(json.dumps({'type': 'turn.completed', 'cost_usd': 0.0}))\n"))
+    planned = runtime.plan(root, 'Fix duplicate charge', agent='codex', write_paths=['charge.py'], execute_local=True)
+    result = runtime.execute(root, planned, None, provider_executable=cli)
+    assert result['effective_verdict'] == 'PASS', result['passport']['negative']

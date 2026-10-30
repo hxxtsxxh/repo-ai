@@ -1299,7 +1299,9 @@ def validate_workspace_edits(
         from ..mission.runtime import committed_if_only_managed_blocks
         committed = committed_if_only_managed_blocks(root, rel)
         if committed is not None:
-            orig = committed
+            # the workspace's copy may carry the checkout's line endings (git archive applies core.autocrlf)
+            same = cand is not None and cand.replace(b"\r\n", b"\n") == committed.replace(b"\r\n", b"\n")
+            orig = cand if same else committed
         if orig != cand:
             changed_files.append(rel)
             if rel not in write_paths:
