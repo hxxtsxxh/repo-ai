@@ -15,7 +15,8 @@
   `.repo-ai/` files made the checkout "dirty", and once committed (as the message advised) a live provider's candidate
   was refused because repo-ai's own `.repo-ai/config.toml` was compared as if the provider had deleted it. repo-ai's
   own directory is no longer mission source, never makes a checkout dirty, and is never materialized into a candidate
-  workspace (not even as an empty directory).
+  workspace (not even as an empty directory). The same applies to the other local-state paths repo-ai already kept out
+  of candidate workspaces (`.bob/`, `.claude/settings.local.json`): tracked copies no longer count as mission source.
 
 ## 0.11.0 — missions on real suites; requirement erasure
 
