@@ -204,8 +204,7 @@ def test_without_init_block_is_line_exact():
     assert _without_init_block(f'{begin}\nsrc/\n{end}\n', '.repo-ai/state') is None  # ignores source
 
 
-def test_a_workspace_copy_with_crlf_is_not_a_provider_edit(tmp_path, monkeypatch):
-    """git archive applies core.autocrlf, so the workspace may hold CRLF where HEAD's blob is LF."""
+def test_a_provider_that_rewrites_gitignore_line_endings_has_edited_it(tmp_path):
     from repo_ai.mission import runtime
     from test_provider_runtime import _make_fake_cli
     root = _project(tmp_path, gitignore='__pycache__/\n')
@@ -213,7 +212,39 @@ def test_a_workspace_copy_with_crlf_is_not_a_provider_edit(tmp_path, monkeypatch
         "import json, os, pathlib\n"
         "ws = pathlib.Path(os.environ['REPO_AI_WORKSPACE'])\n"
         "g = ws / '.gitignore'\n"
-        "g.write_bytes(g.read_bytes().replace(b'\\r\\n', b'\\n').replace(b'\\n', b'\\r\\n'))\n"
+        "g.write_bytes(g.read_bytes().replace(b'\\n', b'\\r\\n'))\n"
+        "(ws / 'charge.py').write_text('def charge(amount, retries):\\n    return amount\\n')\n"
+        "print(json.dumps({'type': 'turn.completed', 'cost_usd': 0.0}))\n"))
+    planned = runtime.plan(root, 'Fix duplicate charge', agent='codex', write_paths=['charge.py'], execute_local=True)
+    result = runtime.execute(root, planned, None, provider_executable=cli)
+    assert result['effective_verdict'] != 'PASS'
+    assert any('.gitignore' in n for n in result['passport']['negative'])
+
+
+def test_an_autocrlf_checkout_after_init_passes(tmp_path):
+    """core.autocrlf=true: the working tree and the archived workspace hold CRLF, HEAD's blob holds LF."""
+    from repo_ai.mission import runtime
+    from test_provider_runtime import _make_fake_cli
+    root = tmp_path / 'proj'
+    root.mkdir()
+    git(root, 'init', '-q')
+    git(root, 'config', 'core.autocrlf', 'true')
+    (root / '.gitignore').write_bytes(b'__pycache__/\n')
+    (root / 'charge.py').write_text('def charge(amount, retries):\n    return amount * (retries + 1)\n')
+    (root / 'test_charge.py').write_text('from charge import charge\n\ndef test_retry():\n    assert charge(10, 2) == 10\n')
+    (root / 'pyproject.toml').write_text('[tool.pytest.ini_options]\npythonpath = ["."]\n')
+    git(root, 'add', '.')
+    git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'base')
+    for rel in ('.gitignore', 'charge.py', 'test_charge.py', 'pyproject.toml'):
+        (root / rel).unlink()
+    git(root, 'checkout', '--', '.')  # a fresh CRLF checkout
+    assert (root / '.gitignore').read_bytes() == b'__pycache__/\r\n'
+    init = subprocess.run([sys.executable, '-m', 'repo_ai', 'init', '--agent', 'none'], cwd=root,
+                          capture_output=True, text=True)
+    assert init.returncode == 0, init.stderr
+    cli = _make_fake_cli(tmp_path, 'codex', (
+        "import json, os, pathlib\n"
+        "ws = pathlib.Path(os.environ['REPO_AI_WORKSPACE'])\n"
         "(ws / 'charge.py').write_text('def charge(amount, retries):\\n    return amount\\n')\n"
         "print(json.dumps({'type': 'turn.completed', 'cost_usd': 0.0}))\n"))
     planned = runtime.plan(root, 'Fix duplicate charge', agent='codex', write_paths=['charge.py'], execute_local=True)
