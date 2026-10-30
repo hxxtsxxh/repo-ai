@@ -4,7 +4,10 @@ Controlling order: `docs/launch/CLAUDE_ULTIMATE_PRODUCT_LAUNCH_MISSION.md` (user
 Gate registry: [ACCEPTANCE.json](ACCEPTANCE.json). Queue: [WORK_QUEUE.md](WORK_QUEUE.md). Decisions: [DECISIONS.md](DECISIONS.md).
 Evaluation: [EVALUATION.md](EVALUATION.md). Final report: [LAUNCH_REPORT.md](LAUNCH_REPORT.md).
 
-**Launch status: `NOT_LAUNCHED`.** Nothing below is a public launch until G15/G16/G18/G21 pass.
+**Launch status: `PUBLIC_LAUNCH_COMPLETE` (0.9.0, 2026-10-30).** Public source <https://github.com/hxxtsxxh/repo-ai>,
+PyPI <https://pypi.org/project/repo-ai-cli/0.9.0/>, site <https://hxxtsxxh.github.io/repo-ai/>; details and follow-ups in
+[LAUNCH_REPORT.md](LAUNCH_REPORT.md). The baseline below is the historical starting point of the mission (2026-10-29).
+Next work starts from public `main` by pull request; the private history is `hxxtsxxh/repo-ai-dev`.
 
 ## Baseline (verified 2026-10-29, by command, not from the mission text)
 
