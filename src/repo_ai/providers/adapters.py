@@ -893,7 +893,9 @@ def run_provider(
             log_file=scratch / "agy.log",
             read_only=not write_paths,
         )
-        result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=MAX_OUTPUT,
+        # OpenCode's events embed whole tool inputs/outputs (observed 68 KB for a 28-edit local run)
+        limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
+        result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
                           separate_stderr=True, max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
         try:
             unchanged = raw.resolve(strict=True) == resolved and _identity(resolved) == identity_before

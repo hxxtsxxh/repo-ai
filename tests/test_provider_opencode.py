@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from repo_ai.providers import adapters, opencode_cfg, registry
+from repo_ai.providers.discovery import ProbeResult
 
 
 def _ev(type_: str, **part) -> dict:
@@ -176,3 +177,22 @@ def test_profile_allows_loopback_only_and_hides_home(tmp_path):
     finally:
         secret.unlink()
         server.close()
+
+
+def test_verbose_opencode_streams_get_a_larger_bounded_capture(tmp_path, monkeypatch):
+    monkeypatch.setenv(opencode_cfg.MODEL_ENV, "qwen3:8b")
+    seen = {}
+
+    def fake_capture(argv, cwd, env, **kw):
+        seen.update(kw)
+        return ProbeResult(0, "complete", OBSERVED_OK, b"")
+    monkeypatch.setattr(adapters, "_capture", fake_capture)
+    monkeypatch.setattr(adapters, "_execution_sandbox_prefix", lambda *a, **k: ["/usr/bin/env"])
+    (tmp_path / "root").mkdir()
+    (tmp_path / "ws").mkdir()
+    exe = tmp_path / "opencode"
+    exe.write_text("#!/bin/sh\n")
+    exe.chmod(0o755)
+    res = adapters.run_provider("opencode", tmp_path / "root", tmp_path / "ws", "fix", write_paths=["a.py"],
+                                executable=exe, timeout=10, simulated=False, allow_live=True)
+    assert seen["output_limit"] == adapters.MAX_OUTPUT * 4 and res["stage"] == "READY"
