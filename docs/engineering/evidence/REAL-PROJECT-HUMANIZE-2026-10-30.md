@@ -79,10 +79,14 @@ magnitude up to 10^102.
    and closed: markers in source files, a block ignoring more than repo-ai state, an empty file, CRLF/autocrlf, a
    provider rewriting the file's line endings, and malformed markers.
 2. **Missions ran tests with the wrong interpreter.** The interpreter was resolved from the disposable workspace,
-   which never holds `.venv`. Post-apply verification runs in the checkout and used the project's venv. **This
-   explains the open python-slugify discrepancy (20 failures in the sandbox, 0 after apply).** Fixed in PR #17, which also
+   which never holds `.venv`. Fixed in PR #17, which also
    handles editable installs (found in its review). The verified runs used an earlier development build of #16
    and #17 (`86c9e19`), from before their review rounds.
+   - **Correction (2026-10-31):** an earlier version of this record, #17's description and the 0.11.2 changelog said
+     this bug explained the python-slugify discrepancy (20 failures in the sandbox, 0 after apply). It did not. That
+     mission record (`841f651c…`) shows the same pyenv interpreter for the baseline, the candidate and the post-apply
+     observation, and the post-apply observation has `failed: 20`. The "0" was a hard-coded `post_apply_failed` in
+     `repo-ai apply`, fixed in #21.
 3. **A tracked file that `.gitignore` also matches was dropped from mission workspaces**, because the workspace was
    re-committed with `git add -A`. Fixed in PR #17 (`commit_snapshot`, literal pathspecs).
 4. `verify --run --full` printed "0 passed" when no file was selected but the full suite ran (738 passed here). Fixed
