@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Fixed (found on a real repository, python-humanize): mission tests ran with the first `python3` on PATH instead of
+  the project's virtualenv. The interpreter was resolved from the disposable workspace, which never holds `.venv`.
+  Post-apply verification runs in the checkout and used the project's venv, which explains the python-slugify
+  discrepancy (20 failures in the sandbox, 0 after apply). Missions now resolve the interpreter from the checkout, like
+  `repo-ai verify`.
+- Fixed (same repository): a tracked file that a `.gitignore` pattern also matches (python-humanize's `_version.py`
+  stub) was dropped from mission workspaces, so every test failed to import the package.
+
 ## 0.11.1 — `init` then `do` works on the first try
 
 - Fixed (found on a real repository): `repo-ai init` followed by `repo-ai do` failed either way. Uncommitted
