@@ -128,7 +128,11 @@ def analyze_futures(
                 patch_file.unlink(missing_ok=True)
             obs = observe(ws.path, cmd, timeout_s=60.0)
             reran_tests = True
-            passed = bool(obs.get('complete') and obs.get('failed', 0) == 0)
+            # skipped tests must be exactly the baseline's: a diff that makes the failing test skip is not a pass
+            base_outcomes = (mission_state.get('baseline') or {}).get('outcomes') or {}
+            skipped_now = {t for t, o in (obs.get('outcomes') or {}).items() if o == 'skip'}
+            skipped_base = {t for t, o in base_outcomes.items() if o == 'skip'}
+            passed = bool(obs.get('complete') and obs.get('failed', 0) == 0 and skipped_now == skipped_base)
             rehearsal_summary = {
                 'rehearsed': True,
                 'verdict': 'PASS' if passed else 'FALSIFIED',

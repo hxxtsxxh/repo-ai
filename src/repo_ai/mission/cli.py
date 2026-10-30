@@ -282,6 +282,23 @@ def cmd_agents(args) -> int:
         return 0
     if args.action == 'setup':
         return _agents_setup(args)
+    if args.action == 'catalog':
+        from ..providers import catalog
+        rows = catalog.detect(root)
+        if args.json:
+            print(json.dumps({'schema': 'repo-ai.provider-catalog-view/1', 'providers': rows}, indent=2))
+            return 0
+        for state in catalog.REPO_AI_STATES:
+            group = [r for r in rows if r['repo_ai'] == state]
+            if group:
+                print(f'{state}:')
+                for r in group:
+                    mark = {'INSTALLED': 'installed', 'INSTALLED_NO_ADAPTER': 'installed, no repo-ai adapter',
+                            'UNTRUSTED_EXECUTABLE': 'repository-owned executable refused', 'NOT_FOUND': ''}[r['presence']]
+                    print(f"  {r['id']:<20} {r['name']}" + (f'  [{mark}]' if mark else '')
+                          + ('' if r['basis'] == 'observed' else '  (from vendor docs)'))
+        print('PLANNED means no adapter yet: nothing here claims it works. Detection is a PATH lookup; nothing was run.')
+        return 0
     if args.action == 'route':
         decision = registry.route(root, max_cost_usd=args.max_cost_usd, run_authorized=args.allow_live_provider)
         if args.json:
@@ -320,8 +337,28 @@ def _agents_setup(args) -> int:
                   f'{opencode_cfg.MODEL_ENV}=qwen3:8b')
             print('No model was invoked.')
         return 0 if not problems else 2
+    if args.provider == 'codex':
+        from ..providers import adapters
+        source = adapters.codex_login_source()
+        value = {'schema': 'repo-ai.provider-setup/1', 'provider': 'codex', 'login': source,
+                 'dedicated_dir': str(adapters.codex_home()), 'model_invoked': False, 'credential_read': False}
+        if args.json:
+            print(json.dumps(value, indent=2, sort_keys=True))
+            return 0 if source in {'dedicated', 'personal'} else 2
+        print({'dedicated': f'codex: dedicated repo-ai login at {value["dedicated_dir"]}',
+               'personal': 'codex: your personal ~/.codex login',
+               'invalid': f'codex: REPO_AI_CODEX_HOME ({value["dedicated_dir"]}) must be an absolute path other than '
+                          '~/.codex whose auth.json is a regular file; nothing will be used',
+               'none': 'codex: no login found'}[source])
+        print('  Codex needs its token file inside the sandbox and its shell tool can read it: a prompt-injected '
+              'repository could try to send it out.')
+        if source != 'dedicated':
+            print(f'  Recommended: a separate login just for repo-ai, revocable on its own:\n'
+                  f'    CODEX_HOME={value["dedicated_dir"]} codex login')
+        print('No model was invoked and no credential was read.')
+        return 0 if source in {'dedicated', 'personal'} else 2
     if args.provider != 'claude':
-        raise ValueError('agents setup currently explains: claude, opencode (other providers authenticate as '
+        raise ValueError('agents setup currently explains: claude, opencode, codex (other providers authenticate as '
                          'documented in docs/engineering/INTEGRATIONS.md)')
     from ..providers import claude_auth
     plan = claude_auth.plan()
@@ -558,7 +595,7 @@ def register(sub, common) -> None:
     p.add_argument('--resume', metavar='ID', help='inspect/recover an interrupted checkpoint; no automatic model retry')
     p.set_defaults(func=cmd_do)
     p = sub.add_parser('agents', parents=[common], help='local provider availability; doctor runs sandboxed help/version only')
-    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke', 'setup'])
+    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke', 'setup', 'catalog'])
     p.add_argument('provider', nargs='?', help='provider name for authorize/revoke/setup')
     p.add_argument('--prefer', action='store_true', help='with authorize: also prefer this provider in routing')
     p.add_argument('--allow-live-provider', action='store_true', help='route: evaluate as if this run were authorized')

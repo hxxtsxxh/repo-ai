@@ -28,6 +28,7 @@ CLASSIFICATIONS = {
     ('pass', 'fail'): 'NEW_FAILURE',
     ('pass', 'error'): 'NEW_FAILURE',
     ('pass', 'pass'): 'UNCHANGED_PASS',
+    ('skip', 'skip'): 'SKIPPED_BOTH',
 }
 
 
@@ -124,7 +125,10 @@ def _changed_paths(state: dict[str, Any]) -> set[str]:
 
 def _imported_sources(root: Path, test_file: str, sources: dict[str, str]) -> list[str]:
     """Repository modules a failing Python test file imports (static; dynamic imports are a blind spot)."""
-    data = isolate.read_inside(root, test_file, 2_000_000)
+    try:
+        data = isolate.read_inside(root, test_file, 2_000_000)
+    except isolate.ReportTooLarge:
+        return []  # too large to parse: no static lead, never a crash
     if data is None:
         return []
     try:

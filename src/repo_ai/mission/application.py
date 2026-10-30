@@ -18,7 +18,7 @@ from typing import Any
 
 from ..locks import file_lock
 from ..verify.isolate import read_inside
-from .contracts import canonical, digest, relative_path
+from .contracts import MAX_SOURCE_FILE, canonical, digest, relative_path
 from .ledger import Store
 
 LIMIT = 256_000
@@ -151,7 +151,7 @@ def _prepare(root: Path, state: dict[str, Any]) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix='repo-ai-apply-check-') as temp:
         scratch = Path(temp).resolve()
         for rel, sha in state['source']['files'].items():
-            data = read_inside(root, rel, 2_000_000)
+            data = read_inside(root, rel, MAX_SOURCE_FILE)
             if data is None or _sha(data) != sha:
                 raise ValueError('source changed while preparing application')
             target = scratch / relative_path(rel)

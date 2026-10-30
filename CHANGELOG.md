@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.10.0 — Claude Code and OpenCode as isolated providers; safe skill autopilot
+
+- **Claude Code runs as an isolated `repo-ai do` provider** (it was blocked in 0.9.0). It authenticates with its own
+  supported login and nothing is copied: `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` (scratch HOME, no keychain),
+  or a dedicated repo-ai login (`CLAUDE_CONFIG_DIR=<dir> claude auth login`; HOME read-restricted). The model gets
+  file tools only (`--restricted --safe-mode --strict-mcp-config`), and every live run first starts the exact
+  invocation with a model name Claude Code rejects locally to confirm, at no cost, that no other tool, MCP server,
+  plugin or skill would load (an account syncs those into every login). `repo-ai agents setup claude` explains the
+  one-time setup; a missing login is `SETUP_REQUIRED` in `agents route`.
+- **OpenCode with a local model** (new provider, account-free): loopback-only endpoints, deny-by-default tool policy,
+  `--standalone`, network restricted to loopback; cloud-routed models are refused. `repo-ai agents setup opencode`.
+- **Security:** no provider credential is copied into the sandbox any more (0.9.0 copied Claude credential files and
+  the whole `~/.gemini`, which held OAuth tokens and another agent's history). Every process a seatbelt provider run
+  starts is killed before verification, including ones that call `setsid`; `open`/Apple events are denied. An
+  independent adversarial review found and this release fixes: read rules that could expose all of HOME, a
+  config-dir override that made HOME writable, reachable unix sockets (container engine, ssh-agent) and DNS.
+- **Skills — safe autopilot:** autonomy levels (`skills policy`; default PROPOSE, stored machine-locally), five
+  capability kinds kept apart (only skills are installable), a strict inert check, `CapabilityBundle` installs
+  with ownership markers, conflict refusal and byte-exact uninstall/rollback; OpenCode is an install target
+  (`.agents/skills`). A repo-ai-installed skill was observed loading on Claude Code and OpenCode. An independent
+  review's 10 findings are fixed (e.g. a committed lockfile could make uninstall delete a user file).
+- Missions accept a test skipped identically at base and candidate (real suites have platform and
+  optional-dependency skips); a candidate that makes a test skip, or un-skips one, never passes; a module skipped at
+  collection is now reported instead of silently vanishing; `futures --rehearse` no longer counts a new skip as a pass.
+- Codex live runs are HOME read-restricted like Claude and OpenCode (a model with a shell could read
+  `~/.codex/auth.json` and other HOME files) and reach only DNS/scratch unix sockets.
+- Gemini live runs need `GEMINI_API_KEY`/`GOOGLE_API_KEY`; exit 41 is reported as an authentication failure.
+- Added: `repo-ai agents catalog` — 24 coding agents with what repo-ai can honestly do with each (EXECUTION, BLOCKED,
+  PLANNED from vendor docs, UNSUPPORTED); detection is a PATH lookup that never runs anything.
+- Codex: prefers a dedicated repo-ai login (`CODEX_HOME=<dir> codex login`; `repo-ai agents setup codex` explains
+  why) and receives only model-selection keys of the user's config (no MCP servers, `notify` or trust lists).
+- Fixed (found on a real repository): a tracked file over 2 MB made every mission fail with an opaque error, and
+  the same limit let a provider's change to such a file pass the scope check unseen. Files up to 25 MB are read and
+  compared; an unreadable side never compares equal.
+- Fixed: the tree-sitter install hint named `repo-ai[ast]`; it is `repo-ai-cli[ast]`. `why-test-failed` shows
+  pytest identities once. A dirty-checkout refusal names the paths.
+- Evidence: `docs/engineering/` (mission ledger, INTEGRATIONS.md, evidence/). Comparative lift over a standalone
+  agent remains `NOT_YET_DEMONSTRATED`; skill benefit is not demonstrated.
+
 ## 0.9.0 — first stable (beta) release
 
 The first release intended for public installation (`pip install repo-ai`). "Stable" here means a final,

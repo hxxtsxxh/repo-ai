@@ -8,6 +8,7 @@ observed for exactly those test IDs. Per requirement:
   VERIFIED_PRESERVED      kind=preserve: every mapped test passed at baseline and still passes
   NOT_DISCRIMINATING      kind=change but a mapped test already passed at baseline, so it could not have caught the bug
   FAILING                 a mapped test does not pass on the candidate
+  NOT_OBSERVED            a mapped test was skipped at baseline and candidate: it observed nothing
   MISSING_TEST            a declared test ID was not collected (absent or ambiguous)
   UNMAPPED                no test declared: nothing observed supports this requirement
 
@@ -94,6 +95,8 @@ def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, 
                              'candidate': candidate.get(resolved, 'absent')})
         if problems:
             status, detail = 'MISSING_TEST', '; '.join(problems)
+        elif any(o['candidate'] == 'skip' and o['baseline'] == 'skip' for o in observed):
+            status, detail = 'NOT_OBSERVED', 'a mapped test was skipped at baseline and candidate'
         elif any(o['candidate'] != 'pass' for o in observed):
             status, detail = 'FAILING', 'a mapped test does not pass on the candidate'
         elif req['kind'] == 'preserve':

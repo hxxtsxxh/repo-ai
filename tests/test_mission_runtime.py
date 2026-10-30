@@ -133,3 +133,29 @@ def test_dirty_checkout_refusal_names_the_paths(tmp_path):
     (tmp_path / '__pycache__' / 'a.cpython-312.pyc').write_bytes(b'\0')
     with pytest.raises(ValueError, match=r'__pycache__/a\.cpython-312\.pyc'):
         identity(tmp_path, require_clean=True)
+
+
+def test_a_large_tracked_file_does_not_stop_a_mission_and_is_hashed(tmp_path):
+    import subprocess as sp
+    from repo_ai.mission.runtime import identity
+    sp.run(['git', 'init', '-q', str(tmp_path)], check=True)
+    (tmp_path / 'a.py').write_text('x = 1\n')
+    (tmp_path / 'data.json').write_bytes(b'[' + b'1,' * 1_700_000 + b'1]')  # ~3.4 MB, like python-slugify's
+    sp.run(['git', '-C', str(tmp_path), 'add', '.'], check=True)
+    sp.run(['git', '-C', str(tmp_path), '-c', 'user.email=t@example.invalid', '-c', 'user.name=t', 'commit', '-qm', 'i'],
+           check=True)
+    ident = identity(tmp_path, require_clean=True)
+    assert len(ident['files']['data.json']) == 64
+
+
+def test_a_change_to_a_large_tracked_file_is_never_seen_as_unchanged(tmp_path):
+    from repo_ai.providers.adapters import validate_workspace_edits
+    root, ws = tmp_path / 'root', tmp_path / 'ws'
+    for d in (root, ws):
+        d.mkdir()
+        (d / 'a.py').write_text('x = 1\n')
+        (d / 'data.json').write_bytes(b'0' * 3_000_000)
+    (ws / 'data.json').write_bytes(b'1' * 3_000_000)
+    (ws / 'a.py').write_text('x = 2\n')
+    reasons = validate_workspace_edits(root, ws, ['a.py'], set(), {'a.py', 'data.json'})
+    assert any('unapproved path: data.json' in r for r in reasons)

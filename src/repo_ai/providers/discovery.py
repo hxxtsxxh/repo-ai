@@ -41,6 +41,28 @@ def _inside(path: Path, root: Path) -> bool:
     return path == root or root in path.parents
 
 
+def _repo_owned(path: str | Path, root: Path) -> bool:
+    """Whether an executable path (as found, resolved, or with its directory resolved) lies inside the repository,
+    also on a case-insensitive filesystem where `/REPO/bin` and `/repo/bin` are the same directory."""
+    raw = Path(os.path.abspath(path))
+    candidates = [raw]
+    try:
+        candidates += [raw.resolve(strict=True), raw.parent.resolve(strict=True) / raw.name]
+    except (OSError, RuntimeError):
+        pass
+    root = root.resolve()
+    for candidate in candidates:
+        if _inside(candidate, root):
+            return True
+        for parent in candidate.parents:
+            try:
+                if os.path.samefile(parent, root):
+                    return True
+            except OSError:
+                continue
+    return False
+
+
 def _identity(path: Path) -> str:
     """Hash a bounded regular entrypoint, refusing symlink/FIFO replacement."""
     flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -239,8 +261,7 @@ def _one(provider: str, root: Path, probe: bool) -> dict[str, Any]:
     raw = Path(os.path.abspath(executable))
     try:
         resolved = raw.resolve(strict=True)
-        parent_resolved = raw.parent.resolve(strict=True) / raw.name
-        if _inside(raw, root) or _inside(resolved, root) or _inside(parent_resolved, root):
+        if _repo_owned(raw, root):
             profile["status"] = "UNTRUSTED_EXECUTABLE"
             profile["stage"] = "BLOCKED"
             profile["limitations"].append("Repository-owned executable or alias refused; it was not executed.")

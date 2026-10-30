@@ -10,8 +10,14 @@ dated evidence; where a row names an older build (0.8.0rc1, `903984a`), the evid
 
 **Missions (0.9):** live single-provider runs (Bob, Codex, agy on macOS), live tournaments that abstain instead of
 picking, `shortlist` (now also reporting AST-identical candidates), handoff with verified partial work (one live
-Codex → agy demonstration), `coverage` (developer-declared requirement map; never a correctness claim). Claude Code as
-an isolated execution provider: **blocked** (re-observed 2026-10-29: "Not logged in" inside repo-ai's scratch HOME).
+Codex → agy demonstration), `coverage` (developer-declared requirement map; never a correctness claim).
+**0.10:** Claude Code is a live isolated execution provider (macOS; its own login, file tools only, per-run isolation
+probe; n=1 journeys, hidden oracle 17/17) and OpenCode with a local model is a new account-free provider (macOS; 1 of 4
+end-to-end attempts passed, every failure refused). Gemini needs an API key. Evidence:
+[engineering/INTEGRATIONS.md](engineering/INTEGRATIONS.md), [engineering/evidence/](engineering/evidence/).
+**Skills (0.10):** autonomy policy and capability-bundle installs are **experimental**; a repo-ai-installed skill was
+observed loading on Claude Code and OpenCode; skill *benefit* is **not demonstrated**
+([engineering/SKILLS_NETWORK.md](engineering/SKILLS_NETWORK.md)).
 Comparative benefit over a standalone agent: **not demonstrated**; the abc-v5 calibration narrowed the claim to
 "names the requirements your tests do not pin, and resists test gaming" ([launch/EVALUATION.md](launch/EVALUATION.md)).
 
