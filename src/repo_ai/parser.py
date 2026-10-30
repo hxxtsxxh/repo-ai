@@ -3,7 +3,7 @@
 Three tiers, chosen per file:
 
   * **Python** -> `ast` from the standard library. Exact, zero dependencies.
-  * **Anything else, with `repo-ai[ast]` installed** -> tree-sitter queries.
+  * **Anything else, with `repo-ai-cli[ast]` installed** -> tree-sitter queries.
   * **Fallback** -> line-anchored regexes tuned per language family.
 
 The fallback is deliberately conservative: it prefers missing a symbol over

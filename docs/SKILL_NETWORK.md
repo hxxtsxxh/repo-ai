@@ -394,6 +394,42 @@ validated: the synthetic attacks could not be produced.
 
 Treat `blocked` as "look closely" and `review` as "read it yourself before enabling".
 
+## 10. Autonomy policy and autopilot (experimental)
+
+```sh
+repo-ai skills policy                      # show the level (default PROPOSE) and what each level allows
+repo-ai skills policy set SAFE_AUTO        # run it yourself: refused with agent/CI markers or no TTY
+repo-ai skills policy revoke               # back to PROPOSE; removes what the policy installed
+repo-ai skills autopilot [names] [--dry-run]
+repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-run   # diff + conflicts
+```
+
+**Levels:** `OFFLINE`, `DISCOVER_ONLY`, `PROPOSE` (default), `SAFE_AUTO`, `TRIAL`, `MANUAL_ONLY`.
+- The level is stored outside the repository, so a clone cannot grant itself autonomy.
+- Refusing to raise the level from an agent shell is defence in depth, not a boundary: an agent can
+  unset the markers and fake a terminal. Your agent's permission prompt for the command is the boundary.
+- **What `SAFE_AUTO` may install:** only an **inert** skill, under every one of these conditions:
+  - its directory holds a SKILL.md and plain licence files, and nothing else;
+  - it is pinned to the hash that was vetted and re-checked at install;
+  - it declares no permissions, hooks, URLs, network commands, accounts or hidden characters;
+  - the firewall found nothing that matters.
+  
+  It installs into the Claude Code project skills directory only.
+- **At every level:** scripts, hooks, MCP servers, plugins, binaries, provider adapters, static tools,
+  external accounts, permission changes and network execution need your approval.
+- **`eligible` is not inert:** a firewall verdict of `eligible` never qualifies a skill on its own.
+
+**Installs:**
+- Every install carries a repo-ai ownership marker and never adds permissions.
+- A file repo-ai does not own refuses the whole install. Nothing is overwritten.
+- Uninstall, `disable` and `rollback` put back exactly the bytes that were there before.
+- **Other hosts are export-only:** Codex and Antigravity (`.agents/skills`), Gemini CLI
+  (`.gemini/skills`) and IBM Bob (`.bob/skills`) are labelled `CAPABILITY_EXPORT_ONLY`. repo-ai has
+  not observed those hosts load a skill.
+
+Engineering notes and the diagnosis of the failed validations:
+[engineering/SKILLS_NETWORK.md](engineering/SKILLS_NETWORK.md).
+
 ## Threats considered
 
 These scenarios have adversarial fixtures in `tests/test_skill_network.py`:

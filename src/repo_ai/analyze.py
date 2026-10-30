@@ -762,7 +762,8 @@ def run_analysis(
     if not use_ts and cfg.parse_symbols:
         facts.warnings.append(
             "tree-sitter not installed: non-Python symbol extraction uses the regex "
-            "fallback. Install with `pip install 'repo-ai[ast]'` for higher fidelity."
+            "fallback. Install with `pip install 'repo-ai-cli[ast]'` (with pipx: `pipx inject repo-ai-cli "
+            "'tree-sitter>=0.23' 'tree-sitter-language-pack>=0.7,<1.0'`) for higher fidelity."
         )
 
     index.set_meta("generated_at", facts.generated_at)

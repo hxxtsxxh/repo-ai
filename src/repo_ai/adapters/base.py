@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from ..config import Config
-from ..fsutil import (Plan, detect_eol, managed_state, remove_block, same_modulo_eol,
+from ..fsutil import (Plan, detect_eol, managed_state, marker_attrs, remove_block, same_modulo_eol,
                       stamp_managed, to_eol, upsert_block)
 from ..models import RepoFacts
 from ..paths import Layout
@@ -89,6 +89,9 @@ def plan_managed_file(
     if state == "absent":
         plan.write(path, content, executable)
         return "write"
+    if state == "pristine" and _third_party_bundle(current, kind):
+        plan.skip(path, "a third-party skill repo-ai installed with your approval; left untouched")
+        return "skip-foreign"
     if state == "pristine":
         if current == content or same_modulo_eol(current, content):
             return "unchanged"  # identical, or a CRLF checkout of identical text
@@ -104,11 +107,21 @@ def plan_managed_file(
     return "skip-modified"
 
 
+def _third_party_bundle(current: str | None, kind: str = "") -> bool:
+    """A file a capability bundle wrote is owned by the skill portfolio, not by the
+    adapter that manages repo-ai's own files: its marker alone never lets them replace it."""
+    from ..capbundle import MARKER_KIND
+    return kind != MARKER_KIND and marker_attrs(current or "").get("kind") == MARKER_KIND
+
+
 def plan_remove_managed_file(plan: Plan, path: Path, legacy_signature: str = "") -> str:
     current = plan.current(path)
     state = managed_state(current)
     if state == "absent":
         return "absent"
+    if state == "pristine" and _third_party_bundle(current):
+        plan.skip(path, "a third-party skill (capability bundle); removed only through the skill portfolio")
+        return "kept"
     if state == "pristine" or (state == "foreign" and legacy_signature and current
                                and legacy_signature in current):
         plan.delete(path)

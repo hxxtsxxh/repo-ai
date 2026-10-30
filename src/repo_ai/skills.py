@@ -318,7 +318,12 @@ def collision(root: Path, name: str) -> str:
     if name in CURATED_SKILL_NAMES or name in NATIVE_MANAGEMENT_SKILLS:
         return "name reserved for a curated repo-ai skill"
     project = root / ".claude" / "skills" / name / "SKILL.md"
-    state = managed_state(read_text(project))
+    text = read_text(project)
+    from .capbundle import MARKER_KIND
+    from .fsutil import marker_attrs
+    if marker_attrs(text or "").get("kind") == MARKER_KIND:
+        return "a third-party skill repo-ai installed uses this name"
+    state = managed_state(text)
     if state == "foreign":
         return "a project skill with this name already exists (user-owned)"
     if state == "modified":
