@@ -8,7 +8,7 @@ export const site = {
   /** The release the install commands point at. */
   version: '0.9.0',
   /** false: install the wheel from the GitHub release. true: pipx / pip from PyPI. */
-  pypiPublished: false,
+  pypiPublished: true,
   /** Canonical repository URL. Only rendered as a link when `repoPublic` is true. */
   githubRepo: 'https://github.com/hxxtsxxh/repo-ai',
   /** false: no "view source" / star-style calls to action; neutral wording instead. */
