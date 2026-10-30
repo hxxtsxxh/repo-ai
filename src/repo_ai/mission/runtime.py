@@ -28,6 +28,7 @@ from ..verify import engine, evidence, isolate
 from ..verify.execute import get_executor, release
 from .context import build_context
 from .contracts import (
+    MAX_SOURCE_FILE,
     EvidenceRecord,
     ExecutionDAG,
     HandoffCapsule,
@@ -138,7 +139,11 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     contents = {}
     total = 0
     for path in tracked:
-        data = isolate.read_inside(root, path, 2_000_000)
+        try:
+            data = isolate.read_inside(root, path, MAX_SOURCE_FILE)
+        except isolate.ReportTooLarge:
+            raise ValueError(f'tracked file {redact_text(path)[:200]} is larger than {MAX_SOURCE_FILE // 1_000_000} MB; '
+                             'isolated missions bound each source file') from None
         if data is None:
             if require_clean:
                 raise ValueError('source includes missing or nonregular files; isolated mission abstains')
@@ -755,7 +760,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                     for rel in current['files']:
                         if not rel.endswith('.py'):
                             continue
-                        data = isolate.read_inside(candidate, rel, 2_000_000)
+                        data = isolate.read_inside(candidate, rel, MAX_SOURCE_FILE)
                         if data is None:
                             raise ValueError('static investigation source disappeared')
                         try:

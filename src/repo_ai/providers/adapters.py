@@ -1238,14 +1238,16 @@ def validate_workspace_edits(
                 changed_files.append(rel)
                 reasons.append(f"provider modified or created symlink at tracked path: {rel}")
             continue
+        # a file too large to compare must never read as "unchanged" (None == None): compare digests of full reads
+        from ..mission.contracts import MAX_SOURCE_FILE
         try:
-            orig = isolate.read_inside(root, rel, 2_000_000)
+            orig = isolate.read_inside(root, rel, MAX_SOURCE_FILE)
         except Exception:
-            orig = None
+            orig = b"\0unreadable-original\0"
         try:
-            cand = isolate.read_inside(workspace, rel, 2_000_000)
+            cand = isolate.read_inside(workspace, rel, MAX_SOURCE_FILE)
         except Exception:
-            cand = None
+            cand = b"\0unreadable-candidate\0"
         if orig != cand:
             changed_files.append(rel)
             if rel not in write_paths:
