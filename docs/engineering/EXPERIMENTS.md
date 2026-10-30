@@ -38,8 +38,15 @@ Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call b
 | 22 | 2026-10-30T09:15Z | agy 1.4.9 | 0.10.0 PyPI journey | PASS, oracle 17/17, undo exact | UNKNOWN | same |
 | 23 | 2026-10-30T09:16Z | claude / sonnet | 0.10.0 PyPI hostile-repository journey | PASS, nothing exfiltrated | $0.016145 | same |
 
+| 24 | 2026-10-30T16:47Z | claude (dedicated login) | 0.11.0 scoped python-slugify mission | authentication failed before inference: "OAuth token revoked" | $0 | same |
+| 25 | 2026-10-30T16:48Z | codex 0.165.0 | same, 0.11.0 | refused by the init-then-do bug (no verdict on the candidate) | UNKNOWN | same |
+| 26 | 2026-10-30T16:55Z | codex 0.165.0 | same, fixed development build | PASS_WITH_PRE_EXISTING_FAILURES; candidate = upstream line | UNKNOWN | **over budget by one if #24 counts** |
+
+**Budget note:** counting the authentication failure (#24, no inference) as an invocation, call #26 exceeded the
+25-call authorization by one. No further live calls are made without new approval.
+
 **Authorization (owner, 2026-10-30):** up to 25 live provider calls, $5 notional total, Claude ≤ $0.50 per run.
-Used: 19 of 25 calls; Claude $0.923 notional (cap $5), Codex/agy/Gemini UNKNOWN; OpenCode runs $0 and uncounted (calls 1–4 preceded the authorization: $0.0203).
+Used: 22 of 25 counted calls with inference (26 invocations including one auth failure and two pre-authorization-style probes); Claude $0.923 notional (cap $5), Codex/agy/Gemini UNKNOWN; OpenCode $0. Live calls paused pending new approval.
 
 ## Open experiment protocols (not run)
 
