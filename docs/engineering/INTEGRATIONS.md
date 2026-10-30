@@ -122,3 +122,28 @@ repo-ai cannot hide a credential from the process that needs it. Planned mitigat
 Live re-verification on the 0.10.0 development build (2026-10-30, same durations task and hidden oracle): Codex
 0.165.0 PASS in 41 s, oracle 17/17, undo clean; agy 1.4.9 PASS in 43 s, oracle 17/17, undo clean. Bob not re-run
 (its account entitlement was not re-checked this cycle).
+
+## Independent adversarial review of provider isolation (2026-10-30) and fixes
+
+A separate reviewer (fresh clone, real `sandbox-exec` probes, no model calls) confirmed, and this cycle fixed with
+regression tests:
+
+| # | Finding | Severity | Fix |
+|---|---|---|---|
+| 1 | Read rules could open all of HOME: `_install_roots` walked up to a `~/package.json` (left by any `npm install` in HOME), a binary placed directly in HOME allowed its parent (`~`), and `_node_roots` allowed the node prefix (e.g. all of `~/.local`). `cat ~/.ssh/id_rsa` succeeded in the reviewer's probe. | high | package.json search only inside `node_modules`; never HOME, an ancestor or a top-level app-data dir (falls back to the binary as a literal); node exposed as its binary only |
+| 2 | `REPO_AI_CLAUDE_CONFIG_DIR` accepted the parent of HOME, `~/.ssh`, `~/.config`; the config dir is writable, so the sandbox appended to `~/.zshrc`. | medium | refused (HOME, ancestors, sensitive dirs) |
+| 3 | OpenCode's `(allow network-outbound (remote unix-socket))` reached any unix socket (container engine, ssh-agent) and let DNS leave the machine via mDNSResponder; Claude live runs reached them too. | medium-high | OpenCode: unix sockets under its scratch dir only (localhost still resolves); Claude: mDNSResponder and scratch only |
+| 4 | Ollama `*-cloud` models pass as local, but Ollama serves them remotely. | medium | refused; a loopback proxy forwarding off-machine remains the user's responsibility (documented) |
+| 5 | `settings.local.json` not audited. | low | audited |
+| 6 | 500-line event bound failed long correct OpenCode runs. | low-medium | 4000 lines for OpenCode |
+| 7 | A tracked `.venv` symlink in a branch commit. | hygiene | removed from history before merge |
+
+Not fixed (disclosed): a descendant that calls `setsid` survives the process-group kill (still sandboxed; it could
+edit the workspace after verification); reads outside HOME (`/tmp`, `/private/var/folders`, `/Users/Shared`) stay
+open; keychain access through the Security framework in `token_env` mode was not probed. Repository-local OpenCode
+plugins: in 2.2.1, `opencode plugin list` finds none from `.opencode/plugins` and a canary plugin did not load, with
+or without repo-ai's settings (observed for this version only). Non-standalone OpenCode commands (`plugin list`)
+start the detached service; repo-ai's discovery probes do not (checked).
+
+Live re-verification after the fixes (2026-10-30T05:48Z): Claude `run_provider` READY (`dedicated_config`, tools
+Read+Edit, $0.014114, correct edit); OpenCode READY (read+edit, $0, correct edit); no `opencode` process left.
