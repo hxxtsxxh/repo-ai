@@ -16,27 +16,27 @@
   {
    "id": "C01",
    "title": "Public alignment",
-   "status": "PASS_AT_0.9.0",
+   "status": "PASS",
    "owner": "principal",
-   "code_sha": null,
+   "code_sha": "f53d027",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "public main 21fd3c6; PyPI repo-ai-cli 0.9.0 wheel b351d80e\u2026; site 200 (2026-10-30)"
+    "public main = v0.10.0; PyPI repo-ai-cli 0.10.0; GitHub release assets identical to PyPI; SHA256SUMS OK; attestation verified"
    ],
    "limits": [],
-   "next_action": "re-verify after next release; site/release-facts specialist audits drift"
+   "next_action": "site PR #5 deploys the matching release facts"
   },
   {
    "id": "C02",
    "title": "Zero-provider onboarding",
-   "status": "PASS_AT_0.9.0",
+   "status": "PASS",
    "owner": "principal",
-   "code_sha": null,
+   "code_sha": "f53d027",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "release_smoke.sh on clean python:3.12-slim (0.9.0 launch)"
+    "release_smoke.sh from PyPI on macOS: SMOKE PASS; release workflow smoke on fresh ubuntu/windows/macos runners"
    ],
    "limits": [],
    "next_action": "re-run on next release wheel"
@@ -46,7 +46,7 @@
    "title": "Claude provider",
    "status": "PASS",
    "owner": "principal",
-   "code_sha": null,
+   "code_sha": "f53d027",
    "test_run": "tests/test_provider_claude_isolation.py",
    "environment": "macOS Darwin 25.5 arm64, seatbelt, Claude Code 2.1.314, dedicated_config",
    "observations": [
@@ -259,15 +259,17 @@
   {
    "id": "C17",
    "title": "Windows",
-   "status": "NOT_TESTED",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "CI unit tests only"
+    "Windows CI unit suites green (py3.10/3.13) on every PR; release smoke on a fresh windows-latest runner (install, quickstart, init)"
    ],
-   "limits": [],
+   "limits": [
+    "missions unsupported on Windows (no host sandbox); refused, never degraded"
+   ],
    "next_action": "public CI is free now: run Windows jobs"
   },
   {
@@ -302,13 +304,13 @@
   {
    "id": "C20",
    "title": "Distribution/release",
-   "status": "PASS_AT_0.9.0",
+   "status": "PASS",
    "owner": "principal",
-   "code_sha": null,
+   "code_sha": "f53d027",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "Trusted Publishing, SBOM, attestations"
+    "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke"
    ],
    "limits": [],
    "next_action": "next release"
@@ -316,14 +318,16 @@
   {
    "id": "C21",
    "title": "Real adopter proof",
-   "status": "NOT_YET_DEMONSTRATED",
+   "status": "EXPERIMENTAL",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
-   "observations": [],
+   "observations": [
+    "python-slugify: verify --run caught a regression; Claude's fix verified by verify; mission abstained on skips/unrelated failures (part 1 of the fix shipped in 0.10.0)"
+   ],
    "limits": [],
-   "next_action": "two clean-environment real-project journeys"
+   "next_action": "re-run the mission journey on 0.10.0 (identical skips accepted); second real project"
   },
   {
    "id": "C22",
@@ -354,12 +358,14 @@
   {
    "id": "C24",
    "title": "Final launch report",
-   "status": "NOT_STARTED",
+   "status": "IN_PROGRESS",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
-   "observations": [],
+   "observations": [
+    "docs/engineering/FINAL_REPORT.md filled with verified 0.10.0 release facts"
+   ],
    "limits": [],
    "next_action": "FINAL_REPORT.md at the end"
   }
