@@ -276,11 +276,12 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     except UnicodeDecodeError:
         protocol_errors.append("event stream is not valid UTF-8")
 
-    if len(lines) > 500:
+    max_lines = 4000 if provider == "opencode" else 500
+    if len(lines) > max_lines:
         non_json_lines += 1
-        errors.append("provider event stream exceeded 500-line bound")
+        errors.append(f"provider event stream exceeded {max_lines}-line bound")
 
-    for line in lines[:500]:
+    for line in lines[:max_lines]:
         try:
             obj = json.loads(line)
         except json.JSONDecodeError:
@@ -558,7 +559,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             # (`(allow network* (local ip "localhost:*"))` would also admit outbound connections to any host: observed)
             net_rule = ('(deny network*)(allow network-outbound (remote ip "localhost:*"))'
                         '(allow network-inbound (local ip "localhost:*"))(allow network-bind (local ip "localhost:*"))'
-                        "(allow network-outbound (remote unix-socket))")
+                        f"(allow network-outbound (remote unix-socket (subpath {json.dumps(str(scratch.resolve()))})))")
         home = Path.home().resolve()
         # A live provider has network access, so the host's credential stores are unreadable to it.
         secret_dirs = ("/.ssh", "/.aws", "/.gnupg", "/.config/gh", "/.netrc", "/Library/Keychains")
@@ -633,7 +634,13 @@ def _home_read_only_rules(allowed: list[Path]) -> str:
              f"(allow file-read-metadata (subpath {q(str(home))}))"]
     for path in allowed:
         target = path.resolve()
-        rules.append(f"(allow file-read* (subpath {q(str(target.parent if target.is_file() else target))}))")
+        if target.is_file():
+            kind, target = ("literal", target) if claude_auth.too_broad(target.parent) else ("subpath", target.parent)
+        else:
+            kind = "subpath"
+            if claude_auth.too_broad(target):
+                raise ValueError(f"refusing to expose {target} to a provider")
+        rules.append(f"(allow file-read* ({kind} {q(str(target))}))")
     return "".join(rules)
 
 
@@ -643,9 +650,9 @@ def _node_roots() -> list[Path]:
     node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
     if not node:
         return []
-    prefix = Path(node).resolve().parent.parent
+    binary = Path(node).resolve()
     home = Path.home().resolve()
-    return [prefix] if prefix != home and home in prefix.parents else []
+    return [binary] if home in binary.parents else []
 
 
 def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
@@ -998,7 +1005,7 @@ def _claude_preflight(executable: Path, plan: claude_auth.ClaudeAuthPlan) -> tup
         if prefix is None:
             return "no_sandbox", ["no supported execution sandbox on this host"]
         env = _probe_env(scratch)
-        env["PATH"] = os.pathsep.join([*(str(r / "bin") for r in _node_roots()), env["PATH"]])
+        env["PATH"] = os.pathsep.join([*(str(r.parent) for r in _node_roots()), env["PATH"]])
         result = _capture([*prefix, str(executable), "--help"], scratch, env, timeout=20.0, max_timeout=30.0)
     if result.status != "complete" or result.returncode != 0:
         return "help_probe_failed", ["claude --help failed; isolation flags could not be confirmed"]

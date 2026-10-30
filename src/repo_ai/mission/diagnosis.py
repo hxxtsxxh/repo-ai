@@ -14,6 +14,7 @@ from typing import Any
 from ..security import redact_text
 from ..verify import isolate
 from .contracts import digest
+from .coverage import display_test_id
 from .verification import comparability
 
 MAX_TEST_ROWS = 200
@@ -205,6 +206,9 @@ def diagnose(root: Path, mission: str, *, test: str | None = None) -> dict[str, 
     after = after if isinstance(after, dict) else {}
     ids = sorted(set(before) | set(after))
     if test is not None:
+        if test not in ids:  # accept the displayed form (`f.py::test_x`) for a recorded `f.py::f.py::test_x`
+            shown = [i for i in ids if display_test_id(i) == test]
+            test = shown[0] if len(shown) == 1 else test
         if test not in ids:
             raise ValueError('test identity not observed in this mission; inspect the unfiltered report')
         ids = [test]
@@ -272,7 +276,7 @@ def render(report: dict[str, Any]) -> str:
     import json
     lines = [f"{report['mission']}: {report['standing']} ({report['freshness']})"]
     for row in report['tests']:
-        lines.append(f"  {row['classification']}: {json.dumps(row['test_id'], ensure_ascii=True)} "
+        lines.append(f"  {row['classification']}: {json.dumps(display_test_id(row['test_id']), ensure_ascii=True)} "
                      f"({row['baseline']} -> {row['candidate']})")
     for hyp in report.get('source_hypotheses', [])[:5]:
         lines.append(

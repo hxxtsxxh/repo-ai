@@ -64,6 +64,8 @@ def setup_problems(environ: Mapping[str, str] | None = None) -> list[str]:
                         f"qwen3:8b`); endpoint {base_url(environ)} (override with {BASE_URL_ENV})")
     elif not _MODEL_RE.match(model):
         problems.append(f"{MODEL_ENV} is not a plain model name")
+    elif re.search(r"(^|[-:])cloud$", model):
+        problems.append(f"{MODEL_ENV} names a cloud-hosted model; code would leave this machine")
     if loopback_port(base_url(environ)) is None:
         problems.append(f"{BASE_URL_ENV} must be a loopback http(s) URL; remote models would send code off this "
                         "machine and are not supported by repo-ai's OpenCode adapter")

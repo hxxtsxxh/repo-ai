@@ -114,3 +114,15 @@ def test_diagnosis_never_promotes_failed_whole_change_verification(observations)
     assert report['mission_verdict'] == 'INCONCLUSIVE'
     assert report['negative_evidence'] == state['passport']['negative']
     assert state['effective_verdict'] == 'INCONCLUSIVE'
+
+
+def test_render_shows_pytest_identities_once_and_accepts_the_displayed_form(observations):
+    from repo_ai.mission.diagnosis import render
+    root, state = observations
+    key = next(iter(state['candidate']['outcomes']))
+    doubled = key.split('::', 1)[0] + '::' + key
+    for side in ('baseline', 'candidate'):
+        state[side]['outcomes'] = {doubled: next(iter(state[side]['outcomes'].values()))}
+    text = render(diagnose(root, state['id']))
+    assert doubled not in text and json.dumps(key) in text
+    assert diagnose(root, state['id'], test=key)['tests'][0]['test_id'] == doubled

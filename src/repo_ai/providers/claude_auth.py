@@ -50,6 +50,7 @@ REQUIRED_FLAGS = ("--print", "--output-format", "--permission-mode", "--permissi
 CUSTOMISATION_PATHS = ("settings.json", "settings.local.json", "CLAUDE.md", "skills", "agents", "commands",
                        "plugins", "hooks", "output-styles", "rules")
 KEYCHAIN_FILES = ("login.keychain-db", "metadata.keychain-db")
+SENSITIVE_HOME_DIRS = (".ssh", ".aws", ".gnupg", ".config", ".local", "Library", ".kube", ".docker", ".netrc")
 
 
 @dataclass(frozen=True)
@@ -90,7 +91,10 @@ def audit_config_dir(path: Path) -> list[str]:
         return [f"{path} is a symlink; use a real directory owned by repo-ai"]
     home = Path.home().resolve()
     resolved = path.resolve()
-    if resolved == home / ".claude" or resolved == home:
+    if resolved == home or resolved in home.parents or too_broad(resolved) or \
+            any(resolved == home / d or (home / d) in resolved.parents for d in (".ssh", ".aws", ".gnupg", "Library")):
+        return [f"{path} is not a dedicated directory (it is, or contains/sits in, a sensitive HOME location)"]
+    if resolved == home / ".claude":
         return [f"{path} is your personal Claude config; repo-ai needs its own: {login_command(default_config_dir())}"]
     for sub in ("skills", "agents", "commands", "output-styles", "hooks", "rules"):
         d = path / sub
@@ -104,8 +108,9 @@ def audit_config_dir(path: Path) -> list[str]:
         problems.append(f"{path}/plugins has installed plugins; remove them from repo-ai's Claude login")
     if (path / "CLAUDE.md").exists():
         problems.append(f"{path}/CLAUDE.md exists; remove it from repo-ai's Claude login")
-    settings = path / "settings.json"
-    if settings.is_file():
+    for settings in (path / "settings.json", path / "settings.local.json"):
+        if not settings.is_file():
+            continue
         try:
             data = json.loads(settings.read_text("utf-8"))
         except ValueError:
@@ -145,13 +150,21 @@ def _install_roots(executable: Path) -> list[Path]:
     version there) or, for an npm install, the package directory."""
     exe = executable.resolve()
     roots = [exe.parent]
-    for parent in exe.parents:
-        if parent.name == "node_modules":
-            break
-        if (parent / "package.json").is_file():
-            roots.append(parent)
-            break
-    return roots
+    if "node_modules" in exe.parts:
+        for parent in exe.parents:
+            if parent.name == "node_modules":
+                break
+            if (parent / "package.json").is_file():
+                roots.append(parent)
+                break
+    return [r for r in roots if not too_broad(r)] or [exe]
+
+
+def too_broad(path: Path) -> bool:
+    """HOME itself, any ancestor of it, or a top-level HOME directory that holds unrelated app data."""
+    home = Path.home().resolve()
+    p = path.resolve()
+    return p == home or p in home.parents or (p.parent == home and p.name in SENSITIVE_HOME_DIRS)
 
 
 def seatbelt_rules(workspace: Path, scratch: Path, executable: Path | None, auth: ClaudeAuthPlan,
