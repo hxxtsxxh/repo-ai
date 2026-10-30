@@ -48,6 +48,7 @@ Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call b
 | 33 | 2026-10-30T20:03Z | claude (dedicated login) | python-humanize scoped mission, dev build `43293d0` | INCONCLUSIVE: tests ran with the wrong interpreter and without a tracked stub (repo-ai bugs, fixed in #17); the candidate was correct | $0.076408 | owner 2026-10-30 ≈19:30Z: humanize approved, second budget |
 | 34 | 2026-10-30T20:16Z | claude (dedicated login) | same, dev build `86c9e19` (#16 + #17) | PASS [LIVE_CANDIDATE_VERIFIED]; equal to upstream on 3,000+ values × 6 formats; apply/undo exact | $0.070512 | same |
 | 35 | 2026-10-30T20:17Z | codex 0.165.0 | same | PASS [LIVE_CANDIDATE_VERIFIED]; differs from upstream only just below a googol | UNKNOWN (subscription) | same |
+| 36 | 2026-10-30T23:46Z | claude (dedicated login) | same, **published 0.11.2**, fresh first run (uncommitted `init`) | PASS [LIVE_CANDIDATE_VERIFIED]; project venv; apply 739/0; undo exact | $0.066148 | same |
 
 **Budget note:** counting the authentication failure (#24, no inference) as an invocation, call #26 exceeded the
 25-call authorization by one. No further live calls are made without new approval.
@@ -56,8 +57,8 @@ Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call b
 Used: 22 of 25 counted calls with inference (26 invocations including one auth failure and two pre-authorization-style probes); Claude $0.923 notional (cap $5), Codex/agy/Gemini UNKNOWN; OpenCode $0. Live calls paused pending new approval.
 
 **Second authorization (owner, 2026-10-30):** 15 more live calls, $3 notional cap, same rules; the owner re-logged
-the dedicated Claude login at about 18:55Z. Used: 9 of 15 (#27–#35), $0.1724 notional (Claude) plus one Codex run
-(UNKNOWN). #27–#32: `evidence/SKILL-VALUE-PILOT-2026-10-30.md` (INCONCLUSIVE under the predeclared rule). #33–#35:
+the dedicated Claude login at about 18:55Z. Used: 10 of 15 (#27–#36), $0.2386 notional (Claude) plus one Codex run
+(UNKNOWN). #27–#32: `evidence/SKILL-VALUE-PILOT-2026-10-30.md` (INCONCLUSIVE under the predeclared rule). #33–#36:
 `evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md`. A refused 0.11.1 run (dirty `.gitignore`) invoked no model and is not
 counted.
 

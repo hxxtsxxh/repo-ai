@@ -322,7 +322,8 @@
    "observations": [
     "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke",
     "0.11.0: Trusted Publishing, assets identical across PyPI/GitHub, SHA256SUMS and attestation verified, clean install smoke PASS",
-    "0.11.1 published 2026-10-30 (tag v0.11.1 at a0bbe36): PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS"
+    "0.11.1 published 2026-10-30 (tag v0.11.1 at a0bbe36): PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS",
+    "0.11.2 published 2026-10-30 (tag v0.11.2 at c22c9fe, tree = qualified 2ec12f0): macOS full suite 2,616 passed / 0 failed; PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS"
    ],
    "limits": [],
    "next_action": "next release"
@@ -338,14 +339,15 @@
    "observations": [
     "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
     "first-run bug (init then do) found on the published 0.11.0; fixed in 0.11.1 (PR #11, #13)",
-    "python-humanize (second real repository, real upstream defect ca892b3): live Claude and Codex scoped missions PASS [LIVE_CANDIDATE_VERIFIED] on a development build; Claude equal to upstream on the sampled domain, Codex differs just below a googol; found 4 repo-ai bugs, fixed in #16 (init .gitignore), #17 (interpreter, tracked-but-ignored files) and #18 (verify counts) and the slugify 20-vs-0 discrepancy (wrong interpreter); evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md"
+    "python-humanize (second real repository, real upstream defect ca892b3): live Claude and Codex scoped missions PASS [LIVE_CANDIDATE_VERIFIED] on a development build; Claude equal to upstream on the sampled domain, Codex differs just below a googol; found 4 repo-ai bugs, fixed in #16 (init .gitignore), #17 (interpreter, tracked-but-ignored files) and #18 (verify counts) and the slugify 20-vs-0 discrepancy (wrong interpreter); evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md",
+    "published 0.11.2 (2026-10-30T23:46Z): fresh first run on python-humanize, live Claude PASS [LIVE_CANDIDATE_VERIFIED], project venv, apply 739/0, undo exact"
    ],
    "limits": [
     "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
-    "two repositories; verified runs used development builds of the fixes (not yet released)"
+    "two repositories; on the published build, one live run (Claude, python-humanize)"
    ],
-   "next_action": "release the fixes (0.11.2, owner approval) and re-run both scoped missions on the published build"
+   "next_action": "re-run python-slugify's scoped mission on the published 0.11.2; a third repository with independently chosen defects"
   },
   {
    "id": "C22",

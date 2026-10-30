@@ -40,6 +40,12 @@ plus live provider fixes from the second live budget.
 | 35 | dev `86c9e19` | codex | **`PASS [LIVE_CANDIDATE_VERIFIED]`**, claim `ASSURANCE_PARTIAL` | UNKNOWN (subscription) |
 
 - `init` then `do` worked on the first try with findings 1–3 fixed: no extra commit and no manual step.
+- **On the published 0.11.2** (2026-10-30T23:46Z, call #36), from a fresh first run with `init` uncommitted, Claude
+  scored **`PASS [LIVE_CANDIDATE_VERIFIED]`** at $0.066148.
+  - The tests used the project's `.venv`. Baseline: 739 ran, 1 failed. Candidate: 739 ran, 0 failed.
+  - `apply`: post-apply 739 ran, 0 failed. `undo` was byte-exact.
+  - The candidate is `>=` on the integer ratio, the same logic as #33 and #34, so the upstream equivalence holds.
+  - Before that, a $0 replay of #33's candidate also passed on the published build.
 - All verdicts are plain PASS, not `PASS_WITH_PRE_EXISTING_FAILURES`, because the only failure at the base was the
   declared test.
 
@@ -90,5 +96,5 @@ magnitude up to 10^102.
 
 - One repository, one defect.
 - The task needed three disclosed scaffolding edits to run from source.
-- The verified runs used development builds of findings 1–3, not a published release.
+- #34 and #35 used development builds. #36 repeated the Claude run on the published 0.11.2.
 - Grading is equivalence to upstream on a sampled domain, not a proof.

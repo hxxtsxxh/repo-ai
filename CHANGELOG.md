@@ -21,7 +21,7 @@
   the project's virtualenv. The interpreter was resolved from the disposable workspace, which never holds `.venv`.
   Post-apply verification runs in the checkout and used the project's venv, which explains the python-slugify
   discrepancy (20 failures in the sandbox, 0 after apply). Missions now resolve the interpreter from the checkout, like
-  `repo-ai verify`.
+  `repo-ai verify`. A project installed in editable mode imports the candidate's copy, not the checkout's.
 - Fixed (same repository): a tracked file that a `.gitignore` pattern also matches (python-humanize's `_version.py`
   stub) was dropped from mission workspaces, so every test failed to import the package.
 
