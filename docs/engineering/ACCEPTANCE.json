@@ -311,11 +311,12 @@
    "title": "Distribution/release",
    "status": "PASS",
    "owner": "principal",
-   "code_sha": "f53d027",
+   "code_sha": "218461a",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke"
+    "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke",
+    "0.11.0: Trusted Publishing, assets identical across PyPI/GitHub, SHA256SUMS and attestation verified, clean install smoke PASS"
    ],
    "limits": [],
    "next_action": "next release"
@@ -329,10 +330,16 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "python-slugify: verify --run caught a regression; Claude's fix verified by verify; mission abstained on skips/unrelated failures (part 1 of the fix shipped in 0.10.0)"
+    "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
+    "first-run bug (init then do) found on the published 0.11.0; fix in PR #11, not yet released"
    ],
-   "limits": [],
-   "next_action": "re-run the mission journey on 0.10.0 (identical skips accepted); second real project"
+   "limits": [
+    "one real repository; regression injected by the author",
+    "the passing run used a development build (PR #11); 0.11.0 refused it",
+    "post-apply 0-failure vs sandbox 20-failure discrepancy unexplained",
+    "second real project not yet done"
+   ],
+   "next_action": "ship the PR #11 fix; second real project; owner re-login for the Claude provider"
   },
   {
    "id": "C22",
