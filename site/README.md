@@ -15,28 +15,45 @@ project site at <https://hxxtsxxh.github.io/repo-ai/> (base path `/repo-ai`).
 - **No runtime network.** System font stacks, no CDNs, no analytics, no trackers.
   `npm run check:links` fails the build if a page loads anything from another origin.
 
-## Release facts in one place
+## Release facts and evidence: generated, not typed
 
-`src/config.ts` holds the facts that change with a release:
+Release facts and the Evidence Lab come from one generated file, `src/data/release-facts.json`.
+Never edit it by hand. `scripts/site_facts.py` (repository root) builds it from:
 
-```ts
-export const site = {
-  version: '0.9.0',
-  pypiPublished: false, // true: show `pipx install repo-ai` / `python -m pip install repo-ai`
-  githubRepo: 'https://github.com/hxxtsxxh/repo-ai',
-  repoPublic: false,    // true: render links to the source; false: "Source: coming soon"
-  factsAsOf: '2026-10-29',
-};
+| Input | Gives |
+|---|---|
+| `pyproject.toml` | the distribution name (`repo-ai-cli`) and the command (`repo-ai`) |
+| `src/repo_ai/__init__.py` | the source version |
+| the newest final git tag `vX.Y.Z` | the release tag and release URL |
+| `docs/engineering/evidence-matrix.json` | the evidence ledger, the repository's public state, and the **verified PyPI read** |
+
+PyPI counts as published only while the evidence matrix holds a `verified_read` naming this
+distribution, with the wheel's sha256 and the date it was checked. Nobody sets a `published`
+flag: record a real read with `python scripts/site_facts.py --record-pypi` (network: it fetches
+PyPI's JSON, downloads the wheel and re-hashes it). When the source version moves ahead of the
+verified release, the site keeps describing the verified release.
+
+```sh
+python scripts/site_facts.py           # regenerate after changing an input
+python scripts/site_facts.py --check   # fails if the committed file is stale (no network)
 ```
 
-The install command on the landing page and the Install docs page (`<InstallCommand />`)
-both read it. When the release reaches PyPI, or the repository goes public, flip the flag
-and rebuild. Nothing else needs editing.
+`tests/test_site_facts.py` runs the check, so CI fails on stale facts. In a clone without tags
+(shallow CI checkouts) the tag is taken from the committed file and reported as unverified.
 
-The provider and platform matrix, the evaluation numbers and the terminal walkthrough
-(`src/data/transcripts.ts`) are written by hand from the repository's own records
-(`README.md`, `docs/STATUS.md`, `benchmarks/*/RESULTS.md`) and from real CLI output.
-Update them, and `factsAsOf`, when those change. Never add output the CLI did not print.
+`src/config.ts` derives the install command, version and source links from it, and
+`src/data/facts.ts` re-validates every status and label at build time, so an unknown value
+fails the build instead of rendering.
+
+The **provider compatibility matrix** is `src/data/providers.json`, edited by hand with labels
+`EXECUTION`, `HOST_ONLY`, `CONTEXT_SKILLS_ONLY`, `PLANNED`, `BLOCKED`, `UNSUPPORTED`. A row's
+`label` is its overall state; `execution.status` is the isolated `repo-ai do` path, with the
+date, version, sample and evidence file of the last observation. `label: EXECUTION` requires an
+`EXECUTION` observation. To change Claude Code's state, edit its row (and the matching
+`claude-isolated-execution` entry in the evidence matrix), then run the script.
+
+The terminal walkthrough (`src/data/transcripts.ts`) and the platform table are still written
+by hand from real CLI output and the repository's records. Never add output the CLI did not print.
 
 ## Build and preview
 

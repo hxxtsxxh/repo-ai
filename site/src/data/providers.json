@@ -1,0 +1,100 @@
+{
+  "schema": "repo-ai.providers/1",
+  "as_of": "2026-10-29",
+  "about": "Provider compatibility matrix rendered on the landing page and /docs/providers/. Edit by hand when a provider's state changes, then run `python scripts/site_facts.py` (it validates this file) and rebuild the site. `label` is the row's overall state; `execution.status` is the isolated `repo-ai do` path only. label EXECUTION requires execution.status EXECUTION with a dated, versioned observation.",
+  "labels": {
+    "EXECUTION": "repo-ai runs it as an isolated mission provider (repo-ai do), and a live, independently re-verified change has been observed.",
+    "HOST_ONLY": "repo-ai wires context, rules, skills and hooks into it (repo-ai init), but cannot run it as an isolated provider.",
+    "CONTEXT_SKILLS_ONLY": "repo-ai writes context and skills files the tool can read; no hooks and no isolated execution.",
+    "PLANNED": "Intended, not implemented. Nothing on this site claims it works.",
+    "BLOCKED": "Tried, and stopped by an external blocker (authentication, account or terms) that is named.",
+    "UNSUPPORTED": "Not supported, and not planned for now."
+  },
+  "providers": [
+    {
+      "id": "codex",
+      "name": "OpenAI Codex CLI",
+      "agent": "codex",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "Live, independently re-verified changes through repo-ai do: a single-provider mission with apply and undo, tournaments and a handoff. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed.",
+        "verified_on": "2026-10-29",
+        "version": "0.165.0",
+        "sample": "n = 1 workflow per journey per build",
+        "platforms": "macOS (seatbelt) verified live; Linux bubblewrap path covered by tests, no live mission this cycle",
+        "source": "docs/launch/evidence/LIVE-JOURNEYS-2026-10-29.md"
+      },
+      "host": "Not wired as a host by repo-ai init.",
+      "cost": "UNKNOWN under subscription; a positive --max-cost-usd is refused (no hard USD flag)"
+    },
+    {
+      "id": "agy",
+      "name": "Google Antigravity (agy)",
+      "agent": "agy",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "Live candidates in the tournament and handoff journeys, independently re-verified. Must read the encrypted login keychain files to authenticate; refused on other platforms.",
+        "verified_on": "2026-10-29",
+        "version": "1.4.9",
+        "sample": "n = 1 workflow per journey per build",
+        "platforms": "macOS only",
+        "source": "docs/launch/evidence/LIVE-JOURNEYS-2026-10-29.md"
+      },
+      "host": "Not wired as a host by repo-ai init.",
+      "cost": "UNKNOWN under subscription"
+    },
+    {
+      "id": "bob",
+      "name": "IBM Bob",
+      "agent": "bob",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "Live, model-generated changes independently re-verified through repo-ai do (including abc-v1). Not re-run on 0.9.0.",
+        "verified_on": "2026-10",
+        "version": "2.0.9",
+        "sample": "small tasks, small n (abc-v1: 4 tasks, one run per cell)",
+        "platforms": "macOS",
+        "source": "benchmarks/abc-v1/RESULTS.md"
+      },
+      "host": "repo-ai init --agent bob (also the default when --agent is omitted) writes .bob/ skills, rules, commands and hooks and an AGENTS.md block.",
+      "cost": "Provider-reported USD; hard cap through Bob's own flag"
+    },
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "agent": "claude",
+      "label": "HOST_ONLY",
+      "execution": {
+        "status": "BLOCKED",
+        "observed": "Cannot authenticate in repo-ai's isolated scratch HOME (“Not logged in”, re-observed on the 0.9.0 freeze build): its login is not a copyable file, and repo-ai does not work around that.",
+        "verified_on": "2026-10-29",
+        "version": "2.1.312",
+        "sample": "1 probe, failed before any model call",
+        "platforms": "macOS",
+        "source": "docs/launch/ACCEPTANCE.json"
+      },
+      "host": "Fully supported as a host: repo-ai init --agent claude writes a marked CLAUDE.md block, path-scoped rules, curated skills and hooks that attach ranked context to prompts.",
+      "cost": "—"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini CLI",
+      "agent": "gemini",
+      "label": "BLOCKED",
+      "execution": {
+        "status": "BLOCKED",
+        "observed": "Rejected for the account that was tested. Not retried; no further claim either way.",
+        "verified_on": "2026-10",
+        "version": "not recorded",
+        "sample": "1 account",
+        "platforms": "platform not recorded",
+        "source": "docs/launch/LAUNCH_REPORT.md"
+      },
+      "host": "Not wired as a host by repo-ai init.",
+      "cost": "—"
+    }
+  ]
+}

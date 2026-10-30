@@ -3,22 +3,20 @@ title: Providers
 description: Which coding-agent CLIs repo-ai can drive in a mission, what has actually been observed with each, and how each one is set up and isolated.
 ---
 
+import ProviderMatrix from '../../components/evidence/ProviderMatrix.astro';
+
 No provider is needed for indexing, context, impact, `verify` or `coverage`. Providers matter only for live
 [missions](/repo-ai/docs/missions/), [tournaments](/repo-ai/docs/tournaments/) and
 [handoffs](/repo-ai/docs/handoff/). This page records observations, not endorsements.
 
-## Matrix (as of 2026-10-29)
+## Matrix
 
-| Provider | `--agent` | As a repo-ai execution provider | Cost reporting |
-|---|---|---|---|
-| IBM Bob | `bob` | **Works.** Produced live, model-generated, independently re-verified changes through `repo-ai do` on small tasks | provider-reported USD; hard cap through Bob's own `--max-cost` |
-| OpenAI Codex CLI | `codex` | **Works.** Produced live, independently re-verified changes (abc-v2 cells, abc-v3, a tournament, a handoff child) | `UNKNOWN` under subscription login |
-| Google Antigravity | `agy` | **Works, macOS only.** Refused on other platforms | `UNKNOWN` (tokens only) |
-| Claude Code | `claude` | **Blocked** in repo-ai's isolated scratch-HOME path: its login is not a copyable file, and repo-ai does not work around that | — |
-| Gemini CLI | `gemini` | **Rejected** for the tested account; not retried | — |
+<ProviderMatrix />
 
-Every "works" row rests on small samples (a handful of small tasks per provider). It says the path functions, not
-that results are good or better than using the provider directly.
+The table is rendered from `site/src/data/providers.json` in the source tree. Every `EXECUTION` row rests on small
+samples (a handful of small tasks per provider, n = 1 per journey on the 0.9.0 freeze build). It says the path
+functions, not that results are good or better than using the provider directly. The claims behind it are also in the
+[Evidence Lab](/repo-ai/docs/evidence/).
 
 :::note[Claude Code as a host]
 Claude Code is fully usable as a **host** for repo-ai's context: `repo-ai init --agent claude` writes a marked

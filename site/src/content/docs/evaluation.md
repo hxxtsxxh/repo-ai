@@ -89,4 +89,5 @@ invocations in 212 runs), which is why the verify completion gate exists; its ef
 - Any qualification of ProofLab (`prove`): it is not qualified and has known open false-proof classes.
 - Any fresh-data evaluation on Windows.
 
+Each of these claims, with its date, sample size, method and source, is in the [Evidence Lab](/repo-ai/docs/evidence/).
 The status of each capability, with its evidence, is on the [Status matrix](/repo-ai/docs/status/).
