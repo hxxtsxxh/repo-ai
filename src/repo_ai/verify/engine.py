@@ -923,6 +923,12 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
     rec["full_suite"] = {"status": status, "exit_code": res.exit_code, "duration_s": round(res.duration_s, 2),
                          "command": runner.display(argv), "attributed": trusted or status == "pass",
                          "output_tail": evidence.failure_excerpt(text) if status != "pass" else ""}
+    if trusted and att is not None:  # per-test totals from the runner's own report
+        tests = sum(f.tests for f in att.files.values())
+        skipped = sum(f.skipped for f in att.files.values())
+        failed = sum(len(f.failing) for f in att.files.values())
+        rec["full_suite"]["counts"] = {"tests": tests, "passed": max(0, tests - skipped - failed),
+                                       "failed": failed, "skipped": skipped}
     if status == "pass":
         ctx.timings.note_full(res.duration_s)
         if trusted and not ctx.timings.startup_s:

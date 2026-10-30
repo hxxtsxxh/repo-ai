@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed (found on python-humanize): `repo-ai verify --run --full` printed "0 passed" when no test file was selected,
+  although the full suite ran 738 passing tests. The summary now says "N selected test file(s) passed" and, when the
+  runner's report is trusted, adds the full suite's own counts ("full suite: 738 test(s) passed, 1 failed, 112
+  skipped"). The JSON `passed` field keeps its meaning (selected files); `full_suite_counts` is new.
 - Changed: `repo-ai skills recommend` / `explain` count a local skill (`discover --from-path`) as relevant when its
   description names one of this repository's own Python packages (common names such as `app` or `data` excluded).
   Before, a skill written for the repository's own conventions was advised against ("matches no evidence-backed

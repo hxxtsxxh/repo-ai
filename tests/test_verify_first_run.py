@@ -120,3 +120,14 @@ def test_evidence_created_carries_its_utc_offset():
     created = datetime.fromisoformat(evidence.new_record(plan, "seatbelt", "python")["created"])
     assert created.tzinfo is not None and created.utcoffset() is not None
     assert abs((created - before).total_seconds()) < 5
+
+
+@needs_sandbox
+def test_a_full_run_reports_the_suites_test_counts_not_only_selected_files(tmp_path: Path):
+    """Found on python-humanize: with no test file selected, a full suite of 738 passing tests printed "0 passed"."""
+    root = _project(tmp_path)
+    (root / "NOTES.txt").write_text("a change that selects no test file\n")
+    out = run_cli(root, "verify", "--run", "--full", "--test-command", CMD).stdout
+    assert "0 selected test file(s) passed" in out, out
+    assert "full suite: 2 test(s) passed, 0 failed, 0 skipped" in out, out
+    assert "\n  0 passed" not in out, out
