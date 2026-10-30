@@ -41,8 +41,8 @@ pipx install 'repo-ai-cli[ast]'          # new install; or: python -m pip instal
 pipx inject repo-ai-cli 'tree-sitter>=0.23' 'tree-sitter-language-pack>=0.7,<1.0'   # existing install
 ```
 
-`repo-ai` 0.9.0 itself still suggests `pip install 'repo-ai[ast]'` in a warning; that name is not on PyPI, so use
-`repo-ai-cli[ast]` instead.
+`repo-ai` 0.9.0 suggested `pip install 'repo-ai[ast]'` in a warning; that name is not on PyPI. 0.10.0 names
+`repo-ai-cli[ast]`.
 
 repo-ai only uses grammars already on disk; it never asks the grammar pack to download anything.
 

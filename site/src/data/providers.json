@@ -18,12 +18,12 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live, independently re-verified changes through repo-ai do: a single-provider mission with apply and undo, tournaments and a handoff. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Re-verified on the 0.10.0 build (2026-10-30, hidden oracle 17/17). From 0.10.0 the rest of HOME is unreadable to it, but the login token copied into its sandbox is still readable by a model with shell access (disclosed): use a separate repo-ai login (`repo-ai agents setup codex`).",
-        "verified_on": "2026-10-29",
+        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact), with the 0.10.0 sandbox that hides the rest of HOME. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Disclosed: the login token copied into its sandbox is readable by a model with shell access; use a separate repo-ai login (repo-ai agents setup codex).",
+        "verified_on": "2026-10-30",
         "version": "0.165.0",
-        "sample": "n = 1 workflow per journey per build",
+        "sample": "n = 1 per journey",
         "platforms": "macOS (seatbelt) verified live; Linux bubblewrap path covered by tests, no live mission this cycle",
-        "source": "docs/launch/evidence/LIVE-JOURNEYS-2026-10-29.md"
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
       },
       "host": "Not wired as a host by repo-ai init.",
       "cost": "UNKNOWN under subscription; a positive --max-cost-usd is refused (no hard USD flag)"
@@ -35,12 +35,12 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live candidates in the tournament and handoff journeys, independently re-verified. Must read the encrypted login keychain files to authenticate; refused on other platforms. Re-verified on the 0.10.0 build (2026-10-30, hidden oracle 17/17).",
-        "verified_on": "2026-10-29",
+        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact); earlier tournament and handoff journeys on 0.9.0. Must read the encrypted login keychain files to authenticate; refused on other platforms.",
+        "verified_on": "2026-10-30",
         "version": "1.4.9",
-        "sample": "n = 1 workflow per journey per build",
+        "sample": "n = 1 per journey",
         "platforms": "macOS only",
-        "source": "docs/launch/evidence/LIVE-JOURNEYS-2026-10-29.md"
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
       },
       "host": "Not wired as a host by repo-ai init.",
       "cost": "UNKNOWN under subscription"
@@ -52,7 +52,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live, model-generated changes independently re-verified through repo-ai do (including abc-v1). Not re-run on 0.9.0.",
+        "observed": "Live, model-generated changes independently re-verified through repo-ai do on an earlier pre-release (including abc-v1). Not re-run on 0.9.0 or 0.10.0; account entitlement not re-checked.",
         "verified_on": "2026-10",
         "version": "2.0.9",
         "sample": "small tasks, small n (abc-v1: 4 tasks, one run per cell)",
@@ -69,15 +69,15 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "From repo-ai-cli 0.10.0: live, independently re-verified change through repo-ai do (mission PASS, hidden oracle 17/17, apply and undo byte-exact) and a hostile-repository run. Uses Claude Code's own login: a token from `claude setup-token`, or a separate repo-ai login (`repo-ai agents setup claude`); nothing is copied. The model gets file tools only, and every live run first checks (at no cost) that the session would load nothing else.",
+        "observed": "Live, independently re-verified changes through repo-ai do on the published 0.10.0 wheel (2026-10-30): mission PASS, hidden oracle 17/17, apply and undo byte-exact, and a hostile-repository run whose injected instructions were not followed. Uses Claude Code's own login, nothing copied: a separate repo-ai login (live-verified) or CLAUDE_CODE_OAUTH_TOKEN from claude setup-token (not yet live-verified). The model gets file tools only, and every live run first checks, at no cost, that the session would load nothing else.",
         "verified_on": "2026-10-30",
         "version": "2.1.314",
-        "sample": "n = 1 per journey",
+        "sample": "n = 1 per journey (2 journeys on 0.10.0)",
         "platforms": "macOS (seatbelt) verified live; Linux bubblewrap profile covered by tests, not live-verified",
-        "source": "docs/engineering/evidence/CLAUDE-JOURNEY-2026-10-30.md"
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
       },
       "host": "Fully supported as a host: repo-ai init --agent claude writes a marked CLAUDE.md block, path-scoped rules, curated skills and hooks that attach ranked context to prompts.",
-      "cost": "Hard USD cap through --max-budget-usd (checked between turns; one turn of overshoot observed); on a subscription the reported cost is notional"
+      "cost": "Claude's own USD cap via --max-cost-usd, checked between turns (one turn of overshoot observed); on a subscription the reported cost is notional"
     },
     {
       "id": "opencode",
@@ -86,12 +86,12 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "From repo-ai-cli 0.10.0: OpenCode against a local, loopback-only model endpoint (Ollama). Account-free; the sandbox allows network to loopback only, and a deny-by-default tool policy allows only read, edit, glob, grep and list. With a small local model (qwen3:8b) 1 of 4 end-to-end attempts passed; repo-ai refused every failure.",
+        "observed": "OpenCode against a local, loopback-only model endpoint (Ollama), account-free. On the published 0.10.0 wheel (2026-10-30) with qwen3:8b: one attempt refused (broken edit), one PASS of the visible tests that a hidden case failed (the model dropped a docstring requirement no test pinned); on development builds 1 of 4 passed. repo-ai refused every broken candidate. Deny-by-default tools, network to loopback only.",
         "verified_on": "2026-10-30",
         "version": "2.2.1 with qwen3:8b via Ollama 0.40",
-        "sample": "4 attempts, 1 pass",
+        "sample": "7 attempts across builds",
         "platforms": "macOS only (no tested restriction elsewhere: refused)",
-        "source": "docs/engineering/evidence/OPENCODE-JOURNEY-2026-10-30.md"
+        "source": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
       },
       "host": "Reads repo-ai-installed skills from .agents/skills (observed 2026-10-30).",
       "cost": "$0 (local model); cloud-routed models are refused"
