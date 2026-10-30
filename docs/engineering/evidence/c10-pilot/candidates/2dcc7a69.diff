@@ -1,0 +1,47 @@
+diff --git a/invoicekit/lines.py b/invoicekit/lines.py
+index bb73121..171a7e8 100644
+--- a/invoicekit/lines.py
++++ b/invoicekit/lines.py
+@@ -1,3 +1,5 @@
++from decimal import ROUND_HALF_EVEN, Decimal
++
+ from invoicekit.errors import InvoiceError
+ 
+ 
+@@ -6,3 +8,14 @@ def line_total(qty, unit_cents):
+     if qty < 0:
+         raise InvoiceError("quantity must not be negative")
+     return int(qty) * int(unit_cents)
++
++
++def invoice_total(lines, tax_rate):
++    """Invoice total in integer cents, including tax.
++
++    `lines` is a list of (qty, unit_cents) tuples; `tax_rate` is a percentage
++    such as 8.25. Tax is rounded to the nearest cent (half-even, as in money.py).
++    """
++    subtotal = sum(line_total(qty, unit_cents) for qty, unit_cents in lines)
++    tax = Decimal(subtotal) * Decimal(str(tax_rate)) / 100
++    return subtotal + int(tax.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
+diff --git a/tests/test_money.py b/tests/test_money.py
+index c937b98..7a37991 100644
+--- a/tests/test_money.py
++++ b/tests/test_money.py
+@@ -1,7 +1,7 @@
+ import pytest
+ 
+ from invoicekit.errors import InvoiceError
+-from invoicekit.lines import line_total
++from invoicekit.lines import invoice_total, line_total
+ from invoicekit.money import format_amount, parse_amount
+ 
+ 
+@@ -20,3 +20,8 @@ def test_format_amount():
+ 
+ def test_line_total():
+     assert line_total(3, 250) == 750
++
++
++def test_invoice_total_includes_tax():
++    # subtotal 1750 cents; 8.25% of 1750 = 144.375 -> 144 cents tax
++    assert invoice_total([(3, 250), (1, 1000)], 8.25) == 1894

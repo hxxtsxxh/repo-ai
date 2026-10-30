@@ -56,6 +56,17 @@ Live calls under the owner's 2026-10-30 authorization (25 calls / $5): see [EXPE
 Claude stream cost is notional on a Max subscription; Codex/agy/Gemini UNKNOWN; OpenCode $0. CI on the public
 repository is free.
 
+## Release 0.11.1 (verified after publication, 2026-10-30)
+
+| What | Value |
+|---|---|
+| Public `main` at the tag | `a0bbe3677c50d99feeca24de520c579e661f2188` = tag `v0.11.1` (annotated), merge of #13 (head `029e6fa`) |
+| Contents | init-then-do fix (#11): repo-ai's own state never makes a checkout dirty, never counts as mission source, never materializes into a candidate |
+| Qualification | required CI green on #13; macOS full suite on `029e6fa` (18:10–19:10Z): 2,567 passed, 4 skipped, 11 xfailed, 0 failed. The checkout was switched to `main` for 9 s during the run (19:05:22–19:05:31Z; six version-string files differed); the 15 test files that read those files and the plugin check were re-run on `029e6fa` afterwards: 457 passed, 2 xfailed |
+| Review | independent reviewer: no confirmed issue (one changelog nit, folded into the 0.11.1 entry afterwards) |
+| Release workflow | run 41114278657: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
+| PyPI | wheel `92cc761432439b583658c5aa5369541070802367a397466d92fc7a824008025c`, sdist `cedd5f33b254c9463c42c61e2bd252bb493a3e66a81cdf04129472e2c29b29f7`; identical to the GitHub assets; `SHA256SUMS` OK; attestation verified (wheel and sdist); `release_smoke.sh` SMOKE PASS |
+
 ## Release 0.11.0 (verified after publication, 2026-10-30)
 
 | What | Value |
@@ -65,7 +76,7 @@ repository is free.
 | Qualification | required CI green (#10); macOS full suite run locally on `0ebe88a` (2026-10-30T12:05–13:04Z, tree identical to the tag): 2,551 passed, 4 skipped, 11 xfailed, 0 failed |
 | Release workflow | run 41092530934: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
 | PyPI | wheel `5a28fd1787a18b7098635cefd86c079ef83e49f538d3961b0c8b8e293657874e`, sdist `95316697ad2e160260c2367d55a67ae55b230fb2198c8f551cca5718d56adaa9`; identical to the GitHub assets; `SHA256SUMS` OK; attestation verified; clean-install smoke PASS |
-| Found after release | an init-then-do first-run bug (fix in PR #11, unreleased; live-verified on a development build against a real repository) |
+| Found after release | an init-then-do first-run bug (fixed in 0.11.1; live-verified on a development build against a real repository) |
 
 ## Release 0.10.0 (verified after publication)
 
