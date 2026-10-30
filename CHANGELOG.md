@@ -2,11 +2,21 @@
 
 ## Unreleased
 
+<<<<<<< HEAD
 - Added: **requirement erasure** — when a candidate deletes documentation that states a requirement (a docstring or
   comment line with words such as "raise", "must", "never", "reject"), the mission names it and a clean PASS drops to
   `ASSURANCE_PARTIAL`. Observed live on 0.10.0: a local model removed "Raise ValueError if lo > hi" together with the
   behaviour, and the visible tests passed (`docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md`). Python lines are placed
   with the parser on the base file; JS/TS use a diff heuristic. It never changes a verdict.
+||||||| parent of 7f8ef32 (mission: --expect-fix verifies a fix on a suite with unrelated failures, never as a plain PASS)
+=======
+- Added: `repo-ai do --expect-fix TEST` (repeatable) for real suites with failures the task does not touch. The
+  declared tests must fail at the base and pass on the candidate, and no test that passed at the base may fail; tests
+  that already failed at the base and are not declared may keep failing. The result is `PASS_WITH_PRE_EXISTING_FAILURES`
+  (claim `ASSURANCE_PARTIAL`, remaining failures listed), never a plain whole-suite PASS; `apply` re-verifies with the
+  same scope. Without the flag nothing changes. Observed on `un33k/python-slugify`: the same candidate that an unscoped
+  mission had to refuse (20 unrelated failures in this environment) verifies with three declared tests.
+>>>>>>> 7f8ef32 (mission: --expect-fix verifies a fix on a suite with unrelated failures, never as a plain PASS)
 
 ## 0.10.0 — Claude Code and OpenCode as isolated providers; safe skill autopilot
 

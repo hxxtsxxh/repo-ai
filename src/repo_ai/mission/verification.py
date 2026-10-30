@@ -300,7 +300,28 @@ def comparability(baseline: dict, candidate: dict) -> list[str]:
     return reasons
 
 
-def compare(baseline: dict, candidate: dict) -> tuple[str, list[str]]:
+def pre_existing_failures(baseline: dict, candidate: dict, expect_fix: list[str]) -> dict:
+    """For a scoped mission: what the declared tests did and which failures were already there and remain."""
+    remaining = sorted(t for t, o in candidate.get("outcomes", {}).items()
+                       if o == "fail" and baseline.get("outcomes", {}).get(t) == "fail" and t not in expect_fix)
+    return {"expect_fix": list(expect_fix), "pre_existing_failures": remaining[:200],
+            "standing": "PASS_WITH_PRE_EXISTING_FAILURES" if remaining else "PASS"}
+
+
+def _resolve_expected(outcomes: dict, expect_fix: list[str]) -> tuple[dict[str, str], list[str]]:
+    """Declared ids (`file::test`) to recorded keys, which may repeat the file (`file::file::test`)."""
+    resolved, missing = {}, []
+    for test_id in expect_fix:
+        file, _, name = test_id.partition("::")
+        hits = [k for k in outcomes if k == test_id or k == f"{file}::{test_id}"]
+        if len(hits) == 1:
+            resolved[test_id] = hits[0]
+        else:
+            missing.append(test_id)
+    return resolved, missing
+
+
+def compare(baseline: dict, candidate: dict, *, expect_fix: list[str] | None = None) -> tuple[str, list[str]]:
     """PASS means the identical observed suite failed then passed, not correctness.
 
     Both observations must be fresh and eligible. Test/config bytes, command,
@@ -311,6 +332,22 @@ def compare(baseline: dict, candidate: dict) -> tuple[str, list[str]]:
         return "FAIL", reasons
     if baseline["failed"] < 1:
         reasons.append("baseline did not demonstrate a real failing test")
-    if candidate["failed"] or any(o not in {"pass", "skip"} for o in candidate["outcomes"].values()):
-        reasons.append("candidate did not pass every test")
+    if not expect_fix:
+        if candidate["failed"] or any(o not in {"pass", "skip"} for o in candidate["outcomes"].values()):
+            reasons.append("candidate did not pass every test")
+        return ("FAIL", reasons) if reasons else ("PASS", [])
+    # scoped: every declared test fails at the base and passes on the candidate; nothing that passed at the base
+    # fails now; failures already present at the base and not declared may remain (they are listed, never hidden)
+    base, cand = baseline["outcomes"], candidate["outcomes"]
+    resolved, missing = _resolve_expected(base, expect_fix)
+    if missing:
+        reasons.append("declared test(s) not observed exactly once: " + ", ".join(missing[:5]))
+    for test_id, key in resolved.items():
+        if base.get(key) != "fail":
+            reasons.append(f"declared test does not fail at the base: {test_id}")
+        elif cand.get(key) != "pass":
+            reasons.append(f"declared test does not pass on the candidate: {test_id}")
+    regressed = sorted(t for t, o in cand.items() if o in {"fail", "error"} and base.get(t) != "fail")
+    if regressed:
+        reasons.append("tests that pass at the base fail on the candidate: " + ", ".join(regressed[:5]))
     return ("FAIL", reasons) if reasons else ("PASS", [])

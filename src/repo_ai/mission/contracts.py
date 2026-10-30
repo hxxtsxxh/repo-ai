@@ -70,15 +70,28 @@ class IntentContract(Contract):
     zone: str = 'local'
     policy_sha256: str = ''
     roles: list[str] = field(default_factory=list)
+    # tests the task must fix (`--expect-fix`): with them, failures that already fail at the base and are not among
+    # them may remain; without them the whole suite must pass, as before
+    expect_fix: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict[str, Any]:
         value = super().to_json()
         if not value['roles']:
             del value['roles']  # keeps pre-role contract digests and stored missions valid
+        if not value['expect_fix']:
+            del value['expect_fix']  # same: contracts without it keep their digests
         return value
 
     def validate(self) -> None:
         strings(self.roles, 'roles', 4)
+        strings(self.expect_fix, 'expect_fix', 32)
+        for test_id in self.expect_fix:
+            file, sep, name = test_id.partition('::')
+            if not sep or not name or len(test_id) > 1000:
+                raise ValueError('expect_fix entries are test ids such as tests/test_x.py::test_name')
+            relative_path(file)
+        if len(set(self.expect_fix)) != len(self.expect_fix):
+            raise ValueError('expect_fix entries must be unique')
         if any(r not in ROLE_NAMES for r in self.roles) or len(set(self.roles)) != len(self.roles):
             raise ValueError('roles must be unique members of ' + ', '.join(sorted(ROLE_NAMES)))
         if not isinstance(self.policy_sha256, str) or (self.policy_sha256 and

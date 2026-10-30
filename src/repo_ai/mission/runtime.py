@@ -230,7 +230,8 @@ def _classify_orchestration_and_broker(task: str, context: dict[str, Any], max_p
 def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] | None = None,
          execute_local: bool = False, max_cost_usd: float = 0, max_parallel: int = 1,
          max_seconds: float = 120, command: str = 'python -m pytest',
-         allow_live: bool = False, roles: list[str] | None = None) -> dict[str, Any]:
+         allow_live: bool = False, roles: list[str] | None = None,
+         expect_fix: list[str] | None = None) -> dict[str, Any]:
     root = root.resolve()
     if agent not in {'auto', 'none', 'replay', *LIVE_PROVIDERS}:
         raise ValueError('unknown agent')
@@ -281,6 +282,7 @@ def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] |
         zone=zone,
         policy_sha256=policy,
         roles=granted_roles,
+        expect_fix=sorted(set(expect_fix or [])),
     )
     contract.validate()
 
@@ -399,7 +401,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
             allow_live: bool = False, seed: dict[str, Any] | None = None) -> dict[str, Any]:
     from ..providers.adapters import contract_for, run_provider, validate_workspace_edits
     from ..providers.discovery import _identity, _inside
-    from .verification import compare, observe
+    from .verification import compare, observe, pre_existing_failures
     root = root.resolve()
     contract = decode(planned['contract'])
     if not isinstance(contract, IntentContract) or not contract.execute or not contract.approvals:
@@ -804,9 +806,15 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 state['regression'] = nodes['review']['artifact']
                 state['diff'] = nodes['edit']['artifact']['diff']
                 state['diff_sha256'] = nodes['edit']['artifact']['sha256']
-                observed, reasons = compare(state['baseline'], state['candidate'])
-                if state['regression'].get('verdict') != 'selected-and-full-suite-passed':
+                scoped = list(getattr(contract, 'expect_fix', []) or [])
+                observed, reasons = compare(state['baseline'], state['candidate'], expect_fix=scoped)
+                accepted = {'selected-and-full-suite-passed'}
+                if scoped:  # failures that also fail at the base are allowed only when the task set is declared
+                    accepted.add('failing (all failures pre-existing at the base)')
+                if state['regression'].get('verdict') not in accepted:
                     reasons.append('fresh whole-change regression verification did not pass')
+                if scoped and not reasons:
+                    state['scoped'] = pre_existing_failures(state['baseline'], state['candidate'], scoped)
                 if not state['regression'].get('source_tree', {}).get('unchanged'):
                     reasons.append('candidate integrity check failed')
                 if identity(root, require_clean=True)['fingerprint'] != current['fingerprint']:
@@ -1017,10 +1025,18 @@ def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
             data = None
         if data is not None:
             texts[rel] = data.decode('utf-8', 'replace')
-    return claims.assess((state.get('contract') or {}).get('objective', ''), texts,
-                         verdict=state['effective_verdict'], freshness=state['freshness'],
-                         exercise=state.get('exercise'), diff=state.get('diff') or '',
-                         base_source=_base_source(root, (state.get('source') or {}).get('head')))
+    value = claims.assess((state.get('contract') or {}).get('objective', ''), texts,
+                          verdict=state['effective_verdict'], freshness=state['freshness'],
+                          exercise=state.get('exercise'), diff=state.get('diff') or '',
+                          base_source=_base_source(root, (state.get('source') or {}).get('head')))
+    remaining = (state.get('scoped') or {}).get('pre_existing_failures') or []
+    if remaining and value['headline'] in {'OBSERVED_TESTS_PASS', 'ASSURANCE_PARTIAL'}:
+        value['headline'] = 'ASSURANCE_PARTIAL'
+        from .coverage import display_test_id
+        value['notes'].insert(1, f"{len(remaining)} test(s) already failed at the base and still fail (scoped by "
+                                 "--expect-fix; not part of this result): "
+                                 + ', '.join(display_test_id(t) for t in remaining[:5]))
+    return value
 
 
 RECOVERY_CLASSES = (
