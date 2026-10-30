@@ -2745,7 +2745,9 @@ def _skills_autopilot(args, root: Path, state: dict, existing: dict, emit) -> in
 
     Under SAFE_AUTO an inert, pinned, SKILL.md-only skill that fills a gap (or that
     you name) is re-fetched, re-hashed against the vetted pin, re-assessed and
-    installed into Claude Code project scope. Everything else is only proposed."""
+    installed into Claude Code project scope. A skill recommended only because it
+    names this repository's package fills no gap: it is installed only when named.
+    Everything else is only proposed."""
     from . import autonomy, capbundle, firewall, portfolio, recommend
     from .textsafe import shell_word
     level = autonomy.level(root)
@@ -2787,7 +2789,7 @@ def _skills_autopilot(args, root: Path, state: dict, existing: dict, emit) -> in
                           "reasons": [*assessment.get("reasons", []), "vetting its source did not complete"]}
         rec = recommend.score(cand, rep, profile, existing).to_json()
         decision = autonomy.decide(level, assessment, nominated=nominated,
-                                   recommended=bool(rec.get("install_recommended")))
+                                   recommended=recommend.autopilot_wants(rec))
         row.update(action=decision["action"], reasons=decision["reasons"], inert=bool(assessment.get("inert")),
                    surfaces=assessment.get("surfaces", []))
         if decision["action"] == "auto_install" and not args.dry_run:

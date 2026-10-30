@@ -151,6 +151,10 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     # state_dir elsewhere is exempt only for UNTRACKED entries (it can be set by configuration, so tracked source under
     # it must still count: otherwise state_dir = "lib" would hide a real edit to lib/)
     dirty = [p for p in changes if p and not (p[3:].startswith('.repo-ai/') or p.startswith('?? ' + state_rel + '/'))]
+    # `repo-ai init` adds a managed block to `.gitignore` (or creates it). A file whose only change is that block does
+    # not make the checkout dirty; its working bytes stay in the identity, as in the provider's workspace copy
+    dirty = [p for p in dirty if not (p.startswith(' M ') and committed_if_only_managed_blocks(root, p[3:]) is not None
+                                      or p.startswith('?? ') and _only_managed_blocks(root, p[3:], state_rel))]
     if require_clean and dirty:
         shown = [redact_text(p[3:])[:120] for p in dirty if len(p) > 3][:5]
         more = f' and {len(dirty) - len(shown)} more' if len(dirty) > len(shown) else ''
@@ -176,6 +180,72 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     return {'head': head, 'files': contents, 'dirty': bool(dirty),
             'dirty_paths': [p[3:] for p in dirty if len(p) > 3 and p[2] == ' '][:5], 'dirty_count': len(dirty),
             'fingerprint': digest({'head': head, 'files': contents, 'dirty': dirty})}
+
+
+def _without_init_block(text: str, state_rel: str) -> str | None:
+    """`.gitignore` text with `repo-ai init`'s managed block removed, compared line by line (line endings
+    normalized), or None when the block ignores anything but repo-ai's own state, a marker is malformed or a block is
+    unterminated: a pattern there could hide real files from the dirty check."""
+    from ..adapters.base import GITIGNORE_BEGIN, GITIGNORE_END
+    own = (*isolate.STATE_PREFIXES, state_rel.rstrip('/') + '/')
+    out: list[str] = []
+    inside = False
+    for line in text.replace('\r\n', '\n').split('\n'):
+        entry = line.strip()
+        if entry in (GITIGNORE_BEGIN, GITIGNORE_END):
+            if (entry == GITIGNORE_BEGIN) == inside:
+                return None  # nested or unmatched marker
+            inside = entry == GITIGNORE_BEGIN
+            if inside and out and not out[-1].strip():
+                out.pop()  # the blank line init writes before its block
+            continue
+        if 'repo-ai managed' in line:
+            return None  # a marker with extra text: never guess where a block starts or ends
+        if inside:
+            if entry and not entry.startswith('#') and not (entry.startswith(own) or entry + '/' in own):
+                return None
+            continue
+        out.append(line)
+    if inside:
+        return None
+    return '\n'.join(out).rstrip('\n')
+
+
+def _only_managed_blocks(root: Path, path: str, state_rel: str) -> bool:
+    """An untracked root `.gitignore` that `repo-ai init` created: nothing but its managed block."""
+    from ..adapters.base import GITIGNORE_BEGIN
+    if path != '.gitignore':
+        return False
+    try:
+        data = isolate.read_inside(root, path, 1_000_000)
+        text = data.decode('utf-8') if data is not None else ''
+    except (isolate.ReportTooLarge, UnicodeError):
+        return False
+    rest = _without_init_block(text, state_rel)
+    return GITIGNORE_BEGIN in text and rest is not None and not rest.strip()
+
+
+def committed_if_only_managed_blocks(root: Path, path: str) -> bytes | None:
+    """The committed bytes of the root `.gitignore` when its working copy differs from HEAD only by `repo-ai init`'s
+    managed block (workspaces are built from HEAD, so this is what they hold); None otherwise."""
+    if path != '.gitignore':
+        return None
+    try:
+        work = isolate.read_inside(root, path, MAX_SOURCE_FILE)
+    except isolate.ReportTooLarge:
+        return None
+    if work is None:
+        return None
+    try:
+        state_rel = Store(root).layout.state_dir.relative_to(root).as_posix()
+        head = git(root, 'show', 'HEAD:.gitignore', raw=True).encode('utf-8')
+        work_text, head_text = work.decode('utf-8'), head.decode('utf-8')
+    except (ValueError, UnicodeError):
+        return None
+    work_rest, head_rest = _without_init_block(work_text, state_rel), _without_init_block(head_text, state_rel)
+    if work == head or work_rest is None or head_rest is None or work_rest != head_rest:
+        return None
+    return head
 
 
 def _classify_orchestration_and_broker(task: str, context: dict[str, Any], max_parallel: int) -> tuple[dict[str, Any], dict[str, Any]]:

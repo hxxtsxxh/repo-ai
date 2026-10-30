@@ -1294,6 +1294,14 @@ def validate_workspace_edits(
             cand = isolate.read_inside(workspace, rel, MAX_SOURCE_FILE)
         except Exception:
             cand = b"\0unreadable-candidate\0"
+        # `repo-ai init` added its managed block to the working copy only; the workspace holds the committed bytes,
+        # so the candidate is held to those (a candidate that copies the working copy has edited the file)
+        from ..mission.runtime import committed_if_only_managed_blocks
+        committed = committed_if_only_managed_blocks(root, rel)
+        if committed is not None:
+            # byte for byte what the workspace received: git archive applies the checkout's core.autocrlf
+            archived = isolate.archived_file(root, "HEAD", rel)
+            orig = archived if archived is not None else committed
         if orig != cand:
             changed_files.append(rel)
             if rel not in write_paths:

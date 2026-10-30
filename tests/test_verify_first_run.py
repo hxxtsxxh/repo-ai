@@ -9,6 +9,7 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
 from conftest import run_cli
 
 from test_verify_adaptive import CMD, needs_sandbox
@@ -120,3 +121,40 @@ def test_evidence_created_carries_its_utc_offset():
     created = datetime.fromisoformat(evidence.new_record(plan, "seatbelt", "python")["created"])
     assert created.tzinfo is not None and created.utcoffset() is not None
     assert abs((created - before).total_seconds()) < 5
+
+
+@needs_sandbox
+def test_a_full_run_reports_the_suites_test_counts_not_only_selected_files(tmp_path: Path):
+    """Found on python-humanize: with no test file selected, a full suite of 738 passing tests printed "0 passed"."""
+    root = _project(tmp_path)
+    (root / "NOTES.txt").write_text("a change that selects no test file\n")
+    out = run_cli(root, "verify", "--run", "--full", "--test-command", CMD).stdout
+    assert "0 selected test file(s) passed" in out, out
+    assert "\n  0 passed" not in out, out
+    assert "full suite (" not in out, out  # unittest prints no pytest summary; counts are never derived
+
+
+@pytest.mark.parametrize("stdout, expected", [
+    ("....\n=== 1 failed, 738 passed, 112 skipped in 0.83s ===\n", {"failed": 1, "passed": 738, "skipped": 112}),
+    ("\x1b[32m6 passed\x1b[0m in 0.02s\n", {"passed": 6}),
+    ("== 2 passed, 1 error in 1.00s ==", {"passed": 2, "error": 1}),
+    ("= 4 passed, 2 failed, 1 xfailed, 1 xpassed, 3 warnings in 2.01s (0:00:02) =",
+     {"passed": 4, "failed": 2, "xfailed": 1, "xpassed": 1, "warnings": 3}),
+    ("no summary here\n", None),
+    ("= 2 failed, 1 passed, 2 subtests passed in 0.1s =", {"failed": 2, "passed": 1, "subtests passed": 2}),
+    ("== 3 passed in 0.1s ==\nextra trailing output\n", {"passed": 3}),
+])
+def test_pytest_summary_is_quoted_not_derived(stdout, expected):
+    from repo_ai.verify.engine import pytest_summary
+    assert pytest_summary(stdout) == expected
+
+
+@needs_sandbox
+def test_a_summary_line_printed_by_the_tests_themselves_is_not_quoted(tmp_path: Path):
+    """Test code can print a line that looks like pytest's summary (atexit, a plugin): it is quoted only when it agrees
+    with repo-ai's per-test report, and it never decides a verdict."""
+    root = _project(tmp_path, {"conftest.py": "import atexit\natexit.register(lambda: print('===== 500 passed in 0.10s ====='))\n",
+                               "pyproject.toml": '[tool.pytest.ini_options]\ntestpaths = ["tests"]\n'})
+    (root / "calc" / "core.py").write_text(BROKEN)
+    out = run_cli(root, "verify", "--run", "--full", "--test-command", "python -m pytest").stdout
+    assert "REGRESSION" in out and "as pytest printed it" not in out, out

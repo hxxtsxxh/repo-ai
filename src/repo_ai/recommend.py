@@ -20,12 +20,14 @@ skills are necessary" is a first-class, successful outcome.
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from . import firewall
 
 THRESHOLD = 0.35
+PROJECT_RELEVANCE = 0.6
 
 
 @dataclass(slots=True)
@@ -42,6 +44,9 @@ class Recommendation:
     context_tokens_est: int
     evidence_status: str
     permissions: list[str] = field(default_factory=list)
+    project_packages: list[str] = field(default_factory=list)
+    gap_score: float = 0.0             # the score without project credit: ranks gap slots, drives autopilot
+    gap_recommended: bool = False      # recommended on gap evidence alone
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -58,9 +63,20 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
         g = gaps[gid]
         relevance = max(relevance, float(g["strength"]))
         reasons.append(f"addresses gap '{g['title']}' ({'; '.join(g['evidence'][:2])})")
-    if not matched:
-        reasons.append("matches no evidence-backed capability gap of this repository")
     desc = str(candidate.get("description", ""))
+    # A skill written for this repository (its description names one of the repository's own packages) carries
+    # project knowledge no gap detector can see. Only a local skill the user pointed at counts: a network candidate
+    # could name the package to promote itself. The name alone is not enough (it is just the directory name).
+    project = names_packages(desc, profile.get("own_packages", []))
+    if project and candidate.get("provider") == "local":
+        reasons.append(f"written for this repository: names its package {', '.join(project)}")
+    else:
+        if project:
+            reasons.append(f"names this repository's package {', '.join(project)}, but is not a local skill: "
+                           "naming a package is no evidence of relevance")
+        project = []
+        if not matched:
+            reasons.append("matches no evidence-backed capability gap of this repository")
     doc_quality = min(1.0, len(desc) / 200) * (1.0 if " when " in desc.lower() or "use " in desc.lower()
                                                else 0.7)
     overlaps = sorted(name for name, text in existing.items() if overlap(desc, text) >= 0.35)
@@ -82,8 +98,12 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
         elif "worse" in trial.get("verdict", ""):
             empirical = -0.5
             reasons.append("controlled trial: outcomes were worse with this skill")
-    total = round(relevance * (1 - redundancy) * 0.7 + doc_quality * 0.1 + provenance
-                  - cost_penalty + empirical, 3)
+    def scored(rel: float) -> float:
+        return round(rel * (1 - redundancy) * 0.7 + doc_quality * 0.1 + provenance - cost_penalty + empirical, 3)
+
+    gap_total = scored(relevance)
+    # project credit is kept apart from gap evidence, so it can never win a gap's slot or move autopilot
+    total = scored(max(relevance, PROJECT_RELEVANCE)) if project else gap_total
     verdict = (report or {}).get("verdict", "not audited")
     no_license = any(f.get("rule") in firewall.LICENSE_GATE_RULES for f in (report or {}).get("findings", []))
     eligible = verdict in {"eligible", "review"} and not no_license
@@ -97,9 +117,28 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
     for f in (report or {}).get("findings", []):
         if f["rule"] in {"allowed-tools", "external-host", "external-requirements"}:
             perms.append(f"{f['rule']}: {f['evidence'][:80]}")
-    recommended = eligible and total >= THRESHOLD and bool(matched)
+    gap_recommended = eligible and gap_total >= THRESHOLD and bool(matched)
+    recommended = gap_recommended or (eligible and total >= THRESHOLD and bool(project))
     return Recommendation(candidate.get("id", ""), candidate.get("name", ""), total, eligible, verdict,
-                          recommended, reasons, matched, overlaps, tokens, evidence_status, perms[:6])
+                          recommended, reasons, matched, overlaps, tokens, evidence_status, perms[:6], project,
+                          gap_total, gap_recommended)
+
+
+def names_packages(text: str, packages: list[str]) -> list[str]:
+    """Packages named as whole words; `ledger_core`, `ledger-core` and `ledger core` all name `ledger_core`."""
+    tokens = re.split(r"[^a-z0-9]+", text.lower())
+    found = []
+    for pkg in packages:
+        parts = pkg.lower().split("_")
+        if any(tokens[i:i + len(parts)] == parts for i in range(len(tokens) - len(parts) + 1)):
+            found.append(pkg)
+    return sorted(found)
+
+
+def autopilot_wants(rec: dict[str, Any]) -> bool:
+    """Autopilot acts on a recommendation only when gap evidence alone earns it. Project credit (the skill names this
+    repository's package) is advice for `explain`/`recommend`: autopilot installs such a skill only when named."""
+    return bool(rec.get("gap_recommended"))
 
 
 def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any]],
@@ -110,22 +149,28 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
                   (trials or {}).get(c["id"]) or (trials or {}).get(c.get("name", "")))
             for c in candidates]
     recs.sort(key=lambda r: (not r.install_recommended, -r.score, r.name))
-    # portfolio optimisation: one recommendation per gap (smallest high-performing set)
+    # portfolio optimisation: one recommendation per gap (smallest high-performing set), on gap evidence alone
     chosen: dict[str, Recommendation] = {}
-    for r in recs:
-        if r.install_recommended:
+    # on a tie the slot goes to a skill that is not also kept as a project skill, so both stay recommended
+    for r in sorted(recs, key=lambda r: (not r.gap_recommended, -r.gap_score, bool(r.project_packages), r.name)):
+        if r.gap_recommended:
             for gap in r.gaps:
                 if gap not in chosen:
                     chosen[gap] = r
     picked = {r.candidate_id for r in chosen.values()}
+    # a project skill stands on its own, even when a stronger candidate took a gap it also matched
+    project_only = {r.candidate_id for r in recs if r.install_recommended and r.project_packages} - picked
+    picked |= project_only
     for r in recs:
         if r.install_recommended and r.candidate_id not in picked:
-            r.install_recommended = False
+            r.install_recommended = r.gap_recommended = False
             r.reasons.append("a stronger candidate already covers the same gap")
     summary = ("No additional skills are necessary: " + (
         "no evidence-backed capability gap was found" if not profile.get("gaps") else
         "no eligible candidate addresses a gap strongly enough")) if not picked else \
-        f"{len(picked)} skill(s) recommended for {len(chosen)} gap(s)"
+        f"{len(picked)} skill(s) recommended for {len(chosen)} gap(s)" if not project_only else \
+        f"{len(picked)} skill(s) recommended: {len(picked) - len(project_only)} for {len(chosen)} gap(s), " \
+        f"{len(project_only)} written for this repository"
     return {"summary": summary, "recommendations": [r.to_json() for r in recs],
             "gaps_without_candidates": sorted(set(g["id"] for g in profile.get("gaps", [])) -
                                               {g for r in recs for g in r.gaps})}

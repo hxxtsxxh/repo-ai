@@ -534,6 +534,27 @@ def materialize(root: Path, *, label: str = "ws", dependencies: bool = True,
     return ws
 
 
+def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
+    """The bytes `materialize_commit` writes for tracked file `rel`: `git archive` applies the checkout's
+    line-ending settings (core.autocrlf), so this can differ from the raw blob."""
+    import io
+    import tarfile
+    archive = subprocess.run(["git", "archive", "--format=tar", "--end-of-options", commit, rel],
+                             cwd=root.resolve(), capture_output=True, timeout=60, check=False,
+                             stdin=subprocess.DEVNULL)
+    if archive.returncode != 0:
+        return None
+    try:
+        with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
+            member = tar.getmember(rel)
+            if not member.isfile() or member.size > 2_000_000:
+                return None
+            fh = tar.extractfile(member)
+            return fh.read() if fh is not None else None
+    except (KeyError, tarfile.TarError):
+        return None
+
+
 def materialize_commit(root: Path, commit: str, *, label: str = "base", dependencies: bool = True) -> Workspace:
     """The tracked files of `commit` (git archive: no hooks or filters run),
     with the same read-only dependency directories as the working tree."""
