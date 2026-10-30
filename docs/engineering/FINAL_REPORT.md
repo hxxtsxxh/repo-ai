@@ -61,10 +61,12 @@ repository is free.
 | What | Value |
 |---|---|
 | Public `main` at the tag | `f53d027416e1983bd04dfa7f4e437ff969f42cad` = tag `v0.10.0` (annotated, `18d2f0c2…`) |
-| Merged PRs | #3 providers (`90a3b94`), #4 skills (`f33e9fb`), #6 release (`f53d027`); #5 site after the release |
+| Merged PRs | #3 providers (`90a3b94`), #4 skills (`f33e9fb`), #6 release (`f53d027`), #5 site + docs (`8eeb8ef`) |
 | CI | every required check green on each PR (Linux py3.10–3.14, Windows py3.10/3.13, docker and bwrap sandboxes, lint, offline eval, benchmark) |
 | macOS full suite (freeze, `434a659`, `src/` identical to the tag) | 2,467 passed, 4 skipped, 9 xfailed, 1 failed (stale plugin bundle, fixed in `9c5f52f`, re-run green) |
 | Release workflow | <https://github.com/hxxtsxxh/repo-ai/actions/runs/41030084295>: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
 | PyPI | <https://pypi.org/project/repo-ai-cli/0.10.0/>: wheel `aa8278061511a26ea0d947b80af825711d073462ea6d74fcb6d63ff963eb51cf`, sdist `4cdcb886067eb59bbdeb54434af46b454a510297aa57f6d35dde6365a3c6bec3` |
 | Re-download check | PyPI and GitHub release files byte-identical; `SHA256SUMS` OK (wheel, sdist, SBOM); `gh attestation verify` exit 0 |
+| Website | Pages run 41036040819 (2026-10-30T09:48Z): all 20 sitemap URLs 200 over HTTPS, real 404, served HTML shows `repo-ai-cli 0.10.0` (verified PyPI read) |
+| Live journeys on the published wheel | Claude, Codex, agy PASS (hidden oracle 17/17, undo byte-exact); Claude hostile repository PASS; OpenCode PASS of visible tests with one hidden failure (kept on display) — [evidence](evidence/JOURNEYS-0.10.0-PYPI.md) |
 | Clean install | `sh scripts/release_smoke.sh 'repo-ai-cli==0.10.0' 0.10.0` from the default index on macOS: **SMOKE PASS** (offline first run, sandboxed verify, privacy audit, uninstall keeping user edits) |
