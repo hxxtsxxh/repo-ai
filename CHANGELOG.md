@@ -13,6 +13,10 @@
   capability gap"); found in the C10 skill-value pilot (`docs/engineering/evidence/SKILL-VALUE-PILOT-2026-10-30.md`).
   This is advice only: a network skill that names the package gets no credit, and `skills autopilot` never
   auto-installs a skill on this ground; it does so only for a skill that fills a gap or that you name.
+- Fixed (found on a real repository, python-humanize, with 0.11.1): `repo-ai init` adds its managed block to
+  `.gitignore` (or creates the file), and `repo-ai do` then refused the "dirty checkout". A `.gitignore` whose only
+  change is repo-ai's managed block no longer makes the checkout dirty, and a provider's candidate is compared with the
+  committed file, so the block is not read as a provider edit. Any other change to the file still blocks the mission.
 
 ## 0.11.1 — `init` then `do` works on the first try
 
