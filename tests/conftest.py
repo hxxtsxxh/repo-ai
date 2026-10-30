@@ -122,7 +122,6 @@ _MISSION_NEEDS_SANDBOX = {
     "test_mission_expect_fix", "test_mission_expect_fix_review", "test_mission_expect_fix_review_handoff",
     "test_mission_expect_fix_review_cli",
 }
-}
 _MISSION_POSIX_ONLY = _MISSION_NEEDS_SANDBOX | {
     "test_eval_integrity", "test_mission_real_project_edges", "test_mission_apply_transaction",
     "test_provider_channels", "test_provider_probe", "test_mission_redteam", "test_mission_review_state",
