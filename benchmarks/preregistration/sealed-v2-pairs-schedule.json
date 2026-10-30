@@ -1,0 +1,369 @@
+{
+ "experiment": "EXPLORATORY-v2-pairs (repo-ai Core vs Plain on sealed-v2, budget-limited)",
+ "task_order": "interleave",
+ "tasks": [
+  "v2-dns-004",
+  "v2-ac-001",
+  "v2-mi-001",
+  "v2-asn-001",
+  "v2-mk-001",
+  "v2-lk-002",
+  "v2-sg-004",
+  "v2-te-001",
+  "v2-dns-005",
+  "v2-asn-002",
+  "v2-sg-005",
+  "v2-lk-001",
+  "v2-ac-003",
+  "v2-sg-007",
+  "v2-ac-002",
+  "v2-dns-003",
+  "v2-ac-004",
+  "v2-sg-006",
+  "v2-dns-002",
+  "v2-dns-001",
+  "v2-sg-008",
+  "v2-sg-003",
+  "v2-dns-006",
+  "v2-sg-002",
+  "v2-sg-001"
+ ],
+ "arms": [
+  "baseline",
+  "core"
+ ],
+ "seed": 0,
+ "repeat": 1,
+ "model": "claude-sonnet-5-5",
+ "effort": "medium",
+ "schedule": [
+  {
+   "rep": 0,
+   "task": "v2-dns-004",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-mi-001",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-asn-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-mk-001",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-lk-002",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-004",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-te-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-005",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-asn-002",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-005",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-lk-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-003",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-007",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-002",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-003",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-004",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-006",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-002",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-008",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-003",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-006",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-002",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-001",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  }
+ ],
+ "positions": [
+  {
+   "position": 1,
+   "task": "v2-dns-004",
+   "base": "v2-dnspython"
+  },
+  {
+   "position": 2,
+   "task": "v2-ac-001",
+   "base": "v2-asn1crypto"
+  },
+  {
+   "position": 3,
+   "task": "v2-mi-001",
+   "base": "v2-more-itertools"
+  },
+  {
+   "position": 4,
+   "task": "v2-asn-001",
+   "base": "v2-pyasn1"
+  },
+  {
+   "position": 5,
+   "task": "v2-mk-001",
+   "base": "v2-marked"
+  },
+  {
+   "position": 6,
+   "task": "v2-lk-002",
+   "base": "v2-lark"
+  },
+  {
+   "position": 7,
+   "task": "v2-sg-004",
+   "base": "v2-sqlglot"
+  },
+  {
+   "position": 8,
+   "task": "v2-te-001",
+   "base": "v2-typing-extensions"
+  },
+  {
+   "position": 9,
+   "task": "v2-dns-005",
+   "base": "v2-dnspython"
+  },
+  {
+   "position": 10,
+   "task": "v2-asn-002",
+   "base": "v2-pyasn1"
+  },
+  {
+   "position": 11,
+   "task": "v2-sg-005",
+   "base": "v2-sqlglot"
+  },
+  {
+   "position": 12,
+   "task": "v2-lk-001",
+   "base": "v2-lark"
+  },
+  {
+   "position": 13,
+   "task": "v2-ac-003",
+   "base": "v2-asn1crypto"
+  },
+  {
+   "position": 14,
+   "task": "v2-sg-007",
+   "base": "v2-sqlglot"
+  },
+  {
+   "position": 15,
+   "task": "v2-ac-002",
+   "base": "v2-asn1crypto"
+  },
+  {
+   "position": 16,
+   "task": "v2-dns-003",
+   "base": "v2-dnspython"
+  },
+  {
+   "position": 17,
+   "task": "v2-ac-004",
+   "base": "v2-asn1crypto"
+  },
+  {
+   "position": 18,
+   "task": "v2-sg-006",
+   "base": "v2-sqlglot"
+  },
+  {
+   "position": 19,
+   "task": "v2-dns-002",
+   "base": "v2-dnspython"
+  },
+  {
+   "position": 20,
+   "task": "v2-dns-001",
+   "base": "v2-dnspython"
+  },
+  {
+   "position": 21,
+   "task": "v2-sg-008",
+   "base": "v2-sqlglot"
+  },
+  {
+   "position": 22,
+   "task": "v2-sg-003",
+   "base": "v2-sqlglot"
+  },
+  {
+   "position": 23,
+   "task": "v2-dns-006",
+   "base": "v2-dnspython"
+  },
+  {
+   "position": 24,
+   "task": "v2-sg-002",
+   "base": "v2-sqlglot"
+  },
+  {
+   "position": 25,
+   "task": "v2-sg-001",
+   "base": "v2-sqlglot"
+  }
+ ],
+ "schedule_sha256": "bb90d60ef963f8c09b5a8d73b37616f10ce51dde17c5cf31fe47917ad7334184"
+}

@@ -1,0 +1,186 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "tomli/_parser.py",
+   "func": "key_value_rule",
+   "start": 431,
+   "end": 459,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "load",
+   "start": 154,
+   "end": 161,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "get_or_create_nest",
+   "start": 304,
+   "end": 313,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "make_safe_parse_float",
+   "start": 792,
+   "end": 801,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "parse_key_part",
+   "start": 501,
+   "end": 513,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "create_dict_rule",
+   "start": 386,
+   "end": 402,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "__init__",
+   "start": 109,
+   "end": 149,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "parse_inline_table",
+   "start": 550,
+   "end": 580,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "loads",
+   "start": 169,
+   "end": 232,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "parse_multiline_str",
+   "start": 641,
+   "end": 668,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data"
+   ]
+  },
+  {
+   "file": "tomli/_re.py",
+   "func": "cached_tz",
+   "start": 100,
+   "end": 106,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "__init__",
+   "start": 245,
+   "end": 246,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "finalize_pending",
+   "start": 252,
+   "end": 254,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_re.py",
+   "func": "match_to_number",
+   "start": 117,
+   "end": 119,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error",
+    "tests.test_misc"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "parse_basic_str_escape",
+   "start": 586,
+   "end": 611,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data"
+   ]
+  },
+  {
+   "file": "tomli/_parser.py",
+   "func": "parse_key_value_pair",
+   "start": 465,
+   "end": 475,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_data",
+    "tests.test_error",
+    "tests.test_misc"
+   ]
+  }
+ ]
+}

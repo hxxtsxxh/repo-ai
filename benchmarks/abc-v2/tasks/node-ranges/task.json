@@ -1,0 +1,3 @@
+{"id": "node-ranges", "cluster": "node_set_normalization", "language": "node", "test_command": "node --test",
+ "write_paths": ["ranges.js"],
+ "prompt": "In ranges.js, mergeRanges(ranges) takes an array of [start, end] integer pairs (start <= end, both inclusive) and returns a new array of the smallest set of non-overlapping ranges covering exactly the same integers, sorted by start. Ranges that overlap are merged, and ranges that are adjacent integers (for example [1,3] and [4,6]) are also merged into [1,6]. Duplicates collapse. An empty array gives an empty array. The input array and its pairs must not be modified. Throw a TypeError if any pair is not an array of two integers, and a RangeError if a pair has start greater than end."}

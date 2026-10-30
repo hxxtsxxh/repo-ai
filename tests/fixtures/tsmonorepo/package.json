@@ -1,0 +1,17 @@
+{
+  "name": "shop",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "jest",
+    "build": "tsc -b",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "typescript": "^5.4.0",
+    "eslint": "^9.0.0"
+  }
+}

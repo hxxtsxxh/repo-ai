@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "repo-ai.proof-evidence/1",
+  "title": "repo-ai proof-of-change evidence record (docs/PROOF-EVIDENCE-CONTRACT.md)",
+  "type": "object",
+  "required": [
+    "schema",
+    "contract_version",
+    "base",
+    "candidate",
+    "command",
+    "sides",
+    "integrity",
+    "freshness",
+    "claim",
+    "reproduction"
+  ],
+  "properties": {
+    "schema": {
+      "const": "repo-ai.proof-evidence/1"
+    },
+    "contract_version": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+$"
+    },
+    "base": {
+      "type": "object",
+      "required": [
+        "commit"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40,64}$"
+        },
+        "tree": {
+          "type": "string"
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "required": [
+        "fingerprint"
+      ],
+      "properties": {
+        "fingerprint": {
+          "type": "string",
+          "minLength": 64
+        },
+        "semantic_fingerprint": {
+          "type": "string"
+        },
+        "head": {
+          "type": "string"
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "required": [
+        "sha256",
+        "source",
+        "independent_of_change"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^(worktree|blob|external|generated):"
+        },
+        "independent_of_change": {
+          "type": "boolean"
+        },
+        "pinned_from": {
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "type": "object",
+      "required": [
+        "runner",
+        "argv"
+      ],
+      "properties": {
+        "runner": {
+          "type": "object"
+        },
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "required": [
+        "kind",
+        "sha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "exit-status",
+            "test-ids",
+            "output-match",
+            "custom"
+          ]
+        },
+        "spec": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        }
+      }
+    },
+    "sides": {
+      "type": "object",
+      "required": [
+        "candidate"
+      ],
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/side"
+        },
+        "candidate": {
+          "$ref": "#/$defs/side"
+        },
+        "control": {
+          "$ref": "#/$defs/side"
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": [
+        "source_tree_unchanged",
+        "workspace_disposable",
+        "sandbox"
+      ],
+      "properties": {
+        "source_tree_unchanged": {
+          "type": "boolean"
+        },
+        "workspace_disposable": {
+          "const": true
+        },
+        "sandbox": {
+          "type": "object",
+          "required": [
+            "backend",
+            "network"
+          ],
+          "properties": {
+            "backend": {
+              "type": "string"
+            },
+            "network": {
+              "const": false
+            }
+          }
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "required": [
+        "state",
+        "environment_key"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "fresh",
+            "stale",
+            "unknown"
+          ]
+        },
+        "checked_at": {
+          "type": "string"
+        },
+        "environment_key": {
+          "type": "string"
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "required": [
+        "level",
+        "not_established"
+      ],
+      "properties": {
+        "level": {
+          "enum": [
+            "not_established",
+            "test_passed",
+            "behavior_observed",
+            "regression_reproduced",
+            "supported_by_controlled_comparison"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "not": {
+            "pattern": "\\b([Pp]roves?|PROVES?|[Ss]afe|SAFE|[Cc]orrect|CORRECT)\\b"
+          }
+        },
+        "not_established": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "reproduction": {
+      "type": "object",
+      "required": [
+        "engine",
+        "environment",
+        "commands"
+      ],
+      "properties": {
+        "engine": {
+          "type": "object"
+        },
+        "environment": {
+          "type": "object"
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "seed": {}
+      }
+    }
+  },
+  "$defs": {
+    "side": {
+      "type": "object",
+      "required": [
+        "observations"
+      ],
+      "properties": {
+        "observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/observation"
+          }
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "required": [
+        "state",
+        "conclusive"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "pass",
+            "fail",
+            "timeout",
+            "infrastructure_error",
+            "incomplete",
+            "skipped",
+            "not_run"
+          ]
+        },
+        "conclusive": {
+          "type": "boolean"
+        },
+        "exit_code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "timed_out": {
+          "type": "boolean"
+        },
+        "duration_s": {
+          "type": "number"
+        },
+        "processes": {
+          "type": "integer"
+        },
+        "tests": {
+          "type": "object",
+          "properties": {
+            "ran": {
+              "type": "integer"
+            },
+            "passed": {
+              "type": "integer"
+            },
+            "failed": {
+              "type": "integer"
+            },
+            "skipped": {
+              "type": "integer"
+            },
+            "expected_failures": {
+              "type": "integer"
+            }
+          }
+        },
+        "failing_tests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hung_tests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "report": {
+          "type": "object",
+          "properties": {
+            "present": {
+              "type": "boolean"
+            },
+            "complete": {
+              "type": "boolean"
+            },
+            "trusted": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": "string"
+            }
+          }
+        },
+        "stdout_sha256": {
+          "type": "string"
+        },
+        "stderr_sha256": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "conclusive": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "state": {
+                "enum": [
+                  "pass",
+                  "fail"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

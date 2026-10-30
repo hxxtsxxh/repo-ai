@@ -1,0 +1,163 @@
+---
+/**
+ * Architecture diagram, drawn from one data model in two layouts:
+ * a wide one (lanes as rows) and a narrow one (lanes as columns of steps) for phones.
+ */
+type Node = { title: string; sub: string[]; tone?: 'verdict' | 'you' };
+type Lane = { id: string; label: string; note: string; nodes: Node[] };
+
+const lanes: Lane[] = [
+  {
+    id: 'context',
+    label: '1 · Context',
+    note: 'offline, no agent',
+    nodes: [
+      { title: 'Repository', sub: ['working tree', '+ git history'] },
+      { title: 'Local index', sub: ['imports, tests, routes', 'churn, co-change'] },
+      { title: 'Ranked context', sub: ['context · explain', 'only with evidence'] },
+      { title: 'Change impact', sub: ['impact · packet', 'review'] },
+    ],
+  },
+  {
+    id: 'evidence',
+    label: '2 · Evidence',
+    note: 'runs code only with --run',
+    nodes: [
+      { title: 'Your change', sub: ['diff against base', 'HEAD or --base'] },
+      { title: 'Plan (read-only)', sub: ['changed units →', 'tests + confidence'] },
+      { title: 'Disposable copy', sub: ['sandboxed, no network', 'integrity-checked'] },
+      { title: 'Base comparison', sub: ['new vs pre-existing', 'per test'] },
+      { title: 'Evidence record', sub: ['what ran, what passed', '+ coverage map'], tone: 'verdict' },
+    ],
+  },
+  {
+    id: 'agents',
+    label: '3 · Agents',
+    note: 'optional, explicit consent',
+    nodes: [
+      { title: 'Task + consent', sub: ['--run', '--allow-live-provider'] },
+      { title: 'Isolated worktree', sub: ['frozen tests', 'allowed write paths'] },
+      { title: 'Candidate(s)', sub: ['one provider, or a', '2–3 way tournament'] },
+      { title: 'Same checks', sub: ['baseline · candidate', '· regression run'] },
+      { title: 'PASS or ABSTAIN', sub: ['you decide:', 'apply · undo'], tone: 'you' },
+    ],
+  },
+];
+
+// ---- wide layout ----
+const W = 1000;
+const NW = 176;
+const NH = 70;
+const GAP = (W - 5 * NW) / 4; // 30
+const LANE_H = 150;
+const TOP = 34;
+const colX = (i: number) => i * (NW + GAP);
+const laneY = (l: number) => TOP + l * LANE_H;
+const wideH = TOP + 3 * LANE_H - 30;
+
+// ---- narrow layout ----
+const NWW = 340;
+const NNW = 300;
+const NNH = 58;
+const NGAP = 18;
+let y = 0;
+const narrow = lanes.map((lane) => {
+  const top = y;
+  y += 40;
+  const nodes = lane.nodes.map((n) => {
+    const ny = y;
+    y += NNH + NGAP;
+    return { ...n, y: ny };
+  });
+  y += 24;
+  return { ...lane, top, nodes };
+});
+const narrowH = y - 24;
+---
+
+<figure class="arch" aria-labelledby="arch-caption">
+  <svg class="arch__svg arch__svg--wide" viewBox={`-2 0 ${W + 4} ${wideH}`} role="img" aria-labelledby="arch-title-w arch-desc-w">
+    <title id="arch-title-w">How repo-ai fits together</title>
+    <desc id="arch-desc-w">
+      Three lanes. Context: the repository and its git history are indexed locally, which feeds ranked context and change impact.
+      Evidence: your change is planned read-only against the base, linked tests run in a disposable sandboxed copy, failures are
+      compared with the base, and an evidence record is written. Agents, optional: with explicit consent a task runs in an isolated
+      worktree with frozen tests, one or more candidates are produced, the same checks run, and the result is PASS or ABSTAIN; you
+      decide whether to apply or undo. The index supplies test links to the plan, and missions reuse the same sandbox.
+    </desc>
+    <defs>
+      <marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 10 5 0 10z" class="arch__arrowhead"></path>
+      </marker>
+    </defs>
+    {
+      lanes.map((lane, l) => (
+        <g class={`arch__lane arch__lane--${lane.id}`}>
+          <text x="0" y={laneY(l) - 12} class="arch__lane-label">
+            {lane.label}
+            <tspan class="arch__lane-note" dx="10">{lane.note}</tspan>
+          </text>
+          {lane.nodes.map((n, i) => (
+            <g class={`arch__node${n.tone ? ` arch__node--${n.tone}` : ''}`} style={`--d:${l * 5 + i}`}>
+              <rect x={colX(i)} y={laneY(l)} width={NW} height={NH} rx="6" />
+              <text x={colX(i) + 12} y={laneY(l) + 22} class="arch__title">{n.title}</text>
+              {n.sub.map((s, k) => (
+                <text x={colX(i) + 12} y={laneY(l) + 41 + k * 16} class="arch__sub">{s}</text>
+              ))}
+            </g>
+          ))}
+          {lane.nodes.slice(1).map((_, i) => (
+            <path class="arch__flow" d={`M${colX(i) + NW + 2} ${laneY(l) + NH / 2} H${colX(i + 1) - 3}`} marker-end="url(#arch-arrow)" />
+          ))}
+        </g>
+      ))
+    }
+    <!-- cross-lane links -->
+    <path class="arch__link" d={`M${colX(1) + NW - 36} ${laneY(0) + NH + 2} V${laneY(1) - 4}`} marker-end="url(#arch-arrow)" />
+    <text class="arch__link-label" x={colX(1) + NW - 28} y={laneY(0) + NH + 30}>test links</text>
+    <path
+      class="arch__link"
+      d={`M${colX(2) + NW / 2} ${laneY(1) + NH + 2} V${laneY(1) + NH + 40} H${colX(3) + NW / 2} V${laneY(2) - 4}`}
+      marker-end="url(#arch-arrow)"
+    />
+    <text class="arch__link-label" x={colX(2) + NW / 2 + 8} y={laneY(1) + NH + 32}>same sandbox and comparison</text>
+  </svg>
+
+  <svg class="arch__svg arch__svg--narrow" viewBox={`-2 0 ${NWW + 4} ${narrowH}`} role="img" aria-labelledby="arch-title-n arch-desc-n">
+    <title id="arch-title-n">How repo-ai fits together</title>
+    <desc id="arch-desc-n">
+      Context: repository, local index, ranked context, change impact. Evidence: your change, read-only plan, disposable sandboxed copy,
+      base comparison, evidence record. Agents, optional: task with consent, isolated worktree, candidates, the same checks, PASS or
+      ABSTAIN, then you apply or undo.
+    </desc>
+    <defs>
+      <marker id="arch-arrow-n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 10 5 0 10z" class="arch__arrowhead"></path>
+      </marker>
+    </defs>
+    {
+      narrow.map((lane) => (
+        <g class={`arch__lane arch__lane--${lane.id}`}>
+          <text x="0" y={lane.top + 22} class="arch__lane-label">
+            {lane.label}
+            <tspan class="arch__lane-note" dx="8">{lane.note}</tspan>
+          </text>
+          {lane.nodes.map((n, i) => (
+            <g class={`arch__node${n.tone ? ` arch__node--${n.tone}` : ''}`}>
+              <rect x="20" y={n.y} width={NNW} height={NNH} rx="6" />
+              <text x="32" y={n.y + 23} class="arch__title">{n.title}</text>
+              <text x="32" y={n.y + 43} class="arch__sub">{n.sub.join(' · ').replace('→ · ', '→ ').replace(' · ·', ' ·')}</text>
+              {i < lane.nodes.length - 1 && (
+                <path class="arch__flow" d={`M38 ${n.y + NNH + 1} V${n.y + NNH + NGAP - 2}`} marker-end="url(#arch-arrow-n)" />
+              )}
+            </g>
+          ))}
+        </g>
+      ))
+    }
+  </svg>
+  <figcaption id="arch-caption">
+    One engine, three entry points. The index is built once and kept fresh by <code>repo-ai update</code>. The verifier never runs
+    in your working tree. Missions add an agent in front of the same checks — they do not replace them.
+  </figcaption>
+</figure>

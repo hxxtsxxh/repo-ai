@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-014-mobile-orders-untaxed",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Sales tax isn't being charged on orders from the new mobile app. Web orders shipped to\nNew York get the 4% tax, but the app's NY orders come through with `\"tax\": {\"amount\": \"0.00\"}`.\nLooking at the request payloads, the app sends `\"region\": \"ny\"` (and occasionally `\" NY\"`\nwith a stray space).",
+  "setup": [
+    {
+      "file": "shop/services/pricing.py",
+      "find": "code = (region or \"\").strip().upper()",
+      "replace": "code = region or \"\""
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/pricing.py",
+      "find": "code = region or \"\"",
+      "replace": "code = (region or \"\").strip().upper()"
+    }
+  ],
+  "gold_files": [
+    "shop/services/pricing.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_region_tax.py",
+      "dest": "tests/test_hidden_region_tax.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_region_tax"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

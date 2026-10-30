@@ -1,0 +1,30 @@
+{
+  "note": "Development corpus written by the matcher's author (tuning set). The independent held-out corpus is scored separately and never read by the author.",
+  "tasks": [
+    {"id": "D01", "stack": "python-fastapi", "task": "fix the SQL injection in the search endpoint", "changed": ["app/api/search.py"], "expected": ["adapter.ruff-security"], "forbidden": ["ext.browser-evidence", "adapter.dependency-audit"]},
+    {"id": "D02", "stack": "python-cli", "task": "fix a typo in the README", "changed": ["README.md"], "expected": [], "forbidden": ["adapter.ruff-security", "repo-ai.verify", "repo-ai.impact"]},
+    {"id": "D03", "stack": "ts-react-frontend", "task": "the settings modal renders blank after the last change", "changed": ["src/components/SettingsModal.tsx"], "expected": ["ext.browser-evidence"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D04", "stack": "go-service", "task": "find all call sites of NewClient before I change its signature", "changed": [], "expected": ["repo-ai.impact"], "acceptable": ["ext.lsp-references"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D05", "stack": "python-cli", "task": "write the commit message for these changes", "changed": ["cli/main.py"], "expected": [], "forbidden": ["adapter.ruff-security", "repo-ai.verify"]},
+    {"id": "D06", "stack": "ts-node-api", "task": "audit our npm dependencies for known vulnerabilities", "changed": [], "expected": ["adapter.dependency-audit"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D07", "stack": "python-web-django", "task": "make sure my refactor of the billing views did not break anything, run the affected tests", "changed": ["billing/views.py"], "expected": ["repo-ai.verify"], "acceptable": ["repo-ai.impact"], "forbidden": ["ext.browser-evidence"]},
+    {"id": "D08", "stack": "mixed-monorepo", "task": "I want to install this plugin from https://github.com/acme/super-plugin, is it safe?", "changed": [], "expected": ["repo-ai.skills-vet"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D09", "stack": "python-cli", "task": "which skills and MCP servers are loaded in this project?", "changed": [], "expected": ["repo-ai.skills-inventory"], "forbidden": []},
+    {"id": "D10", "stack": "docs-only", "task": "update the security policy document with the new contact address", "changed": ["SECURITY.md"], "expected": [], "forbidden": ["adapter.ruff-security", "ext.differential-security-review", "adapter.semgrep"]},
+    {"id": "D11", "stack": "python-fastapi", "task": "replace yaml.load with a safe loader in the config reader", "changed": ["app/config.py"], "expected": ["adapter.ruff-security"], "forbidden": []},
+    {"id": "D12", "stack": "ts-node-api", "task": "fix the command injection in the export job that shells out", "changed": ["src/jobs/export.ts"], "expected": ["adapter.semgrep"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D13", "stack": "rust-lib", "task": "add property-based tests for the parser round trip", "changed": ["src/parser.rs"], "expected": ["ext.property-testing"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D14", "stack": "python-cli", "task": "are our unit tests actually strong enough to catch regressions in the rate limiter?", "changed": [], "expected": ["ext.mutation-testing"], "acceptable": ["repo-ai.verify"], "forbidden": []},
+    {"id": "D15", "stack": "python-cli", "task": "rename the local variable tmp to buffer in parse()", "changed": ["cli/parse.py"], "expected": [], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D16", "stack": "ts-react-frontend", "task": "add a 'browser' field to package.json for the bundler", "changed": ["package.json"], "expected": [], "forbidden": ["ext.browser-evidence"]},
+    {"id": "D17", "stack": "python-cli", "task": "our CLAUDE.md is too long and eats context; trim it", "changed": [], "expected": ["repo-ai.budget"], "forbidden": []},
+    {"id": "D18", "stack": "java-spring", "task": "review my changes before I open a PR", "changed": ["src/main/java/app/OrderService.java"], "expected": ["repo-ai.review"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D19", "stack": "python-fastapi", "task": "do a thorough security review of the new password reset flow", "changed": ["app/auth/reset.py"], "expected": ["ext.differential-security-review"], "acceptable": ["adapter.ruff-security"], "forbidden": []},
+    {"id": "D20", "stack": "go-service", "task": "add structured logging to the request handler", "changed": ["internal/http/handler.go"], "expected": [], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D21", "stack": "python-web-django", "task": "add a new field to the user profile page", "changed": ["profiles/views.py"], "expected": [], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D22", "stack": "mixed-monorepo", "task": "fix the XSS in the comment renderer", "changed": ["web/src/Comment.tsx"], "expected": ["adapter.semgrep"], "acceptable": ["ext.browser-evidence"], "forbidden": ["adapter.ruff-security"]},
+    {"id": "D23", "stack": "python-cli", "task": "what would break if I remove the deprecated function load_legacy_config?", "changed": [], "expected": ["repo-ai.impact"], "forbidden": []},
+    {"id": "D24", "stack": "ts-node-api", "task": "bump the version to 2.1.0", "changed": ["package.json"], "expected": [], "forbidden": ["adapter.dependency-audit"]},
+    {"id": "D25", "stack": "python-cli", "task": "we use token budgets in the summarizer config; raise the limit to 4000", "changed": ["summarizer/config.py"], "expected": [], "forbidden": ["adapter.ruff-security", "repo-ai.budget"]}
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "ts-workspace-016-jobs-table-rendering",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "frontend",
+  "difficulty": "medium",
+  "prompt": "Two rendering bugs in the dashboard's jobs table (the `@jobrunner/web` package):\n\n1. Long commands that contain `&&`, quotes or `<...>` sometimes show up mangled in the\n   Command column, e.g. a job whose command is\n   `make backup && notify <ops@example.com>` renders as `make backup &amp;&a…` or cuts\n   off much earlier than other commands of the same length. The tooltip on the cell\n   shows the full command correctly. The visible text should be the command cut to\n   `commandWidth` characters (with the ellipsis), displayed literally.\n2. Sorting by \"Next run\" ascending puts the jobs that have no upcoming run (shown as\n   an em dash) at the top. They should be at the bottom in both directions, as the\n   comment on the sort function says.",
+  "setup": [
+    {
+      "file": "packages/web/package.json",
+      "create": "{\n  \"name\": \"@jobrunner/web\",\n  \"version\": \"0.7.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"license\": \"MIT\",\n  \"description\": \"Server-rendered dashboard pieces: pure functions from API DTOs to HTML and UI state.\",\n  \"scripts\": {\n    \"test\": \"node --test\"\n  }\n}\n"
+    },
+    {
+      "file": "packages/web/src/html.ts",
+      "create": "// HTML escaping for server-rendered dashboard fragments.\n\nconst ENTITIES: Record<string, string> = {\n  \"&\": \"&amp;\",\n  \"<\": \"&lt;\",\n  \">\": \"&gt;\",\n  '\"': \"&quot;\",\n  \"'\": \"&#39;\",\n};\n\n// Safe for element content and for quoted attribute values.\nexport function escapeHtml(text: string): string {\n  return String(text).replace(/[&<>\"']/g, (ch) => ENTITIES[ch]);\n}\n"
+    },
+    {
+      "file": "packages/web/src/jobs-table.ts",
+      "create": "// The jobs table on the dashboard: JobDto[] in, an HTML fragment out. Pure functions only.\nimport type { JobDto } from \"../../api/src/serialize.ts\";\nimport { formatDuration } from \"../../core/src/duration.ts\";\nimport { pluralize, truncate } from \"../../core/src/strings.ts\";\nimport { escapeHtml } from \"./html.ts\";\n\nexport type SortKey = \"name\" | \"status\" | \"nextRunAt\";\n\nexport interface SortSpec {\n  key: SortKey;\n  dir: \"asc\" | \"desc\";\n}\n\nexport interface TableOptions {\n  now: Date;\n  sort?: SortSpec;\n  selectedId?: string;\n  // Visible characters of the command before it is cut with an ellipsis; the full\n  // command is always available in the cell's tooltip.\n  commandWidth?: number;\n}\n\nconst STATUS_CLASS: Record<string, string> = {\n  queued: \"badge badge-info\",\n  running: \"badge badge-active\",\n  succeeded: \"badge badge-ok\",\n  failed: \"badge badge-error\",\n  cancelled: \"badge badge-muted\",\n};\n\nconst COLUMNS: Array<{ key: SortKey | null; label: string }> = [\n  { key: \"name\", label: \"Name\" },\n  { key: null, label: \"Command\" },\n  { key: \"status\", label: \"Status\" },\n  { key: \"nextRunAt\", label: \"Next run\" },\n];\n\n// \"in 5m\", \"2h ago\", \"now\", or an em dash when there is no upcoming run.\nexport function relativeLabel(iso: string | null, now: Date): string {\n  if (!iso) return \"\\u2014\";\n  const diff = Date.parse(iso) - now.getTime();\n  if (Math.abs(diff) < 1_000) return \"now\";\n  const text = formatDuration(Math.abs(diff)).split(\" \")[0];\n  return diff > 0 ? `in ${text}` : `${text} ago`;\n}\n\n// A sorted copy of `jobs`. Ties are broken by id so the order is stable. Jobs without\n// a next run always go last when sorting by next run, whatever the direction.\nexport function sortJobs(jobs: readonly JobDto[], sort?: SortSpec): JobDto[] {\n  const copy = [...jobs];\n  if (!sort) return copy;\n  const factor = sort.dir === \"desc\" ? -1 : 1;\n  return copy.sort((a, b) => {\n    const av = a[sort.key] ?? \"\";\n    const bv = b[sort.key] ?? \"\";\n    if (av !== bv) return av < bv ? -factor : factor;\n    return a.id.localeCompare(b.id);\n  });\n}\n\nexport function renderJobRow(job: JobDto, options: TableOptions): string {\n  const width = options.commandWidth ?? 32;\n  const selected = job.id === options.selectedId ? ' class=\"selected\" aria-selected=\"true\"' : \"\";\n  return [\n    `<tr data-id=\"${escapeHtml(job.id)}\"${selected}>`,\n    `<td class=\"name\">${escapeHtml(job.name)}</td>`,\n    `<td class=\"command\" title=\"${escapeHtml(job.command)}\">${truncate(escapeHtml(job.command), width)}</td>`,\n    `<td class=\"status\"><span class=\"${STATUS_CLASS[job.status] ?? \"badge\"}\">${escapeHtml(job.status)}</span></td>`,\n    `<td class=\"next\">${escapeHtml(relativeLabel(job.nextRunAt, options.now))}</td>`,\n    \"</tr>\",\n  ].join(\"\");\n}\n\nexport function renderJobsTable(jobs: readonly JobDto[], options: TableOptions): string {\n  if (jobs.length === 0) return '<p class=\"empty\">No jobs match these filters.</p>';\n  const head = COLUMNS.map((col) => {\n    const sorted = options.sort !== undefined && col.key === options.sort.key;\n    const aria = sorted ? ` aria-sort=\"${options.sort?.dir === \"desc\" ? \"descending\" : \"ascending\"}\"` : \"\";\n    return `<th scope=\"col\"${aria}>${col.label}</th>`;\n  }).join(\"\");\n  const rows = sortJobs(jobs, options.sort).map((job) => renderJobRow(job, options));\n  return [\n    '<table class=\"jobs\">',\n    `<thead><tr>${head}</tr></thead>`,\n    \"<tbody>\",\n    ...rows,\n    \"</tbody>\",\n    `<tfoot><tr><td colspan=\"${COLUMNS.length}\">${pluralize(jobs.length, \"job\")}</td></tr></tfoot>`,\n    \"</table>\",\n  ].join(\"\\n\");\n}\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/web/src/jobs-table.ts",
+      "find": "  return copy.sort((a, b) => {\n    const av = a[sort.key] ?? \"\";",
+      "replace": "  return copy.sort((a, b) => {\n    if (sort.key === \"nextRunAt\" && (a.nextRunAt === null) !== (b.nextRunAt === null)) {\n      return a.nextRunAt === null ? 1 : -1;\n    }\n    const av = a[sort.key] ?? \"\";"
+    },
+    {
+      "file": "packages/web/src/jobs-table.ts",
+      "find": "${truncate(escapeHtml(job.command), width)}",
+      "replace": "${escapeHtml(truncate(job.command, width))}"
+    }
+  ],
+  "gold_files": [
+    "packages/web/src/jobs-table.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_jobs_table.test.ts",
+      "dest": "packages/web/test/hidden_jobs_table.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/web/test/hidden_jobs_table.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

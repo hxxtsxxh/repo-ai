@@ -1,0 +1,159 @@
+{
+  "analysis": "n=4 tasks (2 calibration, 2 holdout; 2 Python, 2 Node clusters), one run per cell. Too small for any inferential claim: counts and a Wilson interval at most. Descriptive counts only; no significance or superiority claim. Verdict stays NOT_YET_DEMONSTRATED unless matched live arms exist and are reported with their uncertainty.",
+  "arms": {
+    "A": "provider's ordinary workflow (codex exec, its own workspace-write sandbox), same model/budget, no repo-ai",
+    "B": "same provider via `repo-ai do --agent codex` (retrieval, plan, frozen verification, isolation)",
+    "C": "`repo-ai do --tournament codex,agy` (two independent live candidates; abstains unless exactly one distinct candidate passes the frozen tests). agy has no arm A, so C is compared against codex A/B only."
+  },
+  "caps": {
+    "note": "includes all prior spend; UNKNOWN cost is not 0",
+    "per_call_usd": 10,
+    "total_usd": 150
+  },
+  "design_note": "Every behaviour the hidden tests check is stated in the task prompt (abc-v1 node-slug showed unstated hidden requirements make a FALSE_GREEN a contract defect, not a verifier defect). Tasks are new for v3 and disjoint from abc-v1 and abc-v2 (spent).",
+  "hidden_grader_policy": "hidden/ is never copied into the agent workspace nor mentioned in prompts; grading happens in a separate temp copy.",
+  "negative_controls": "each task ships a `decoy` that passes visible tests and must grade FALSE_GREEN, and the untouched `repo` that must grade FAIL.",
+  "outcomes": [
+    "CORRECT",
+    "FALSE_GREEN",
+    "FAIL",
+    "INCONCLUSIVE",
+    "NOT_RUN",
+    "ABSTAIN",
+    "NO_CANDIDATE"
+  ],
+  "primary_endpoint": "CORRECT = visible AND hidden tests pass on the candidate files actually produced (only task.write_paths are honoured; other changes are ignored and reported)",
+  "providers": [
+    "codex",
+    "agy"
+  ],
+  "run_order_counterbalanced_seeded": {
+    "node-lru": [
+      "A",
+      "B",
+      "C"
+    ],
+    "node-paths": [
+      "C",
+      "B",
+      "A"
+    ],
+    "py-intervals": [
+      "A",
+      "C",
+      "B"
+    ],
+    "py-template": [
+      "C",
+      "B",
+      "A"
+    ]
+  },
+  "schema": 1,
+  "secondary_endpoints": [
+    "false_green_count",
+    "wall_seconds",
+    "observed_usd",
+    "agent_count",
+    "abstentions",
+    "human_interventions",
+    "attempted_but_failed_runs"
+  ],
+  "seed": 20261029,
+  "sha256": {
+    "grade.py": "b8a058bce4a477e3d433a0086f3bda6a815f347821c7aeb2d32a475fb9153308",
+    "tasks/node-lru/decoy/lru.js": "e7fc0eee7ace6926424e0e5b5dec5a69b932b1ab6fe2e5ef8d1382a5874a3700",
+    "tasks/node-lru/hidden/lru.hidden.test.js": "fbbcfb450f0977f52dfcbe4967641c53c8ee7722803c9d04432f23e41bf6ed26",
+    "tasks/node-lru/reference/lru.js": "f2bace3313dfc39038a381105a6b590c9332da484552ce750adca5196cc441b9",
+    "tasks/node-lru/repo/lru.js": "0dec2fcac5f853ca84df7ef9f82a72959d9b47b45248a72e89d540cdb543d514",
+    "tasks/node-lru/repo/lru.test.js": "3d9b46cbf43734b766c90b1d25155e749eda9d396e5a420577ba2ef6579dffeb",
+    "tasks/node-lru/repo/package.json": "f74702c1de3a14d3499a1aea134648bb2d08cccb1e5d6a5dfa87735aaa4fbea1",
+    "tasks/node-lru/task.json": "e185bb1f216714316b8fefb1f91a40da0410af586f582d2480c66c4a2b178120",
+    "tasks/node-paths/decoy/paths.js": "9ecf81eab3d6cc9b6aaa78d3f07a53a608f98cb9d2a04e283bf62c27729813bf",
+    "tasks/node-paths/hidden/paths.hidden.test.js": "6171ab6faf8b225b484c4f9e51afe45e6cccbd0bd475d5fd3225d3b95c52d800",
+    "tasks/node-paths/reference/paths.js": "978bab094a62532c195fdd767b266ba5445da034a2f84af36ae16bb5fba5b56b",
+    "tasks/node-paths/repo/package.json": "f74702c1de3a14d3499a1aea134648bb2d08cccb1e5d6a5dfa87735aaa4fbea1",
+    "tasks/node-paths/repo/paths.js": "ad034ef75bcc559a06451a73afd90551cd72c6e6f6b491c075f927e50ac5fb3f",
+    "tasks/node-paths/repo/paths.test.js": "2899d5128b95b7e71d580a3b182eae10383e00291f92759d82312ae75d209eb8",
+    "tasks/node-paths/task.json": "5158477872b1f2b7ee555c33ef4ec2837d0156740d898a926b0c1b5e5dcf0d62",
+    "tasks/py-intervals/decoy/intervals.py": "6e1d10e205a8d0a346dceddbaab3e5bbbc2b3f2f27dc6330ffd6560dcdec6563",
+    "tasks/py-intervals/hidden/test_intervals_hidden.py": "faf672cd29ab62f491d91ba4675f16087b3ef9ad61655b60103fc16df981067a",
+    "tasks/py-intervals/reference/intervals.py": "1673289a586d210d31ac6f11ddc91060efeb8b4cda1f0571a7a1b90c8ca049b3",
+    "tasks/py-intervals/repo/intervals.py": "1df98947b10803c9e76c94ac862574586a54a9ce8686521ae2e57fb3f602dbc9",
+    "tasks/py-intervals/repo/pyproject.toml": "16713d02c4751fb02221a274d20fe9f3be7ffaffd1a3031af82cd37f3a6456f3",
+    "tasks/py-intervals/repo/test_intervals.py": "d3334ea742bed47d419f05a4b95c23f9e5a44a90945850679af17b78c7aebe39",
+    "tasks/py-intervals/task.json": "a5acd8a740ca8e451e3e6d39512c21e3f2ca14ef32b6356665e554902b32413b",
+    "tasks/py-template/decoy/template.py": "152e71473c8b7e3c51dd955434bdda228978c7817d23917668010db46bed3a93",
+    "tasks/py-template/hidden/test_template_hidden.py": "43b783c936f1a18a4154320b2af93e36dce2eae60b1b9b788fa41b050964f105",
+    "tasks/py-template/reference/template.py": "c5be564f10540eb948b29e269ef18ec433ecd7757dda6d5741445ad37254abff",
+    "tasks/py-template/repo/pyproject.toml": "16713d02c4751fb02221a274d20fe9f3be7ffaffd1a3031af82cd37f3a6456f3",
+    "tasks/py-template/repo/template.py": "9fd1235f966f2ab32332bd737656278edb316ef05457c096120a99981fa7124d",
+    "tasks/py-template/repo/test_template.py": "f38f8182301486277f7d7f54685d283591684b771f00422fac431531a8373286",
+    "tasks/py-template/task.json": "6a9e766f13ca27db64d469a4af3de49ccbdbf0eac71dde4783e6f0c688872db8"
+  },
+  "split_policy": "calibration tasks may be run first to check that the bare provider (arm A) does not already solve everything (ceiling check) and to debug the harness. Nothing about the holdout tasks, prompts, hidden tests, grader or arm definitions may change after a calibration or holdout result is seen; any change means a new study id. The primary comparison uses holdout tasks only.",
+  "splits": {
+    "calibration": [
+      "node-lru",
+      "py-template"
+    ],
+    "holdout": [
+      "node-paths",
+      "py-intervals"
+    ]
+  },
+  "status": "PREREGISTERED_FROZEN_BEFORE_ANY_LIVE_RUN",
+  "study": "abc-v3",
+  "task_clusters": [
+    "node_cache_semantics",
+    "node_path_semantics",
+    "python_interval_algebra",
+    "python_string_templating"
+  ],
+  "tasks": {
+    "node-lru": {
+      "cluster": "node_cache_semantics",
+      "id": "node-lru",
+      "language": "node",
+      "prompt": "In lru.js export a class LruCache. new LruCache(capacity, options) where capacity must be a positive integer (otherwise throw RangeError, including for undefined, null, strings and NaN) and options may hold ttlMs (a positive number of type number, otherwise throw RangeError; absent means entries never expire) and now (a function returning the current time in milliseconds, default Date.now). set(key, value) stores the value, marks the key as most recently used, restarts its time to live (get and has never extend it), returns the cache itself, and when the number of live entries would exceed capacity it evicts the least recently used live entry. get(key) returns the value and marks the key most recently used, or undefined when the key is absent or expired. has(key) reports whether the key is present and not expired and does NOT change recency. delete(key) returns true if a live entry was removed and false otherwise. size() returns the number of live entries. keys() returns an array of live keys from least to most recently used. An entry is expired when now() >= the time it was set + ttlMs. Expired entries never count toward size or capacity, are never returned and never evicted in place of a live entry. A stored value may be undefined (has still reports true). Keys are compared with SameValueZero, so NaN is a usable key and 1 and '1' are different keys.",
+      "split": "calibration",
+      "test_command": "node --test",
+      "write_paths": [
+        "lru.js"
+      ]
+    },
+    "node-paths": {
+      "cluster": "node_path_semantics",
+      "id": "node-paths",
+      "language": "node",
+      "prompt": "In paths.js export normalize(path) and relative(from, to) for POSIX-style paths (do not use the node path module). normalize: the argument must be a string, otherwise throw TypeError (relative throws the same TypeError for a non-string argument). Empty input gives '.'. Only '.' and '..' are special segments (a name like '...' or '..c' is ordinary). Repeated slashes collapse to one, '.' segments are removed, and a '..' segment removes the segment before it. In a relative path a '..' that has nothing to remove is kept (so '../a' stays '../a' and 'a/../../b' is '../b'); in an absolute path (starting with '/') it is dropped, so '/../a' is '/a'. A trailing slash is removed except for the root path '/'. A relative path that reduces to nothing gives '.', an absolute one gives '/'. relative(from, to) first normalizes both; if exactly one of them is absolute throw an Error; otherwise return the normalized relative path that leads from `from` to `to`, using '..' for each segment of `from` that is not shared and then the remaining segments of `to`, joined with '/'; equal paths give '.'. When `from` (after the shared prefix) still contains a '..' segment the result cannot be determined, so throw an Error.",
+      "split": "holdout",
+      "test_command": "node --test",
+      "write_paths": [
+        "paths.js"
+      ]
+    },
+    "py-intervals": {
+      "cluster": "python_interval_algebra",
+      "id": "py-intervals",
+      "language": "python",
+      "prompt": "In intervals.py implement three functions over half-open intervals [start, end) given as (start, end) tuples of numbers. merge(intervals) returns a new sorted list of disjoint intervals covering exactly the same points: overlapping AND touching intervals (one ends where the next starts) are joined into one, and empty intervals (start == end) are dropped. Every function raises ValueError when any input interval (in either argument of subtract) has start > end, even one that would be dropped or absorbed. subtract(a, b) returns the merged form of the points that are in the union of a and not in the union of b. total_length(intervals) returns the length of the union of the intervals (an int when all bounds are ints). None of the functions may modify their arguments, and the input lists may be unsorted. Keep the three function names and signatures.",
+      "split": "holdout",
+      "test_command": "python -m pytest",
+      "write_paths": [
+        "intervals.py"
+      ]
+    },
+    "py-template": {
+      "cluster": "python_string_templating",
+      "id": "py-template",
+      "language": "python",
+      "prompt": "In template.py implement render(template, context) for a tiny template language. A placeholder is {{ path }} (spaces around the path, and around the filter if there is one, are ignored) where path is dot-separated names (letters, digits, underscore; each name must not be empty). Lookup starts at the context dict: a segment indexes a dict by that exact string key, or, when the current value is a list and the segment is all digits, indexes the list. Any lookup that cannot be done (missing key, bad index, indexing into a non-dict non-list) raises KeyError whose argument is the full path text. A placeholder may end with |raw (for example {{ body|raw }}); no other filter exists and any other filter raises ValueError, as does a malformed path. The value is converted to text: None becomes the empty string, True and False become 'true' and 'false', anything else uses str(). Unless |raw is used, the text is HTML-escaped by replacing & < > \" and ' with &amp; &lt; &gt; &quot; and &#x27; (ampersand first so existing replacements are not escaped twice). A backslash directly before {{ (that is \\{{) produces a literal {{ and what follows is ordinary text, not a placeholder; any other backslash is ordinary text. A {{ with no closing }} raises ValueError. Text outside placeholders is copied unchanged and replaced values are never re-scanned for placeholders.",
+      "split": "calibration",
+      "test_command": "python -m pytest",
+      "write_paths": [
+        "template.py"
+      ]
+    }
+  }
+}

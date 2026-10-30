@@ -1,0 +1,944 @@
+{
+ "baseline": {
+  "commit": "79a508d482ed375b8e56bcfe5019aed6cbb6e96b",
+  "revision": "HEAD"
+ },
+ "candidate": {
+  "changed_files": [
+   "lib/ipaddr.js",
+   "test/ipaddr.test.js"
+  ],
+  "changed_files_total": 2,
+  "fingerprint": "51550e1b6c55b6a69a8fe4c70b6609480deb6d29c732b92c0a3521d22f59aaa4",
+  "kind": "working tree",
+  "withheld_credential_like": 0
+ },
+ "claim": {
+  "earlier_scenarios": [],
+  "expect_failure": null,
+  "id": "claim",
+  "pinned": {
+   "agent_shell": false,
+   "created": "2026-10-24T08:33:01-07:00",
+   "signals": []
+  },
+  "redacted": false,
+  "replaced": 0,
+  "settings": "1878e689fca376ab54787a8acb1ada1cb4c7817ea14fecf08b40eade4fc0f5ed",
+  "sha256": "7a99450c94ac0ed63c8e8c595f2a2beda2a0a3ee1badf6a0ff58f6ae7558d05c",
+  "supersedes": [],
+  "targets": [
+   "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+   "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+   "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+  ],
+  "text": "IPv4/IPv6 match() and subnetMatch() reject invalid CIDR prefix lengths (negative, fractional, NaN, infinite or longer than the address)."
+ },
+ "conditions": {
+  "command": "node --test test/ipaddr.test.js",
+  "oracle": {
+   "base_sha256": "c4db81825700a60c44425fdd631792019e5f387874b36d7db7c8e2ae53f372b8",
+   "candidate_sha256": "c4db81825700a60c44425fdd631792019e5f387874b36d7db7c8e2ae53f372b8",
+   "changed_data": [],
+   "checked": 1,
+   "differing": [],
+   "files": [
+    "package.json#type,imports"
+   ],
+   "identical": true,
+   "imported_changed": [
+    "lib/ipaddr.js"
+   ]
+  },
+  "runner": {
+   "command": "node --test",
+   "identity_sha256": "119464acd06ce832eb74e4f61203d5bf289cfc5b7f9a2637d2110927f2eeecf2",
+   "kind": "node",
+   "source": "--test-command"
+  },
+  "same_sandbox_and_interpreter": true
+ },
+ "created": "2026-10-24T08:33:02-07:00",
+ "digest": "7be816d101db1e17cc7598bc1186f0a190e2ccc2f692177b34cb22a126ada37a",
+ "edited_tests": {
+  "files": [
+   {
+    "messages": {
+     "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "ipaddr: invalid CIDR prefix length",
+     "ipaddr > correctly processes IPv4-mapped addresses": "ipaddr: invalid CIDR prefix length",
+     "ipaddr > detects reserved IPv4 networks": "ipaddr: invalid CIDR prefix length",
+     "ipaddr > detects reserved IPv6 networks": "ipaddr: invalid CIDR prefix length",
+     "ipaddr > matches IPv4 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+     "ipaddr > matches IPv6 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+     "ipaddr > parses IPv4 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+     "ipaddr > parses IPv6 CIDR correctly": "ipaddr: invalid CIDR prefix length"
+    },
+    "new_failures": [
+     "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses",
+     "ipaddr > correctly processes IPv4-mapped addresses",
+     "ipaddr > detects reserved IPv4 networks",
+     "ipaddr > detects reserved IPv6 networks",
+     "ipaddr > matches IPv4 CIDR correctly",
+     "ipaddr > matches IPv6 CIDR correctly",
+     "ipaddr > parses IPv4 CIDR correctly",
+     "ipaddr > parses IPv6 CIDR correctly"
+    ],
+    "path": "test/ipaddr.test.js",
+    "state": "detected",
+    "status": "modified",
+    "superseded": []
+   }
+  ],
+  "state": "detected"
+ },
+ "edited_tests_planned": [
+  {
+   "is_scenario": "true",
+   "path": "test/ipaddr.test.js",
+   "status": "modified"
+  }
+ ],
+ "environment": {
+  "backend": "seatbelt",
+  "key": "75914f3e04e25651dcd36a98",
+  "machine": "arm64",
+  "node": "v24.19.0",
+  "os": "Darwin",
+  "os_release": "25.5.0",
+  "repo_ai": "0.7.7"
+ },
+ "evidence": [
+  {
+   "base": {
+    "commit": "79a508d482ed375b8e56bcfe5019aed6cbb6e96b",
+    "tree": "b061063094c15f22858ea43bbc6966869ec5934d"
+   },
+   "candidate": {
+    "fingerprint": "51550e1b6c55b6a69a8fe4c70b6609480deb6d29c732b92c0a3521d22f59aaa4",
+    "head": "79a508d482ed375b8e56bcfe5019aed6cbb6e96b"
+   },
+   "claim": {
+    "level": "not_established",
+    "not_established": [
+     "other inputs and scenarios",
+     "other environments",
+     "the full test suite",
+     "correctness of the change",
+     "the candidate did not pass conclusively",
+     "the scenario is not independent of the change",
+     "the ProofLab claim: candidate-failed (candidate: 8 test(s) of the scenario fail at the candidate: ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses (ipaddr: invalid CIDR prefix length))"
+    ],
+    "text": "nothing is claimed"
+   },
+   "command": {
+    "argv": [
+     "node --test test/ipaddr.test.js"
+    ],
+    "runner": {
+     "command": "node --test",
+     "cwd": "",
+     "env": {},
+     "kind": "node",
+     "modules": [],
+     "options": [],
+     "paths": [],
+     "pattern": "test*.py",
+     "start": ".",
+     "top": "."
+    }
+   },
+   "contract_version": "1.0",
+   "freshness": {
+    "checked_at": "2026-10-24T08:33:06-07:00",
+    "environment_key": "75914f3e04e25651dcd36a98",
+    "state": "fresh"
+   },
+   "integrity": {
+    "sandbox": {
+     "backend": "seatbelt",
+     "network": false
+    },
+    "source_tree_unchanged": true,
+    "workspace_disposable": true
+   },
+   "oracle": {
+    "kind": "test-ids",
+    "sha256": "b0d77159cc00987866466a6895cfeff905e58f186f5a34fbd7de50c1bcfcdd01",
+    "spec": "every test of the scenario passes on the candidate; at the base, the targeted tests fail"
+   },
+   "reproduction": {
+    "commands": [
+     "repo-ai prove run claim --base 79a508d482ed",
+     "repo-ai verify --run --base 79a508d482ed   # the regression check"
+    ],
+    "engine": {
+     "version": "0.7.7"
+    },
+    "environment": {
+     "machine": "arm64",
+     "node": "v24.19.0",
+     "os": "Darwin"
+    }
+   },
+   "scenario": {
+    "independent_of_change": false,
+    "sha256": "ba469775028dece0b2c1de7023a1ee92d9de7bc7c68e3f50927fc9c10b444057",
+    "source": "blob:74ee4c5751af:test/ipaddr.test.js"
+   },
+   "schema": "repo-ai.proof-evidence/1",
+   "sides": {
+    "base": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.39,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+        "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+        "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "a5254c41e7a38c693e2de686d8ec3318c9e33cf10ab9d20c7819793573a46458",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 3,
+        "passed": 67,
+        "ran": 70,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.29,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+        "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+        "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "76339ff3ce7b77cd549a0310e3134fb1ffc9ed9215dac6a82a255b499bde5822",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 3,
+        "passed": 67,
+        "ran": 70,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "candidate": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.37,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses",
+        "ipaddr > correctly processes IPv4-mapped addresses",
+        "ipaddr > detects reserved IPv4 networks",
+        "ipaddr > detects reserved IPv6 networks",
+        "ipaddr > matches IPv4 CIDR correctly",
+        "ipaddr > matches IPv6 CIDR correctly",
+        "ipaddr > parses IPv4 CIDR correctly",
+        "ipaddr > parses IPv6 CIDR correctly"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "d4c59d213fda5e26140bba31de4bad45150def6bfcccf6efc69d4d89b5d324f0",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 8,
+        "passed": 62,
+        "ran": 70,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.27,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses",
+        "ipaddr > correctly processes IPv4-mapped addresses",
+        "ipaddr > detects reserved IPv4 networks",
+        "ipaddr > detects reserved IPv6 networks",
+        "ipaddr > matches IPv4 CIDR correctly",
+        "ipaddr > matches IPv6 CIDR correctly",
+        "ipaddr > parses IPv4 CIDR correctly",
+        "ipaddr > parses IPv6 CIDR correctly"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "38780e0672689479607b888e76545e86c5a443669f2071771d8526cad5b472be",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 8,
+        "passed": 62,
+        "ran": 70,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "control": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.38,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+        "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+        "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "c993f57e7c6b52c9de803d36dd11008ddbc63b59a66a0defeea8cfca66360a74",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 3,
+        "passed": 67,
+        "ran": 70,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "executed": true,
+ "freshness": {
+  "reasons": [],
+  "state": "fresh"
+ },
+ "integrity": {
+  "changes": [],
+  "check_seconds": 0.004,
+  "entries_checked": 38,
+  "files_hashed": 11,
+  "unchanged": true
+ },
+ "limitations": [
+  "A passing scenario shows the claim only for what this scenario checks; it is not a proof that the change is correct for other inputs, states or callers.",
+  "ProofLab checks for mistakes, not for a hostile candidate: code under test runs in the scenario's own process and could defeat any check made there. This passport is also a local record that anyone who can write .repo-ai/state could forge, so a reviewer should run `repo-ai prove run` again.",
+  "The scenario is blob 092ccb1acb47 of test/ipaddr.test.js at commit 74ee4c5751af; whoever wrote that commit wrote the oracle (check it with `git cat-file -p 092ccb1acb47`).",
+  "The change edits files the scenario reaches by imports (lib/ipaddr.js). ProofLab treats them as the code under test; if one of them holds the expected values, the scenario does not check the claim. Review them, or move expected values into the scenario.",
+  "Each side ran 2 time(s); a flaky outcome that shows up less often is not ruled out.",
+  "The assertion canary only shows that assertions still fail in the scenario's process; code under test that recognises the scenario and behaves differently for it is not detected."
+ ],
+ "observations": {
+  "baseline": {
+   "control": [
+    {
+     "canary": "ok",
+     "command": "node --test test/ipaddr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "AssertionError: Missing expected exception."
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > allows to access IPv4 octets": "pass",
+      "ipaddr > allows to access IPv6 address parts": "pass",
+      "ipaddr > barfs at invalid IPv4": "pass",
+      "ipaddr > barfs at invalid IPv6": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv4 broadcast address": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv6 broadcast address": "pass",
+      "ipaddr > can construct IPv4 from octets": "pass",
+      "ipaddr > can construct IPv6 from 16bit parts": "pass",
+      "ipaddr > can construct IPv6 from 8bit parts": "pass",
+      "ipaddr > checks IPv4 address format": "pass",
+      "ipaddr > checks IPv6 address format": "pass",
+      "ipaddr > checks the conventional IPv4 CIDR format": "pass",
+      "ipaddr > checks the conventional IPv4 address format": "pass",
+      "ipaddr > compresses a trailing zero run when a zoneIndex is present": "pass",
+      "ipaddr > converts IPv4 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv4 to string correctly": "pass",
+      "ipaddr > converts IPv6 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv6 to RFC 5952 string correctly": "pass",
+      "ipaddr > converts IPv6 to string correctly": "pass",
+      "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "pass",
+      "ipaddr > correctly converts IPv6 and IPv4 addresses to byte arrays": "pass",
+      "ipaddr > correctly detects IPv4 and IPv6 CIDR addresses": "pass",
+      "ipaddr > correctly parses 1 as an IPv4 address": "pass",
+      "ipaddr > correctly processes IPv4-mapped addresses": "pass",
+      "ipaddr > detects reserved IPv4 networks": "pass",
+      "ipaddr > detects reserved IPv6 networks": "pass",
+      "ipaddr > does not consider a very large or very small number a valid IP address": "pass",
+      "ipaddr > does not hang on ::8:8:8:8:8:8:8:8:8": "pass",
+      "ipaddr > does not reject compression of exactly one IPv6 part": "pass",
+      "ipaddr > is able to determine IP address type": "pass",
+      "ipaddr > is able to determine IP address type from byte array input": "pass",
+      "ipaddr > matches IPv4 CIDR correctly": "pass",
+      "ipaddr > matches IPv6 CIDR correctly": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv4 network address": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv6 network address": "pass",
+      "ipaddr > parses CIDR reversible": "pass",
+      "ipaddr > parses IPv4 CIDR correctly": "pass",
+      "ipaddr > parses IPv4 in several weird formats": "pass",
+      "ipaddr > parses IPv6 CIDR correctly": "pass",
+      "ipaddr > parses IPv6 in different formats": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv6 masks": "pass",
+      "ipaddr > refuses to construct IPv4 address with trailing and leading zeros": "pass",
+      "ipaddr > refuses to construct invalid IPv4": "pass",
+      "ipaddr > refuses to construct invalid IPv6": "pass",
+      "ipaddr > refuses to convert non-IPv4-mapped IPv6 address to IPv4 address": "pass",
+      "ipaddr > rejects IPv6 parts longer than four hexadecimal digits": "pass",
+      "ipaddr > rejects compression of zero IPv6 parts": "pass",
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "fail",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "fail",
+      "ipaddr > returns IPv6 zoneIndex": "pass",
+      "ipaddr > returns IPv6 zoneIndex for IPv4-mapped IPv6 addresses": "pass",
+      "ipaddr > returns correct kind for IPv4": "pass",
+      "ipaddr > returns correct kind for IPv6": "pass",
+      "ipaddr > should define main classes": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv4 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv6 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength throws on an out-of-range or non-numeric prefix length": "pass",
+      "ipaddr > subnetMatch can use a hybrid IPv4/IPv6 range list": "pass",
+      "ipaddr > subnetMatch does not fail on IPv4 when looking for IPv6": "pass",
+      "ipaddr > subnetMatch does not fail on IPv6 when looking for IPv4": "pass",
+      "ipaddr > subnetMatch does not fail on empty range": "pass",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "fail",
+      "ipaddr > subnetMatch returns default subnet on empty range": "pass",
+      "ipaddr > throws a descriptive error when parsing a malformed IPv6 address": "pass",
+      "ipaddr > throws an error if tried to parse an invalid address": "pass",
+      "ipaddr > validates IPv4 addresses": "pass",
+      "ipaddr > validates IPv4 addresses in CIDR notation": "pass",
+      "ipaddr > validates IPv6 addresses": "pass",
+      "ipaddr > validates IPv6 addresses in CIDR notation": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.38,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "c993f57e7c6b52c9de803d36dd11008ddbc63b59a66a0defeea8cfca66360a74",
+     "tests": 75,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "kind": "behaviour",
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "node --test test/ipaddr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "AssertionError: Missing expected exception."
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > allows to access IPv4 octets": "pass",
+      "ipaddr > allows to access IPv6 address parts": "pass",
+      "ipaddr > barfs at invalid IPv4": "pass",
+      "ipaddr > barfs at invalid IPv6": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv4 broadcast address": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv6 broadcast address": "pass",
+      "ipaddr > can construct IPv4 from octets": "pass",
+      "ipaddr > can construct IPv6 from 16bit parts": "pass",
+      "ipaddr > can construct IPv6 from 8bit parts": "pass",
+      "ipaddr > checks IPv4 address format": "pass",
+      "ipaddr > checks IPv6 address format": "pass",
+      "ipaddr > checks the conventional IPv4 CIDR format": "pass",
+      "ipaddr > checks the conventional IPv4 address format": "pass",
+      "ipaddr > compresses a trailing zero run when a zoneIndex is present": "pass",
+      "ipaddr > converts IPv4 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv4 to string correctly": "pass",
+      "ipaddr > converts IPv6 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv6 to RFC 5952 string correctly": "pass",
+      "ipaddr > converts IPv6 to string correctly": "pass",
+      "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "pass",
+      "ipaddr > correctly converts IPv6 and IPv4 addresses to byte arrays": "pass",
+      "ipaddr > correctly detects IPv4 and IPv6 CIDR addresses": "pass",
+      "ipaddr > correctly parses 1 as an IPv4 address": "pass",
+      "ipaddr > correctly processes IPv4-mapped addresses": "pass",
+      "ipaddr > detects reserved IPv4 networks": "pass",
+      "ipaddr > detects reserved IPv6 networks": "pass",
+      "ipaddr > does not consider a very large or very small number a valid IP address": "pass",
+      "ipaddr > does not hang on ::8:8:8:8:8:8:8:8:8": "pass",
+      "ipaddr > does not reject compression of exactly one IPv6 part": "pass",
+      "ipaddr > is able to determine IP address type": "pass",
+      "ipaddr > is able to determine IP address type from byte array input": "pass",
+      "ipaddr > matches IPv4 CIDR correctly": "pass",
+      "ipaddr > matches IPv6 CIDR correctly": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv4 network address": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv6 network address": "pass",
+      "ipaddr > parses CIDR reversible": "pass",
+      "ipaddr > parses IPv4 CIDR correctly": "pass",
+      "ipaddr > parses IPv4 in several weird formats": "pass",
+      "ipaddr > parses IPv6 CIDR correctly": "pass",
+      "ipaddr > parses IPv6 in different formats": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv6 masks": "pass",
+      "ipaddr > refuses to construct IPv4 address with trailing and leading zeros": "pass",
+      "ipaddr > refuses to construct invalid IPv4": "pass",
+      "ipaddr > refuses to construct invalid IPv6": "pass",
+      "ipaddr > refuses to convert non-IPv4-mapped IPv6 address to IPv4 address": "pass",
+      "ipaddr > rejects IPv6 parts longer than four hexadecimal digits": "pass",
+      "ipaddr > rejects compression of zero IPv6 parts": "pass",
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "fail",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "fail",
+      "ipaddr > returns IPv6 zoneIndex": "pass",
+      "ipaddr > returns IPv6 zoneIndex for IPv4-mapped IPv6 addresses": "pass",
+      "ipaddr > returns correct kind for IPv4": "pass",
+      "ipaddr > returns correct kind for IPv6": "pass",
+      "ipaddr > should define main classes": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv4 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv6 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength throws on an out-of-range or non-numeric prefix length": "pass",
+      "ipaddr > subnetMatch can use a hybrid IPv4/IPv6 range list": "pass",
+      "ipaddr > subnetMatch does not fail on IPv4 when looking for IPv6": "pass",
+      "ipaddr > subnetMatch does not fail on IPv6 when looking for IPv4": "pass",
+      "ipaddr > subnetMatch does not fail on empty range": "pass",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "fail",
+      "ipaddr > subnetMatch returns default subnet on empty range": "pass",
+      "ipaddr > throws a descriptive error when parsing a malformed IPv6 address": "pass",
+      "ipaddr > throws an error if tried to parse an invalid address": "pass",
+      "ipaddr > validates IPv4 addresses": "pass",
+      "ipaddr > validates IPv4 addresses in CIDR notation": "pass",
+      "ipaddr > validates IPv6 addresses": "pass",
+      "ipaddr > validates IPv6 addresses in CIDR notation": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.39,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "a5254c41e7a38c693e2de686d8ec3318c9e33cf10ab9d20c7819793573a46458",
+     "tests": 75,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "node --test test/ipaddr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "AssertionError: Missing expected exception."
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > allows to access IPv4 octets": "pass",
+      "ipaddr > allows to access IPv6 address parts": "pass",
+      "ipaddr > barfs at invalid IPv4": "pass",
+      "ipaddr > barfs at invalid IPv6": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv4 broadcast address": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv6 broadcast address": "pass",
+      "ipaddr > can construct IPv4 from octets": "pass",
+      "ipaddr > can construct IPv6 from 16bit parts": "pass",
+      "ipaddr > can construct IPv6 from 8bit parts": "pass",
+      "ipaddr > checks IPv4 address format": "pass",
+      "ipaddr > checks IPv6 address format": "pass",
+      "ipaddr > checks the conventional IPv4 CIDR format": "pass",
+      "ipaddr > checks the conventional IPv4 address format": "pass",
+      "ipaddr > compresses a trailing zero run when a zoneIndex is present": "pass",
+      "ipaddr > converts IPv4 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv4 to string correctly": "pass",
+      "ipaddr > converts IPv6 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv6 to RFC 5952 string correctly": "pass",
+      "ipaddr > converts IPv6 to string correctly": "pass",
+      "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "pass",
+      "ipaddr > correctly converts IPv6 and IPv4 addresses to byte arrays": "pass",
+      "ipaddr > correctly detects IPv4 and IPv6 CIDR addresses": "pass",
+      "ipaddr > correctly parses 1 as an IPv4 address": "pass",
+      "ipaddr > correctly processes IPv4-mapped addresses": "pass",
+      "ipaddr > detects reserved IPv4 networks": "pass",
+      "ipaddr > detects reserved IPv6 networks": "pass",
+      "ipaddr > does not consider a very large or very small number a valid IP address": "pass",
+      "ipaddr > does not hang on ::8:8:8:8:8:8:8:8:8": "pass",
+      "ipaddr > does not reject compression of exactly one IPv6 part": "pass",
+      "ipaddr > is able to determine IP address type": "pass",
+      "ipaddr > is able to determine IP address type from byte array input": "pass",
+      "ipaddr > matches IPv4 CIDR correctly": "pass",
+      "ipaddr > matches IPv6 CIDR correctly": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv4 network address": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv6 network address": "pass",
+      "ipaddr > parses CIDR reversible": "pass",
+      "ipaddr > parses IPv4 CIDR correctly": "pass",
+      "ipaddr > parses IPv4 in several weird formats": "pass",
+      "ipaddr > parses IPv6 CIDR correctly": "pass",
+      "ipaddr > parses IPv6 in different formats": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv6 masks": "pass",
+      "ipaddr > refuses to construct IPv4 address with trailing and leading zeros": "pass",
+      "ipaddr > refuses to construct invalid IPv4": "pass",
+      "ipaddr > refuses to construct invalid IPv6": "pass",
+      "ipaddr > refuses to convert non-IPv4-mapped IPv6 address to IPv4 address": "pass",
+      "ipaddr > rejects IPv6 parts longer than four hexadecimal digits": "pass",
+      "ipaddr > rejects compression of zero IPv6 parts": "pass",
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "fail",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "fail",
+      "ipaddr > returns IPv6 zoneIndex": "pass",
+      "ipaddr > returns IPv6 zoneIndex for IPv4-mapped IPv6 addresses": "pass",
+      "ipaddr > returns correct kind for IPv4": "pass",
+      "ipaddr > returns correct kind for IPv6": "pass",
+      "ipaddr > should define main classes": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv4 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv6 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength throws on an out-of-range or non-numeric prefix length": "pass",
+      "ipaddr > subnetMatch can use a hybrid IPv4/IPv6 range list": "pass",
+      "ipaddr > subnetMatch does not fail on IPv4 when looking for IPv6": "pass",
+      "ipaddr > subnetMatch does not fail on IPv6 when looking for IPv4": "pass",
+      "ipaddr > subnetMatch does not fail on empty range": "pass",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "fail",
+      "ipaddr > subnetMatch returns default subnet on empty range": "pass",
+      "ipaddr > throws a descriptive error when parsing a malformed IPv6 address": "pass",
+      "ipaddr > throws an error if tried to parse an invalid address": "pass",
+      "ipaddr > validates IPv4 addresses": "pass",
+      "ipaddr > validates IPv4 addresses in CIDR notation": "pass",
+      "ipaddr > validates IPv6 addresses": "pass",
+      "ipaddr > validates IPv6 addresses in CIDR notation": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.29,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "76339ff3ce7b77cd549a0310e3134fb1ffc9ed9215dac6a82a255b499bde5822",
+     "tests": 75,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "reproduced",
+   "targets_failing": [
+    "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+    "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+    "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+   ],
+   "why": "3 targeted test(s) fail at the base"
+  },
+  "candidate": {
+   "failing": [
+    "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses",
+    "ipaddr > correctly processes IPv4-mapped addresses",
+    "ipaddr > detects reserved IPv4 networks",
+    "ipaddr > detects reserved IPv6 networks",
+    "ipaddr > matches IPv4 CIDR correctly",
+    "ipaddr > matches IPv6 CIDR correctly",
+    "ipaddr > parses IPv4 CIDR correctly",
+    "ipaddr > parses IPv6 CIDR correctly"
+   ],
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "node --test test/ipaddr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > correctly processes IPv4-mapped addresses": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > detects reserved IPv4 networks": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > detects reserved IPv6 networks": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > matches IPv4 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > matches IPv6 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > parses IPv4 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > parses IPv6 CIDR correctly": "ipaddr: invalid CIDR prefix length"
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > allows to access IPv4 octets": "pass",
+      "ipaddr > allows to access IPv6 address parts": "pass",
+      "ipaddr > barfs at invalid IPv4": "pass",
+      "ipaddr > barfs at invalid IPv6": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv4 broadcast address": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv6 broadcast address": "pass",
+      "ipaddr > can construct IPv4 from octets": "pass",
+      "ipaddr > can construct IPv6 from 16bit parts": "pass",
+      "ipaddr > can construct IPv6 from 8bit parts": "pass",
+      "ipaddr > checks IPv4 address format": "pass",
+      "ipaddr > checks IPv6 address format": "pass",
+      "ipaddr > checks the conventional IPv4 CIDR format": "pass",
+      "ipaddr > checks the conventional IPv4 address format": "pass",
+      "ipaddr > compresses a trailing zero run when a zoneIndex is present": "pass",
+      "ipaddr > converts IPv4 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv4 to string correctly": "pass",
+      "ipaddr > converts IPv6 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv6 to RFC 5952 string correctly": "pass",
+      "ipaddr > converts IPv6 to string correctly": "pass",
+      "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "fail",
+      "ipaddr > correctly converts IPv6 and IPv4 addresses to byte arrays": "pass",
+      "ipaddr > correctly detects IPv4 and IPv6 CIDR addresses": "pass",
+      "ipaddr > correctly parses 1 as an IPv4 address": "pass",
+      "ipaddr > correctly processes IPv4-mapped addresses": "fail",
+      "ipaddr > detects reserved IPv4 networks": "fail",
+      "ipaddr > detects reserved IPv6 networks": "fail",
+      "ipaddr > does not consider a very large or very small number a valid IP address": "pass",
+      "ipaddr > does not hang on ::8:8:8:8:8:8:8:8:8": "pass",
+      "ipaddr > does not reject compression of exactly one IPv6 part": "pass",
+      "ipaddr > is able to determine IP address type": "pass",
+      "ipaddr > is able to determine IP address type from byte array input": "pass",
+      "ipaddr > matches IPv4 CIDR correctly": "fail",
+      "ipaddr > matches IPv6 CIDR correctly": "fail",
+      "ipaddr > networkAddressFromCIDR returns correct IPv4 network address": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv6 network address": "pass",
+      "ipaddr > parses CIDR reversible": "pass",
+      "ipaddr > parses IPv4 CIDR correctly": "fail",
+      "ipaddr > parses IPv4 in several weird formats": "pass",
+      "ipaddr > parses IPv6 CIDR correctly": "fail",
+      "ipaddr > parses IPv6 in different formats": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv6 masks": "pass",
+      "ipaddr > refuses to construct IPv4 address with trailing and leading zeros": "pass",
+      "ipaddr > refuses to construct invalid IPv4": "pass",
+      "ipaddr > refuses to construct invalid IPv6": "pass",
+      "ipaddr > refuses to convert non-IPv4-mapped IPv6 address to IPv4 address": "pass",
+      "ipaddr > rejects IPv6 parts longer than four hexadecimal digits": "pass",
+      "ipaddr > rejects compression of zero IPv6 parts": "pass",
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "pass",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "pass",
+      "ipaddr > returns IPv6 zoneIndex": "pass",
+      "ipaddr > returns IPv6 zoneIndex for IPv4-mapped IPv6 addresses": "pass",
+      "ipaddr > returns correct kind for IPv4": "pass",
+      "ipaddr > returns correct kind for IPv6": "pass",
+      "ipaddr > should define main classes": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv4 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv6 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength throws on an out-of-range or non-numeric prefix length": "pass",
+      "ipaddr > subnetMatch can use a hybrid IPv4/IPv6 range list": "pass",
+      "ipaddr > subnetMatch does not fail on IPv4 when looking for IPv6": "pass",
+      "ipaddr > subnetMatch does not fail on IPv6 when looking for IPv4": "pass",
+      "ipaddr > subnetMatch does not fail on empty range": "pass",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "pass",
+      "ipaddr > subnetMatch returns default subnet on empty range": "pass",
+      "ipaddr > throws a descriptive error when parsing a malformed IPv6 address": "pass",
+      "ipaddr > throws an error if tried to parse an invalid address": "pass",
+      "ipaddr > validates IPv4 addresses": "pass",
+      "ipaddr > validates IPv4 addresses in CIDR notation": "pass",
+      "ipaddr > validates IPv6 addresses": "pass",
+      "ipaddr > validates IPv6 addresses in CIDR notation": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.37,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "d4c59d213fda5e26140bba31de4bad45150def6bfcccf6efc69d4d89b5d324f0",
+     "tests": 75,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "node --test test/ipaddr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > correctly processes IPv4-mapped addresses": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > detects reserved IPv4 networks": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > detects reserved IPv6 networks": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > matches IPv4 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > matches IPv6 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > parses IPv4 CIDR correctly": "ipaddr: invalid CIDR prefix length",
+      "ipaddr > parses IPv6 CIDR correctly": "ipaddr: invalid CIDR prefix length"
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > allows to access IPv4 octets": "pass",
+      "ipaddr > allows to access IPv6 address parts": "pass",
+      "ipaddr > barfs at invalid IPv4": "pass",
+      "ipaddr > barfs at invalid IPv6": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv4 broadcast address": "pass",
+      "ipaddr > broadcastAddressFromCIDR returns correct IPv6 broadcast address": "pass",
+      "ipaddr > can construct IPv4 from octets": "pass",
+      "ipaddr > can construct IPv6 from 16bit parts": "pass",
+      "ipaddr > can construct IPv6 from 8bit parts": "pass",
+      "ipaddr > checks IPv4 address format": "pass",
+      "ipaddr > checks IPv6 address format": "pass",
+      "ipaddr > checks the conventional IPv4 CIDR format": "pass",
+      "ipaddr > checks the conventional IPv4 address format": "pass",
+      "ipaddr > compresses a trailing zero run when a zoneIndex is present": "pass",
+      "ipaddr > converts IPv4 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv4 to string correctly": "pass",
+      "ipaddr > converts IPv6 CIDR to string correctly": "pass",
+      "ipaddr > converts IPv6 to RFC 5952 string correctly": "pass",
+      "ipaddr > converts IPv6 to string correctly": "pass",
+      "ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses": "fail",
+      "ipaddr > correctly converts IPv6 and IPv4 addresses to byte arrays": "pass",
+      "ipaddr > correctly detects IPv4 and IPv6 CIDR addresses": "pass",
+      "ipaddr > correctly parses 1 as an IPv4 address": "pass",
+      "ipaddr > correctly processes IPv4-mapped addresses": "fail",
+      "ipaddr > detects reserved IPv4 networks": "fail",
+      "ipaddr > detects reserved IPv6 networks": "fail",
+      "ipaddr > does not consider a very large or very small number a valid IP address": "pass",
+      "ipaddr > does not hang on ::8:8:8:8:8:8:8:8:8": "pass",
+      "ipaddr > does not reject compression of exactly one IPv6 part": "pass",
+      "ipaddr > is able to determine IP address type": "pass",
+      "ipaddr > is able to determine IP address type from byte array input": "pass",
+      "ipaddr > matches IPv4 CIDR correctly": "fail",
+      "ipaddr > matches IPv6 CIDR correctly": "fail",
+      "ipaddr > networkAddressFromCIDR returns correct IPv4 network address": "pass",
+      "ipaddr > networkAddressFromCIDR returns correct IPv6 network address": "pass",
+      "ipaddr > parses CIDR reversible": "pass",
+      "ipaddr > parses IPv4 CIDR correctly": "fail",
+      "ipaddr > parses IPv4 in several weird formats": "pass",
+      "ipaddr > parses IPv6 CIDR correctly": "fail",
+      "ipaddr > parses IPv6 in different formats": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv4 masks": "pass",
+      "ipaddr > prefixLengthFromSubnetMask returns proper CIDR notation for standard IPv6 masks": "pass",
+      "ipaddr > refuses to construct IPv4 address with trailing and leading zeros": "pass",
+      "ipaddr > refuses to construct invalid IPv4": "pass",
+      "ipaddr > refuses to construct invalid IPv6": "pass",
+      "ipaddr > refuses to convert non-IPv4-mapped IPv6 address to IPv4 address": "pass",
+      "ipaddr > rejects IPv6 parts longer than four hexadecimal digits": "pass",
+      "ipaddr > rejects compression of zero IPv6 parts": "pass",
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "pass",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "pass",
+      "ipaddr > returns IPv6 zoneIndex": "pass",
+      "ipaddr > returns IPv6 zoneIndex for IPv4-mapped IPv6 addresses": "pass",
+      "ipaddr > returns correct kind for IPv4": "pass",
+      "ipaddr > returns correct kind for IPv6": "pass",
+      "ipaddr > should define main classes": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv4 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength returns correct IPv6 subnet mask given prefix length": "pass",
+      "ipaddr > subnetMaskFromPrefixLength throws on an out-of-range or non-numeric prefix length": "pass",
+      "ipaddr > subnetMatch can use a hybrid IPv4/IPv6 range list": "pass",
+      "ipaddr > subnetMatch does not fail on IPv4 when looking for IPv6": "pass",
+      "ipaddr > subnetMatch does not fail on IPv6 when looking for IPv4": "pass",
+      "ipaddr > subnetMatch does not fail on empty range": "pass",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "pass",
+      "ipaddr > subnetMatch returns default subnet on empty range": "pass",
+      "ipaddr > throws a descriptive error when parsing a malformed IPv6 address": "pass",
+      "ipaddr > throws an error if tried to parse an invalid address": "pass",
+      "ipaddr > validates IPv4 addresses": "pass",
+      "ipaddr > validates IPv4 addresses in CIDR notation": "pass",
+      "ipaddr > validates IPv6 addresses": "pass",
+      "ipaddr > validates IPv6 addresses in CIDR notation": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.27,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "38780e0672689479607b888e76545e86c5a443669f2071771d8526cad5b472be",
+     "tests": 75,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "failed",
+   "why": "8 test(s) of the scenario fail at the candidate: ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses (ipaddr: invalid CIDR prefix length)"
+  }
+ },
+ "regressions": {
+  "state": "not-checked",
+  "why": "the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+ },
+ "repeat": 2,
+ "repo_ai_version": "0.7.7",
+ "reproduce": [
+  "repo-ai prove run claim --base 79a508d482ed",
+  "# by hand: check out 79a508d482ed in a separate worktree, then git show 74ee4c5751af:test/ipaddr.test.js > test/ipaddr.test.js",
+  "# check the bytes: sha256 of test/ipaddr.test.js must be ba469775028dece0b2c1de7023a1ee92d9de7bc7c68e3f50927fc9c10b444057",
+  "# at the base, in a sandbox: node --test test/ipaddr.test.js   -> expect a failure in ipaddr > rejects invalid IPv4 CIDR prefix lengths in match, ipaddr > rejects invalid IPv6 CIDR prefix lengths in match, ipaddr > subnetMatch rejects invalid CIDR prefix lengths",
+  "# at the candidate: node --test test/ipaddr.test.js   -> expect every test to pass",
+  "repo-ai verify --run --base 79a508d482ed   # the regression check"
+ ],
+ "scenario": {
+  "bytes": 37290,
+  "in_base_tree": "differs",
+  "in_candidate_tree": "identical",
+  "notes": [],
+  "path": "test/ipaddr.test.js",
+  "provenance": {
+   "blob": "092ccb1acb47ba0fa759236ecfd7a9f54bfec4d6",
+   "commit": "74ee4c5751afbb998247696539065c78d274d631",
+   "kind": "git",
+   "revision": "74ee4c5751afbb998247696539065c78d274d631"
+  },
+  "sha256": "ba469775028dece0b2c1de7023a1ee92d9de7bc7c68e3f50927fc9c10b444057"
+ },
+ "schema": "repo-ai.proof-passport/1",
+ "seconds": 3.16,
+ "support": [],
+ "untested": [
+  "Behaviour outside the scenario's 70 test(s).",
+  "Other platforms and environments: only Darwin, v24.19.0 in the seatbelt sandbox was used.",
+  "The claim's wording itself: no tool checks that the scenario tests what the claim says."
+ ],
+ "verdict": {
+  "headline": "CLAIM NOT ESTABLISHED: the candidate fails the pinned scenario",
+  "level": "not_established",
+  "reasons": [
+   "candidate: 8 test(s) of the scenario fail at the candidate: ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses (ipaddr: invalid CIDR prefix length)",
+   "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)",
+   "edited tests: the base's own test/ipaddr.test.js fails at the candidate: ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses, ipaddr > correctly processes IPv4-mapped addresses, ipaddr > detects reserved IPv4 networks"
+  ],
+  "state": "candidate-failed",
+  "supported": false
+ }
+}

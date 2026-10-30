@@ -1,0 +1,33 @@
+{
+  "id": "ts-workspace-014-truncate-unit-tests",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "test",
+  "difficulty": "medium",
+  "prompt": "`truncate()` in the core string helpers has no unit tests, and every table the CLI\nprints goes through it. Please add tests to the core package that pin its behaviour\ndown:\n\n- strings that fit (including an exact fit) come back unchanged\n- longer strings are cut so the result, *including* the ellipsis, is exactly `width` characters\n- width 1 gives just the ellipsis; width 0 or negative gives an empty string\n- multi-byte characters (emoji, accented letters) count as a single character\n\nThe implementation is fine as it is -- tests only, please.",
+  "setup": [],
+  "solution": [
+    {
+      "file": "packages/core/test/strings.test.ts",
+      "create": "import { test } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { truncate } from \"../src/strings.ts\";\n\ntest(\"short strings are unchanged\", () => {\n  assert.equal(truncate(\"abc\", 5), \"abc\");\n  assert.equal(truncate(\"abcde\", 5), \"abcde\");\n});\n\ntest(\"long strings are cut to exactly width including the ellipsis\", () => {\n  assert.equal(truncate(\"scheduler\", 6), \"sched\\u2026\");\n  assert.equal(Array.from(truncate(\"a\".repeat(50), 10)).length, 10);\n});\n\ntest(\"tiny widths\", () => {\n  assert.equal(truncate(\"abc\", 1), \"\\u2026\");\n  assert.equal(truncate(\"abc\", 0), \"\");\n  assert.equal(truncate(\"abc\", -3), \"\");\n});\n\ntest(\"multi-byte characters count once\", () => {\n  assert.equal(truncate(\"\\u{1F600}\\u{1F600}\\u{1F600}\", 3), \"\\u{1F600}\\u{1F600}\\u{1F600}\");\n  assert.equal(truncate(\"caf\\u00e9 cr\\u00e8me\", 5), \"caf\\u00e9\\u2026\");\n  assert.equal(truncate(\"\\u{1F600}\\u{1F600}\\u{1F600}\\u{1F600}\", 3), \"\\u{1F600}\\u{1F600}\\u2026\");\n});\n"
+    }
+  ],
+  "gold_files": [
+    "packages/core/test/strings.test.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_truncate_mutants.test.ts",
+      "dest": "packages/core/test/hidden_truncate_mutants.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/core/test/hidden_truncate_mutants.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

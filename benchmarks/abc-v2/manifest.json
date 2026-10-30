@@ -1,0 +1,139 @@
+{
+  "analysis": "n=4 tasks (2 Python, 2 Node clusters) per provider. Descriptive counts only; no significance or superiority claim. Verdict stays NOT_YET_DEMONSTRATED unless matched live arms exist and are reported with their uncertainty.",
+  "arms": {
+    "A": "provider's ordinary workflow, same model/tools/budget, no repo-ai",
+    "B": "same provider via `repo-ai do` (retrieval, plan, frozen verification, isolation)",
+    "C": "B plus selective multi-agent/tournament; NOT RUNNABLE live in this release (compare_candidates is replay-only) -> reported NOT_RUN"
+  },
+  "caps": {
+    "note": "includes all prior spend; UNKNOWN cost is not 0",
+    "per_call_usd": 10,
+    "total_usd": 150
+  },
+  "design_note": "Every behaviour the hidden tests check is stated in the task prompt (abc-v1 node-slug showed unstated hidden requirements make a FALSE_GREEN a contract defect, not a verifier defect). Tasks are disjoint from abc-v1, which is a spent pilot.",
+  "hidden_grader_policy": "hidden/ is never copied into the agent workspace nor mentioned in prompts; grading happens in a separate temp copy.",
+  "negative_controls": "each task ships a `decoy` that passes visible tests and must grade FALSE_GREEN, and the untouched `repo` that must grade FAIL.",
+  "outcomes": [
+    "CORRECT",
+    "FALSE_GREEN",
+    "FAIL",
+    "INCONCLUSIVE",
+    "NOT_RUN",
+    "ABSTAIN"
+  ],
+  "primary_endpoint": "CORRECT = visible AND hidden tests pass on the candidate files actually produced (only task.write_paths are honoured; other changes are ignored and reported)",
+  "providers": [
+    "codex",
+    "bob"
+  ],
+  "run_order_counterbalanced_seeded": {
+    "node-csv": [
+      "A",
+      "B"
+    ],
+    "node-ranges": [
+      "B",
+      "A"
+    ],
+    "py-duration": [
+      "A",
+      "B"
+    ],
+    "py-split": [
+      "A",
+      "B"
+    ]
+  },
+  "schema": 1,
+  "secondary_endpoints": [
+    "false_green_count",
+    "wall_seconds",
+    "observed_usd",
+    "agent_count",
+    "abstentions",
+    "human_interventions",
+    "attempted_but_failed_runs"
+  ],
+  "seed": 20261029,
+  "sha256": {
+    "grade.py": "0f8d2344e064e7b68978cd7115308c2e7be56e83f6a0ae476daffd78ccd5993a",
+    "tasks/node-csv/decoy/csv.js": "e78efd1b0205513104a6ae79de5e0be35fd38939db630931f9d59a13688a9667",
+    "tasks/node-csv/hidden/csv.hidden.test.js": "93cd527c4e5e84c44599bf630b4c3f89ef39bf3f4716ae8969120ab580766c1e",
+    "tasks/node-csv/reference/csv.js": "4c4855cc98248eff9117c2ef24db54fb0cdc954c05b499547b5af819564c46a8",
+    "tasks/node-csv/repo/csv.js": "d7bbe2f18e55ffa2b5e27aef9b7ed1522fd54972465af3c03a9cdcf39af69324",
+    "tasks/node-csv/repo/csv.test.js": "ee834f0c8ed7e8ad42446342586f482ad4aa84aaa46195a8051d1049c7a2d9ed",
+    "tasks/node-csv/repo/package.json": "ee0b467c2916df96dd15f0d4a91fd5c2ea2debb21d6e1cd6741769b7fc538f7e",
+    "tasks/node-csv/task.json": "74f4fcd53aa70313a0a9710ba5d95befa4f044de217ee8e6aeb24692cab2c011",
+    "tasks/node-ranges/decoy/ranges.js": "de8f869d29f6e208fbc9f4baab4f28953bb833977d33d8d983f702e461c380c0",
+    "tasks/node-ranges/hidden/ranges.hidden.test.js": "709b2c81358e90d0e4c4ec6c7d7e13ce59582f285874cedcf6ac615f94765306",
+    "tasks/node-ranges/reference/ranges.js": "76093cfcd95df43a4212bf81cf1d2417db45d60ac8e8ad1843940770e989a384",
+    "tasks/node-ranges/repo/package.json": "ee0b467c2916df96dd15f0d4a91fd5c2ea2debb21d6e1cd6741769b7fc538f7e",
+    "tasks/node-ranges/repo/ranges.js": "3ba334b3acde23878c17299bc457fa9733935262d8193367161155dfe15980a4",
+    "tasks/node-ranges/repo/ranges.test.js": "9d4cb4d079fb450c3829963ebb6cbd2189ac61e18f6bbaaa09d013326b4f550b",
+    "tasks/node-ranges/task.json": "11d3e7df3d15bcc75259983f528501a6d5318b6dc5dcd442e14528dbbb5015b3",
+    "tasks/py-duration/decoy/duration.py": "dda2f89fa9635a0317ca83c2d34a4d628ac184f0196807cc56c2b50461c11296",
+    "tasks/py-duration/hidden/test_duration_hidden.py": "e6cb7307d7476e3c2f5cd94527a1ed34503e1f5c31bbbc1708e50a14a39a5da2",
+    "tasks/py-duration/reference/duration.py": "da2d4be476312c6809274e2b25160088fb451e9ba74330f5ad88009ebb47901a",
+    "tasks/py-duration/repo/duration.py": "764e7e0e019c9ba7ab3a21340c64038309279249f0b64b5961684764fb3ec688",
+    "tasks/py-duration/repo/pyproject.toml": "16713d02c4751fb02221a274d20fe9f3be7ffaffd1a3031af82cd37f3a6456f3",
+    "tasks/py-duration/repo/test_duration.py": "4d1d7f32c77c71d9084eefdd574efc6287ccac0c392315ffc6a5d75e085c5573",
+    "tasks/py-duration/task.json": "c2bd86537b5992baa172b0c4a832f07f0391a383063b241c3061bfca8247f009",
+    "tasks/py-split/decoy/split.py": "d8a6aabc39df44d5e586eeee09770396d4e5dcd23f10986cd279faedef07e796",
+    "tasks/py-split/hidden/test_split_hidden.py": "ae61e8f1c9370ccd5790d06b37dc747e6858f23676822065edd32a3f7b4c2834",
+    "tasks/py-split/reference/split.py": "c71c96f2eec84b95a58f46668506d50caf7c2a4a9595337ba883ea2d6d50ed35",
+    "tasks/py-split/repo/pyproject.toml": "16713d02c4751fb02221a274d20fe9f3be7ffaffd1a3031af82cd37f3a6456f3",
+    "tasks/py-split/repo/split.py": "444a1e753742efc1087477227030184a5487e0aedfbc286a2fb8bbb935eedd25",
+    "tasks/py-split/repo/test_split.py": "52bd3a0cceee97d3577846c6d98ecdd57fbfabce02e02718d61859a5aace9008",
+    "tasks/py-split/task.json": "8b24252cdac3311e1b0657eed9e8fdf89e724ab1ef6687ca2f4a7791bae13706"
+  },
+  "status": "PREREGISTERED_FROZEN_BEFORE_ANY_LIVE_RUN",
+  "study": "abc-v2",
+  "task_clusters": [
+    "node_set_normalization",
+    "node_strict_parsing",
+    "python_money_allocation",
+    "python_strict_parsing"
+  ],
+  "tasks": {
+    "node-csv": {
+      "cluster": "node_strict_parsing",
+      "id": "node-csv",
+      "language": "node",
+      "prompt": "In csv.js, parseCsvLine(line) must split one CSV line into an array of strings. Fields are separated by commas. A field that starts with a double quote is quoted: it ends at the next double quote that is not doubled, a doubled double quote inside it stands for one literal double quote, and commas inside it are part of the value. Unquoted fields are returned exactly as written, including any spaces. Empty fields are kept, so 'a,,b' has three fields and a trailing comma adds a final empty field. An empty line gives [''] (one empty field). After a closing quote only a comma or the end of the line may follow. Throw an Error for an unterminated quoted field or for any other character after a closing quote. Quotes in the middle of an unquoted field are ordinary characters.",
+      "test_command": "node --test",
+      "write_paths": [
+        "csv.js"
+      ]
+    },
+    "node-ranges": {
+      "cluster": "node_set_normalization",
+      "id": "node-ranges",
+      "language": "node",
+      "prompt": "In ranges.js, mergeRanges(ranges) takes an array of [start, end] integer pairs (start <= end, both inclusive) and returns a new array of the smallest set of non-overlapping ranges covering exactly the same integers, sorted by start. Ranges that overlap are merged, and ranges that are adjacent integers (for example [1,3] and [4,6]) are also merged into [1,6]. Duplicates collapse. An empty array gives an empty array. The input array and its pairs must not be modified. Throw a TypeError if any pair is not an array of two integers, and a RangeError if a pair has start greater than end.",
+      "test_command": "node --test",
+      "write_paths": [
+        "ranges.js"
+      ]
+    },
+    "py-duration": {
+      "cluster": "python_strict_parsing",
+      "id": "py-duration",
+      "language": "python",
+      "prompt": "In duration.py, parse_duration(text) must convert strings like '1h30m' to a whole number of seconds (int). The grammar is one or more components, each a non-negative integer immediately followed by one unit letter: d (86400 s), h (3600 s), m (60 s), s (1 s). Units are lowercase, may each appear at most once, and must appear in the order d, h, m, s (so '30m1h' and '1h1h' are invalid). Leading and trailing whitespace around the whole string is ignored, but whitespace inside it is invalid. Raise ValueError for anything else: an empty or whitespace-only string, a number without a unit, an unknown unit, a sign, a decimal point, or any stray text. '0s' is valid and gives 0.",
+      "test_command": "python -m pytest",
+      "write_paths": [
+        "duration.py"
+      ]
+    },
+    "py-split": {
+      "cluster": "python_money_allocation",
+      "id": "py-split",
+      "language": "python",
+      "prompt": "In split.py, split_bill(total_cents, weights) must divide total_cents (an int) among the weights so that the returned list of ints always sums to exactly total_cents. Each share is proportional to its weight; use the largest-remainder method: give every share its floor first, then hand out the remaining cents one each to the shares with the largest fractional remainders, breaking ties in favour of the earlier index. A weight of 0 gets 0. Raise ValueError if weights is empty, if any weight is negative, if all weights are zero, or if total_cents is negative. The weights argument must not be modified.",
+      "test_command": "python -m pytest",
+      "write_paths": [
+        "split.py"
+      ]
+    }
+  }
+}

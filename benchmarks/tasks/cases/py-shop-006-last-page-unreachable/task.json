@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-006-last-page-unreachable",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Catalog pagination drops the tail. With 25 products, `GET /products?per_page=10` says\n`\"pages\": 2`, and asking for `page=3` returns an empty `items` list, so the last 5\nproducts can't be reached from the storefront. The orders list behaves the same way.",
+  "setup": [
+    {
+      "file": "shop/utils/pagination.py",
+      "find": "pages = (total + per_page - 1) // per_page if total else 0",
+      "replace": "pages = total // per_page if total else 0"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/utils/pagination.py",
+      "find": "pages = total // per_page if total else 0",
+      "replace": "pages = (total + per_page - 1) // per_page if total else 0"
+    }
+  ],
+  "gold_files": [
+    "shop/utils/pagination.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_partial_page.py",
+      "dest": "tests/test_hidden_partial_page.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_partial_page"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

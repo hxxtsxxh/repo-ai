@@ -1,0 +1,422 @@
+---
+import Landing from '../layouts/Landing.astro';
+import InstallCommand from '../components/InstallCommand.astro';
+import Terminal from '../components/landing/Terminal.astro';
+import Architecture from '../components/landing/Architecture.astro';
+import { site, sourceLabel } from '../config';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const docs = (p = '') => `${base}docs/${p}`;
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/** Static copy only: `backticks` become <code>. */
+const codeify = (s: string) => escapeHtml(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+
+const vocabulary = [
+  { term: 'PASSED', tone: 'pass', text: 'Every selected test ran and passed. Not proof the change is correct.' },
+  { term: 'REGRESSION', tone: 'fail', text: 'This change breaks tests that pass at the base.' },
+  { term: 'already failing', tone: 'pre', text: 'Failing at the base too, so not caused by this change.' },
+  { term: 'NOT VERIFIED', tone: 'unknown', text: 'No linked test, or the run was cut short. Never reported as a pass.' },
+  { term: 'ABSTAIN', tone: 'abstain', text: 'Several different candidates passed. No arbitrary winner is picked.' },
+];
+
+const parts = [
+  {
+    n: '01',
+    name: 'Context',
+    lede: 'Where to look first, from an offline index.',
+    body: 'repo-ai indexes imports, test links, routes, entry points and git co-change history on your machine. It returns a ranked shortlist with the reason for every file, and returns nothing when it has no evidence.',
+    cmds: ['context "…"', 'explain "…"', 'impact --changed'],
+    tag: 'no agent needed',
+  },
+  {
+    n: '02',
+    name: 'Evidence',
+    lede: 'What your change can break, checked skeptically.',
+    body: 'It picks the tests linked to your change, runs them sandboxed in a disposable copy, and compares every failure with the base commit, so new failures are kept apart from old ones. `repo-ai coverage` checks the requirement-to-test map you declare against what the tests actually showed.',
+    cmds: ['verify', 'verify --run', 'coverage ID --requirements reqs.json'],
+    tag: 'no agent needed',
+  },
+  {
+    n: '03',
+    name: 'Agents',
+    lede: 'Optional. Under frozen tests, with your consent.',
+    body: '`repo-ai do` can hand a task to a coding agent CLI you already use. The agent works in an isolated worktree, the acceptance tests are frozen, and nothing reaches your checkout until you run `repo-ai apply`. A tournament between providers abstains when more than one candidate passes.',
+    cmds: ['do "…" --dry-run', 'apply ID · undo ID', 'shortlist ID · handoff ID'],
+    tag: 'experimental',
+  },
+];
+
+const useCases = [
+  {
+    title: 'Start a task in an unfamiliar repository',
+    cmd: 'repo-ai context "fix the login validation bug"',
+    what: 'A shortlist of files with line ranges and the evidence for each, plus the test command to run.',
+    backed: 'Captured for this page on the bundled fixture. Identifier lookups are a stable candidate; plain-prose queries are weak (recall@5 0.320 on the retrieval holdout).',
+  },
+  {
+    title: 'Check a change before you push it',
+    cmd: 'repo-ai verify --run',
+    what: 'The linked tests run sandboxed in a throwaway copy of the working tree; the source tree is snapshotted before and after, and any difference invalidates the run.',
+    backed: 'Held-out-7: 0 false assurances in 127 failing states; working tree unchanged in 234 of 234 runs.',
+  },
+  {
+    title: 'Tell a new failure from one that was already there',
+    cmd: 'repo-ai verify --run',
+    what: 'Every failing test is re-checked at the base revision and labelled a regression or already failing.',
+    backed: 'Held-out-7: no new failure classified as pre-existing, no false alarms (pytest and node --test, in containers).',
+  },
+  {
+    title: 'Pin the requirements that matter to real tests',
+    cmd: 'repo-ai coverage ID --requirements reqs.json',
+    what: 'Each declared requirement is matched to the tests that should show it, and checked against observed before/after outcomes.',
+    backed: 'Reproduced on the node-slug false green: a decoy and the reference look identical until the missing requirement is mapped.',
+  },
+  {
+    title: 'Let an agent attempt a fix without touching your checkout',
+    cmd: 'repo-ai do "…" --agent codex --allow-live-provider --run --allow-write src/x.py',
+    what: 'The candidate is produced in an isolated worktree, checked by the same engine, and applied only by `repo-ai apply`.',
+    backed: 'Live, independently re-verified changes from IBM Bob, Codex CLI and Antigravity on small tasks. Small n.',
+  },
+  {
+    title: 'Hand unfinished work to a different agent',
+    cmd: 'repo-ai handoff ID --to bob --json > capsule.json',
+    what: 'An integrity-checked capsule; validated partial progress is re-derived from the local store and re-verified from the frozen base.',
+    backed: 'Demonstrated live once from agy to Codex, on a constructed scenario (n = 1).',
+  },
+];
+---
+
+<Landing
+  title="repo-ai: context before the change, evidence after it"
+  description="A local-first CLI that indexes a repository offline, runs the tests your change can break in a sandboxed disposable copy, compares them with the base commit, and can optionally drive coding agents under frozen tests."
+>
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <p class="eyebrow">Local-first CLI · macOS, Linux, Windows · Python 3.10–3.14</p>
+        <h1 id="hero-title" class="hero__title">Context before the change.<br /><span class="hero__accent">Evidence</span> after it.</h1>
+        <p class="hero__lede">
+          repo-ai indexes your repository offline, runs the tests your change can break in a sandboxed throwaway copy, and compares
+          them with the base commit. Coding agents are optional. When you use one, its work goes through the same checks and reaches
+          your checkout only when you say so.
+        </p>
+        <p class="hero__fine">A pass means the tests that ran observed a pass. It never means the task is correct.</p>
+        <InstallCommand variant="hero" details={false} />
+        <div class="hero__actions">
+          <a class="btn btn--primary" href={docs('quickstart/')}>Quickstart, no agent needed</a>
+          <a class="btn" href={docs('install/')}>Install options</a>
+        </div>
+        <p class="hero__meta">
+          {site.pypiPublished ? `On PyPI as repo-ai ${site.version}.` : `${site.version} ships as a wheel on the GitHub release, not on PyPI yet.`}
+          {' '}No daemon, no telemetry.
+        </p>
+      </div>
+
+      <aside class="vocab" aria-labelledby="vocab-title">
+        <h2 id="vocab-title" class="vocab__title">The words it uses, and what they mean</h2>
+        <ul class="vocab__list">
+          {
+            vocabulary.map((v, i) => (
+              <li class="vocab__item" style={`--i:${i}`}>
+                <span class={`chip chip--${v.tone}`}>{v.term}</span>
+                <span class="vocab__text">{v.text}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="vocab__foot">
+          And one for us: comparative lift over a standalone agent is <span class="chip chip--unknown">NOT_YET_DEMONSTRATED</span>
+        </p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- THREE PARTS -->
+  <section class="section" id="parts" aria-labelledby="parts-title">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="eyebrow">What it does</p>
+        <h2 id="parts-title">Three parts. Each one works without the next.</h2>
+        <p class="section__lede">
+          Most tools in this space start from the agent. repo-ai starts from the repository and the evidence, and treats the agent as
+          an optional input that has to pass the same checks as you.
+        </p>
+      </header>
+      <ol class="parts">
+        {
+          parts.map((p) => (
+            <li class="part">
+              <div class="part__head">
+                <span class="part__n" aria-hidden="true">{p.n}</span>
+                <h3 class="part__name">{p.name}</h3>
+                <span class={`part__tag${p.tag === 'experimental' ? ' part__tag--exp' : ''}`}>{p.tag}</span>
+              </div>
+              <p class="part__lede">{p.lede}</p>
+              <p class="part__body" set:html={codeify(p.body)} />
+              <ul class="part__cmds" aria-label={`${p.name} commands`}>
+                {p.cmds.map((c) => (
+                  <li>
+                    <code>repo-ai {c}</code>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- WALKTHROUGH -->
+  <section class="section section--alt" id="walkthrough" aria-labelledby="walk-title">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="eyebrow">A real session</p>
+        <h2 id="walk-title">Six commands on a small Python and TypeScript project</h2>
+        <p class="section__lede">
+          Captured on macOS on {site.factsAsOf} with the 0.9.0 release candidate (it reports itself as 0.9.0.dev4), in a throwaway copy of
+          the test fixture that ships in the repository. Lines are removed where marked, paths shortened; nothing is added.
+        </p>
+      </header>
+      <Terminal />
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="eyebrow">How it works</p>
+        <h2 id="how-title">Index once. Verify in a copy. Decide yourself.</h2>
+      </header>
+      <Architecture />
+      <dl class="facts">
+        <div>
+          <dt>Index</dt>
+          <dd>SQLite with full-text search under <code>.repo-ai/state/</code>, gitignored. No embeddings, no server.</dd>
+        </div>
+        <div>
+          <dt>Sandbox</dt>
+          <dd>seatbelt on macOS, bubblewrap on Linux, podman or docker anywhere. No network, a clean environment, writes only to the copy.</dd>
+        </div>
+        <div>
+          <dt>Comparison</dt>
+          <dd>Failures are re-checked per test at the base revision. A dependency change makes them “not comparable”, never pre-existing.</dd>
+        </div>
+        <div>
+          <dt>Apply</dt>
+          <dd>Re-verifies, writes receipt-backed bytes, refuses on later edits, symlinks or scope mismatch. <code>undo</code> restores them.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section class="section section--alt" id="use-cases" aria-labelledby="uses-title">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="eyebrow">Use cases</p>
+        <h2 id="uses-title">What it is for, and what backs each claim</h2>
+      </header>
+      <ul class="uses">
+        {
+          useCases.map((u) => (
+            <li class="use">
+              <h3 class="use__title">{u.title}</h3>
+              <code class="use__cmd">{u.cmd}</code>
+              <p class="use__what" set:html={codeify(u.what)} />
+              <p class="use__backed">
+                <span class="use__label">Backed by</span> {u.backed}
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- MATRIX -->
+  <section class="section" id="matrix" aria-labelledby="matrix-title">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="eyebrow">Support, as of {site.factsAsOf}</p>
+        <h2 id="matrix-title">Providers and platforms, stated plainly</h2>
+        <p class="section__lede">
+          No provider is needed for context or verification. The agent rows describe repo-ai’s isolated execution path only: what we
+          have observed, on small tasks, with the accounts we tested.
+        </p>
+      </header>
+
+      <div class="table-wrap" role="region" aria-labelledby="providers-caption" tabindex="0">
+        <table class="matrix">
+          <caption id="providers-caption">Coding agents as repo-ai execution providers (<code>repo-ai do --agent …</code>)</caption>
+          <thead>
+            <tr><th scope="col">Provider</th><th scope="col">Status</th><th scope="col">What we observed</th><th scope="col">Cost reporting</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">IBM Bob</th>
+              <td data-label="Status"><span class="chip chip--pass">works</span></td>
+              <td data-label="What we observed">Live, model-generated changes, independently re-verified through <code>repo-ai do</code>. Small tasks, small n.</td>
+              <td data-label="Cost reporting">Provider-reported; hard USD cap via Bob’s own flag</td>
+            </tr>
+            <tr>
+              <th scope="row">OpenAI Codex CLI</th>
+              <td data-label="Status"><span class="chip chip--pass">works</span></td>
+              <td data-label="What we observed">Same, on small tasks. Runs inside repo-ai’s outer sandbox with Codex’s own sandbox bypassed, only once the outer one is confirmed.</td>
+              <td data-label="Cost reporting"><span class="chip chip--unknown">UNKNOWN</span> under subscription</td>
+            </tr>
+            <tr>
+              <th scope="row">Google Antigravity <code>agy</code></th>
+              <td data-label="Status"><span class="chip chip--pass">works</span> <span class="matrix__note">macOS only</span></td>
+              <td data-label="What we observed">Same, on small tasks. Must read the encrypted login keychain files to authenticate; refused on other platforms.</td>
+              <td data-label="Cost reporting"><span class="chip chip--unknown">UNKNOWN</span> under subscription</td>
+            </tr>
+            <tr>
+              <th scope="row">Claude Code</th>
+              <td data-label="Status"><span class="chip chip--fail">blocked</span> <span class="matrix__note">as a provider</span></td>
+              <td data-label="What we observed">Works as a <em>host</em> for repo-ai’s context and hooks (<code>repo-ai init --agent claude</code>). As an execution provider it cannot authenticate in repo-ai’s isolated scratch HOME.</td>
+              <td data-label="Cost reporting">—</td>
+            </tr>
+            <tr>
+              <th scope="row">Gemini CLI</th>
+              <td data-label="Status"><span class="chip chip--fail">rejected</span></td>
+              <td data-label="What we observed">Rejected for the account we tested. Not retried.</td>
+              <td data-label="Cost reporting">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap" role="region" aria-labelledby="platforms-caption" tabindex="0">
+        <table class="matrix">
+          <caption id="platforms-caption">Platforms</caption>
+          <thead>
+            <tr><th scope="col"><span class="visually-hidden">Capability</span></th><th scope="col">macOS</th><th scope="col">Linux</th><th scope="col">Windows</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Index, context, impact, review</th>
+              <td data-label="macOS">yes</td><td data-label="Linux">yes</td><td data-label="Windows">yes</td>
+            </tr>
+            <tr>
+              <th scope="row">Host sandbox for <code>verify --run</code></th>
+              <td data-label="macOS">seatbelt</td><td data-label="Linux">bubblewrap</td><td data-label="Windows"><strong>none</strong>: use <code>--sandbox podman</code> or <code>docker</code></td>
+            </tr>
+            <tr>
+              <th scope="row">Missions (<code>repo-ai do</code> execution)</th>
+              <td data-label="macOS">yes (seatbelt)</td><td data-label="Linux">yes, needs bubblewrap</td><td data-label="Windows">not supported</td>
+            </tr>
+            <tr>
+              <th scope="row">Measured on fresh held-out data</th>
+              <td data-label="macOS, Linux" colspan="2">held-out-7, in podman containers</td><td data-label="Windows">never</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="matrix__foot">
+        Python 3.10–3.14. Runtime dependencies: <code>pathspec</code>, plus <code>tomli</code> on 3.10. Test runners split per file:
+        <code>pytest</code>, <code>unittest</code>, <code>node --test</code>. Jest, Vitest and Mocha run only as an opaque full suite.{' '}
+        <a href={docs('providers/')}>Provider setup notes</a> · <a href={docs('status/')}>Full status matrix</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- SECURITY -->
+  <section class="section section--alt" id="local-first" aria-labelledby="sec-title">
+    <div class="wrap split">
+      <header class="section__head">
+        <p class="eyebrow">Local-first</p>
+        <h2 id="sec-title">Your code stays on your machine unless you send it</h2>
+        <p class="section__lede">
+          Nothing leaves the machine on any default path. When you authorise a live provider, the task text and the files that agent
+          opens go to that provider under its terms. That is the whole list of exceptions, plus the opt-in network commands named in
+          the docs.
+        </p>
+        <a class="btn" href={docs('security/')}>Security &amp; privacy details</a>
+      </header>
+      <ul class="checks">
+        <li><strong>No daemon, no telemetry, no MCP server.</strong> A CLI you run, and hooks that fail open if you wire an agent.</li>
+        <li><strong>Tests never run in your working tree.</strong> A disposable copy, sandboxed, with no network; the source tree is hashed before and after every run.</li>
+        <li><strong>No unsandboxed fallback.</strong> No supported sandbox means nothing executes.</li>
+        <li><strong>Secrets are quarantined before they are read.</strong> Credential files never reach the index; findings show a short prefix and a length, never the value.</li>
+        <li><strong>Repository text is data, never instructions.</strong> repo-ai never adds permission allow rules or <code>bypassPermissions</code>.</li>
+        <li><strong>You can see every store.</strong> <code>repo-ai privacy audit</code> lists what is kept, where, and whether it is committed; <code>repo-ai uninstall --dry-run</code> shows exactly what removal deletes.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- EVIDENCE -->
+  <section class="section" id="evidence" aria-labelledby="ev-title">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="eyebrow">Methods &amp; caveats</p>
+        <h2 id="ev-title">What we have and haven’t shown</h2>
+        <p class="section__lede">
+          A tool that checks claims should be strict about its own. These are the measured results we stand behind, with their scope,
+          and the questions that are still open.
+        </p>
+      </header>
+      <div class="ledger">
+        <section class="ledger__col" aria-labelledby="shown-title">
+          <h3 id="shown-title" class="ledger__title"><span class="chip chip--pass">shown</span> with its scope</h3>
+          <ul>
+            <li>
+              <span class="stat">0</span> false assurances in <span class="stat">127</span> failing states
+              <span class="ledger__scope">Held-out-7: frozen, independently labelled, 5 projects, pytest and <code>node --test</code>, in podman containers, build <code>903984a</code>. Runtime no-miss 96.7%.</span>
+            </li>
+            <li>
+              Working tree unchanged in <span class="stat">234 / 234</span> runs
+              <span class="ledger__scope">Same evaluation. The integrity check also fails any run that touches it.</span>
+            </li>
+            <li>
+              Live agent candidates, independently re-verified
+              <span class="ledger__scope">IBM Bob, Codex CLI and Antigravity through <code>repo-ai do</code>, on small synthetic tasks. Small n.</span>
+            </li>
+          </ul>
+        </section>
+        <section class="ledger__col" aria-labelledby="notshown-title">
+          <h3 id="notshown-title" class="ledger__title"><span class="chip chip--unknown">not shown</span> yet</h3>
+          <ul>
+            <li>
+              Lift over a standalone agent
+              <span class="ledger__scope">Four small preregistered studies (abc-v1 to v4). In v2–v4 the bare provider already solved every task, so nothing could separate the arms; in v1 (n = 4) the one-task difference is consistent with noise. Verdict: NOT_YET_DEMONSTRATED.</span>
+            </li>
+            <li>
+              Better task success for Claude Code with repo-ai context
+              <span class="ledger__scope">150 preregistered runs: plain 92%, Core 90%, Full 88%. All differences inconclusive.</span>
+            </li>
+            <li>
+              Speed
+              <span class="ledger__scope">On held-out-7, slower than the native suite on 3 of 5 projects (1.44–2.31×). Value on small suites is the classification, not time.</span>
+            </li>
+            <li>
+              Windows, on fresh data
+              <span class="ledger__scope">Unit tests pass in CI; no held-out run.</span>
+            </li>
+          </ul>
+        </section>
+      </div>
+      <p class="ledger__method">
+        <strong>How these were measured.</strong> Manifests frozen before any live call, hidden graders kept out of the agent’s workspace,
+        free controls (untouched FAIL, reference CORRECT, decoy FALSE_GREEN) for every task. The tasks, hidden tests and harness were
+        written by an AI agent, and the samples are small: these are not independent evaluations.{' '}
+        <a href={docs('evaluation/')}>Full methodology</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="wrap cta__inner">
+      <h2 id="cta-title">Start with the parts that need nothing but your repository.</h2>
+      <p>Index, ask for context, verify a change. Add an agent later, or never.</p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href={docs('quickstart/')}>Read the quickstart</a>
+        <a class="btn" href={docs()}>Browse the docs</a>
+        {site.repoPublic ? <a class="btn" href={site.githubRepo} rel="noopener">{sourceLabel}</a> : <span class="cta__source">{sourceLabel}</span>}
+      </div>
+    </div>
+  </section>
+</Landing>

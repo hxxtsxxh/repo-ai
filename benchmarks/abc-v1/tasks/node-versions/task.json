@@ -1,0 +1,3 @@
+{"id": "node-versions", "cluster": "node_cjs_protocol_parsers", "language": "node", "test_command": "node --test",
+ "write_paths": ["versions.js"],
+ "prompt": "In versions.js, compare() must order a prerelease version below its release (1.0.0-rc.1 < 1.0.0), ignore +build metadata, and follow semantic-versioning precedence for prerelease identifiers. Keep the exports and everything else as is."}

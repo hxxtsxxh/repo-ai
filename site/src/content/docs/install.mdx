@@ -1,0 +1,113 @@
+---
+title: Install
+description: Install repo-ai on macOS, Linux or Windows, check the install, upgrade it and remove it cleanly.
+---
+
+import InstallCommand from '../../components/InstallCommand.astro';
+
+<InstallCommand />
+
+Using [pipx](https://pipx.pypa.io/) keeps repo-ai in its own environment and puts the `repo-ai` command on your
+`PATH`. Hooks written by `repo-ai init --agent claude` call `repo-ai` by name, so it must be on the `PATH` of the
+shell your agent uses.
+
+## Prerequisites
+
+| Requirement | macOS | Linux | Windows |
+|---|---|---|---|
+| Python | 3.10–3.14 | 3.10–3.14 | 3.10–3.14 |
+| Git | required (repo-ai works inside a Git repository) | required | required |
+| Indexing, `context`, `impact`, `review` | yes | yes | yes |
+| Sandbox for `verify --run` | seatbelt (built in) | bubblewrap (`bwrap`; install it from your distribution) | **none on the host**: install podman or Docker and pass `--sandbox podman` or `--sandbox docker` |
+| Mission execution (`repo-ai do --run`) | yes (seatbelt) | yes, with bubblewrap | **not supported** (apply needs POSIX no-follow file operations) |
+
+To run your tests, the project's own test tooling must be installed where repo-ai can find it: pytest (or the
+standard-library `unittest`) for Python projects, Node.js for `node --test`. repo-ai does not install them.
+
+Runtime dependencies are `pathspec`, plus `tomli` on Python 3.10. Nothing else is required.
+
+:::note[Windows]
+Windows passes the unit tests in CI, but it has no host sandbox and no fresh-data evaluation has been run there.
+A killed `repo-ai` can leave a container running; check `podman ps` or `docker ps` afterwards.
+:::
+
+### Optional: better non-Python symbols
+
+Python is parsed with the standard library. For higher-fidelity symbols in other languages, add tree-sitter to the
+same environment:
+
+```sh
+pipx inject repo-ai 'tree-sitter>=0.23' 'tree-sitter-language-pack>=0.7,<1.0'
+```
+
+repo-ai only uses grammars already on disk; it never asks the grammar pack to download anything.
+
+## Check the install
+
+```sh
+repo-ai --version
+repo-ai doctor          # installation and agent wiring; warns if the repo-ai on PATH is not the one running
+repo-ai sandbox status  # which isolation backends are available here
+```
+
+`repo-ai sandbox status` on a Mac with podman installed printed:
+
+```text
+  podman    available   podman (arm64)
+  docker    unavailable docker not installed
+  bwrap     unavailable Linux only
+  seatbelt  available   macOS sandbox-exec (shared kernel; weaker than a container)
+  untrusted code will run in: podman
+```
+
+## Upgrade
+
+**From a 0.9.0.devN pre-release or an older wheel.** Those were distributed as `repo-ai`; from 0.9.0 the PyPI
+distribution is `repo-ai-cli` (the name `repo-ai` collides on PyPI with an unrelated project). Both install the same
+`repo-ai` command and `repo_ai` package, so remove the old one first. Your repositories' `.repo-ai/` data is kept:
+
+```sh
+pipx uninstall repo-ai          # or: python -m pip uninstall repo-ai
+pipx install repo-ai-cli
+```
+
+Later upgrades: `pipx upgrade repo-ai-cli`, or re-run the install command with the new version's wheel. With pipx,
+replace an existing install with:
+
+```sh
+pipx install --force <path-or-url-to-new-wheel>
+```
+
+To try a new build next to an existing one, install it under a different command name; both then coexist:
+
+```sh
+pipx install --suffix=-dev <path-or-url-to-wheel>
+repo-ai-dev --version
+```
+
+Hooks call `repo-ai` by name, so they keep using whichever version is on `PATH`. An index written by a newer
+repo-ai is refused with a message, never wiped; upgrade, or run `repo-ai rebuild`.
+
+## Uninstall
+
+Remove repo-ai's data and wiring from each repository first, previewing it:
+
+```sh
+repo-ai uninstall --dry-run   # exactly what would be removed
+repo-ai uninstall
+```
+
+`uninstall` removes only what repo-ai created (files carrying its ownership marker, or text inside its marked
+blocks). Files you edited, and exports you named yourself such as `.repo-ai/proof.md`, are kept and listed.
+
+Then remove the program:
+
+```sh
+pipx uninstall repo-ai-cli
+# or, if you installed with pip:
+python -m pip uninstall repo-ai-cli
+```
+
+A few things live outside the repository and are listed by `repo-ai privacy audit`: an optional per-user
+configuration (`~/.config/repo-ai/config.toml`), opt-in cross-repository and capability-approval data under
+`~/.local/share/repo-ai`, and an empty private workspace folder that `verify --run` leaves in `$TMPDIR`.

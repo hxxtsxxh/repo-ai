@@ -1,0 +1,530 @@
+{
+ "baseline": {
+  "commit": "1f13a3b8945fbff84f9062357d26c9b9da541df9",
+  "revision": "HEAD"
+ },
+ "candidate": {
+  "changed_files": [
+   "lib/ipaddr.js"
+  ],
+  "changed_files_total": 1,
+  "fingerprint": "a9c6bd832ca45bd9d3fa9addf1d16f9ba89be7f64b389a6cac602e7ad0681d13",
+  "kind": "working tree",
+  "withheld_credential_like": 0
+ },
+ "claim": {
+  "earlier_scenarios": [],
+  "expect_failure": null,
+  "id": "claim",
+  "pinned": {
+   "agent_shell": false,
+   "created": "2026-10-24T08:33:41-07:00",
+   "signals": []
+  },
+  "redacted": false,
+  "replaced": 0,
+  "settings": "a6ec78d36c877cc41220fcec2f5edf37d5a3cd5f86d8940ba0fea4d0aca65947",
+  "sha256": "7a99450c94ac0ed63c8e8c595f2a2beda2a0a3ee1badf6a0ff58f6ae7558d05c",
+  "supersedes": [],
+  "targets": [],
+  "text": "IPv4/IPv6 match() and subnetMatch() reject invalid CIDR prefix lengths (negative, fractional, NaN, infinite or longer than the address)."
+ },
+ "conditions": {
+  "command": "node --test test/accept-cidr.test.js",
+  "oracle": {
+   "base_sha256": "c4db81825700a60c44425fdd631792019e5f387874b36d7db7c8e2ae53f372b8",
+   "candidate_sha256": "c4db81825700a60c44425fdd631792019e5f387874b36d7db7c8e2ae53f372b8",
+   "changed_data": [],
+   "checked": 1,
+   "differing": [],
+   "files": [
+    "package.json#type,imports"
+   ],
+   "identical": true,
+   "imported_changed": [
+    "lib/ipaddr.js"
+   ]
+  },
+  "runner": {
+   "command": "node --test",
+   "identity_sha256": "119464acd06ce832eb74e4f61203d5bf289cfc5b7f9a2637d2110927f2eeecf2",
+   "kind": "node",
+   "source": "--test-command"
+  },
+  "same_sandbox_and_interpreter": true
+ },
+ "created": "2026-10-24T08:33:42-07:00",
+ "digest": "87739c6496ecb302de9b385341d9180f8dc0092ce977d56518688642ffd506ad",
+ "edited_tests": {
+  "files": [],
+  "state": "none-edited"
+ },
+ "edited_tests_planned": [],
+ "environment": {
+  "backend": "seatbelt",
+  "key": "75914f3e04e25651dcd36a98",
+  "machine": "arm64",
+  "node": "v24.19.0",
+  "os": "Darwin",
+  "os_release": "25.5.0",
+  "repo_ai": "0.7.7"
+ },
+ "evidence": [
+  {
+   "base": {
+    "commit": "1f13a3b8945fbff84f9062357d26c9b9da541df9",
+    "tree": "2573ae6b09b4b147c6b38ed5ee3dc7cbfaaa7b11"
+   },
+   "candidate": {
+    "fingerprint": "a9c6bd832ca45bd9d3fa9addf1d16f9ba89be7f64b389a6cac602e7ad0681d13",
+    "head": "1f13a3b8945fbff84f9062357d26c9b9da541df9"
+   },
+   "claim": {
+    "level": "supported_by_controlled_comparison",
+    "not_established": [
+     "other inputs and scenarios",
+     "other environments",
+     "the full test suite",
+     "correctness of the change"
+    ],
+    "text": "the pinned scenario fails at the base and passes with this change, and an independent base copy fails it the same way"
+   },
+   "command": {
+    "argv": [
+     "node --test test/accept-cidr.test.js"
+    ],
+    "runner": {
+     "command": "node --test",
+     "cwd": "",
+     "env": {},
+     "kind": "node",
+     "modules": [],
+     "options": [],
+     "paths": [],
+     "pattern": "test*.py",
+     "start": ".",
+     "top": "."
+    }
+   },
+   "contract_version": "1.0",
+   "freshness": {
+    "checked_at": "2026-10-24T08:33:45-07:00",
+    "environment_key": "75914f3e04e25651dcd36a98",
+    "state": "fresh"
+   },
+   "integrity": {
+    "sandbox": {
+     "backend": "seatbelt",
+     "network": false
+    },
+    "source_tree_unchanged": true,
+    "workspace_disposable": true
+   },
+   "oracle": {
+    "kind": "test-ids",
+    "sha256": "cd8ec8f88776ed8b21d72d7c5126ef3d49905885f04dfef9deb5f51dc1553fa3",
+    "spec": "every test of the scenario passes on the candidate; at the base, the targeted tests fail"
+   },
+   "reproduction": {
+    "commands": [
+     "repo-ai prove run claim --base 1f13a3b8945f",
+     "repo-ai verify --run --base 1f13a3b8945f   # the regression check"
+    ],
+    "engine": {
+     "version": "0.7.7"
+    },
+    "environment": {
+     "machine": "arm64",
+     "node": "v24.19.0",
+     "os": "Darwin"
+    }
+   },
+   "scenario": {
+    "independent_of_change": true,
+    "sha256": "e26813d62815ba0b144a8b4fbf6f07498d3c589c226a93e81222de5932f6eacc",
+    "source": "external:e26813d62815ba0b144a8b4fbf6f07498d3c589c226a93e81222de5932f6eacc"
+   },
+   "schema": "repo-ai.proof-evidence/1",
+   "sides": {
+    "base": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.31,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+        "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+        "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "96d3b96598843f4b165a9150a426d72f83b2702df0ced8801bbc377a40982e47",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 3,
+        "passed": 0,
+        "ran": 3,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.3,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+        "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+        "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "46587fda1235f315a7a8896063e99a7df1abb4adc1cfac78a7d1a7087c6c6e30",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 3,
+        "passed": 0,
+        "ran": 3,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "candidate": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.28,
+       "exit_code": 1,
+       "failing_tests": [],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "pass",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "6106bc1220a03d789ccacf8ea3bd46d574f36b9cfc3e10f497f556dc021fadbf",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 0,
+        "passed": 3,
+        "ran": 3,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.18,
+       "exit_code": 1,
+       "failing_tests": [],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "pass",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "4bf31e184c64ce6e47b9295ed69d3f0aa3471204a9a130fac8084b01e321808d",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 0,
+        "passed": 3,
+        "ran": 3,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "control": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.25,
+       "exit_code": 1,
+       "failing_tests": [
+        "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+        "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+        "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "stdout_sha256": "7397bc5b8f3f3968d88e333482ff2d066ee2cde566148f2acf84e7ebba81d9cc",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 3,
+        "passed": 0,
+        "ran": 3,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "executed": true,
+ "freshness": {
+  "reasons": [],
+  "state": "fresh"
+ },
+ "integrity": {
+  "changes": [],
+  "check_seconds": 0.004,
+  "entries_checked": 38,
+  "files_hashed": 11,
+  "unchanged": true
+ },
+ "limitations": [
+  "A passing scenario shows the claim only for what this scenario checks; it is not a proof that the change is correct for other inputs, states or callers.",
+  "ProofLab checks for mistakes, not for a hostile candidate: code under test runs in the scenario's own process and could defeat any check made there. This passport is also a local record that anyone who can write .repo-ai/state could forge, so a reviewer should run `repo-ai prove run` again.",
+  "The scenario was pinned from a terminal; who wrote it is not recorded.",
+  "The change edits files the scenario reaches by imports (lib/ipaddr.js). ProofLab treats them as the code under test; if one of them holds the expected values, the scenario does not check the claim. Review them, or move expected values into the scenario.",
+  "The scenario is not in the candidate's tree (it was injected for the experiment): the change does not ship this test.",
+  "Each side ran 2 time(s); a flaky outcome that shows up less often is not ruled out.",
+  "The assertion canary only shows that assertions still fail in the scenario's process; code under test that recognises the scenario and behaves differently for it is not detected.",
+  "The regression check's test selection has medium confidence (see `repo-ai verify`)."
+ ],
+ "observations": {
+  "baseline": {
+   "control": [
+    {
+     "canary": "ok",
+     "command": "node --test test/accept-cidr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "AssertionError: Missing expected exception."
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "fail",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "fail",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "fail"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.25,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "7397bc5b8f3f3968d88e333482ff2d066ee2cde566148f2acf84e7ebba81d9cc",
+     "tests": 8,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "kind": "behaviour",
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "node --test test/accept-cidr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "AssertionError: Missing expected exception."
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "fail",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "fail",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "fail"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.31,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "96d3b96598843f4b165a9150a426d72f83b2702df0ced8801bbc377a40982e47",
+     "tests": 8,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "node --test test/accept-cidr.test.js",
+     "exit_code": 1,
+     "failures": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "AssertionError: Missing expected exception.",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "AssertionError: Missing expected exception."
+     },
+     "hung": [],
+     "outcomes": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "fail",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "fail",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "fail"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.3,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "46587fda1235f315a7a8896063e99a7df1abb4adc1cfac78a7d1a7087c6c6e30",
+     "tests": 8,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "reproduced",
+   "targets_failing": [
+    "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match",
+    "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match",
+    "ipaddr > subnetMatch rejects invalid CIDR prefix lengths"
+   ],
+   "why": "3 targeted test(s) fail at the base"
+  },
+  "candidate": {
+   "failing": [],
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "node --test test/accept-cidr.test.js",
+     "exit_code": 1,
+     "failures": {},
+     "hung": [],
+     "outcomes": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "pass",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "pass",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.28,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "6106bc1220a03d789ccacf8ea3bd46d574f36b9cfc3e10f497f556dc021fadbf",
+     "tests": 8,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "node --test test/accept-cidr.test.js",
+     "exit_code": 1,
+     "failures": {},
+     "hung": [],
+     "outcomes": {
+      "ipaddr > rejects invalid IPv4 CIDR prefix lengths in match": "pass",
+      "ipaddr > rejects invalid IPv6 CIDR prefix lengths in match": "pass",
+      "ipaddr > subnetMatch rejects invalid CIDR prefix lengths": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.18,
+     "skipped": 0,
+     "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "stdout_sha256": "4bf31e184c64ce6e47b9295ed69d3f0aa3471204a9a130fac8084b01e321808d",
+     "tests": 8,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "passed",
+   "why": "all 3 test(s) of the scenario pass"
+  }
+ },
+ "regressions": {
+  "confidence": "medium",
+  "evidence": ".repo-ai/state/evidence/20261024-153344-a9c6bd832c-0002320.json",
+  "fingerprint": "a9c6bd832ca45bd9d3fa9addf1d16f9ba89be7f64b389a6cac602e7ad0681d13",
+  "full_suite": "not-run",
+  "new_failures": [],
+  "passed": 1,
+  "pre_existing": [],
+  "reused": false,
+  "selected": 1,
+  "state": "none-detected",
+  "test_files_total": 1,
+  "verdict": "selected-passed (full suite not run)",
+  "why": "verify: selected-passed (full suite not run)"
+ },
+ "repeat": 2,
+ "repo_ai_version": "0.7.7",
+ "reproduce": [
+  "repo-ai prove run claim --base 1f13a3b8945f",
+  "# by hand: check out 1f13a3b8945f in a separate worktree, then copy the pinned bytes from .repo-ai/state/prove/blobs/e26813d62815ba0b144a8b4fbf6f07498d3c589c226a93e81222de5932f6eacc to test/accept-cidr.test.js",
+  "# check the bytes: sha256 of test/accept-cidr.test.js must be e26813d62815ba0b144a8b4fbf6f07498d3c589c226a93e81222de5932f6eacc",
+  "# at the base, in a sandbox: node --test test/accept-cidr.test.js   -> expect a failure in ipaddr > rejects invalid IPv4 CIDR prefix lengths in match, ipaddr > rejects invalid IPv6 CIDR prefix lengths in match, ipaddr > subnetMatch rejects invalid CIDR prefix lengths",
+  "# at the candidate: node --test test/accept-cidr.test.js   -> expect every test to pass",
+  "repo-ai verify --run --base 1f13a3b8945f   # the regression check"
+ ],
+ "scenario": {
+  "bytes": 1755,
+  "in_base_tree": "absent",
+  "in_candidate_tree": "absent",
+  "notes": [],
+  "path": "test/accept-cidr.test.js",
+  "provenance": {
+   "kind": "file",
+   "name": "accept-cidr.test.js"
+  },
+  "sha256": "e26813d62815ba0b144a8b4fbf6f07498d3c589c226a93e81222de5932f6eacc"
+ },
+ "schema": "repo-ai.proof-passport/1",
+ "seconds": 2.88,
+ "support": [],
+ "untested": [
+  "Behaviour outside the scenario's 3 test(s).",
+  "Other platforms and environments: only Darwin, v24.19.0 in the seatbelt sandbox was used.",
+  "The claim's wording itself: no tool checks that the scenario tests what the claim says."
+ ],
+ "verdict": {
+  "headline": "CLAIM SUPPORTED by a controlled comparison for the pinned scenario: an independent scenario fails on the original code (twice, and on a separate control copy) and passes with the change, and no regression was detected",
+  "level": "supported_by_controlled_comparison",
+  "reasons": [],
+  "state": "supported",
+  "supported": true
+ }
+}

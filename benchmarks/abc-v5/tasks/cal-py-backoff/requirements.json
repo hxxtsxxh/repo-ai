@@ -1,0 +1,39 @@
+{
+  "schema": "repo-ai.requirements/1",
+  "requirements": [
+    {
+      "text": "R1: every delay is min(base * factor ** i, cap)",
+      "kind": "change",
+      "tests": [
+        "test_cap_applies"
+      ]
+    },
+    {
+      "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []",
+      "kind": "change",
+      "tests": [
+        "test_negative_attempts_rejected"
+      ]
+    },
+    {
+      "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError",
+      "kind": "change",
+      "tests": [
+        "test_nonpositive_base_rejected"
+      ]
+    },
+    {
+      "text": "R4: a schedule that never reaches the cap is unchanged",
+      "kind": "preserve",
+      "tests": [
+        "test_uncapped_schedule",
+        "test_zero_attempts"
+      ]
+    },
+    {
+      "text": "R5: attempts that is a bool or not an int raises TypeError",
+      "kind": "change",
+      "tests": []
+    }
+  ]
+}

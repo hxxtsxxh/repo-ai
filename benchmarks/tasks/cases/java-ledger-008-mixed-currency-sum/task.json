@@ -1,0 +1,48 @@
+{
+  "id": "java-ledger-008-mixed-currency-sum",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "`Money.plus` happily adds 5.00 EUR to 5.00 USD and returns `10.00 USD`. Because of that, a\ntransaction whose entries are `-5.00 EUR` and `+5.00 USD` passes the \"entries sum to\nzero\" check and gets posted. Adding amounts in different currencies should be an error,\njust like it already is for subtraction.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/Money.java",
+      "find": "    public Money plus(Money other) {\n        requireSameCurrency(other);\n",
+      "replace": "    public Money plus(Money other) {\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/Money.java",
+      "find": "    public Money plus(Money other) {\n",
+      "replace": "    public Money plus(Money other) {\n        requireSameCurrency(other);\n"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/Money.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenMixedCurrencyTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenMixedCurrencyTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenMixedCurrencyTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

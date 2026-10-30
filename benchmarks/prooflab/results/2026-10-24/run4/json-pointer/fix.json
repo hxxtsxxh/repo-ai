@@ -1,0 +1,666 @@
+{
+ "baseline": {
+  "commit": "cb845b0e4ac3315b0853f605918002f6c2ceffe7",
+  "revision": "HEAD"
+ },
+ "candidate": {
+  "changed_files": [
+   "jsonpointer.py",
+   "tests.py"
+  ],
+  "changed_files_total": 2,
+  "fingerprint": "fbeb6d76c7ced623254ea70101c807ad37a3e7e46ed4387bd21f64b27accf89e",
+  "kind": "working tree",
+  "withheld_credential_like": 0
+ },
+ "claim": {
+  "earlier_scenarios": [],
+  "expect_failure": null,
+  "id": "claim",
+  "pinned": {
+   "agent_shell": false,
+   "created": "2026-10-24T08:31:18-07:00",
+   "signals": []
+  },
+  "redacted": false,
+  "replaced": 0,
+  "settings": "0b4a0cabd6ca1927561cb3c29bd9f5f79b861cfa957ba9335d1ec1465db44d3e",
+  "sha256": "73bcf3015232655429aa35a21886e5db76f28bd30fdf3cfbae948f943e9ecca6",
+  "supersedes": [],
+  "targets": [
+   "tests.WrongInputTests.test_string_not_indexable"
+  ],
+  "text": "Resolving a JSON pointer token against a string raises JsonPointerException instead of indexing into the string (/foo/0 on {'foo': 'abc'} must not return 'a')."
+ },
+ "conditions": {
+  "command": "python -m unittest tests",
+  "oracle": {
+   "base_sha256": "4702e743a9a7fdd9cc6fd4a0dcaec2891f3b37f2ebd6c28108c2062c3b786a6c",
+   "candidate_sha256": "4702e743a9a7fdd9cc6fd4a0dcaec2891f3b37f2ebd6c28108c2062c3b786a6c",
+   "changed_data": [],
+   "checked": 0,
+   "differing": [],
+   "files": [],
+   "identical": true,
+   "imported_changed": [
+    "jsonpointer.py"
+   ]
+  },
+  "runner": {
+   "command": "python -m unittest tests",
+   "identity_sha256": "e93e24e4ba3b4b72e53abc1d49e7ac824d9a4a180d086e9a30c2dc149bc49a32",
+   "kind": "unittest",
+   "source": "--test-command"
+  },
+  "same_sandbox_and_interpreter": true
+ },
+ "created": "2026-10-24T08:31:19-07:00",
+ "digest": "3642aa589079d398d9cffd99d89630c298200d7516a8f1bca37c859c910c5961",
+ "edited_tests": {
+  "files": [
+   {
+    "messages": {},
+    "new_failures": [],
+    "path": "tests.py",
+    "state": "none-detected",
+    "status": "modified",
+    "superseded": []
+   }
+  ],
+  "state": "none-detected"
+ },
+ "edited_tests_planned": [
+  {
+   "is_scenario": "true",
+   "path": "tests.py",
+   "status": "modified"
+  }
+ ],
+ "environment": {
+  "backend": "seatbelt",
+  "key": "279670c871c0455aa23c15f7",
+  "machine": "arm64",
+  "os": "Darwin",
+  "os_release": "25.5.0",
+  "python": "3.12.14",
+  "repo_ai": "0.7.7"
+ },
+ "evidence": [
+  {
+   "base": {
+    "commit": "cb845b0e4ac3315b0853f605918002f6c2ceffe7",
+    "tree": "f7afebff7a9e252b1938a78a9f9235d2d2eaf53e"
+   },
+   "candidate": {
+    "fingerprint": "fbeb6d76c7ced623254ea70101c807ad37a3e7e46ed4387bd21f64b27accf89e",
+    "head": "cb845b0e4ac3315b0853f605918002f6c2ceffe7"
+   },
+   "claim": {
+    "level": "behavior_observed",
+    "not_established": [
+     "other inputs and scenarios",
+     "other environments",
+     "the full test suite",
+     "correctness of the change",
+     "the scenario is not independent of the change"
+    ],
+    "text": "the pinned scenario passes with this change"
+   },
+   "command": {
+    "argv": [
+     "python -m unittest tests tests_c547e2c6175"
+    ],
+    "runner": {
+     "command": "python -m unittest tests",
+     "cwd": "",
+     "env": {},
+     "kind": "unittest",
+     "modules": [
+      "tests"
+     ],
+     "options": [],
+     "paths": [],
+     "pattern": "test*.py",
+     "start": ".",
+     "top": "."
+    }
+   },
+   "contract_version": "1.0",
+   "freshness": {
+    "checked_at": "2026-10-24T08:31:24-07:00",
+    "environment_key": "279670c871c0455aa23c15f7",
+    "state": "fresh"
+   },
+   "integrity": {
+    "sandbox": {
+     "backend": "seatbelt",
+     "network": false
+    },
+    "source_tree_unchanged": true,
+    "workspace_disposable": true
+   },
+   "oracle": {
+    "kind": "test-ids",
+    "sha256": "c9113d5eb63b1c2c9367e5824c5578dd89f30b836d2e742e470d620c9f06d0ed",
+    "spec": "every test of the scenario passes on the candidate; at the base, the targeted tests fail"
+   },
+   "reproduction": {
+    "commands": [
+     "repo-ai prove run claim --base cb845b0e4ac3",
+     "repo-ai verify --run --base cb845b0e4ac3   # the regression check"
+    ],
+    "engine": {
+     "version": "0.7.7"
+    },
+    "environment": {
+     "machine": "arm64",
+     "os": "Darwin",
+     "python": "3.12.14"
+    }
+   },
+   "scenario": {
+    "independent_of_change": false,
+    "sha256": "0f865c62352ce0fde46f1904810d29ec0e9906db0cdf87ff4953d7ee9980c7bf",
+    "source": "blob:16c4c8e33a30:tests.py"
+   },
+   "schema": "repo-ai.proof-evidence/1",
+   "sides": {
+    "base": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.18,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "50e07290f9ca335d42ccb49f3a68bf4a7c40e2bb488a97b88f0d118065d5c03f",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.22,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "81e4d53c16a432bc95dc9fdaf9a9673ccc236d2938278f580e10a0b8bacc7b52",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "candidate": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.22,
+       "exit_code": 1,
+       "failing_tests": [],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "pass",
+       "stderr_sha256": "f2952fcd7954fbdfe75d0499f45e4781944899c73aef64a448909d1a0c020253",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 0,
+        "passed": 29,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.16,
+       "exit_code": 1,
+       "failing_tests": [],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "pass",
+       "stderr_sha256": "6a9d9eaed302ddfabed5578394f204fe1fdced6e7db169a7b5b308684b4d89b1",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 0,
+        "passed": 29,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "control": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.23,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "b32f579d4de989425a82334e327219239dc6deaeaccc90b177a23016648b34c0",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "executed": true,
+ "freshness": {
+  "reasons": [],
+  "state": "fresh"
+ },
+ "integrity": {
+  "changes": [],
+  "check_seconds": 0.006,
+  "entries_checked": 50,
+  "files_hashed": 22,
+  "unchanged": true
+ },
+ "limitations": [
+  "A passing scenario shows the claim only for what this scenario checks; it is not a proof that the change is correct for other inputs, states or callers.",
+  "ProofLab checks for mistakes, not for a hostile candidate: code under test runs in the scenario's own process and could defeat any check made there. This passport is also a local record that anyone who can write .repo-ai/state could forge, so a reviewer should run `repo-ai prove run` again.",
+  "The scenario is blob 19bd621d75b8 of tests.py at commit 16c4c8e33a30; whoever wrote that commit wrote the oracle (check it with `git cat-file -p 19bd621d75b8`).",
+  "The change edits files the scenario reaches by imports (jsonpointer.py). ProofLab treats them as the code under test; if one of them holds the expected values, the scenario does not check the claim. Review them, or move expected values into the scenario.",
+  "Each side ran 2 time(s); a flaky outcome that shows up less often is not ruled out.",
+  "The assertion canary only shows that assertions still fail in the scenario's process; code under test that recognises the scenario and behaves differently for it is not detected.",
+  "The regression check's test selection has medium confidence (see `repo-ai verify`)."
+ ],
+ "observations": {
+  "baseline": {
+   "control": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c547e2c6175",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.23,
+     "skipped": 0,
+     "stderr_sha256": "b32f579d4de989425a82334e327219239dc6deaeaccc90b177a23016648b34c0",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "kind": "behaviour",
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c547e2c6175",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.18,
+     "skipped": 0,
+     "stderr_sha256": "50e07290f9ca335d42ccb49f3a68bf4a7c40e2bb488a97b88f0d118065d5c03f",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c547e2c6175",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.22,
+     "skipped": 0,
+     "stderr_sha256": "81e4d53c16a432bc95dc9fdaf9a9673ccc236d2938278f580e10a0b8bacc7b52",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "reproduced",
+   "targets_failing": [
+    "tests.WrongInputTests.test_string_not_indexable"
+   ],
+   "why": "1 targeted test(s) fail at the base"
+  },
+  "candidate": {
+   "failing": [],
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c547e2c6175",
+     "exit_code": 1,
+     "failures": {},
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "pass",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.22,
+     "skipped": 0,
+     "stderr_sha256": "f2952fcd7954fbdfe75d0499f45e4781944899c73aef64a448909d1a0c020253",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c547e2c6175",
+     "exit_code": 1,
+     "failures": {},
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "pass",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.16,
+     "skipped": 0,
+     "stderr_sha256": "6a9d9eaed302ddfabed5578394f204fe1fdced6e7db169a7b5b308684b4d89b1",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "passed",
+   "why": "all 29 test(s) of the scenario pass"
+  }
+ },
+ "regressions": {
+  "confidence": "medium",
+  "evidence": ".repo-ai/state/evidence/20261024-153122-fbeb6d76c7-0093409.json",
+  "fingerprint": "fbeb6d76c7ced623254ea70101c807ad37a3e7e46ed4387bd21f64b27accf89e",
+  "full_suite": "not-run",
+  "new_failures": [],
+  "passed": 1,
+  "pre_existing": [],
+  "reused": false,
+  "selected": 1,
+  "state": "none-detected",
+  "test_files_total": 1,
+  "verdict": "selected-passed (full suite not run)",
+  "why": "verify: selected-passed (full suite not run)"
+ },
+ "repeat": 2,
+ "repo_ai_version": "0.7.7",
+ "reproduce": [
+  "repo-ai prove run claim --base cb845b0e4ac3",
+  "# by hand: check out cb845b0e4ac3 in a separate worktree, then git show 16c4c8e33a30:tests.py > tests.py",
+  "# check the bytes: sha256 of tests.py must be 0f865c62352ce0fde46f1904810d29ec0e9906db0cdf87ff4953d7ee9980c7bf",
+  "# at the base, in a sandbox: python -m unittest tests   -> expect a failure in tests.WrongInputTests.test_string_not_indexable",
+  "# at the candidate: python -m unittest tests   -> expect every test to pass",
+  "repo-ai verify --run --base cb845b0e4ac3   # the regression check"
+ ],
+ "scenario": {
+  "bytes": 13066,
+  "in_base_tree": "differs",
+  "in_candidate_tree": "identical",
+  "notes": [],
+  "path": "tests.py",
+  "provenance": {
+   "blob": "19bd621d75b8800eb5072f557c8d22e2beec89f5",
+   "commit": "16c4c8e33a30e364d94f7a870a6c79916b5f870d",
+   "kind": "git",
+   "revision": "16c4c8e33a30e364d94f7a870a6c79916b5f870d"
+  },
+  "sha256": "0f865c62352ce0fde46f1904810d29ec0e9906db0cdf87ff4953d7ee9980c7bf"
+ },
+ "schema": "repo-ai.proof-passport/1",
+ "seconds": 4.22,
+ "support": [],
+ "untested": [
+  "Behaviour outside the scenario's 29 test(s).",
+  "Other platforms and environments: only Darwin, 3.12.14 in the seatbelt sandbox was used.",
+  "The claim's wording itself: no tool checks that the scenario tests what the claim says."
+ ],
+ "verdict": {
+  "headline": "CLAIM SUPPORTED for the pinned scenario: the candidate passes it and the original code failed it, with no regression detected. The scenario is not independent of the change, so this is not a controlled comparison (evidence level behavior_observed)",
+  "level": "behavior_observed",
+  "reasons": [],
+  "state": "supported",
+  "supported": true
+ }
+}

@@ -1,0 +1,1289 @@
+{
+ "version": "lexicon_v0_mech",
+ "written": "2026-10-23, AFTER failure analysis on spent H and B. Every form/rule added after v0 carries provenance (the task id that inspired it).",
+ "rule": "Each concept <= 20 surface forms. Forms are (a) words/phrases in capabilities.json title/description/needs/limitations/native_alternatives/adds_beyond_native, or (b) general SE thesaurus entries for the concept. No corpus phrasing.",
+ "concepts": {
+  "TEST": [
+   "test",
+   "tests",
+   "test suite",
+   "unit test",
+   "integration test",
+   "spec",
+   "pytest",
+   "jest",
+   "vitest",
+   "junit",
+   "go test",
+   "cargo test",
+   "ci",
+   "test case",
+   "testsuite"
+  ],
+  "RUN_CHECK": [
+   "run",
+   "rerun",
+   "execute",
+   "verify",
+   "confirm",
+   "check",
+   "make sure",
+   "ensure",
+   "validate",
+   "prove",
+   "pass",
+   "green",
+   "sandbox"
+  ],
+  "BREAK": [
+   "break",
+   "breaks",
+   "broke",
+   "breakage",
+   "regress",
+   "regression",
+   "side effect",
+   "still work",
+   "still works",
+   "nothing else",
+   "safe to change"
+  ],
+  "CHANGE": [
+   "change",
+   "diff",
+   "patch",
+   "fix",
+   "refactor",
+   "edit",
+   "commit",
+   "branch",
+   "pull request",
+   "pr",
+   "modification",
+   "rewrite",
+   "changed paths",
+   "changed files"
+  ],
+  "AFFECT": [
+   "affect",
+   "impact",
+   "downstream",
+   "dependents",
+   "consumer",
+   "importer",
+   "importers",
+   "caller",
+   "callers",
+   "ripple",
+   "blast radius",
+   "reachable",
+   "co changed",
+   "who uses",
+   "what uses",
+   "depend",
+   "rely",
+   "knock-on"
+  ],
+  "SYMBOL": [
+   "function",
+   "method",
+   "class",
+   "module",
+   "symbol",
+   "interface",
+   "api",
+   "public api",
+   "endpoint",
+   "signature",
+   "return type",
+   "field",
+   "constant",
+   "helper",
+   "util",
+   "export",
+   "struct",
+   "trait",
+   "enum",
+   "schema",
+   "zzident"
+  ],
+  "MODIFY_STRUCT": [
+   "rename",
+   "remove",
+   "delete",
+   "deprecate",
+   "drop",
+   "move",
+   "extract",
+   "split",
+   "change signature",
+   "replace",
+   "inline",
+   "consolidate",
+   "retire",
+   "merge modules"
+  ],
+  "REFERENCE": [
+   "reference",
+   "references",
+   "usage",
+   "usages",
+   "call site",
+   "call sites",
+   "occurrence",
+   "occurrences",
+   "definition",
+   "re export",
+   "re exported",
+   "alias",
+   "aliased",
+   "implementation",
+   "implementations",
+   "where used",
+   "where called"
+  ],
+  "FIND": [
+   "find",
+   "list",
+   "locate",
+   "show",
+   "where",
+   "enumerate",
+   "track down",
+   "everywhere",
+   "every place",
+   "all places",
+   "across",
+   "throughout",
+   "precise"
+  ],
+  "LSP": [
+   "language server",
+   "lsp",
+   "go to definition",
+   "jump to definition",
+   "find all references",
+   "rename symbol",
+   "pyright",
+   "gopls",
+   "tsserver",
+   "rust analyzer",
+   "intellisense",
+   "semantic rename",
+   "serena"
+  ],
+  "FILES": [
+   "which files",
+   "what files",
+   "where to start",
+   "where do i start",
+   "entry point",
+   "relevant files",
+   "files to touch",
+   "shortlist",
+   "starting point",
+   "most relevant",
+   "where is the code",
+   "unfamiliar codebase"
+  ],
+  "REVIEW": [
+   "review",
+   "code review",
+   "reviewer",
+   "look over",
+   "go over",
+   "sanity check",
+   "double check",
+   "self review",
+   "pre pr",
+   "passport",
+   "blind spot",
+   "blind spots",
+   "risks",
+   "evidence packet",
+   "second pair of eyes"
+  ],
+  "SHIP": [
+   "merge",
+   "merging",
+   "push",
+   "pushing",
+   "ship",
+   "submit",
+   "open a pr",
+   "land",
+   "before pr",
+   "release"
+  ],
+  "EXTENSION": [
+   "skill",
+   "skills",
+   "plugin",
+   "plugins",
+   "mcp",
+   "mcp server",
+   "mcp servers",
+   "hook",
+   "hooks",
+   "extension",
+   "extensions",
+   "slash command",
+   "subagent",
+   "marketplace",
+   "plugin components"
+  ],
+  "THIRDPARTY": [
+   "github",
+   "third party",
+   "external",
+   "community",
+   "someone else",
+   "url",
+   "link",
+   "download",
+   "unknown author",
+   "open source",
+   "pinned",
+   "pin the commit",
+   "local directory"
+  ],
+  "INSTALL": [
+   "add",
+   "try",
+   "set up",
+   "adopt",
+   "register",
+   "use",
+   "pull",
+   "plug",
+   "=install",
+   "=installing",
+   "=enable"
+  ],
+  "SAFE": [
+   "safe",
+   "safety",
+   "trust",
+   "trustworthy",
+   "malicious",
+   "sketchy",
+   "shady",
+   "vet",
+   "inspect",
+   "audit",
+   "risky",
+   "suspicious",
+   "legit",
+   "backdoor",
+   "exfiltrate",
+   "statically inspect"
+  ],
+  "INSTALLED": [
+   "active",
+   "configured",
+   "currently",
+   "whoever installed",
+   "everything claude code loads",
+   "=installed",
+   "=enabled",
+   "=running",
+   "=loaded",
+   "=loads",
+   "already"
+  ],
+  "AUDIT_LIST": [
+   "audit",
+   "list",
+   "inventory",
+   "overview",
+   "enumerate",
+   "clean up",
+   "tidy",
+   "prune",
+   "which",
+   "what"
+  ],
+  "CONTEXT": [
+   "context",
+   "context window",
+   "token",
+   "tokens",
+   "prompt",
+   "claude md",
+   "agents md",
+   "memory file",
+   "instructions",
+   "system prompt",
+   "always loaded",
+   "session start",
+   "per prompt",
+   "preamble",
+   "context cost"
+  ],
+  "SIZE": [
+   "budget",
+   "too big",
+   "too long",
+   "too large",
+   "bloat",
+   "bloated",
+   "size",
+   "limit",
+   "limits",
+   "trim",
+   "shrink",
+   "cost",
+   "overhead",
+   "how much",
+   "how many",
+   "eat up",
+   "fill up",
+   "footprint",
+   "reduce"
+  ],
+  "VULN": [
+   "vulnerability",
+   "vulnerabilities",
+   "vulnerable",
+   "exploit",
+   "exploitable",
+   "insecure",
+   "security issue",
+   "security hole",
+   "security bug",
+   "security fix",
+   "attack",
+   "attacker",
+   "unsafe",
+   "compromise",
+   "flaw",
+   "weakness",
+   "cwe"
+  ],
+  "DEP_VULN_DIRECT": [
+   "cve",
+   "cves",
+   "advisory",
+   "advisories",
+   "dependabot",
+   "snyk",
+   "pip audit",
+   "npm audit",
+   "osv",
+   "osv scanner",
+   "supply chain",
+   "known vulnerability",
+   "known vulnerabilities",
+   "security advisory",
+   "ghsa",
+   "vulnerability database"
+  ],
+  "DEP": [
+   "dependency",
+   "dependencies",
+   "deps",
+   "package",
+   "packages",
+   "library",
+   "libraries",
+   "lockfile",
+   "lockfiles",
+   "lock file",
+   "requirements txt",
+   "transitive",
+   "manifest",
+   "manifests",
+   "npm",
+   "pip",
+   "cargo",
+   "go mod",
+   "maven",
+   "gradle"
+  ],
+  "DEP_ACTION": [
+   "upgrade",
+   "bump",
+   "pin",
+   "downgrade",
+   "update the dependency",
+   "update dependencies",
+   "version bump",
+   "patched version"
+  ],
+  "INJECTION_CLASS": [
+   "injection",
+   "sql injection",
+   "xss",
+   "cross site scripting",
+   "csrf",
+   "ssrf",
+   "path traversal",
+   "directory traversal",
+   "command injection",
+   "shell injection",
+   "deserialization",
+   "xxe",
+   "rce",
+   "remote code execution",
+   "open redirect",
+   "prototype pollution",
+   "zip slip",
+   "redos"
+  ],
+  "UNTRUSTED_INPUT": [
+   "untrusted",
+   "untrusted input",
+   "user input",
+   "user supplied",
+   "user controlled",
+   "request param",
+   "query param",
+   "form data",
+   "upload",
+   "uploads",
+   "attacker controlled",
+   "external input",
+   "sanitize",
+   "escape",
+   "unsanitized",
+   "taint",
+   "payload",
+   "validate input"
+  ],
+  "DANGEROUS_API": [
+   "eval",
+   "exec",
+   "pickle",
+   "yaml load",
+   "subprocess",
+   "shell true",
+   "os system",
+   "raw sql",
+   "innerhtml",
+   "dangerouslysetinnerhtml",
+   "mark safe",
+   "extractall",
+   "string concatenation",
+   "f string",
+   "marshal",
+   "tarfile"
+  ],
+  "SECRETS_CRYPTO": [
+   "secret",
+   "secrets",
+   "hardcoded",
+   "hard coded",
+   "api key",
+   "credential",
+   "credentials",
+   "password",
+   "passwords",
+   "private key",
+   "encrypt",
+   "decrypt",
+   "crypto",
+   "cipher",
+   "bcrypt",
+   "md5",
+   "sha1",
+   "tls",
+   "ssl",
+   "certificate"
+  ],
+  "AUTH": [
+   "auth",
+   "authentication",
+   "authorization",
+   "authorize",
+   "login",
+   "logout",
+   "sign up",
+   "session",
+   "sessions",
+   "jwt",
+   "oauth",
+   "oidc",
+   "sso",
+   "saml",
+   "permission",
+   "access control",
+   "rbac",
+   "admin",
+   "cookie",
+   "signin"
+  ],
+  "SECURITY": [
+   "security",
+   "secure",
+   "securely",
+   "harden",
+   "hardening",
+   "sast",
+   "static analysis",
+   "bandit",
+   "semgrep",
+   "codeql",
+   "owasp",
+   "flake8 bandit",
+   "security lint",
+   "dataflow"
+  ],
+  "DEEP": [
+   "thorough",
+   "deep",
+   "full",
+   "comprehensive",
+   "careful",
+   "structured",
+   "threat model",
+   "threat modeling",
+   "assessment",
+   "pentest",
+   "penetration test",
+   "sign off",
+   "systematic",
+   "rigorous",
+   "checklist",
+   "every class",
+   "workflow",
+   "depth"
+  ],
+  "UI_OBJ": [
+   "ui",
+   "page",
+   "button",
+   "component",
+   "layout",
+   "screen",
+   "modal",
+   "form",
+   "dropdown",
+   "menu",
+   "navbar",
+   "widget",
+   "tooltip",
+   "dialog",
+   "frontend",
+   "front end",
+   "web app",
+   "site",
+   "dom",
+   "view"
+  ],
+  "UI_ASPECT": [
+   "render",
+   "rendering",
+   "css",
+   "style",
+   "styling",
+   "display",
+   "dark mode",
+   "responsive",
+   "mobile",
+   "animation",
+   "hydration",
+   "font",
+   "visual",
+   "appearance",
+   "theme",
+   "scroll",
+   "click",
+   "front end changes"
+  ],
+  "BROWSER": [
+   "browser",
+   "chrome",
+   "safari",
+   "firefox",
+   "devtools",
+   "console error",
+   "console errors",
+   "console",
+   "network tab",
+   "network request",
+   "screenshot",
+   "screenshots",
+   "lighthouse",
+   "web vitals",
+   "performance trace",
+   "page load",
+   "headless",
+   "puppeteer",
+   "playwright",
+   "runtime evidence"
+  ],
+  "SYMPTOM": [
+   "blank",
+   "flicker",
+   "broken",
+   "misaligned",
+   "overlap",
+   "slow",
+   "jank",
+   "laggy",
+   "not showing",
+   "not rendering",
+   "glitch",
+   "cut off",
+   "stuck",
+   "freeze",
+   "white screen",
+   "nothing happens",
+   "unresponsive",
+   "wrong",
+   "error",
+   "errors"
+  ],
+  "ADEQUACY": [
+   "good enough",
+   "strong",
+   "strength",
+   "weak",
+   "adequate",
+   "adequacy",
+   "catch",
+   "trust",
+   "coverage",
+   "meaningful",
+   "test quality",
+   "false confidence",
+   "actually test",
+   "assertions",
+   "effective",
+   "useless",
+   "measure"
+  ],
+  "MUTATION": [
+   "mutation testing",
+   "mutation",
+   "mutant",
+   "mutants",
+   "mutmut",
+   "stryker",
+   "mutation score",
+   "cosmic ray",
+   "mewt"
+  ],
+  "PROPERTY": [
+   "property based",
+   "property test",
+   "property tests",
+   "invariant",
+   "invariants",
+   "round trip",
+   "round trips",
+   "fuzz",
+   "fuzzing",
+   "random input",
+   "random inputs",
+   "generated input",
+   "generated inputs",
+   "arbitrary input",
+   "hypothesis",
+   "fast check",
+   "proptest",
+   "quickcheck",
+   "idempotent",
+   "any input"
+  ],
+  "EDGE": [
+   "edge case",
+   "edge cases",
+   "corner case",
+   "corner cases",
+   "malformed",
+   "weird input",
+   "unexpected input",
+   "boundary",
+   "boundaries",
+   "all inputs"
+  ],
+  "PARSE_SER": [
+   "parser",
+   "parse",
+   "parsing",
+   "serializer",
+   "serialize",
+   "serialization",
+   "deserialize",
+   "encode",
+   "decode",
+   "encoder",
+   "decoder",
+   "codec",
+   "converter",
+   "tokenizer",
+   "normalizer",
+   "compress",
+   "decompress",
+   "format"
+  ],
+  "DOMAIN_NOUN": [
+   "field",
+   "column",
+   "attribute",
+   "score",
+   "value",
+   "setting",
+   "settings",
+   "default",
+   "entity",
+   "model",
+   "table",
+   "key",
+   "parameter",
+   "variable",
+   "flag",
+   "label",
+   "text",
+   "message",
+   "volume",
+   "sound",
+   "effect",
+   "counter",
+   "metric",
+   "timestamp",
+   "factory",
+   "db",
+   "database",
+   "pool",
+   "zzident"
+  ]
+ },
+ "trivial": [
+  "typo",
+  "typos",
+  "spelling",
+  "grammar",
+  "wording",
+  "reword",
+  "readme",
+  "changelog",
+  "docstring",
+  "docstrings",
+  "comment",
+  "comments",
+  "formatting",
+  "whitespace",
+  "indentation",
+  "license header",
+  "release notes",
+  "translation",
+  "copy edit",
+  "punctuation"
+ ],
+ "constraints": {
+  "no_exec": [
+   "dont run",
+   "do not run",
+   "without running",
+   "no execution",
+   "not execute",
+   "dont execute",
+   "do not execute",
+   "read only",
+   "static only",
+   "without executing",
+   "nothing runs",
+   "no code execution",
+   "never run",
+   "cannot run",
+   "cant run"
+  ],
+  "no_network": [
+   "no network",
+   "offline",
+   "without network",
+   "no internet",
+   "air gapped",
+   "airgapped",
+   "no external calls",
+   "no outbound",
+   "without internet",
+   "local only",
+   "no network access",
+   "dont call out",
+   "cant reach"
+  ],
+  "no_install": [
+   "dont install",
+   "do not install",
+   "no new tools",
+   "without installing",
+   "no new dependencies",
+   "cant install",
+   "cannot install",
+   "nothing new installed",
+   "no installs"
+  ]
+ },
+ "negators": [
+  "no need",
+  "dont need",
+  "doesnt need",
+  "do not need",
+  "not need",
+  "not about",
+  "unrelated to",
+  "ignore",
+  "aside from",
+  "nothing to do with",
+  "not asking",
+  "not looking for"
+ ],
+ "intents": {
+  "verify-change": [
+   [
+    [
+     "TEST",
+     "RUN_CHECK"
+    ],
+    3
+   ],
+   [
+    [
+     "BREAK",
+     "CHANGE"
+    ],
+    3
+   ],
+   [
+    [
+     "TEST",
+     "CHANGE"
+    ],
+    2
+   ],
+   [
+    [
+     "BREAK"
+    ],
+    1.5
+   ],
+   [
+    [
+     "TEST"
+    ],
+    1
+   ]
+  ],
+  "blast-radius": [
+   [
+    [
+     "AFFECT",
+     "SYMBOL"
+    ],
+    3
+   ],
+   [
+    [
+     "AFFECT",
+     "CHANGE"
+    ],
+    3
+   ],
+   [
+    [
+     "AFFECT",
+     "MODIFY_STRUCT"
+    ],
+    3
+   ],
+   [
+    [
+     "BREAK",
+     "MODIFY_STRUCT"
+    ],
+    3
+   ],
+   [
+    [
+     "AFFECT"
+    ],
+    1.5
+   ],
+   [
+    [
+     "MODIFY_STRUCT",
+     "SYMBOL"
+    ],
+    2
+   ],
+   [
+    [
+     "BREAK",
+     "SYMBOL"
+    ],
+    2
+   ]
+  ],
+  "precise-refs": [
+   [
+    [
+     "LSP"
+    ],
+    3
+   ],
+   [
+    [
+     "FIND",
+     "REFERENCE"
+    ],
+    3
+   ],
+   [
+    [
+     "REFERENCE",
+     "MODIFY_STRUCT"
+    ],
+    2
+   ],
+   [
+    [
+     "MODIFY_STRUCT",
+     "SYMBOL",
+     "FIND"
+    ],
+    2
+   ]
+  ],
+  "shortlist-files": [
+   [
+    [
+     "FILES"
+    ],
+    2
+   ]
+  ],
+  "review-diff": [
+   [
+    [
+     "REVIEW",
+     "CHANGE"
+    ],
+    3
+   ],
+   [
+    [
+     "REVIEW",
+     "SHIP"
+    ],
+    3
+   ],
+   [
+    [
+     "REVIEW"
+    ],
+    1.5
+   ]
+  ],
+  "vet-third-party": [
+   [
+    [
+     "EXTENSION",
+     "THIRDPARTY"
+    ],
+    3
+   ],
+   [
+    [
+     "EXTENSION",
+     "SAFE",
+     "INSTALL"
+    ],
+    3
+   ],
+   [
+    [
+     "EXTENSION",
+     "INSTALL"
+    ],
+    2
+   ],
+   [
+    [
+     "EXTENSION",
+     "SAFE"
+    ],
+    2
+   ]
+  ],
+  "audit-installed": [
+   [
+    [
+     "EXTENSION",
+     "INSTALLED"
+    ],
+    3
+   ],
+   [
+    [
+     "EXTENSION",
+     "AUDIT_LIST"
+    ],
+    2
+   ]
+  ],
+  "context-budget": [
+   [
+    [
+     "CONTEXT",
+     "SIZE"
+    ],
+    3
+   ]
+  ],
+  "security-code": [
+   [
+    [
+     "INJECTION_CLASS"
+    ],
+    3
+   ],
+   [
+    [
+     "DANGEROUS_API",
+     "UNTRUSTED_INPUT"
+    ],
+    3
+   ],
+   [
+    [
+     [
+      "UNTRUSTED_INPUT"
+     ],
+     [
+      "SECURITY",
+      "VULN"
+     ]
+    ],
+    3
+   ],
+   [
+    [
+     [
+      "SECRETS_CRYPTO"
+     ],
+     [
+      "SECURITY",
+      "VULN"
+     ]
+    ],
+    3
+   ],
+   [
+    [
+     "UNTRUSTED_INPUT"
+    ],
+    2
+   ],
+   [
+    [
+     "DANGEROUS_API"
+    ],
+    2
+   ],
+   [
+    [
+     "SECRETS_CRYPTO"
+    ],
+    2
+   ],
+   [
+    [
+     "VULN"
+    ],
+    2
+   ],
+   [
+    [
+     "SECURITY"
+    ],
+    2
+   ],
+   [
+    [
+     "AUTH",
+     "CHANGE"
+    ],
+    1.5
+   ]
+  ],
+  "security-review-deep": [
+   [
+    [
+     "SECURITY",
+     "DEEP"
+    ],
+    3
+   ],
+   [
+    [
+     "SECURITY",
+     "REVIEW"
+    ],
+    3
+   ],
+   [
+    [
+     "VULN",
+     "REVIEW"
+    ],
+    2
+   ],
+   [
+    [
+     "AUTH",
+     "REVIEW"
+    ],
+    2
+   ],
+   [
+    [
+     "AUTH",
+     "DEEP"
+    ],
+    2
+   ]
+  ],
+  "dependency-vuln": [
+   [
+    [
+     "DEP_VULN_DIRECT"
+    ],
+    3
+   ],
+   [
+    [
+     "DEP",
+     "VULN"
+    ],
+    3
+   ],
+   [
+    [
+     [
+      "DEP_ACTION"
+     ],
+     [
+      "SECURITY",
+      "VULN"
+     ]
+    ],
+    3
+   ],
+   [
+    [
+     "DEP",
+     "SAFE"
+    ],
+    2
+   ]
+  ],
+  "browser-runtime": [
+   [
+    [
+     [
+      "BROWSER"
+     ],
+     [
+      "UI_OBJ",
+      "UI_ASPECT",
+      "SYMPTOM"
+     ]
+    ],
+    3
+   ],
+   [
+    [
+     [
+      "UI_OBJ",
+      "UI_ASPECT"
+     ],
+     [
+      "SYMPTOM"
+     ]
+    ],
+    3
+   ],
+   [
+    [
+     "BROWSER"
+    ],
+    2
+   ],
+   [
+    [
+     "UI_ASPECT"
+    ],
+    1.5
+   ],
+   [
+    [
+     "UI_OBJ"
+    ],
+    0.5
+   ]
+  ],
+  "test-adequacy": [
+   [
+    [
+     "MUTATION"
+    ],
+    3
+   ],
+   [
+    [
+     "TEST",
+     "ADEQUACY"
+    ],
+    3
+   ]
+  ],
+  "property-invariants": [
+   [
+    [
+     "PROPERTY"
+    ],
+    3
+   ],
+   [
+    [
+     "EDGE",
+     "PARSE_SER"
+    ],
+    3
+   ],
+   [
+    [
+     "EDGE",
+     "TEST"
+    ],
+    2
+   ],
+   [
+    [
+     "EDGE"
+    ],
+    1.5
+   ]
+  ]
+ },
+ "provenance": {
+  "note": "Copied verbatim from the research prototype's lexicon_v0_mech.json (the REC lexicon); only this provenance entry, empty in the source, was filled in. lexicon_v1*.json is never used: it was fitted to spent corpora.",
+  "source_file": "lexicon_v0_mech.json",
+  "source_sha256": "8a556513295f174897e49d3126cb408896b42768f8d090cd297227f2a3f0c024",
+  "v0_sha256": "4030f64918cd81f42cc9774ebb19649b06735f7f12a068510779b826e1b8b632",
+  "v0_frozen": "lexicon_v0.json was frozen before any dev, H or B task text was read (PROVENANCE.txt).",
+  "not_held_out": "lexicon_v0_mech changed v0 forms and rules after failure analysis on the spent H and B corpora (see written): H and B are not held out for it, and parity on them is not evidence of quality."
+ },
+ "guarded": [
+  "AFFECT",
+  "REVIEW",
+  "CONTEXT",
+  "SIZE",
+  "AUTH",
+  "SYMPTOM",
+  "EXTENSION"
+ ]
+}

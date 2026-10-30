@@ -1,0 +1,226 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "bottle.py",
+   "func": "__enter__",
+   "start": 1091,
+   "end": 1092,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "decorator",
+   "start": 880,
+   "end": 890,
+   "indent": 12,
+   "failing_modules": [
+    "test.test_auth",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_oorouting",
+    "test.test_outputfilter",
+    "test.test_plugins",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "get_cookie",
+   "start": 1177,
+   "end": 1188,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_environ",
+    "test.test_securecookies"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "prepare",
+   "start": 4049,
+   "end": 4056,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "bottle.py",
+   "func": "build",
+   "start": 419,
+   "end": 428,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_auth",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_oorouting",
+    "test.test_outputfilter",
+    "test.test_plugins",
+    "test.test_router",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "_global_config",
+   "start": 593,
+   "end": 596,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_app",
+    "test.test_auth",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_oorouting",
+    "test.test_outputfilter",
+    "test.test_plugins",
+    "test.test_route",
+    "test.test_securecookies",
+    "test.test_sendfile",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "__get__",
+   "start": 180,
+   "end": 183,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_auth",
+    "test.test_environ",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_oorouting",
+    "test.test_outputfilter",
+    "test.test_securecookies",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "__init__",
+   "start": 281,
+   "end": 295,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_app",
+    "test.test_auth",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_oorouting",
+    "test.test_outputfilter",
+    "test.test_plugins",
+    "test.test_route",
+    "test.test_router",
+    "test.test_securecookies",
+    "test.test_sendfile",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "render",
+   "start": 4059,
+   "end": 4065,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "bottle.py",
+   "func": "_copy_file",
+   "start": 2666,
+   "end": 2671,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_fileupload"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "_cast",
+   "start": 988,
+   "end": 1051,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_auth",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_outputfilter",
+    "test.test_plugins",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "apply",
+   "start": 1914,
+   "end": 1917,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_auth",
+    "test.test_mount",
+    "test.test_outputfilter",
+    "test.test_plugins",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "urlparts",
+   "start": 1390,
+   "end": 1400,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_auth",
+    "test.test_environ",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_outputfilter",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "query_string",
+   "start": 1411,
+   "end": 1411,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "bottle.py",
+   "func": "setup",
+   "start": 1951,
+   "end": 1955,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_app",
+    "test.test_auth",
+    "test.test_exc",
+    "test.test_mount",
+    "test.test_oorouting",
+    "test.test_outputfilter",
+    "test.test_plugins",
+    "test.test_route",
+    "test.test_securecookies",
+    "test.test_sendfile",
+    "test.test_wsgi"
+   ]
+  },
+  {
+   "file": "bottle.py",
+   "func": "json",
+   "start": 1245,
+   "end": 1254,
+   "indent": 8,
+   "failing_modules": [
+    "test.test_environ"
+   ]
+  }
+ ]
+}

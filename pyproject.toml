@@ -1,0 +1,108 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "repo-ai-cli"
+dynamic = ["version"]
+description = "Local-first repository intelligence and skeptical, sandboxed change verification for AI-assisted engineering, with optional provider-neutral coding agents."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Heet Shah" }]
+maintainers = [{ name = "Heet Shah" }]
+keywords = ["ai-agents", "code-verification", "testing", "sandbox", "code-intelligence", "claude-code", "codex", "developer-tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+    "License :: OSI Approved :: MIT License",
+    "Environment :: Console",
+    "Topic :: Software Development",
+]
+
+dependencies = [
+    "pathspec>=0.12",
+    "tomli>=1.1; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://hxxtsxxh.github.io/repo-ai/"
+Documentation = "https://hxxtsxxh.github.io/repo-ai/docs/"
+Source = "https://github.com/hxxtsxxh/repo-ai"
+Issues = "https://github.com/hxxtsxxh/repo-ai/issues"
+Changelog = "https://github.com/hxxtsxxh/repo-ai/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/repo_ai/__init__.py"
+
+[project.optional-dependencies]
+# Multi-language AST parsing. Python always uses the stdlib `ast` module.
+ast = [
+    "tree-sitter>=0.23",
+    # 0.x bundles every grammar; 1.x downloads them at runtime, which repo-ai
+    # never triggers (it only uses grammars already on disk).
+    "tree-sitter-language-pack>=0.7,<1.0",
+]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+repo-ai = "repo_ai.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/repo_ai"]
+
+[tool.hatch.build.targets.wheel.force-include]
+# The frozen eval suite ships with the tool so `repo-ai eval --offline` works
+# from any install. Hidden tests live outside every evaluated workspace.
+"benchmarks/tasks" = "repo_ai/_evalsuite"
+
+[tool.hatch.build.targets.sdist]
+# Only the offline eval task suite (`repo-ai eval --offline`, also force-included
+# in the wheel) ships from benchmarks/. Research data, evaluation corpora,
+# results, the sealed-v2 confirmatory set and its authoring notes (which
+# contain the fixes) stay in the private repository, and so do docs/research/
+# (the research ledger, evaluation protocols, corpora and results).
+# Root files are anchored with "/": an unanchored "README.md" also matches every
+# README.md below benchmarks/ (it shipped benchmarks/audit-v0.7.7/README.md).
+include = ["/src/", "/tests/", "/docs/", "/benchmarks/tasks/", "/integrations/", "/README.md", "/LICENSE",
+           "/CHANGELOG.md", "/pyproject.toml"]
+exclude = ["benchmarks/sealed-v2", "benchmarks/abc-v2/tasks", "benchmarks/authoring", "benchmarks/verify-eval", "benchmarks/results",
+           "benchmarks/statistics", "benchmarks/preregistration", "benchmarks/audit-v0.7.7",
+           "docs/research", "docs/launch", "site"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["tests/fixtures"]
+addopts = "--ignore=tests/fixtures"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = ["tests/fixtures", "benchmarks/tasks", "benchmarks/sealed-v2", "benchmarks/abc-v2/tasks", "benchmarks/authoring"]
+
+[tool.ruff.lint]
+# Correctness-focused: pyflakes, pycodestyle errors, bugbear, and the
+# security subset that matters for a tool that runs subprocesses.
+select = ["E4", "E7", "E9", "F", "B", "S102", "S307", "S602", "S604", "S605", "S606"]
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011", "B017"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+files = ["src/repo_ai"]

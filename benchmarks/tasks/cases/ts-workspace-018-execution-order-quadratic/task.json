@@ -1,0 +1,39 @@
+{
+  "id": "ts-workspace-018-execution-order-quadratic",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "performance",
+  "difficulty": "hard",
+  "prompt": "Planning a big workflow hangs. `executionOrder` (packages/core/src/plan.ts) is fine for\nthe usual dozen jobs, but a generated workflow with 5,000 jobs (mostly long\n\"run after\" chains) takes about 40 seconds, and doubling the job count roughly\nquadruples the time. The planner runs on every API request that touches a workflow, so\nthis blocks the event loop.\n\nPlease make it scale (linear or n log n in the number of jobs plus dependencies) without\nchanging its observable behaviour: the exact same order for every input (it's\ndocumented as stable, and the UI and our golden files rely on that), and the same\nerrors with the same `ids`.",
+  "setup": [
+    {
+      "file": "packages/core/src/plan.ts",
+      "create": "// Execution order for jobs that depend on other jobs (\"run after\").\n\nexport interface PlannedJob {\n  id: string;\n  dependsOn: readonly string[];\n}\n\nexport class DependencyError extends Error {\n  ids: string[];\n\n  constructor(message: string, ids: string[]) {\n    super(message);\n    this.name = \"DependencyError\";\n    this.ids = ids;\n  }\n}\n\n// Job ids in an order where every job comes after all of its dependencies.\n//\n// The order is stable: whenever several jobs are ready to run, the one listed first in\n// `jobs` goes first. Throws DependencyError for duplicate ids, for dependencies on\n// unknown jobs, and for cycles (ids: the jobs that could not be scheduled, in input order).\nexport function executionOrder(jobs: readonly PlannedJob[]): string[] {\n  const ids = new Set<string>();\n  for (const job of jobs) {\n    if (ids.has(job.id)) throw new DependencyError(`duplicate job id ${job.id}`, [job.id]);\n    ids.add(job.id);\n  }\n  for (const job of jobs) {\n    const missing = job.dependsOn.filter((dep) => !ids.has(dep));\n    if (missing.length > 0) {\n      throw new DependencyError(`job ${job.id} depends on unknown job(s) ${missing.join(\", \")}`, [job.id]);\n    }\n  }\n\n  const done = new Set<string>();\n  const remaining = [...jobs];\n  const order: string[] = [];\n  while (remaining.length > 0) {\n    const index = remaining.findIndex((job) => job.dependsOn.every((dep) => done.has(dep)));\n    if (index < 0) {\n      const stuck = remaining.map((job) => job.id);\n      throw new DependencyError(`dependency cycle among ${stuck.join(\", \")}`, stuck);\n    }\n    const [job] = remaining.splice(index, 1);\n    done.add(job.id);\n    order.push(job.id);\n  }\n  return order;\n}\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/plan.ts",
+      "find": "// Job ids in an order where every job comes after all of its dependencies.\n//\n// The order is stable: whenever several jobs are ready to run, the one listed first in\n// `jobs` goes first. Throws DependencyError for duplicate ids, for dependencies on\n// unknown jobs, and for cycles (ids: the jobs that could not be scheduled, in input order).\nexport function executionOrder(jobs: readonly PlannedJob[]): string[] {\n  const ids = new Set<string>();\n  for (const job of jobs) {\n    if (ids.has(job.id)) throw new DependencyError(`duplicate job id ${job.id}`, [job.id]);\n    ids.add(job.id);\n  }\n  for (const job of jobs) {\n    const missing = job.dependsOn.filter((dep) => !ids.has(dep));\n    if (missing.length > 0) {\n      throw new DependencyError(`job ${job.id} depends on unknown job(s) ${missing.join(\", \")}`, [job.id]);\n    }\n  }\n\n  const done = new Set<string>();\n  const remaining = [...jobs];\n  const order: string[] = [];\n  while (remaining.length > 0) {\n    const index = remaining.findIndex((job) => job.dependsOn.every((dep) => done.has(dep)));\n    if (index < 0) {\n      const stuck = remaining.map((job) => job.id);\n      throw new DependencyError(`dependency cycle among ${stuck.join(\", \")}`, stuck);\n    }\n    const [job] = remaining.splice(index, 1);\n    done.add(job.id);\n    order.push(job.id);\n  }\n  return order;\n}\n",
+      "replace": "// Min-heap of input positions: the ready job listed first always comes out first.\nclass PositionHeap {\n  items: number[];\n\n  constructor() {\n    this.items = [];\n  }\n\n  get size(): number {\n    return this.items.length;\n  }\n\n  push(value: number): void {\n    const items = this.items;\n    items.push(value);\n    let i = items.length - 1;\n    while (i > 0) {\n      const parent = (i - 1) >> 1;\n      if (items[parent] <= items[i]) break;\n      [items[parent], items[i]] = [items[i], items[parent]];\n      i = parent;\n    }\n  }\n\n  pop(): number {\n    const items = this.items;\n    const top = items[0];\n    const last = items.pop() as number;\n    if (items.length > 0) {\n      items[0] = last;\n      let i = 0;\n      for (;;) {\n        const left = 2 * i + 1;\n        const right = left + 1;\n        let smallest = i;\n        if (left < items.length && items[left] < items[smallest]) smallest = left;\n        if (right < items.length && items[right] < items[smallest]) smallest = right;\n        if (smallest === i) break;\n        [items[smallest], items[i]] = [items[i], items[smallest]];\n        i = smallest;\n      }\n    }\n    return top;\n  }\n}\n\n// Job ids in an order where every job comes after all of its dependencies.\n//\n// The order is stable: whenever several jobs are ready to run, the one listed first in\n// `jobs` goes first. Throws DependencyError for duplicate ids, for dependencies on\n// unknown jobs, and for cycles (ids: the jobs that could not be scheduled, in input order).\nexport function executionOrder(jobs: readonly PlannedJob[]): string[] {\n  const position = new Map<string, number>();\n  jobs.forEach((job, i) => {\n    if (position.has(job.id)) throw new DependencyError(`duplicate job id ${job.id}`, [job.id]);\n    position.set(job.id, i);\n  });\n\n  const waitingOn = new Array<number>(jobs.length).fill(0);\n  const dependents: number[][] = jobs.map(() => []);\n  jobs.forEach((job, i) => {\n    const deps = job.dependsOn;\n    const missing = deps.filter((dep) => !position.has(dep));\n    if (missing.length > 0) {\n      throw new DependencyError(`job ${job.id} depends on unknown job(s) ${missing.join(\", \")}`, [job.id]);\n    }\n    for (const dep of deps) {\n      dependents[position.get(dep) as number].push(i);\n      waitingOn[i] += 1;\n    }\n  });\n\n  const ready = new PositionHeap();\n  waitingOn.forEach((count, i) => {\n    if (count === 0) ready.push(i);\n  });\n  const order: string[] = [];\n  while (ready.size > 0) {\n    const i = ready.pop();\n    order.push(jobs[i].id);\n    for (const next of dependents[i]) {\n      waitingOn[next] -= 1;\n      if (waitingOn[next] === 0) ready.push(next);\n    }\n  }\n  if (order.length < jobs.length) {\n    const stuck = jobs.filter((_, i) => waitingOn[i] > 0).map((job) => job.id);\n    throw new DependencyError(`dependency cycle among ${stuck.join(\", \")}`, stuck);\n  }\n  return order;\n}\n"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/plan.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_execution_order.test.ts",
+      "dest": "packages/core/test/hidden_execution_order.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/core/test/hidden_execution_order.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

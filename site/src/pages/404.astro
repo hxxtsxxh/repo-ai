@@ -1,0 +1,22 @@
+---
+import Landing from '../layouts/Landing.astro';
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<Landing title="Page not found · repo-ai" description="This page does not exist on the repo-ai site." path="404.html" noindex>
+  <section class="notfound" aria-labelledby="nf-title">
+    <div class="wrap">
+      <p class="notfound__code">404 · page not found</p>
+      <h1 id="nf-title">Nothing is linked to this path.</h1>
+      <p>
+        The page you asked for is not part of this site. It may have moved when the docs were reorganised. Search the documentation,
+        or start from one of these:
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href={base}>Home</a>
+        <a class="btn" href={`${base}docs/`}>Documentation</a>
+        <a class="btn" href={`${base}docs/quickstart/`}>Quickstart</a>
+      </div>
+    </div>
+  </section>
+</Landing>

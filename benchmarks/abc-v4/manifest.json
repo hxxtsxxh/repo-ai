@@ -1,0 +1,109 @@
+{
+  "analysis": "n=2 tasks (1 calibration, 1 holdout; 1 Python, 1 Node cluster), one run per cell. Too small for any inferential claim: counts and a Wilson interval at most. Descriptive counts only; no significance or superiority claim. Verdict stays NOT_YET_DEMONSTRATED unless matched live arms exist and are reported with their uncertainty.",
+  "arms": {
+    "A": "provider's ordinary workflow (codex exec, its own workspace-write sandbox), same model/budget, no repo-ai",
+    "B": "same provider via `repo-ai do --agent codex` (retrieval, plan, frozen verification, isolation)",
+    "C": "`repo-ai do --tournament codex,agy` (two independent live candidates; abstains unless exactly one distinct candidate passes the frozen tests). agy has no arm A, so C is compared against codex A/B only."
+  },
+  "caps": {
+    "note": "includes all prior spend; UNKNOWN cost is not 0",
+    "per_call_usd": 10,
+    "total_usd": 150
+  },
+  "design_note": "Every behaviour the hidden tests check is stated in the task prompt (abc-v1 node-slug showed unstated hidden requirements make a FALSE_GREEN a contract defect, not a verifier defect). Tasks are new for v4 and disjoint from abc-v1, abc-v2 and abc-v3 (all development evidence, spent). abc-v3 showed a ceiling effect (arms A and B both CORRECT on 4/4), so v4 is a PILOT: its first question is whether the bare provider (arm A) fails these harder-specified tasks at all; if arm A is CORRECT on both, there is nothing for repo-ai to improve on them and the study ends there.",
+  "hidden_grader_policy": "hidden/ is never copied into the agent workspace nor mentioned in prompts; grading happens in a separate temp copy.",
+  "negative_controls": "each task ships a `decoy` that passes visible tests and must grade FALSE_GREEN, and the untouched `repo` that must grade FAIL.",
+  "outcomes": [
+    "CORRECT",
+    "FALSE_GREEN",
+    "FAIL",
+    "INCONCLUSIVE",
+    "NOT_RUN",
+    "ABSTAIN",
+    "NO_CANDIDATE"
+  ],
+  "primary_endpoint": "CORRECT = visible AND hidden tests pass on the candidate files actually produced (only task.write_paths are honoured; other changes are ignored and reported)",
+  "providers": [
+    "codex",
+    "agy"
+  ],
+  "run_order_counterbalanced_seeded": {
+    "node-duration": [
+      "B",
+      "A",
+      "C"
+    ],
+    "py-semver": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  "schema": 1,
+  "secondary_endpoints": [
+    "false_green_count",
+    "wall_seconds",
+    "observed_usd",
+    "agent_count",
+    "abstentions",
+    "human_interventions",
+    "attempted_but_failed_runs"
+  ],
+  "seed": 20261030,
+  "sha256": {
+    "grade.py": "efc3c2079cf75d163bbe984278dcb3f1112096ce3db7d78cba8e0310e754d6e5",
+    "tasks/node-duration/decoy/duration.js": "5df1f38cf46269a51ad33b120b82fcc689ecadc34464356b58e9cf962f74e113",
+    "tasks/node-duration/hidden/duration.hidden.test.js": "249ec06ec68d9184b120207badf1547137dbebda751f1132e3b771e76cf3ee96",
+    "tasks/node-duration/reference/duration.js": "6e3f2fd8c87391d7356890e45672c01f65b98d0bf8ba535bbaa4cdbdb6bc412c",
+    "tasks/node-duration/repo/duration.js": "0f5a8859e9412533e6818898f8634e82d1aa5c31346f1cd4f3340468b60d395d",
+    "tasks/node-duration/repo/duration.test.js": "570e7b1a03d94dab633947a0e782f15ec8892726596cbeaf68172160a82a25b3",
+    "tasks/node-duration/repo/package.json": "f74702c1de3a14d3499a1aea134648bb2d08cccb1e5d6a5dfa87735aaa4fbea1",
+    "tasks/node-duration/task.json": "92900939e7e2b3fb72889f8684e33bcebd55f2c7df83d1c1e1fa1461986242a8",
+    "tasks/py-semver/decoy/semver.py": "8e82e64a66afc91713ac2b55dc07e48f2f2e348541f8ddab5c5350f1e74cff29",
+    "tasks/py-semver/hidden/test_semver_hidden.py": "619a7c8c6afb6be7e66e954285c995741f9db0bdedcbd84b3f6fb8451eda4155",
+    "tasks/py-semver/reference/semver.py": "f1627f9b72d491e66cda7ee1a8409df16c44c5a842410a5ac1cd691018e33e0f",
+    "tasks/py-semver/repo/pyproject.toml": "8bbf8175f0bf20fe72d58d6ce897ff263f5a7e7a840fcfd752891a608813f0b7",
+    "tasks/py-semver/repo/semver.py": "cc5f2986872d1c62de379d884fc3f6b7de179bc6877f172d9961edc005d825ca",
+    "tasks/py-semver/repo/test_semver.py": "cfc6d079fb18f0824cfefad02af68afde9bc18c75b6a0db39ccf8f0a58b549ea",
+    "tasks/py-semver/task.json": "e3393168008fd4f5c40a79adca15011501f1e91065f55ee2291f3fd0a92844ff"
+  },
+  "split_policy": "calibration tasks may be run first to check that the bare provider (arm A) does not already solve everything (ceiling check) and to debug the harness. Nothing about the holdout tasks, prompts, hidden tests, grader or arm definitions may change after a calibration or holdout result is seen; any change means a new study id. The primary comparison uses holdout tasks only. PILOT RULE: arm A is run on the calibration task first; if it is CORRECT the holdout is still run for A only, and arms B/C are run only on tasks where arm A was not CORRECT, because a ceiling cell cannot show lift. Skipped cells are reported as NOT_RUN with that reason.",
+  "splits": {
+    "calibration": [
+      "py-semver"
+    ],
+    "holdout": [
+      "node-duration"
+    ]
+  },
+  "status": "PREREGISTERED_FROZEN_BEFORE_ANY_LIVE_RUN",
+  "study": "abc-v4",
+  "task_clusters": [
+    "node_duration_parsing",
+    "python_version_precedence"
+  ],
+  "tasks": {
+    "node-duration": {
+      "cluster": "node_duration_parsing",
+      "id": "node-duration",
+      "language": "node",
+      "prompt": "In duration.js export (CommonJS, module.exports = { parseDuration }) a function parseDuration(text) that returns a whole number of milliseconds. If text is not a string throw TypeError. Leading and trailing whitespace is ignored; after trimming the text must be one or more components written back to back with no whitespace between them, each component being a number followed by a unit. A number is digits with an optional fractional part ('1', '1.5'; a leading '.', a trailing '.' and signs are invalid). The units are h, m, s and ms. Units must appear in strictly decreasing order of size (h, then m, then s, then ms) and each unit may appear at most once. The result is the sum of number times the unit's milliseconds, rounded once with Math.round at the end. Anything else (empty text, an unknown unit, text that is not entirely components, a repeated or out-of-order unit) throws RangeError.",
+      "split": "holdout",
+      "test_command": "node --test",
+      "write_paths": [
+        "duration.js"
+      ]
+    },
+    "py-semver": {
+      "cluster": "python_version_precedence",
+      "id": "py-semver",
+      "language": "python",
+      "prompt": "In semver.py implement compare_versions(a, b) returning -1, 0 or 1 for the precedence of two semantic-version strings. A version is MAJOR.MINOR.PATCH, optionally followed by -PRERELEASE, optionally followed by +BUILD. MAJOR, MINOR and PATCH are non-negative decimal integers without leading zeros (0 itself is fine). PRERELEASE is one or more dot-separated identifiers; each identifier is non-empty and uses only ASCII letters, digits and hyphen, and an identifier made only of digits must not have a leading zero. BUILD is one or more dot-separated non-empty identifiers of ASCII letters, digits and hyphen (leading zeros allowed). Any input that is not a str or is not a valid version raises ValueError. Precedence: compare MAJOR, then MINOR, then PATCH numerically. If those are equal, a version with a PRERELEASE is lower than the same version without one. Two PRERELEASEs are compared identifier by identifier from the left: two numeric identifiers compare as integers; two non-numeric identifiers compare as plain ASCII strings; a numeric identifier is lower than a non-numeric one; if all shared identifiers are equal, the one with fewer identifiers is lower. BUILD is ignored completely (it never affects the result).",
+      "split": "calibration",
+      "test_command": "python -m pytest",
+      "write_paths": [
+        "semver.py"
+      ]
+    }
+  }
+}

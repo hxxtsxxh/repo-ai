@@ -1,0 +1,88 @@
+{
+  "schema": "repo-ai.mission-development/2",
+  "branch": "codex/reality-engine-20261027",
+  "status": "FINALIZATION_SECURITY_REPAIRS_IN_VALIDATION",
+  "source_checkpoint": "790d581",
+  "paid_actions_authorized": false,
+  "remote_mutations_authorized": false,
+  "release_go": false,
+  "comparative_lift_verdict": "NOT_YET_DEMONSTRATED",
+  "acceptance_matrix": "docs/roadmap/FINALIZATION-ACCEPTANCE.md",
+  "handoff": "docs/roadmap/CODEX-FINALIZATION-HANDOFF.md",
+  "historical_phase2_record": {
+    "schema": "repo-ai.mission-development/1",
+    "branch": "codex/reality-engine-20261027",
+    "base": "ed936f5fd8df5a0a3247dd53717c95997d7cb09e",
+    "milestone": "PHASE_2_LIVE_PROVIDER_CONTINUATION_AND_SCIENTIFIC_EVAL_VERIFIED",
+    "status": "PHASE_2_LIVE_VERIFIED",
+    "paid_actions_authorized": true,
+    "remote_mutations_authorized": true,
+    "next": "Execute preregistered multi-arm live benchmark across unseen repository clusters when Codex/Claude quota resets.",
+    "p0": "LIVE_VERIFIED_WITH_POST_APPLY_TEST_GATE",
+    "p1": "LIVE_VERIFIED_BOB_2_0_6_AND_CODEX_0_164_0_RATE_LIMIT_DETECTION",
+    "independent_final_review": "COMPLETED_3_PHASE2_SUBAGENT_AUDITS_AND_6_PRIOR_FINDINGS_VERIFIED",
+    "source_commit": "608170ad8f646b82a3568e8bc7a399aacb53adfb",
+    "p2": "COMPLEXITY_ROUTED_DAG_AND_CAPABILITY_BROKER_OPERATIONAL",
+    "p3": "ISOLATED_CANDIDATE_TOURNAMENT_AND_COMPARE_CLI_OPERATIONAL",
+    "full_suite": {
+      "source_commit": "aba350752f2f00ea3488234c4a08c2b38493d72d",
+      "verdict_file": "dist/reality-engine/suite-aba3507/verdict.json",
+      "status": "PASS",
+      "collected": 1895,
+      "passed": 1887,
+      "xfailed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "exact_id_set_equality": true
+    },
+    "review": {
+      "independent_reproductions": 21,
+      "corrected_regressions": "54 passed in review/tournament/probe/diagnosis suite",
+      "primary_zone_reproductions": 4,
+      "ordering_checks": "3 passed in 3.71s",
+      "integration_log": "dist/reality-engine/review-integration.log",
+      "phase2_subagent_reviews": [
+        "Adversarial Security Reviewer (c17b8d29-0168-44a8-9a13-b788f1ea83f8)",
+        "Evaluation Methodology Reviewer (c64c2a3f-c018-4358-a44f-68e21fcfba05)",
+        "DX Integration Reviewer (27225229-2056-4afb-b734-844a6ff4a6e3)"
+      ],
+      "final_independent_verdict": "PASS_WITH_ALL_PHASE2_GAPS_REMEDIATED"
+    },
+    "p4": "BINARY_IDENTITY_AND_TESTMAP_FRESHNESS_VERIFIED",
+    "p5": "OBSERVED_FAILURE_DELTAS_REMEDIATION_AND_PLAYBOOK_EXTRACTION",
+    "p6": "LIVE_VERIFIED_CROSS_PROVIDER_HANDOFF_CONTINUATION",
+    "p7": "VERIFIED_PLAYBOOK_SKILL_DISTILLERY_AND_CAPABILITY_BROKER",
+    "p8": "SAME_ZONE_CHANGE_FUTURES_WITH_EMPIRICAL_SANDBOX_REHEARSAL",
+    "p9": "CALM_TEXT_UX_AND_HELDOUT_INDEPENDENT_GRADER_EVAL_HARNESS",
+    "live_provider_execution": {
+      "first_provider": "codex",
+      "first_mission_id": "b82a5e158916e077cd5ae1fc",
+      "first_outcome": "BLOCKED_RATE_LIMITED",
+      "handoff_capsule": "dist/reality-engine/live-phase2/handoff-codex-to-bob.json",
+      "handoff_verified": true,
+      "continuation_provider": "bob",
+      "continuation_mission_id": "23375b36c9c88a626c695166",
+      "continuation_verdict": "PASS",
+      "verification_label": "LIVE_VERIFIED",
+      "observed_cost_usd": 0.091508,
+      "diff_sha256": "6b23f201d31795b6c6e932f2a52cdf8576f619a4ab71f90f01b392e011083f92",
+      "futures_rehearsal_observation_sha256": "8e436e18bc0d3556c6445f14bb378b73b1cfc51401e128ed74ed764bd52650fc",
+      "post_apply_observation_sha256": "579d8a0e64753c901e3f9a9001870e3bd55745308c18cf73a40e774535dbd4a6"
+    },
+    "installed_acceptance": {
+      "status": "PASS",
+      "wheel_sha256": "b7603f858492327d36ce2d40762a4aa7c046fbd8b32bce41ac727a63d13ca9b7",
+      "sdist_sha256": "9b092326ed09705892a213add05030ca0765029e3c39f1fd938daaf3ee7492f8",
+      "rebuilt_wheel_sha256": "b7603f858492327d36ce2d40762a4aa7c046fbd8b32bce41ac727a63d13ca9b7",
+      "python_demo": "dist/reality-engine/demo-py-phase2",
+      "node_demo": "dist/reality-engine/demo-node-phase2",
+      "eval_protocol": "dist/reality-engine/eval-phase2/eval-report.json"
+    },
+    "diagnosis_validation": {
+      "mission_provider_polish_tests": 191,
+      "duration_seconds": 405.37,
+      "kernel_closure_runtime_explanation_tests": 15,
+      "kernel_log": "dist/reality-engine/kernel-closure-fixed.log"
+    }
+  }
+}

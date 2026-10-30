@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-018-partial-refunds-overrun",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Finance found a $50.99 payment with $60.00 refunded against it. Support issued two\npartial refunds of $30.00 each through `POST /payments/{id}/refund` and both were\naccepted. The total refunded on a payment must never exceed what was captured.",
+  "setup": [
+    {
+      "file": "shop/services/payments.py",
+      "find": "if amount_cents > remaining:",
+      "replace": "if amount_cents > payment.amount_cents:"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/payments.py",
+      "find": "if amount_cents > payment.amount_cents:",
+      "replace": "if amount_cents > remaining:"
+    }
+  ],
+  "gold_files": [
+    "shop/services/payments.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_refund_limit.py",
+      "dest": "tests/test_hidden_refund_limit.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_refund_limit"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

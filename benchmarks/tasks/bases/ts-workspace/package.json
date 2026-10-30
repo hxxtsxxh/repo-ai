@@ -1,0 +1,20 @@
+{
+  "name": "jobrunner-workspace",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny job scheduler: shared core, an HTTP-shaped API and a CLI.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test \"packages/*/test/*.test.ts\"",
+    "test:core": "node --test \"packages/core/test/*.test.ts\"",
+    "test:api": "node --test \"packages/api/test/*.test.ts\"",
+    "test:cli": "node --test \"packages/cli/test/*.test.ts\""
+  }
+}

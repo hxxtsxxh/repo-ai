@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+*.egg-info/
+/build/
+/dist/
+.pytest_cache/
+.venv/
+# repo-ai state when repo-ai is run on itself
+.repo-ai/state/

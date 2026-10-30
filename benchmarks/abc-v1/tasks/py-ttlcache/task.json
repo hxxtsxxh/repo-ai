@@ -1,0 +1,3 @@
+{"id": "py-ttlcache", "cluster": "python_cache_expiry", "language": "python", "test_command": "python -m pytest",
+ "write_paths": ["ttlcache.py"],
+ "prompt": "In ttlcache.py, TTLCache entries must expire exactly ttl time units after they were stored (an entry stored at 100 with ttl 10 is gone at 110). Calling set() on an existing key must overwrite the value and restart its ttl. Add a purge(now) method that deletes expired entries from storage and returns how many it removed. Keep the other behavior as is."}

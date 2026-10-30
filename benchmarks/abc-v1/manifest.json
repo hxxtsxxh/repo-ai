@@ -1,0 +1,134 @@
+{
+  "analysis": "n=4 tasks (2 Python, 2 Node clusters). Descriptive counts only; no significance or superiority claim. Verdict stays NOT_YET_DEMONSTRATED unless matched live arms exist and are reported with their uncertainty.",
+  "arms": {
+    "A": "provider's ordinary workflow, same model/tools/budget, no repo-ai",
+    "B": "same provider via `repo-ai do` (retrieval, plan, frozen verification, isolation)",
+    "C": "B plus selective multi-agent/tournament; NOT RUNNABLE live in this release (compare_candidates is replay-only) -> reported NOT_RUN"
+  },
+  "caps": {
+    "note": "includes all prior spend; UNKNOWN cost is not 0",
+    "per_call_usd": 10,
+    "total_usd": 150
+  },
+  "hidden_grader_policy": "hidden/ is never copied into the agent workspace nor mentioned in prompts; grading happens in a separate temp copy.",
+  "negative_controls": "each task ships a `decoy` that passes visible tests and must grade FALSE_GREEN, and the untouched `repo` that must grade FAIL.",
+  "outcomes": [
+    "CORRECT",
+    "FALSE_GREEN",
+    "FAIL",
+    "INCONCLUSIVE",
+    "NOT_RUN",
+    "ABSTAIN"
+  ],
+  "primary_endpoint": "CORRECT = visible AND hidden tests pass on the candidate files actually produced (only task.write_paths are honoured; other changes are ignored and reported)",
+  "run_order_counterbalanced_seeded": {
+    "node-slug": [
+      "B",
+      "A"
+    ],
+    "node-versions": [
+      "B",
+      "A"
+    ],
+    "py-ledger": [
+      "B",
+      "A"
+    ],
+    "py-ttlcache": [
+      "A",
+      "B"
+    ]
+  },
+  "schema": 1,
+  "secondary_endpoints": [
+    "false_green_count",
+    "wall_seconds",
+    "observed_usd",
+    "agent_count",
+    "abstentions",
+    "human_interventions",
+    "attempted_but_failed_runs"
+  ],
+  "seed": 20261028,
+  "sha256": {
+    "grade.py": "044197100b9fe347c134eae8c2bc52da1bdb75b5ed509fbd91b79e7a13be851b",
+    "tasks/node-slug/decoy/slug.js": "52dcd2c468ff82f027c24acb7289a467c5cbcd9b30c3970e7337cb3cc2834ef6",
+    "tasks/node-slug/hidden/test/slug.hidden.test.js": "2fc64f192119354ab1098c513b01c5a18dafa900d21482c2c6fc5e9499a8152c",
+    "tasks/node-slug/reference/slug.js": "e9cdb4d2e6641c706edffad28341cd0039c1d7856895dfb6fb5e0d1e52546b05",
+    "tasks/node-slug/repo/package.json": "6fc3c2ac18aa9535cf035568337bc44236531825dcb7519f33cf49df77d35ee9",
+    "tasks/node-slug/repo/slug.js": "6f63b89ccda1c3d70c1908b2f07c323739e41746b9c5fde9620dc6836c581ed4",
+    "tasks/node-slug/repo/test/slug.test.js": "471eee1a0f2fba1ca2ba9973a01926abb005fe84632b1cb608c507a071f215cc",
+    "tasks/node-slug/task.json": "4201b4dc5c70968e942ae6c960d78695320926bb4de97e3148c53efa30bc13c6",
+    "tasks/node-versions/decoy/versions.js": "95a3a40eed88989e78eeb85c7948197195839594c68579eaeaed8762deae479c",
+    "tasks/node-versions/hidden/test/versions.hidden.test.js": "3d9fdce27f470e8a2ed724e55d9eb3b5d79abc453ce7c8a7d375a257c9f134fb",
+    "tasks/node-versions/reference/versions.js": "8c02cd9b370a763d52680569fbf3429cde3605ec8c5da87af83af0308b5f7c34",
+    "tasks/node-versions/repo/package.json": "31feec440005174cb814d525cb7cff674c1d195908d794fc58b31ea034d3c778",
+    "tasks/node-versions/repo/test/versions.test.js": "76f72e3c2def091b3462e89311f0dd3639f33595dedb0fbe0f5d88a278280173",
+    "tasks/node-versions/repo/versions.js": "a13b3e79a193e50620a30ff1314565bba687985770a2946ebb9d04f2a12b2cbe",
+    "tasks/node-versions/task.json": "39715b835614d5414d5c58bd1c584f8df702db9f29e26b1d5b27bb0678b7461e",
+    "tasks/py-ledger/decoy/ledger.py": "a9d605e486eae3943457a1173ce0b803b7786a15601c7da38adec86cd3ddd3bc",
+    "tasks/py-ledger/hidden/test_ledger_hidden.py": "583e1cf7ccdb84faf51f9b6231d699cfe47735213fa4720517668fb02c2192f6",
+    "tasks/py-ledger/reference/ledger.py": "0f37d2f0cd95237a694d86cee85a4c8bb4d5c0ac2140f1747a2838704590549d",
+    "tasks/py-ledger/repo/ledger.py": "d08d0d6a73e48b3e8a75fcbf12ec497afaa438dceca3b7e3311a13fc76727d80",
+    "tasks/py-ledger/repo/pyproject.toml": "16713d02c4751fb02221a274d20fe9f3be7ffaffd1a3031af82cd37f3a6456f3",
+    "tasks/py-ledger/repo/test_ledger.py": "ef4fead97b0945fda0038518808071014630294a920ee6a6b260519ae4276b06",
+    "tasks/py-ledger/task.json": "62fd826ee0978781c480bfdbafd2bc084ae5087be5c9ee8916476bee20c4b3ef",
+    "tasks/py-ttlcache/decoy/ttlcache.py": "5a7026a5e7a4543e8b173ae8c9b23cb23ae987b7d01806c64612a777fa1327bd",
+    "tasks/py-ttlcache/hidden/test_ttlcache_hidden.py": "6a7d637edb62b4b345c3fb013eb699d0f0287c23504e513cc1a7dcb9a5cab5cd",
+    "tasks/py-ttlcache/reference/ttlcache.py": "0440be3c8fa9ade01a43223e53a50f43872112dd86c79ad2fe65f995fa9a6c62",
+    "tasks/py-ttlcache/repo/pyproject.toml": "16713d02c4751fb02221a274d20fe9f3be7ffaffd1a3031af82cd37f3a6456f3",
+    "tasks/py-ttlcache/repo/test_ttlcache.py": "59972cc549ebfc9fdf6c549d635d8923f2bbebd5a75ea8340f3e1fe1e316a9ba",
+    "tasks/py-ttlcache/repo/ttlcache.py": "9c34eb42b5f083d33c8d9357d5f5248a7fbec31a378ad004588ec383c3b8a416",
+    "tasks/py-ttlcache/task.json": "08c01ecb90c3732eae3bb0b3d7d490fe906303a3861a6fabd34d63886dd4f437"
+  },
+  "status": "PREREGISTERED_FROZEN_BEFORE_ANY_LIVE_RUN",
+  "study": "abc-v1",
+  "task_clusters": [
+    "node_cjs_protocol_parsers",
+    "node_cjs_text_utils",
+    "python_cache_expiry",
+    "python_stateful_finance"
+  ],
+  "tasks": {
+    "node-slug": {
+      "cluster": "node_cjs_text_utils",
+      "id": "node-slug",
+      "language": "node",
+      "prompt": "In slug.js, slugify must strip leading and trailing dashes, and uniqueSlugs must give duplicate titles the suffixes -2, -3, ... Slugs must be unique across the whole returned list. Keep the exports and everything else as is.",
+      "test_command": "node --test",
+      "write_paths": [
+        "slug.js"
+      ]
+    },
+    "node-versions": {
+      "cluster": "node_cjs_protocol_parsers",
+      "id": "node-versions",
+      "language": "node",
+      "prompt": "In versions.js, compare() must order a prerelease version below its release (1.0.0-rc.1 < 1.0.0), ignore +build metadata, and follow semantic-versioning precedence for prerelease identifiers. Keep the exports and everything else as is.",
+      "test_command": "node --test",
+      "write_paths": [
+        "versions.js"
+      ]
+    },
+    "py-ledger": {
+      "cluster": "python_stateful_finance",
+      "id": "py-ledger",
+      "language": "python",
+      "prompt": "In ledger.py, Ledger.transfer must be safe to retry and must never overdraw. Retrying a transfer with the same txid must move money only once. A transfer that would take the source balance below zero must raise ValueError, and a rejected transfer must change nothing. Keep deposit and balance behavior as is.",
+      "test_command": "python -m pytest",
+      "write_paths": [
+        "ledger.py"
+      ]
+    },
+    "py-ttlcache": {
+      "cluster": "python_cache_expiry",
+      "id": "py-ttlcache",
+      "language": "python",
+      "prompt": "In ttlcache.py, TTLCache entries must expire exactly ttl time units after they were stored (an entry stored at 100 with ttl 10 is gone at 110). Calling set() on an existing key must overwrite the value and restart its ttl. Add a purge(now) method that deletes expired entries from storage and returns how many it removed. Keep the other behavior as is.",
+      "test_command": "python -m pytest",
+      "write_paths": [
+        "ttlcache.py"
+      ]
+    }
+  }
+}

@@ -1,0 +1,3 @@
+{"id": "py-split", "cluster": "python_money_allocation", "language": "python", "test_command": "python -m pytest",
+ "write_paths": ["split.py"],
+ "prompt": "In split.py, split_bill(total_cents, weights) must divide total_cents (an int) among the weights so that the returned list of ints always sums to exactly total_cents. Each share is proportional to its weight; use the largest-remainder method: give every share its floor first, then hand out the remaining cents one each to the shares with the largest fractional remainders, breaking ties in favour of the earlier index. A weight of 0 gets 0. Raise ValueError if weights is empty, if any weight is negative, if all weights are zero, or if total_cents is negative. The weights argument must not be modified."}

@@ -1,0 +1,88 @@
+{
+  "id": "java-ledger-007-importer-account-id-rules",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "refactor",
+  "difficulty": "medium",
+  "prompt": "The bank portal's CSV export writes account ids in lower case (`acc-0001`, sometimes\nwith a stray space). Everywhere else in the ledger ids are case-insensitive, but the\nimporter rejects these rows with `line 2: invalid account id 'acc-0001'`. It looks like\nthe importer carries its own copy of the account-id rules. Please make it follow the\nsame rules as the rest of the code base instead of maintaining a separate check, and\nkeep reporting bad ids with their line number.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "import com.example.ledger.Validation;\n",
+      "replace": ""
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "import java.util.Locale;\n",
+      "replace": "import java.util.Locale;\nimport java.util.regex.Pattern;\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "    public static final List<String> HEADER = ",
+      "replace": "    private static final Pattern ACCOUNT_ID = Pattern.compile(\"ACC-\\\\d{4}\");\n\n    public static final List<String> HEADER = "
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "            String from = Validation.accountId(fields.get(2));\n            String to = Validation.accountId(fields.get(3));",
+      "replace": "            String from = checkAccount(fields.get(2), lineNo);\n            String to = checkAccount(fields.get(3), lineNo);"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "    private Row parseRow(",
+      "replace": "    private static String checkAccount(String raw, int lineNo) {\n        String id = raw.trim();\n        if (!ACCOUNT_ID.matcher(id).matches()) {\n            throw new CsvImportException(lineNo, \"invalid account id '\" + raw + \"'\");\n        }\n        return id;\n    }\n\n    private Row parseRow("
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "import com.example.ledger.Transaction;\n",
+      "replace": "import com.example.ledger.Transaction;\nimport com.example.ledger.Validation;\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "import java.util.Locale;\nimport java.util.regex.Pattern;\n",
+      "replace": "import java.util.Locale;\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "    private static final Pattern ACCOUNT_ID = Pattern.compile(\"ACC-\\\\d{4}\");\n\n    public static final List<String> HEADER = ",
+      "replace": "    public static final List<String> HEADER = "
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "            String from = checkAccount(fields.get(2), lineNo);\n            String to = checkAccount(fields.get(3), lineNo);",
+      "replace": "            String from = Validation.accountId(fields.get(2));\n            String to = Validation.accountId(fields.get(3));"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvImporter.java",
+      "find": "    private static String checkAccount(String raw, int lineNo) {\n        String id = raw.trim();\n        if (!ACCOUNT_ID.matcher(id).matches()) {\n            throw new CsvImportException(lineNo, \"invalid account id '\" + raw + \"'\");\n        }\n        return id;\n    }\n\n    private Row parseRow(",
+      "replace": "    private Row parseRow("
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/io/CsvImporter.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenImporterIdsTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenImporterIdsTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenImporterIdsTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

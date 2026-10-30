@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-011-flag-value-with-equals",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "`jobs create backup --command=\"env MODE=full ./backup.sh\"` creates a job whose command\nis just `env MODE` -- everything after the second `=` is dropped. Writing it as\n`--command \"env MODE=full ./backup.sh\"` (space instead of `=`) works.",
+  "setup": [
+    {
+      "file": "packages/cli/src/args.ts",
+      "find": "      const eq = body.indexOf(\"=\");\n      if (eq >= 0) {\n        flags[body.slice(0, eq)] = body.slice(eq + 1);\n        continue;\n      }",
+      "replace": "      if (body.includes(\"=\")) {\n        const [key, value] = body.split(\"=\");\n        flags[key] = value;\n        continue;\n      }"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/cli/src/args.ts",
+      "find": "      if (body.includes(\"=\")) {\n        const [key, value] = body.split(\"=\");\n        flags[key] = value;\n        continue;\n      }",
+      "replace": "      const eq = body.indexOf(\"=\");\n      if (eq >= 0) {\n        flags[body.slice(0, eq)] = body.slice(eq + 1);\n        continue;\n      }"
+    }
+  ],
+  "gold_files": [
+    "packages/cli/src/args.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_equals_flags.test.ts",
+      "dest": "packages/cli/test/hidden_equals_flags.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/cli/test/hidden_equals_flags.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

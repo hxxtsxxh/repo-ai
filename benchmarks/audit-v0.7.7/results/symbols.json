@@ -1,0 +1,212 @@
+{
+ "oss-bottle": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 171
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 23
+  }
+ },
+ "oss-cachetools": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 0.852,
+   "top1": 0.975,
+   "p50_ms": 179
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 23
+  }
+ },
+ "oss-markdown": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 167
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 24
+  }
+ },
+ "oss-pyflakes": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 179
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 23
+  }
+ },
+ "oss-simplejson": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 157
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 21
+  }
+ },
+ "oss-tomli": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 164
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 23
+  }
+ },
+ "repo-ai": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 158
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 24
+  }
+ },
+ "v2-asn1crypto": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 188
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 30
+  }
+ },
+ "v2-dnspython": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 0.977,
+   "top1": 0.975,
+   "p50_ms": 184
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 32
+  }
+ },
+ "v2-lark": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 159
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 22
+  }
+ },
+ "v2-more-itertools": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 0.784,
+   "top1": 1.0,
+   "p50_ms": 157
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 22
+  }
+ },
+ "v2-pyasn1": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 160
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 23
+  }
+ },
+ "v2-sqlglot": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 155
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 25
+  }
+ },
+ "v2-typing-extensions": {
+  "names": 40,
+  "ra": {
+   "recall": 1.0,
+   "precision": 1.0,
+   "top1": 1.0,
+   "p50_ms": 163
+  },
+  "rg": {
+   "recall": 1.0,
+   "precision": 0.979,
+   "top1": 0.975,
+   "p50_ms": 22
+  }
+ }
+}

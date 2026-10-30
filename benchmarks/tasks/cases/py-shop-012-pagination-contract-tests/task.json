@@ -1,0 +1,40 @@
+{
+  "id": "py-shop-012-pagination-contract-tests",
+  "base": "py-shop",
+  "language": "python",
+  "category": "test",
+  "difficulty": "medium",
+  "prompt": "Our pagination helper (`shop/utils/pagination.py`) has had two regressions this year and\nthe unit tests caught neither. Please extend the tests so they actually pin down its\ncontract:\n\n- page count when the last page is only partially full\n- asking for a page past the end returns no items (but the right total)\n- `per_page` is clamped to the configured bounds: values below 1 and values above the\n  configured maximum\n\nThe implementation is correct today; this is about tests only, so don't change it.",
+  "setup": [],
+  "solution": [
+    {
+      "file": "tests/test_pagination.py",
+      "find": "from shop.utils.pagination import paginate\n",
+      "replace": "from shop import config\nfrom shop.utils.pagination import paginate\n"
+    },
+    {
+      "file": "tests/test_pagination.py",
+      "find": "\n\nif __name__ == \"__main__\":",
+      "replace": "\n\nclass PaginationContractTest(unittest.TestCase):\n    def test_partial_last_page(self):\n        page = paginate(list(range(25)), page=3, per_page=10)\n        self.assertEqual(page.pages, 3)\n        self.assertEqual(page.items, [20, 21, 22, 23, 24])\n\n    def test_page_past_the_end(self):\n        page = paginate(list(range(5)), page=4, per_page=2)\n        self.assertEqual(page.items, [])\n        self.assertEqual(page.total, 5)\n\n    def test_per_page_clamped_to_max(self):\n        page = paginate(list(range(300)), page=1, per_page=1000)\n        self.assertEqual(page.per_page, config.MAX_PAGE_SIZE)\n        self.assertEqual(len(page.items), config.MAX_PAGE_SIZE)\n\n    def test_per_page_clamped_to_one(self):\n        for value in (0, -5):\n            page = paginate(list(range(3)), page=1, per_page=value)\n            self.assertEqual(page.per_page, 1)\n            self.assertEqual(page.items, [0])\n\n\nif __name__ == \"__main__\":"
+    }
+  ],
+  "gold_files": [
+    "tests/test_pagination.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_pagination_mutants.py",
+      "dest": "tests/test_hidden_pagination_mutants.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_pagination_mutants"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

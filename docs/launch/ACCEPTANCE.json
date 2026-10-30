@@ -1,0 +1,257 @@
+{
+  "schema": "repo-ai.launch-acceptance/1",
+  "updated": "2026-10-29",
+  "launch_status": "NOT_LAUNCHED",
+  "result_vocabulary": [
+    "PASS",
+    "FAIL",
+    "INCONCLUSIVE",
+    "BLOCKED_EXTERNAL",
+    "NOT_APPLICABLE",
+    "NOT_RUN"
+  ],
+  "gates": [
+    {
+      "id": "G01",
+      "owner": "integrator",
+      "criterion": "Product integrity: scope, supported/unsupported features and limits are understandable; falsifiable thesis backed by observed workflows",
+      "evidence_path": "README.md; docs/STATUS.md; docs/launch/DECISIONS.md (L-001, L-007); site /docs/status",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "Scope, stable/experimental/unsupported labels and limits are stated in README, STATUS and the site; thesis is falsifiable and was narrowed after the abc-v5 calibration (L-007). Workflows backing it are recorded in evidence/LIVE-JOURNEYS-2026-10-29.md.",
+      "blocker": null
+    },
+    {
+      "id": "G02",
+      "owner": "integrator",
+      "criterion": "Offline value with no coding agent: analysis, context, impact/why/verify, setup, privacy audit behave honestly and safely",
+      "evidence_path": "dist/launch/qual-9663ac3/smoke-{macos,linux,linux-bwrap}.log; scripts/release_smoke.sh",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "No agent installed (clean containers): quickstart, agents list/route (NO_AGENT, all NOT_INSTALLED), do --dry-run, init, context, impact, verify (linked test, inferred pytest), verify --run (sandboxed where a backend works, honest refusal otherwise), privacy audit, uninstall. Retrieval on prose queries is weak (documented).",
+      "blocker": null
+    },
+    {
+      "id": "G03",
+      "owner": "provider-runtime",
+      "criterion": "Zero/one/many provider discovery: deterministic, install-aware, policy-aware states; no surprise install/billable call/Bob default; >=1 real provider works through the sanctioned path",
+      "evidence_path": "evidence/LIVE-JOURNEYS-2026-10-29.md; tests/test_provider_registry.py; agents route outputs in dist/launch/",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "Zero (container: NO_AGENT), many (host: NOT_AUTHORIZED without consent; no billable call in list/route/doctor/dry-run), one real provider through the sanctioned path (Codex, agy). Claude re-observed BLOCKED_AUTH from a real run; Gemini not re-tried.",
+      "blocker": null
+    },
+    {
+      "id": "G04",
+      "owner": "security",
+      "criterion": "Security/containment: scopes, safe defaults, credential hygiene, positive+adversarial sandbox tests, symlink/traversal, prompt-injection hardening, OS limits disclosed",
+      "evidence_path": "docs/launch/evidence/FREEZE-9663ac3.md; docs/SECURITY.md; docs/VERIFY-THREAT-MODEL.md; docs/launch/PUBLICATION_AUDIT.md",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:46Z",
+      "result": "PASS",
+      "limitations": "Full suite incl. hostile-repository, symlink/traversal, sandbox-escape and #56 tests on macOS; Linux bwrap suites in a privileged container; independent adversarial review (fixed). OS limits disclosed: Windows has no host sandbox; live-provider sandbox restricts writes, not host reads; Codex inner-sandbox bypass runs only under repo-ai's outer sandbox.",
+      "blocker": null
+    },
+    {
+      "id": "G05",
+      "owner": "integrator",
+      "criterion": "Intent-to-verified-change: clean-repo workflow with a model-generated candidate, baseline, frozen acceptance, isolated write, regression, evidence, explicit apply, post-apply tests, undo",
+      "evidence_path": "docs/launch/evidence/LIVE-JOURNEYS-2026-10-29.md (journeys 1 and 3, incl. the freeze re-run)",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:29Z",
+      "result": "PASS",
+      "limitations": "Synthetic constructed tasks, n=1 per build; Codex and agy only; macOS seatbelt; same author wrote task, tests and hidden oracle.",
+      "blocker": null
+    },
+    {
+      "id": "G06",
+      "owner": "integrator",
+      "criterion": "Evidence semantics: verdict means exactly what was observed; requirement->test mapping; stale/changed/skipped/interrupted/no-op/false-green handled honestly",
+      "evidence_path": "docs/launch/evidence/FREEZE-9663ac3.md; tests/test_mission_coverage.py, test_mission_claims*.py, test_verify_*; held-out-7 (903984a) in docs/STATUS.md",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:46Z",
+      "result": "PASS",
+      "limitations": "PASS never means correct (claims + coverage CLAIM_UNVERIFIED); stale/changed/skipped/interrupted/no-op handled by tests; this cycle fixed a launcher failure being reported as pre-existing failures. abc-v5 calibration shows coverage does not discriminate semantic false greens when both candidates pass the same tests (stated). Held-out evidence is for 903984a, not re-run.",
+      "blocker": null
+    },
+    {
+      "id": "G07",
+      "owner": "integrator",
+      "criterion": "Human-useful tournament: zero/one/many; live 2-provider run; independent workspaces, identical frozen oracle; honest tie handling; explicit apply",
+      "evidence_path": "LIVE-JOURNEYS (journey 2 on dfb6880 and 9663ac3); tests/test_live_tournament.py",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:29Z",
+      "result": "PASS",
+      "limitations": "Live runs: one abstention with distinct passing diffs (dfb6880) and one byte-identical pair resolved by the equivalence rule (9663ac3). A behaviourally different live tie was not exercised; the AST same-code report is covered by tests only.",
+      "blocker": null
+    },
+    {
+      "id": "G08",
+      "owner": "integrator",
+      "criterion": "Verified continuity: integrity-checked handoff; genuine cross-provider partial-progress transfer; fresh verification; attacks refused",
+      "evidence_path": "LIVE-JOURNEYS (journey 3 on c505f74 and 9663ac3); tests/test_handoff_integrity.py, tests/test_mission_partial_handoff.py",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:29Z",
+      "result": "PASS",
+      "limitations": "Constructed scenario (stage A scoped to one file to force partial progress), n=1 per build; seed reuse confirmed byte-identical.",
+      "blocker": null
+    },
+    {
+      "id": "G09",
+      "owner": "integrator",
+      "criterion": "Failure analysis: baseline/new/flaky separated; inspectable leads with uncertainty; no fictional causal certainty",
+      "evidence_path": "tests/test_mission_decision_chain.py, why-test-failed tests; docs/roadmap/REALITY-ENGINE-USAGE.md",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "Baseline/new/pre-existing/fixed separated per test; leads labelled static, never causal. No new held-out evaluation of diagnosis quality this cycle.",
+      "blocker": null
+    },
+    {
+      "id": "G10",
+      "owner": "integrator",
+      "criterion": "Skills/knowledge: provenance-aware discovery or clearly unsupported; untrusted skill text cannot escalate; experimental parts labelled",
+      "evidence_path": "docs/STATUS.md skills rows; docs/SKILL_NETWORK.md; tests/test_skill_vet.py",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "Inventory/vet are read-only stable candidates; discovery, install, trials and plugin inspection are labelled experimental (their fresh validations failed); skill text is never executed. Accepted as clearly experimental status, not demonstrated benefit.",
+      "blocker": null
+    },
+    {
+      "id": "G11",
+      "owner": "integrator",
+      "criterion": "Change rehearsal: risk/blast-radius with transparent limits; speculation never marketed as certainty",
+      "evidence_path": "docs/STATUS.md; repo-ai futures --help (experimental)",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "futures/rehearsal and impact are labelled static/heuristic with uncertainty lines; no certainty is marketed. Calibration of risk prediction is not measured (stated).",
+      "blocker": null
+    },
+    {
+      "id": "G12",
+      "owner": "release-qa",
+      "criterion": "First-run onboarding in a clean host/container: install, skip/configure agents, useful offline journey, clear errors; upgrade/uninstall preserve user data",
+      "evidence_path": "dist/launch/qual-9663ac3/smoke-*.log, upgrade/linux-journey.log",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "Clean macOS venv; clean python:3.12-slim container (no sandbox); privileged container with bwrap; upgrade from the published dev4 wheel to repo-ai-cli 0.9.0 keeps state; uninstall keeps user CLAUDE.md edits and restores the tree. Windows not run (billable CI while private).",
+      "blocker": null
+    },
+    {
+      "id": "G13",
+      "owner": "integrator",
+      "criterion": "CLI & docs quality: command reference consistent with --help, JSON/exit codes, provider/platform matrix, troubleshooting, migration",
+      "evidence_path": "docs/CLI-REFERENCE.md + tests/test_cli_reference.py (CI step); documented-command/flag check over README, GETTING-STARTED and every site page; site troubleshooting, install/upgrade/migration pages",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "Site tutorial snippets are not executed in CI (release_smoke.sh covers the first-run path).",
+      "blocker": null
+    },
+    {
+      "id": "G14",
+      "owner": "web-dx",
+      "criterion": "Site quality: original responsive landing + docs, visual QA desktop/mobile, accessibility, SEO/social, performance, no fabricated claims",
+      "evidence_path": "site/ (npm run qa: build + link check + axe); screenshots site/qa/screenshots (ignored)",
+      "code_sha": "91780ad",
+      "verified_at": "2026-10-29T23:20Z",
+      "result": "PASS",
+      "limitations": "Local build and Playwright/axe QA only: 20 pages x light/dark x 390/1440 px, 0 axe violations, 0 broken of 1,103 internal links/anchors, no overflow at 390/768/1440, 0 third-party requests, landing 19 KB gzipped. Lighthouse not run. Not yet deployed (G15).",
+      "blocker": null
+    },
+    {
+      "id": "G15",
+      "owner": "web-dx",
+      "criterion": "Public websites: real HTTPS URL(s), routing, 404, metadata, external smoke checks, rollback path",
+      "evidence_path": null,
+      "code_sha": null,
+      "verified_at": null,
+      "result": "NOT_RUN",
+      "limitations": null,
+      "blocker": null
+    },
+    {
+      "id": "G16",
+      "owner": "release",
+      "criterion": "Python packaging: stable wheel+sdist, constraints, reproducible build, checksums, provenance, clean install from public PyPI",
+      "evidence_path": null,
+      "code_sha": null,
+      "verified_at": null,
+      "result": "NOT_RUN",
+      "limitations": null,
+      "blocker": null
+    },
+    {
+      "id": "G17",
+      "owner": "release",
+      "criterion": "GitHub readiness: README, community files, templates, CI with explicit skips, release automation, changelog, green branch-protected merge",
+      "evidence_path": null,
+      "code_sha": null,
+      "verified_at": null,
+      "result": "NOT_RUN",
+      "limitations": null,
+      "blocker": null
+    },
+    {
+      "id": "G18",
+      "owner": "security",
+      "criterion": "Public open-source status: publication-rights and secret-history audit, explicit visibility decision, source publicly accessible, licence/author accuracy",
+      "evidence_path": "local: scratchpad pubaudit/REPORT.md (summary in docs/launch/PUBLICATION_AUDIT.md)",
+      "code_sha": "2d64217",
+      "verified_at": "2026-10-29T22:55Z",
+      "result": "BLOCKED_EXTERNAL",
+      "limitations": "Audit of all 166 origin refs, 5566 blobs, issues/PRs/releases: no real credentials, no IBM-internal material. High: F01 corporate author email on 8 commits (4 reachable from main and tags); F02 sealed-v2/held-out labels in history whose own policy says private. Neither removable without history rewrite; refs/pull/* not rewritable by owner. A curated single-commit public export (scripts/public_export.py) avoids both.",
+      "blocker": "Owner decision: (a) flip this repo public accepting F01/F02, or (b) publish the curated export as the public repository, or (c) stay private"
+    },
+    {
+      "id": "G19",
+      "owner": "eval",
+      "criterion": "Independent evaluation: prospective preregistered study, honest CIs and false-green metrics, declared limits; no small-n superiority claims",
+      "evidence_path": "benchmarks/abc-v5/ (PREREGISTRATION.md, power.py, results/calibration.json); docs/launch/EVALUATION.md",
+      "code_sha": "509e54f",
+      "verified_at": "2026-10-29T23:37Z",
+      "result": "INCONCLUSIVE",
+      "limitations": "Prospective study designed and preregistered with immutable manifests, sealed grader, negative controls and exact power calculation; calibration run only (n=4 synthetic, single author). Calibration falsified the strong form of the thesis (B task-level discrimination 0/4) and narrowed the claim. Confirmatory 24-task phase not run.",
+      "blocker": "Confirmatory phase needs blinded task authors: humans, or approval of ~$15-40 for separate AI authoring sessions; model-candidate phase needs separate approval (proposed cap $150)"
+    },
+    {
+      "id": "G20",
+      "owner": "provider-runtime",
+      "criterion": "Real integrations: actual executables/auth/sandbox tested, broken adapters labelled, real user workflow, negative tests for denial/quota/failure",
+      "evidence_path": "evidence/LIVE-JOURNEYS-2026-10-29.md; dist/launch/claude-probe/claude.txt; tests/test_provider_*.py (denial, quota, failure fakes)",
+      "code_sha": "9663ac3",
+      "verified_at": "2026-10-30T00:24Z",
+      "result": "PASS",
+      "limitations": "Real executables/auth/sandbox exercised for Codex 0.165.0 and agy 1.4.9 (macOS); Claude 2.1.312 re-observed as BLOCKED_AUTH in the isolated HOME and labelled so; Bob not re-run; Gemini not tried. n=1 workflows.",
+      "blocker": null
+    },
+    {
+      "id": "G21",
+      "owner": "release-qa",
+      "criterion": "Deployment/release smoke: re-download published artifacts, hash compare, external install, documented walkthrough, site links, pinned SHA",
+      "evidence_path": null,
+      "code_sha": null,
+      "verified_at": null,
+      "result": "NOT_RUN",
+      "limitations": null,
+      "blocker": null
+    },
+    {
+      "id": "G22",
+      "owner": "integrator",
+      "criterion": "Final launch report with gate matrix, URLs, environment matrix, install transcript, benchmark, security review, budgets, blockers",
+      "evidence_path": null,
+      "code_sha": null,
+      "verified_at": null,
+      "result": "NOT_RUN",
+      "limitations": null,
+      "blocker": null
+    }
+  ]
+}

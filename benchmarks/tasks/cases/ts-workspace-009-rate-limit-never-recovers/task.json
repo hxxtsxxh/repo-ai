@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-009-rate-limit-never-recovers",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "hard",
+  "prompt": "Clients that get rate limited never recover if they keep polling. Our SDK retries every\n500 ms after a 429, and it keeps getting 429 for as long as it keeps polling -- I watched\none for ten minutes. If it backs off for a few seconds instead, the next request goes\nthrough. Limits are 60 requests per API key, refilling at 1 request per second.",
+  "setup": [
+    {
+      "file": "packages/core/src/ratelimit.ts",
+      "find": "this.tokens = Math.min(this.capacity, this.tokens + (elapsedMs / 1000) * this.refillPerSecond);",
+      "replace": "this.tokens = Math.min(this.capacity, this.tokens + Math.floor(elapsedMs / 1000) * this.refillPerSecond);"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/ratelimit.ts",
+      "find": "this.tokens = Math.min(this.capacity, this.tokens + Math.floor(elapsedMs / 1000) * this.refillPerSecond);",
+      "replace": "this.tokens = Math.min(this.capacity, this.tokens + (elapsedMs / 1000) * this.refillPerSecond);"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/ratelimit.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_bucket_polling.test.ts",
+      "dest": "packages/core/test/hidden_bucket_polling.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/core/test/hidden_bucket_polling.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

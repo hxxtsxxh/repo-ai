@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-019-page-size-limit",
+  "base": "py-shop",
+  "language": "python",
+  "category": "config",
+  "difficulty": "easy",
+  "prompt": "The admin dashboard asks for `GET /orders?per_page=50` but only ever gets 10 rows back\n(the response says `\"per_page\": 10`), so it thinks there are far more pages than there\nare. Our API docs promise up to 100 items per page.",
+  "setup": [
+    {
+      "file": "shop/config.py",
+      "find": "MAX_PAGE_SIZE = 100\n",
+      "replace": "MAX_PAGE_SIZE = 10\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/config.py",
+      "find": "MAX_PAGE_SIZE = 10\n",
+      "replace": "MAX_PAGE_SIZE = 100\n"
+    }
+  ],
+  "gold_files": [
+    "shop/config.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_page_size_cap.py",
+      "dest": "tests/test_hidden_page_size_cap.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_page_size_cap"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

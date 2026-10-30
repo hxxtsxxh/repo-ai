@@ -1,0 +1,70 @@
+{
+  "id": "py-shop-021-receipt-html-injection",
+  "base": "py-shop",
+  "language": "python",
+  "category": "security",
+  "difficulty": "medium",
+  "prompt": "Bug bounty report: stored XSS on the printable receipt page.\n\nThe researcher registered an account whose display name was\n`<img src=x onerror=alert(document.domain)>`, placed an order, and opened\n`GET /orders/<id>/receipt`; the payload ran. They also showed that a product name\ncontaining a double quote (we import names from supplier feeds) breaks out of the\ntooltip attribute on the line items, e.g. `Pen\" onmouseover=\"steal()`. While\nyou're in there: a product called `Fish & Chips Plate` produces invalid HTML because\nthe ampersand is emitted raw.\n\nEverything dynamic on that page (names, ids, amounts) must be rendered as text, never\nas markup, both in element content and in attribute values.",
+  "setup": [
+    {
+      "file": "shop/utils/html.py",
+      "create": "\"\"\"Tiny HTML helpers for server-rendered pages (receipts, packing slips).\"\"\"\n\n\ndef escape(value) -> str:\n    \"\"\"Make ``value`` safe to embed in HTML text and in double-quoted attributes.\"\"\"\n    text = \"\" if value is None else str(value)\n    return text.replace(\"<\", \"&lt;\").replace(\">\", \"&gt;\")\n\n\ndef tag(name: str, text, **attrs) -> str:\n    \"\"\"``tag(\"td\", 3, class_=\"qty\")`` -> ``<td class=\"qty\">3</td>``.\n\n    The text and every attribute value are escaped. A trailing underscore\n    in an attribute name is dropped (``class_`` -> ``class``).\n    \"\"\"\n    rendered = \"\".join(f' {key.rstrip(\"_\")}=\"{escape(value)}\"' for key, value in attrs.items())\n    return f\"<{name}{rendered}>{escape(text)}</{name}>\"\n"
+    },
+    {
+      "file": "shop/services/receipts.py",
+      "create": "\"\"\"Printable HTML receipts, linked from the order confirmation email.\"\"\"\n\nfrom shop.utils.dates import isoformat\nfrom shop.utils.html import escape, tag\nfrom shop.utils.money import format_money\n\n\ndef _line_row(line, products, currency: str) -> str:\n    product = products.get(line.sku)\n    name = product.name if product is not None else line.sku\n    return (\n        \"<tr>\"\n        + tag(\"td\", name, class_=\"item\", title=name)\n        + tag(\"td\", line.quantity, class_=\"qty\")\n        + tag(\"td\", format_money(line.line_total_cents, currency), class_=\"num\")\n        + \"</tr>\"\n    )\n\n\ndef render_receipt(order, user, products) -> str:\n    \"\"\"Full HTML document for ``order``; ``user`` may be None for guest orders.\"\"\"\n    cur = order.currency\n    customer = user.name if user is not None else \"customer\"\n    rows = [_line_row(line, products, cur) for line in order.lines]\n    totals = [\n        (\"Subtotal\", order.subtotal_cents),\n        (\"Discount\", -order.discount_cents),\n        (\"Shipping\", order.shipping_cents),\n        (\"Tax\", order.tax_cents),\n        (\"Total\", order.total_cents),\n    ]\n    total_rows = [\n        \"<tr>\" + tag(\"th\", label) + tag(\"td\", format_money(cents, cur), class_=\"num\") + \"</tr>\"\n        for label, cents in totals\n    ]\n    parts = [\n        \"<!doctype html>\",\n        '<html lang=\"en\"><head><meta charset=\"utf-8\">',\n        f\"<title>Receipt {escape(order.id)}</title></head><body>\",\n        f\"<h1>Thanks for your order, {customer}!</h1>\",\n        f'<p class=\"meta\">Order {escape(order.id)} placed {escape(isoformat(order.created_at))}</p>',\n        '<table class=\"lines\">',\n        *rows,\n        \"</table>\",\n        '<table class=\"totals\">',\n        *total_rows,\n        \"</table>\",\n        \"</body></html>\",\n    ]\n    return \"\\n\".join(parts)\n"
+    },
+    {
+      "file": "shop/api/orders.py",
+      "find": "from shop.errors import NotFound\n",
+      "replace": "from shop.errors import NotFound\nfrom shop.services.receipts import render_receipt\n"
+    },
+    {
+      "file": "shop/api/orders.py",
+      "find": "    return json_response({\"items\": [serialize_payment(p) for p in payments]})\n",
+      "replace": "    return json_response({\"items\": [serialize_payment(p) for p in payments]})\n\n\ndef get_receipt(ctx, request, order_id):\n    user = current_user(ctx, request)\n    order = _visible_order(ctx, user, order_id)\n    html = render_receipt(order, ctx.users.get(order.user_id), ctx.products)\n    return {\"status\": 200, \"headers\": {\"Content-Type\": \"text/html; charset=utf-8\"}, \"body\": html}\n"
+    },
+    {
+      "file": "shop/api/routes.py",
+      "find": "    (\"GET /orders/{order_id}/payments\", orders.list_order_payments),\n",
+      "replace": "    (\"GET /orders/{order_id}/payments\", orders.list_order_payments),\n    (\"GET /orders/{order_id}/receipt\", orders.get_receipt),\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/utils/html.py",
+      "find": "\"\"\"Tiny HTML helpers for server-rendered pages (receipts, packing slips).\"\"\"\n",
+      "replace": "\"\"\"Tiny HTML helpers for server-rendered pages (receipts, packing slips).\"\"\"\n\nimport html\n"
+    },
+    {
+      "file": "shop/utils/html.py",
+      "find": "    return text.replace(\"<\", \"&lt;\").replace(\">\", \"&gt;\")",
+      "replace": "    return html.escape(text, quote=True)"
+    },
+    {
+      "file": "shop/services/receipts.py",
+      "find": "        f\"<h1>Thanks for your order, {customer}!</h1>\",",
+      "replace": "        f\"<h1>Thanks for your order, {escape(customer)}!</h1>\","
+    }
+  ],
+  "gold_files": [
+    "shop/utils/html.py",
+    "shop/services/receipts.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_receipt_escaping.py",
+      "dest": "tests/test_hidden_receipt_escaping.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_receipt_escaping"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

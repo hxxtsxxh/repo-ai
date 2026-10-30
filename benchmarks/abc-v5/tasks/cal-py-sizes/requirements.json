@@ -1,0 +1,43 @@
+{
+  "schema": "repo-ai.requirements/1",
+  "requirements": [
+    {
+      "text": "R1: KiB, MiB and GiB are powers of 1024",
+      "kind": "change",
+      "tests": [
+        "test_binary_units"
+      ]
+    },
+    {
+      "text": "R2: the unit is case-insensitive",
+      "kind": "change",
+      "tests": [
+        "test_case_insensitive"
+      ]
+    },
+    {
+      "text": "R3: exactly one space may separate number and unit; other whitespace is rejected",
+      "kind": "change",
+      "tests": [
+        "test_single_space"
+      ]
+    },
+    {
+      "text": "R4: fractional numbers allowed; a non-whole byte result raises ValueError",
+      "kind": "change",
+      "tests": [
+        "test_fractional"
+      ]
+    },
+    {
+      "text": "R5: existing forms and errors keep their meaning",
+      "kind": "preserve",
+      "tests": [
+        "test_plain_bytes",
+        "test_decimal_units",
+        "test_invalid_strings",
+        "test_non_str"
+      ]
+    }
+  ]
+}

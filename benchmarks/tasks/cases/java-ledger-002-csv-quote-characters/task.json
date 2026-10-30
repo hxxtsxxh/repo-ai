@@ -1,0 +1,48 @@
+{
+  "id": "java-ledger-002-csv-quote-characters",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Importing the bank export loses quote characters in descriptions. A row like\n\n    2026-03-05,\"Invoice \"\"Q3-17\"\", net 30\",ACC-0001,ACC-0300,120.00,USD\n\nends up with the description `Invoice Q3-17, net 30` instead of `Invoice \"Q3-17\", net 30`.\nThe export follows the usual CSV convention for quotes inside quoted fields.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvParser.java",
+      "find": "                if (c == '\"') {\n                    if (i + 1 < line.length() && line.charAt(i + 1) == '\"') {\n                        current.append('\"');\n                        i++;\n                    } else {\n                        inQuotes = false;\n                    }\n                } else {",
+      "replace": "                if (c == '\"') {\n                    inQuotes = false;\n                } else {"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvParser.java",
+      "find": "                if (c == '\"') {\n                    inQuotes = false;\n                } else {",
+      "replace": "                if (c == '\"') {\n                    if (i + 1 < line.length() && line.charAt(i + 1) == '\"') {\n                        current.append('\"');\n                        i++;\n                    } else {\n                        inQuotes = false;\n                    }\n                } else {"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/io/CsvParser.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenCsvQuotesTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenCsvQuotesTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenCsvQuotesTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

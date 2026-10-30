@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-004-session-lifetime",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Users are getting logged out after roughly a minute: every API call starts failing\nwith 401 `token expired` shortly after login. Sessions are supposed to last an hour\naccording to the README, and nobody touched the configuration.",
+  "setup": [
+    {
+      "file": "shop/services/auth.py",
+      "find": "ttl = config.TOKEN_TTL_MINUTES * 60",
+      "replace": "ttl = config.TOKEN_TTL_MINUTES"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/auth.py",
+      "find": "ttl = config.TOKEN_TTL_MINUTES",
+      "replace": "ttl = config.TOKEN_TTL_MINUTES * 60"
+    }
+  ],
+  "gold_files": [
+    "shop/services/auth.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_session_ttl.py",
+      "dest": "tests/test_hidden_session_ttl.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_session_ttl"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

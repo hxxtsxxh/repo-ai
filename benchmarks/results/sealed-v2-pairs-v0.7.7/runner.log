@@ -1,0 +1,117 @@
+  v2-dns-004 [core] done  spent $0.23
+  v2-dns-004 [baseline] done  spent $0.39
+  v2-ac-001 [baseline] done  spent $0.49
+  v2-ac-001 [core] done  spent $0.59
+  v2-mi-001 [core] done  spent $0.74
+  v2-mi-001 [baseline] done  spent $0.88
+  v2-asn-001 [baseline] done  spent $1.05
+  v2-asn-001 [core] done  spent $1.17
+  v2-mk-001 [core] done  spent $1.31
+  v2-mk-001 [baseline] done  spent $1.43
+  v2-lk-002 [baseline] done  spent $1.54
+  v2-lk-002 [core] done  spent $1.63
+  v2-sg-004 [core] done  spent $1.80
+  v2-sg-004 [baseline] done  spent $1.98
+  v2-te-001 [baseline] done  spent $2.09
+  v2-te-001 [core] done  spent $2.20
+  v2-dns-005 [core] done  spent $2.34
+  v2-dns-005 [baseline] done  spent $2.52
+  v2-asn-002 [baseline] done  spent $2.65
+  v2-asn-002 [core] done  spent $2.79
+  v2-sg-005 [core] done  spent $2.91
+  v2-sg-005 [baseline] done  spent $3.03
+  v2-lk-001 [baseline] done  spent $3.10
+  v2-lk-001 [core] done  spent $3.18
+  v2-ac-003 [core] done  spent $3.31
+  v2-ac-003 [baseline] done  spent $3.48
+  v2-sg-007 [baseline] done  spent $3.90
+  v2-sg-007 [core] done  spent $4.26
+  v2-ac-002 [core] done  spent $4.36
+  v2-ac-002 [baseline] done  spent $4.47
+  v2-dns-003 [baseline] done  spent $4.65
+  v2-dns-003 [core] done  spent $4.79
+  v2-ac-004 [core] done  spent $4.93
+  v2-ac-004 [baseline] done  spent $5.10
+  v2-sg-006 [baseline] done  spent $5.26
+  v2-sg-006 [core] done  spent $5.39
+  v2-dns-002 [core] done  spent $5.53
+  v2-dns-002 [baseline] done  spent $5.65
+  v2-dns-001 [baseline] done  spent $5.92
+  v2-dns-001 [core] done  spent $6.27
+  v2-sg-008 [core] done  spent $6.48
+  v2-sg-008 [baseline] done  spent $6.65
+  v2-sg-003 [baseline] done  spent $6.82
+  v2-sg-003 [core] done  spent $6.99
+  v2-dns-006 [core] done  spent $7.10
+  v2-dns-006 [baseline] done  spent $7.21
+  v2-sg-002 [baseline] done  spent $7.39
+  v2-sg-002 [core] done  spent $7.57
+  v2-sg-001 [core] done  spent $7.71
+  v2-sg-001 [baseline] done  spent $7.88
+## Coding experiment 20261021-103834-40bc
+model: claude-sonnet-5-5, max turns 60, seed 0; runs: 50 valid of 50; charged $7.88 of $20.00 (Claude Code estimates, not billing)
+
+| Metric | Plain Claude | repo-ai Core |
+|---|---|---|
+| Task success rate | 92% | 84% |
+| Correct with no regression | 92% | 84% |
+| Regression-free | 100% | 96% |
+| Hidden tests passed (mean fraction) | 96% | 96% |
+| Average tokens | 263,048 | 260,628 |
+| Median runtime (s) | 48.2 | 48.8 |
+| Median tool calls | 11 | 11 |
+| Median test runs by the agent | 0 | 0 |
+| Estimated model cost (mean $) | $0.158 | $0.157 |
+| Regression rate | 0% | 4% |
+| Sample size (valid runs) | 25 | 25 |
+| Median time to first edit (s) | 29.25 | 23.55 |
+| repo-ai context injected (tokens, est.) | 0.0 | 273.04 |
+| repo-ai setup time (s) | 0.0 | 1.933 |
+| Cost p50 ($) | 0.1607 | 0.1386 |
+| Cost p90 ($) | 0.185 | 0.2316 |
+| Cost max ($) | 0.4174 | 0.3583 |
+| Runs stopped by the cost cap | 0 | 0 |
+| Turns p90 | 18 | 19 |
+| Turns max | 36 | 28 |
+| Runs stopped by max turns | 0 | 0 |
+| Timeouts | 0 | 0 |
+| Longest run (s) | 156.1 | 163.9 |
+| Largest single API call ($, est.) | 0.062 | 0.0756 |
+
+Every attempt (budget, turn and time limits count as failures; nothing is dropped):
+| | Plain Claude | repo-ai Core |
+|---|---|---|
+| attempts | 25 | 25 |
+| valid | 25 | 25 |
+| success | 23 | 21 |
+| failure | 2 | 4 |
+| stopped by cost cap | 0 | 0 |
+| stopped by max turns | 0 | 0 |
+| timed out | 0 | 0 |
+| invalid isolation | 0 | 0 |
+| invalid contamination | 0 | 0 |
+| errors | 0 | 0 |
+| crashed | 0 | 0 |
+| cancelled | 0 | 0 |
+| not attempted (of 25 planned) | 0 | 0 |
+
+Success rates: Plain Claude 92% (95% Wilson 75%–98%); repo-ai Core 84% (95% Wilson 65%–94%)
+
+- **core vs baseline**: success 84% vs 92%, diff -8% (95% CI -22%…+7%, task-clustered Bonett-Price; permutation p=0.5, Holm p=0.5; 25 tasks, 25 paired runs) → **inconclusive: directional (-8%), not significant**; regressions: v2-dns-005, v2-sg-007
+  - tokens: median paired diff -16025 (95% CI -59508…+36257; lower in 14/25; Wilcoxon p=0.615)
+  - cache_read_tokens: median paired diff -17373 (95% CI -53398…+35199; lower in 14/25; Wilcoxon p=0.615)
+  - cost_usd: median paired diff +0.0036 (95% CI -0.0173…+0.0088; lower in 11/25; Wilcoxon p=0.8119)
+  - tool_calls: median paired diff +0 (95% CI -3…+3; lower in 12/25; Wilcoxon p=0.9345)
+  - wall_s: median paired diff +4 (95% CI -4.7…+7.8; lower in 9/25; Wilcoxon p=0.4146)
+- correct with no regression (hidden tests and visible suite pass), **core vs baseline**: 84% vs 92%, diff -8% (95% CI -22%…+7%; permutation p=0.5, Holm p=0.5; 25 tasks) → **inconclusive: directional (-8%), not significant**
+- regression-free (visible suite passes), **core vs baseline**: 96% vs 100%, diff -4% (95% CI -16%…+9%; permutation p=1.0, Holm p=1.0; 25 tasks) → **inconclusive: directional (-4%), not significant; ceiling effect: both arms ≥95%**
+
+Sensitivity analyses (pre-registered):
+  - invalid as failures: core vs baseline diff -8% (95% CI -22%…+7%) → inconclusive: directional (-8%), not significant
+  - repetition 0 only: core vs baseline diff -8% (95% CI -22%…+7%) → inconclusive: directional (-8%), not significant
+  - content match as invalid: core vs baseline diff -8% (95% CI -22%…+7%) → inconclusive: directional (-8%), not significant
+  - correct no regression invalid as failures: core vs baseline diff -8% (95% CI -22%…+7%) → inconclusive: directional (-8%), not significant
+
+_Equal observed rates are not evidence of equivalence: equivalence is claimed only when the 90% interval lies within ±10 points (TOST). Pilots (n<10) are never called significant._
+
+by category (successes/valid runs): bugfix core=21/25, baseline=23/25

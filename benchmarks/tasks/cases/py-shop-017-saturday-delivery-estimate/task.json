@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-017-saturday-delivery-estimate",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Shipping confirmation e-mails sometimes promise delivery on a Saturday, e.g.\n\"Estimated delivery: Sat, Mar 07 2026.\" Our carriers only deliver Monday to Friday,\nand standard shipping is 5 business days, so an order shipped on Monday 2 March 2026\nshould say Monday 9 March.",
+  "setup": [
+    {
+      "file": "shop/utils/dates.py",
+      "find": "        if current.weekday() < 5:\n",
+      "replace": "        if current.weekday() < 6:\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/utils/dates.py",
+      "find": "        if current.weekday() < 6:\n",
+      "replace": "        if current.weekday() < 5:\n"
+    }
+  ],
+  "gold_files": [
+    "shop/utils/dates.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_delivery_days.py",
+      "dest": "tests/test_hidden_delivery_days.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_delivery_days"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

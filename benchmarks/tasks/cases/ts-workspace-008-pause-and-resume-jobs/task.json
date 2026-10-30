@@ -1,0 +1,73 @@
+{
+  "id": "ts-workspace-008-pause-and-resume-jobs",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "monorepo",
+  "difficulty": "hard",
+  "prompt": "Feature: operators want to pause and resume queued jobs.\n\n- New job status `paused`. Only a queued job can be paused; a paused job can be resumed\n  (it goes back to `queued`) or cancelled.\n- API: `POST /jobs/:id/pause` and `POST /jobs/:id/resume`, both requiring the\n  `jobs:write` scope. 200 with the job on success, 409 when the transition isn't allowed.\n  `GET /jobs?status=paused` has to work.\n- A paused job has no upcoming run (`nextRunAt: null`).\n- CLI: `jobs pause <id>` and `jobs resume <id>` print `Paused <id> (now PAUSED)` and\n  `Resumed <id> (now QUEUED)`.",
+  "setup": [],
+  "solution": [
+    {
+      "file": "packages/core/src/types.ts",
+      "find": "export type JobStatus = \"queued\" | \"running\" | \"succeeded\" | \"failed\" | \"cancelled\";",
+      "replace": "export type JobStatus = \"queued\" | \"running\" | \"succeeded\" | \"failed\" | \"cancelled\" | \"paused\";"
+    },
+    {
+      "file": "packages/core/src/types.ts",
+      "find": "  \"cancelled\",\n];",
+      "replace": "  \"cancelled\",\n  \"paused\",\n];"
+    },
+    {
+      "file": "packages/core/src/lifecycle.ts",
+      "find": "queued: [\"running\", \"cancelled\"],",
+      "replace": "queued: [\"running\", \"cancelled\", \"paused\"],"
+    },
+    {
+      "file": "packages/core/src/lifecycle.ts",
+      "find": "  cancelled: [],\n",
+      "replace": "  cancelled: [],\n  paused: [\"queued\", \"cancelled\"],\n"
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "export function retryJob(ctx: JobsContext, id: string): ApiResponse {\n  return transition(ctx, id, \"queued\", \"job:retried\", { lastError: undefined });\n}\n",
+      "replace": "export function retryJob(ctx: JobsContext, id: string): ApiResponse {\n  return transition(ctx, id, \"queued\", \"job:retried\", { lastError: undefined });\n}\n\nexport function pauseJob(ctx: JobsContext, id: string): ApiResponse {\n  return transition(ctx, id, \"paused\", \"job:paused\");\n}\n\nexport function resumeJob(ctx: JobsContext, id: string): ApiResponse {\n  const job = requireJob(ctx, id);\n  if (job.status !== \"paused\") throw conflict(`job ${id} is ${job.status}, not paused`);\n  return transition(ctx, id, \"queued\", \"job:resumed\");\n}\n"
+    },
+    {
+      "file": "packages/api/src/server.ts",
+      "find": "import { cancelJob, createJob, getJob, listJobs, retryJob } from \"./jobs.ts\";",
+      "replace": "import { cancelJob, createJob, getJob, listJobs, pauseJob, resumeJob, retryJob } from \"./jobs.ts\";"
+    },
+    {
+      "file": "packages/api/src/server.ts",
+      "find": "    .add(\"POST\", \"/jobs/:id/retry\", scoped(\"jobs:write\", (_req, p) => retryJob(ctx, p.id)));",
+      "replace": "    .add(\"POST\", \"/jobs/:id/retry\", scoped(\"jobs:write\", (_req, p) => retryJob(ctx, p.id)))\n    .add(\"POST\", \"/jobs/:id/pause\", scoped(\"jobs:write\", (_req, p) => pauseJob(ctx, p.id)))\n    .add(\"POST\", \"/jobs/:id/resume\", scoped(\"jobs:write\", (_req, p) => resumeJob(ctx, p.id)));"
+    },
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "  retry: transitionCommand(\"retry\", \"Requeued\"),\n",
+      "replace": "  retry: transitionCommand(\"retry\", \"Requeued\"),\n  pause: transitionCommand(\"pause\", \"Paused\"),\n  resume: transitionCommand(\"resume\", \"Resumed\"),\n"
+    }
+  ],
+  "gold_files": [
+    "packages/api/src/jobs.ts",
+    "packages/api/src/server.ts",
+    "packages/cli/src/commands.ts",
+    "packages/core/src/lifecycle.ts",
+    "packages/core/src/types.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_pause_resume.test.ts",
+      "dest": "packages/api/test/hidden_pause_resume.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/api/test/hidden_pause_resume.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

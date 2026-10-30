@@ -1,0 +1,410 @@
+{
+  "label": "v0.5.0",
+  "version": "repo-ai 0.5.0",
+  "python": "3.12.14",
+  "fixtures": {
+    "dotnetapi": {
+      "init_s": 0.578,
+      "update_noop_s": 0.178
+    },
+    "goservice": {
+      "init_s": 0.618,
+      "update_noop_s": 0.184
+    },
+    "javaspring": {
+      "init_s": 0.588,
+      "update_noop_s": 0.182
+    },
+    "pyweb": {
+      "init_s": 0.61,
+      "update_noop_s": 0.181
+    },
+    "tsmonorepo": {
+      "init_s": 0.609,
+      "update_noop_s": 0.182
+    }
+  },
+  "cases": [
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "fix the login validation bug: users with a valid email are rejected",
+      "top5": [
+        "app/auth/login.py",
+        "app/auth/tokens.py",
+        "app/api/users.py",
+        "tests/test_login.py",
+        "app/db/session.py"
+      ],
+      "hook_tokens": 634,
+      "claude_hook_chars": 1155,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "change how validate_credentials checks the password hash",
+      "top5": [
+        "app/auth/login.py",
+        "app/api/users.py",
+        "app/db/models.py",
+        "app/auth/tokens.py",
+        "tests/test_login.py"
+      ],
+      "hook_tokens": 378,
+      "claude_hook_chars": 780,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "JWT tokens expire too early, increase the token lifetime",
+      "top5": [
+        "app/auth/tokens.py",
+        "app/auth/login.py",
+        "tests/test_tokens.py",
+        "app/db/models.py",
+        "app/auth/middleware.py"
+      ],
+      "hook_tokens": 367,
+      "claude_hook_chars": 1059,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "stripe charges fail with zero amount error when creating a booking",
+      "top5": [
+        "app/billing/charges.py",
+        "app/api/bookings.py",
+        "app/db/models.py",
+        "tests/test_charges.py",
+        "app/auth/login.py"
+      ],
+      "hook_tokens": 582,
+      "claude_hook_chars": 1209,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "add a refund window check to the refund policy",
+      "top5": [
+        "app/billing/charges.py",
+        "app/billing/refunds.py",
+        "app/db/models.py",
+        "app/auth/login.py",
+        "tests/test_charges.py"
+      ],
+      "hook_tokens": 470,
+      "claude_hook_chars": 1103,
+      "recall@5": 1.0,
+      "rr": 0.5
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "the DELETE /bookings/{booking_id} endpoint should return 404 for unknown booking",
+      "top5": [
+        "app/api/bookings.py",
+        "app/db/models.py",
+        "app/api/users.py",
+        "app/billing/charges.py",
+        "app/main.py"
+      ],
+      "hook_tokens": 291,
+      "claude_hook_chars": 546,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "the login form shows no error message for an invalid email address",
+      "top5": [
+        "app/auth/login.py",
+        "app/api/users.py",
+        "web/src/components/LoginForm.tsx",
+        "app/db/session.py",
+        "web/src/components/LoginForm.test.tsx"
+      ],
+      "hook_tokens": 493,
+      "claude_hook_chars": 1125,
+      "recall@5": 1.0,
+      "rr": 0.3333333333333333
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "Traceback (most recent call last):\n  File \"app/billing/charges.py\", line 10, in ",
+      "top5": [
+        "app/billing/charges.py",
+        "tests/test_charges.py",
+        "app/billing/refunds.py",
+        "app/api/bookings.py",
+        "app/auth/tokens.py"
+      ],
+      "hook_tokens": 282,
+      "claude_hook_chars": 535,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "the CI workflow fails on the make test step",
+      "top5": [
+        ".github/workflows/ci.yml",
+        "Makefile",
+        "app/auth/tokens.py",
+        "tests/test_charges.py",
+        "tests/test_login.py"
+      ],
+      "hook_tokens": 365,
+      "claude_hook_chars": 401,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "relevant",
+      "prompt": "auth middleware does not attach the user when the Authorization header has a Bea",
+      "top5": [
+        "app/auth/tokens.py",
+        "app/auth/login.py",
+        "app/auth/middleware.py",
+        "app/api/users.py",
+        "tests/test_tokens.py"
+      ],
+      "hook_tokens": 503,
+      "claude_hook_chars": 1225,
+      "recall@5": 1.0,
+      "rr": 0.3333333333333333
+    },
+    {
+      "fixture": "goservice",
+      "kind": "relevant",
+      "prompt": "ReserveItem should return 409 when stock is insufficient",
+      "top5": [
+        "internal/api/handlers.go",
+        "internal/store/postgres.go",
+        "internal/api/router.go",
+        "README.md",
+        "internal/api/handlers_test.go"
+      ],
+      "hook_tokens": 277,
+      "claude_hook_chars": 445,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "goservice",
+      "kind": "relevant",
+      "prompt": "make the postgres reserve run inside a transaction",
+      "top5": [
+        "internal/store/postgres.go",
+        "internal/store/postgres_test.go",
+        "internal/api/handlers.go",
+        "internal/api/router.go",
+        "Dockerfile"
+      ],
+      "hook_tokens": 249,
+      "claude_hook_chars": 576,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "goservice",
+      "kind": "relevant",
+      "prompt": "add a new route to list all items",
+      "top5": [
+        "internal/api/router.go",
+        "internal/api/handlers.go",
+        "internal/store/postgres.go",
+        "internal/store/store.go",
+        "internal/api/handlers_test.go"
+      ],
+      "hook_tokens": 235,
+      "claude_hook_chars": 480,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "goservice",
+      "kind": "relevant",
+      "prompt": "increase replicas in the kubernetes deployment",
+      "top5": [
+        "deploy/k8s/deployment.yaml",
+        "Dockerfile"
+      ],
+      "hook_tokens": 133,
+      "claude_hook_chars": 413,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "tsmonorepo",
+      "kind": "relevant",
+      "prompt": "discount codes should be case insensitive in applyDiscount",
+      "top5": [
+        "packages/core/src/pricing.ts",
+        "packages/core/src/pricing.test.ts",
+        "packages/core/src/cart.ts",
+        "packages/api/src/routes/checkout.ts",
+        "packages/api/src/server.ts"
+      ],
+      "hook_tokens": 266,
+      "claude_hook_chars": 626,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "tsmonorepo",
+      "kind": "relevant",
+      "prompt": "the checkout quote endpoint returns the wrong total",
+      "top5": [
+        "packages/api/src/routes/checkout.ts",
+        "packages/api/src/server.ts",
+        "packages/core/src/cart.ts",
+        "packages/api/src/routes/checkout.test.ts",
+        "packages/core/src/pricing.ts"
+      ],
+      "hook_tokens": 263,
+      "claude_hook_chars": 668,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "tsmonorepo",
+      "kind": "relevant",
+      "prompt": "show the cart total with discount in the CartSummary component",
+      "top5": [
+        "packages/ui/src/CartSummary.tsx",
+        "packages/core/src/cart.ts",
+        "packages/core/src/pricing.ts",
+        "packages/api/src/routes/checkout.ts",
+        "packages/api/src/server.ts"
+      ],
+      "hook_tokens": 286,
+      "claude_hook_chars": 711,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "javaspring",
+      "kind": "relevant",
+      "prompt": "transfers should reject overdrafts with a clearer error",
+      "top5": [
+        "src/main/java/com/example/ledger/web/TransferController.java",
+        "src/test/java/com/example/ledger/service/TransferServiceTest.java",
+        "src/main/java/com/example/ledger/service/TransferService.java"
+      ],
+      "hook_tokens": 0,
+      "claude_hook_chars": 0,
+      "recall@5": 1.0,
+      "rr": 0.3333333333333333
+    },
+    {
+      "fixture": "javaspring",
+      "kind": "relevant",
+      "prompt": "add validation to the POST /transfers endpoint",
+      "top5": [
+        "src/main/java/com/example/ledger/web/TransferController.java"
+      ],
+      "hook_tokens": 132,
+      "claude_hook_chars": 408,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "dotnetapi",
+      "kind": "relevant",
+      "prompt": "OrderService.Find should throw for negative ids",
+      "top5": [
+        "src/Orders.Api/OrderService.cs",
+        "src/Orders.Api/Program.cs",
+        "tests/Orders.Tests/OrderServiceTests.cs",
+        "src/Orders.Api/Orders.Api.csproj"
+      ],
+      "hook_tokens": 220,
+      "claude_hook_chars": 560,
+      "recall@5": 1.0,
+      "rr": 1.0
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "irrelevant",
+      "prompt": "write me a short haiku about autumn leaves",
+      "top5": [],
+      "hook_tokens": 0,
+      "claude_hook_chars": 0,
+      "false_injection": false
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "irrelevant",
+      "prompt": "what's the difference between a list and a tuple in python?",
+      "top5": [
+        "Dockerfile"
+      ],
+      "hook_tokens": 0,
+      "claude_hook_chars": 0,
+      "false_injection": false
+    },
+    {
+      "fixture": "pyweb",
+      "kind": "irrelevant",
+      "prompt": "thanks, that looks great, please continue",
+      "top5": [],
+      "hook_tokens": 0,
+      "claude_hook_chars": 0,
+      "false_injection": false
+    },
+    {
+      "fixture": "goservice",
+      "kind": "irrelevant",
+      "prompt": "explain the CAP theorem in simple terms please",
+      "top5": [],
+      "hook_tokens": 0,
+      "claude_hook_chars": 0,
+      "false_injection": false
+    },
+    {
+      "fixture": "tsmonorepo",
+      "kind": "irrelevant",
+      "prompt": "can you summarize our conversation so far?",
+      "top5": [],
+      "hook_tokens": 0,
+      "claude_hook_chars": 0,
+      "false_injection": false
+    },
+    {
+      "fixture": "javaspring",
+      "kind": "irrelevant",
+      "prompt": "how do I configure my terminal colors in zsh?",
+      "top5": [],
+      "hook_tokens": 0,
+      "claude_hook_chars": 0,
+      "false_injection": false
+    }
+  ],
+  "summary": {
+    "cases": 26,
+    "recall@5": 1.0,
+    "mrr": 0.875,
+    "false_injection_rate": 0,
+    "relevant_injection_rate": 0.95,
+    "hook_tokens_mean_relevant": 321.3,
+    "hook_tokens_max": 634,
+    "init_s_p50": 0.609,
+    "update_noop_s_p50": 0.182,
+    "query_s_p50": 0.105,
+    "query_s_p95": 0.11,
+    "claude_hook_s_p50": 0.067,
+    "claude_hook_s_p95": 0.073
+  }
+}

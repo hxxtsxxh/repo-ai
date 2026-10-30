@@ -1,0 +1,41 @@
+name: Bug report
+description: Something repo-ai did differs from what it says it does
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problem? Don't file it here — use private vulnerability reporting (see SECURITY.md).
+        Please remove secrets, private paths and proprietary code from anything you paste.
+  - type: input
+    id: version
+    attributes: {label: "repo-ai --version", placeholder: "repo-ai 0.9.0"}
+    validations: {required: true}
+  - type: input
+    id: platform
+    attributes: {label: "OS, Python version, sandbox backend (repo-ai sandbox status)", placeholder: "macOS 15, Python 3.12, seatbelt"}
+    validations: {required: true}
+  - type: textarea
+    id: command
+    attributes: {label: Command you ran, render: shell}
+    validations: {required: true}
+  - type: textarea
+    id: expected
+    attributes: {label: What you expected}
+    validations: {required: true}
+  - type: textarea
+    id: actual
+    attributes: {label: What happened (output, exit code), render: text}
+    validations: {required: true}
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Coding agent involved
+      options: [none (offline), Claude Code host, Codex, IBM Bob, Antigravity (agy), Gemini, other]
+    validations: {required: true}
+  - type: checkboxes
+    id: false-assurance
+    attributes:
+      label: Trust impact
+      options:
+        - label: repo-ai reported a pass / verified / safe result that was wrong (false assurance)

@@ -1,0 +1,178 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "more_itertools/more.py",
+   "func": "first",
+   "start": 270,
+   "end": 277,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "exactly_n",
+   "start": 3211,
+   "end": 3224,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "callback",
+   "start": 4185,
+   "end": 4188,
+   "indent": 12,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "nth_permutation",
+   "start": 4344,
+   "end": 4363,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_recipes"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "_islice_helper",
+   "start": 2723,
+   "end": 2830,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/recipes.py",
+   "func": "sieve",
+   "start": 921,
+   "end": 929,
+   "indent": 4,
+   "failing_modules": []
+  },
+  {
+   "file": "more_itertools/recipes.py",
+   "func": "polynomial_derivative",
+   "start": 1154,
+   "end": 1156,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.recipes",
+    "tests.test_recipes"
+   ]
+  },
+  {
+   "file": "more_itertools/recipes.py",
+   "func": "sum_of_squares",
+   "start": 1137,
+   "end": 1137,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.recipes",
+    "tests.test_recipes"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "always_iterable",
+   "start": 2165,
+   "end": 2174,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/recipes.py",
+   "func": "quantify",
+   "start": 251,
+   "end": 251,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.recipes",
+    "tests.test_recipes"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "replace",
+   "start": 3478,
+   "end": 3511,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "sample",
+   "start": 4027,
+   "end": 4047,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "outer_product",
+   "start": 5113,
+   "end": 5117,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/recipes.py",
+   "func": "before_and_after",
+   "start": 766,
+   "end": 768,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.recipes",
+    "tests.test_recipes"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "partial_product",
+   "start": 5058,
+   "end": 5069,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  },
+  {
+   "file": "more_itertools/more.py",
+   "func": "consecutive_groups",
+   "start": 2892,
+   "end": 2898,
+   "indent": 4,
+   "failing_modules": [
+    "more_itertools.more",
+    "tests.test_more"
+   ]
+  }
+ ]
+}

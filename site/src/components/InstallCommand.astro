@@ -1,0 +1,167 @@
+---
+/**
+ * Install command with a copy button. Driven entirely by src/config.ts, so the
+ * landing page and the docs always show the same, current instructions.
+ */
+import { installCommand, installAlternatives, installNote } from '../config';
+
+interface Props {
+  /** Show the alternative command(s) and the distribution note. */
+  details?: boolean;
+  /** Visual variant: "hero" on the landing page, "doc" inside Starlight. */
+  variant?: 'hero' | 'doc';
+}
+const { details = true, variant = 'doc' } = Astro.props;
+const rows = [{ label: 'Install', command: installCommand }, ...(details ? installAlternatives : [])];
+---
+
+<div class:list={['ri-install', 'not-content', `ri-install--${variant}`]}>
+  {
+    rows.map((row, i) => (
+      <div class="ri-install__row">
+        {i > 0 && <p class="ri-install__label">{row.label}</p>}
+        <div class="ri-install__box">
+          <code class="ri-install__cmd">
+            <span class="ri-install__prompt" aria-hidden="true">$ </span>
+            <span data-copy-source>{row.command}</span>
+          </code>
+          <button type="button" class="ri-install__copy" data-copy-button aria-label={`Copy ${i === 0 ? 'install command' : row.label}`}>
+            <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+              <rect x="5" y="5" width="8.5" height="8.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4" />
+              <path d="M10.5 3.2V3a1.5 1.5 0 0 0-1.5-1.5H3.5A1.5 1.5 0 0 0 2 3v5.5A1.5 1.5 0 0 0 3.5 10h.3" fill="none" stroke="currentColor" stroke-width="1.4" />
+            </svg>
+            <span class="ri-install__copy-text">Copy</span>
+          </button>
+        </div>
+      </div>
+    ))
+  }
+  {details && <p class="ri-install__note">{installNote}</p>}
+  <p class="ri-install__status" role="status" aria-live="polite"></p>
+</div>
+
+<script>
+  function setup() {
+    document.querySelectorAll<HTMLButtonElement>('[data-copy-button]').forEach((button) => {
+      if (button.dataset.bound) return;
+      button.dataset.bound = '1';
+      button.addEventListener('click', async () => {
+        const box = button.closest('.ri-install__box');
+        const text = box?.querySelector('[data-copy-source]')?.textContent?.trim() ?? '';
+        const status = button.closest('.ri-install')?.querySelector('.ri-install__status');
+        const label = button.querySelector('.ri-install__copy-text');
+        let ok = false;
+        try {
+          await navigator.clipboard.writeText(text);
+          ok = true;
+        } catch {
+          // Fallback for browsers without the async clipboard API (or without permission).
+          const area = document.createElement('textarea');
+          area.value = text;
+          area.setAttribute('readonly', '');
+          area.style.position = 'absolute';
+          area.style.left = '-9999px';
+          document.body.appendChild(area);
+          area.select();
+          try {
+            ok = document.execCommand('copy');
+          } catch {
+            ok = false;
+          }
+          area.remove();
+        }
+        if (label) label.textContent = ok ? 'Copied' : 'Select';
+        if (status) status.textContent = ok ? 'Command copied to clipboard.' : 'Copy failed; select the command and copy it manually.';
+        window.setTimeout(() => {
+          if (label) label.textContent = 'Copy';
+          if (status) status.textContent = '';
+        }, 2000);
+      });
+    });
+  }
+  setup();
+  document.addEventListener('astro:page-load', setup);
+</script>
+
+<style>
+  .ri-install {
+    display: grid;
+    gap: 0.6rem;
+    max-width: 100%;
+  }
+  .ri-install__row {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+  .ri-install__label {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--ri-muted);
+    font-family: var(--ri-font-mono);
+  }
+  .ri-install__box {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--ri-line-strong);
+    border-radius: 6px;
+    background: var(--ri-code-bg);
+    min-width: 0;
+  }
+  .ri-install__cmd {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.7rem 0.85rem;
+    font-family: var(--ri-font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--ri-code-fg);
+    background: transparent;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+    border: 0;
+  }
+  .ri-install__prompt {
+    color: var(--ri-accent-text);
+    user-select: none;
+  }
+  .ri-install__copy {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.85rem;
+    border: 0;
+    border-left: 1px solid var(--ri-line-strong);
+    background: transparent;
+    color: var(--ri-fg);
+    font: 500 0.8rem/1 var(--ri-font-sans);
+    cursor: pointer;
+    border-radius: 0 6px 6px 0;
+  }
+  .ri-install__copy:hover {
+    background: var(--ri-hover);
+  }
+  .ri-install__copy:focus-visible {
+    outline: 2px solid var(--ri-focus);
+    outline-offset: -2px;
+  }
+  .ri-install__note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--ri-muted);
+    max-width: 62ch;
+  }
+  .ri-install__status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .ri-install--hero .ri-install__cmd {
+    font-size: 0.86rem;
+  }
+</style>

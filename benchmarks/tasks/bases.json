@@ -1,0 +1,181 @@
+{
+  "py-shop": {
+    "language": "python",
+    "visible_tests": [
+      [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-t",
+        "."
+      ]
+    ],
+    "toolchain": [
+      "python"
+    ]
+  },
+  "ts-workspace": {
+    "language": "typescript",
+    "visible_tests": [
+      [
+        "{node}",
+        "--test",
+        "{glob:packages/*/test/*.test.ts}"
+      ]
+    ],
+    "toolchain": [
+      "node"
+    ]
+  },
+  "java-ledger": {
+    "language": "java",
+    "visible_tests": [
+      [
+        "javac",
+        "-d",
+        "{out}",
+        "{glob:src/main/java/**/*.java}",
+        "{glob:src/test/java/**/*.java}"
+      ],
+      [
+        "java",
+        "-cp",
+        "{out}",
+        "com.example.ledger.AllTests"
+      ]
+    ],
+    "toolchain": [
+      "javac",
+      "java"
+    ]
+  },
+  "oss-markdown": {
+    "language": "python",
+    "visible_tests": [
+      [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-t",
+        "."
+      ]
+    ],
+    "toolchain": [
+      "python"
+    ],
+    "third_party": true,
+    "source": "https://github.com/Python-Markdown/markdown @ b41e0aaf",
+    "license": "BSD-3-Clause"
+  },
+  "oss-pyflakes": {
+    "language": "python",
+    "visible_tests": [
+      [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "pyflakes/test",
+        "-t",
+        "."
+      ]
+    ],
+    "toolchain": [
+      "python"
+    ],
+    "third_party": true,
+    "source": "https://github.com/PyCQA/pyflakes @ f0a8b981",
+    "license": "MIT"
+  },
+  "oss-cachetools": {
+    "language": "python",
+    "visible_tests": [
+      [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-t",
+        "."
+      ]
+    ],
+    "toolchain": [
+      "python"
+    ],
+    "third_party": true,
+    "source": "https://github.com/tkem/cachetools @ 6f23e2a7",
+    "license": "MIT"
+  },
+  "oss-simplejson": {
+    "language": "python",
+    "visible_tests": [
+      [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "simplejson/tests",
+        "-t",
+        "."
+      ]
+    ],
+    "toolchain": [
+      "python"
+    ],
+    "third_party": true,
+    "source": "https://github.com/simplejson/simplejson @ 9950b7e5",
+    "license": "MIT or AFL-2.1"
+  },
+  "oss-bottle": {
+    "language": "python",
+    "visible_tests": [
+      [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "test",
+        "-t",
+        "."
+      ]
+    ],
+    "toolchain": [
+      "python"
+    ],
+    "third_party": true,
+    "source": "https://github.com/bottlepy/bottle @ 8ec5fe29",
+    "license": "MIT"
+  },
+  "oss-tomli": {
+    "language": "python",
+    "visible_tests": [
+      [
+        "{python}",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-t",
+        "."
+      ]
+    ],
+    "toolchain": [
+      "python"
+    ],
+    "third_party": true,
+    "source": "https://github.com/hukkin/tomli @ 43a86ade",
+    "license": "MIT"
+  }
+}

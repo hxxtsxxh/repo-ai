@@ -1,0 +1,35 @@
+{
+  "schema": "repo-ai.requirements/1",
+  "requirements": [
+    {
+      "text": "R1: fromRoman understands subtractive pairs",
+      "kind": "change",
+      "tests": [
+        "subtractive pairs"
+      ]
+    },
+    {
+      "text": "R2: fromRoman accepts only canonical numerals",
+      "kind": "change",
+      "tests": [
+        "rejects IIII"
+      ]
+    },
+    {
+      "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input",
+      "kind": "change",
+      "tests": [
+        "rejects empty string",
+        "rejects non-string with TypeError"
+      ]
+    },
+    {
+      "text": "R4: toRoman is unchanged",
+      "kind": "preserve",
+      "tests": [
+        "toRoman basics",
+        "toRoman range"
+      ]
+    }
+  ]
+}

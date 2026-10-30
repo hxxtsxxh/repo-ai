@@ -1,0 +1,62 @@
+{
+  "id": "py-shop-026-inject-clock-into-auth",
+  "base": "py-shop",
+  "language": "python",
+  "category": "architecture",
+  "difficulty": "medium",
+  "prompt": "`create_app(clock=...)` only half works. Orders and delivery estimates follow the\ninjected clock, but authentication still reads the wall clock directly (`time.time()` in\n`shop/services/auth.py`). So in an app built with a frozen or fake clock, tokens from\n`POST /auth/login` are stamped with the real time, and bearer tokens are checked against\nthe real time, which makes token expiry impossible to test and gives wrong results in\nreplay/simulation runs.\n\nPlease make the app's clock the single source of time for authentication: tokens issued\nthrough the app (login) get `iat`/`exp` from the injected clock, and requests are\nauthenticated against the injected clock, so advancing a fake clock past\n`TOKEN_TTL_MINUTES` makes authenticated requests fail with 401. The clock is a zero-arg\ncallable returning an aware UTC `datetime`, like `shop.utils.dates.utcnow`.\n`issue_token`/`verify_token` must keep accepting an explicit `now=` (epoch seconds) for\ndirect callers, and `create_app()` without a clock must behave as before.",
+  "setup": [],
+  "solution": [
+    {
+      "file": "shop/app.py",
+      "find": "    user_service: UserService\n\n\ndef build_context",
+      "replace": "    user_service: UserService\n    clock: object = utcnow\n\n\ndef build_context"
+    },
+    {
+      "file": "shop/app.py",
+      "find": "        user_service=UserService(users),\n    )",
+      "replace": "        user_service=UserService(users, clock=clock),\n        clock=clock,\n    )"
+    },
+    {
+      "file": "shop/services/users.py",
+      "find": "from shop.utils.validation import is_valid_email",
+      "replace": "from shop.utils.dates import utcnow\nfrom shop.utils.validation import is_valid_email"
+    },
+    {
+      "file": "shop/services/users.py",
+      "find": "    def __init__(self, users):\n        self.users = users",
+      "replace": "    def __init__(self, users, clock=utcnow):\n        self.users = users\n        self.clock = clock"
+    },
+    {
+      "file": "shop/services/users.py",
+      "find": "        return issue_token(user.id, user.roles, now=now)",
+      "replace": "        if now is None:\n            now = self.clock().timestamp()\n        return issue_token(user.id, user.roles, now=now)"
+    },
+    {
+      "file": "shop/api/middleware.py",
+      "find": "    return verify_token(header[len(\"Bearer \") :].strip())",
+      "replace": "    clock = getattr(ctx, \"clock\", None)\n    now = clock().timestamp() if clock is not None else None\n    return verify_token(header[len(\"Bearer \") :].strip(), now=now)"
+    }
+  ],
+  "gold_files": [
+    "shop/app.py",
+    "shop/services/users.py",
+    "shop/api/middleware.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_auth_clock.py",
+      "dest": "tests/test_hidden_auth_clock.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_auth_clock"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

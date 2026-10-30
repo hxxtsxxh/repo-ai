@@ -1,0 +1,527 @@
+[
+ {
+  "id": "oss-bt-001",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  }
+ },
+ {
+  "id": "oss-bt-002",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  }
+ },
+ {
+  "id": "oss-bt-003",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  }
+ },
+ {
+  "id": "oss-ct-001",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  }
+ },
+ {
+  "id": "oss-ct-002",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  }
+ },
+ {
+  "id": "oss-ct-003",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.1,
+   "first_rank": 10
+  }
+ },
+ {
+  "id": "oss-ct-004",
+  "v0.7.1": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.0,
+   "first_rank": null
+  },
+  "v0.7.2": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.0,
+   "first_rank": null
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  }
+ },
+ {
+  "id": "oss-md-001",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.2,
+   "first_rank": 5
+  }
+ },
+ {
+  "id": "oss-md-002",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.045,
+   "first_rank": 22
+  }
+ },
+ {
+  "id": "oss-md-003",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.091,
+   "first_rank": 11
+  }
+ },
+ {
+  "id": "oss-md-004",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.026,
+   "first_rank": 38
+  }
+ },
+ {
+  "id": "oss-md-005",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.077,
+   "first_rank": 13
+  }
+ },
+ {
+  "id": "oss-md-006",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.25,
+   "first_rank": 4
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.25,
+   "first_rank": 4
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.091,
+   "first_rank": 11
+  }
+ },
+ {
+  "id": "oss-md-007",
+  "v0.7.1": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.0,
+   "first_rank": null
+  },
+  "v0.7.2": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.071,
+   "first_rank": 14
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.077,
+   "first_rank": 13
+  }
+ },
+ {
+  "id": "oss-md-008",
+  "v0.7.1": {
+   "recall_at_k": 0.5,
+   "all_at_k": false,
+   "mrr": 0.25,
+   "first_rank": 4
+  },
+  "v0.7.2": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.0,
+   "first_rank": null
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.059,
+   "first_rank": 17
+  }
+ },
+ {
+  "id": "oss-md-009",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.091,
+   "first_rank": 11
+  }
+ },
+ {
+  "id": "oss-md-010",
+  "v0.7.1": {
+   "recall_at_k": 0.333,
+   "all_at_k": false,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 0.333,
+   "all_at_k": false,
+   "mrr": 0.5,
+   "first_rank": 2
+  },
+  "grep": {
+   "recall_at_k": 0.0,
+   "all_at_k": false,
+   "mrr": 0.056,
+   "first_rank": 18
+  }
+ },
+ {
+  "id": "oss-pf-001",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  }
+ },
+ {
+  "id": "oss-pf-002",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  }
+ },
+ {
+  "id": "oss-pf-003",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.2,
+   "first_rank": 5
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.2,
+   "first_rank": 5
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  }
+ },
+ {
+  "id": "oss-pf-004",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.2,
+   "first_rank": 5
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  }
+ },
+ {
+  "id": "oss-sj-001",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.25,
+   "first_rank": 4
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.5,
+   "first_rank": 2
+  }
+ },
+ {
+  "id": "oss-sj-002",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.25,
+   "first_rank": 4
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 0.333,
+   "first_rank": 3
+  }
+ },
+ {
+  "id": "oss-sj-003",
+  "v0.7.1": {
+   "recall_at_k": 0.5,
+   "all_at_k": false,
+   "mrr": 0.25,
+   "first_rank": 4
+  },
+  "v0.7.2": {
+   "recall_at_k": 0.5,
+   "all_at_k": false,
+   "mrr": 0.25,
+   "first_rank": 4
+  },
+  "grep": {
+   "recall_at_k": 0.5,
+   "all_at_k": false,
+   "mrr": 0.25,
+   "first_rank": 4
+  }
+ },
+ {
+  "id": "oss-tl-001",
+  "v0.7.1": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "v0.7.2": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  },
+  "grep": {
+   "recall_at_k": 1.0,
+   "all_at_k": true,
+   "mrr": 1.0,
+   "first_rank": 1
+  }
+ }
+]

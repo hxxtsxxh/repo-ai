@@ -1,0 +1,52 @@
+{
+  "id": "py-shop-025-scrypt-password-hashes",
+  "base": "py-shop",
+  "language": "python",
+  "category": "migration",
+  "difficulty": "hard",
+  "prompt": "Security wants us off PBKDF2 for password storage. Please migrate the shop to scrypt\n(the stdlib `hashlib.scrypt`, no new dependencies):\n\n* New hashes use the format `scrypt$<n>$<r>$<p>$<salt>$<hex digest>` with n = 2**14,\n  r = 8, p = 1 and a 64-byte derived key. Put the cost parameters in `shop/config.py` as\n  `SCRYPT_N`, `SCRYPT_R` and `SCRYPT_P`. Verification must use the parameters stored in\n  the hash itself, so hashes keep working if we raise the cost later.\n* `hash_password(password, salt=None)` keeps its signature (callers pass an explicit\n  salt in tests).\n* Existing `pbkdf2$<iterations>$<salt>$<hex>` hashes in the user store must keep working;\n  we can't force a reset. When a user with such a legacy hash logs in successfully, their\n  stored hash is transparently replaced with a scrypt hash. A failed login must leave the\n  stored hash alone.\n* Unknown or malformed hash strings simply don't verify (no exceptions).",
+  "setup": [],
+  "solution": [
+    {
+      "file": "shop/config.py",
+      "find": "PASSWORD_HASH_ITERATIONS = 20_000\n",
+      "replace": "PASSWORD_HASH_ITERATIONS = 20_000  # legacy pbkdf2 hashes only\nSCRYPT_N = 2**14\nSCRYPT_R = 8\nSCRYPT_P = 1\n"
+    },
+    {
+      "file": "shop/services/auth.py",
+      "find": "def hash_password(password: str, salt=None) -> str:\n    salt = salt or os.urandom(8).hex()\n    iterations = config.PASSWORD_HASH_ITERATIONS\n    digest = hashlib.pbkdf2_hmac(\"sha256\", password.encode(), salt.encode(), iterations)\n    return f\"pbkdf2${iterations}${salt}${digest.hex()}\"\n\n\ndef verify_password(password: str, stored: str) -> bool:\n    try:\n        _, iterations, salt, expected = stored.split(\"$\")\n    except ValueError:\n        return False\n    digest = hashlib.pbkdf2_hmac(\"sha256\", password.encode(), salt.encode(), int(iterations))\n    return hmac.compare_digest(digest.hex(), expected)\n",
+      "replace": "_SCRYPT_DKLEN = 64\n_SCRYPT_MAXMEM = 256 * 1024 * 1024\n\n\ndef _scrypt(password: str, salt: str, n: int, r: int, p: int) -> bytes:\n    return hashlib.scrypt(\n        password.encode(), salt=salt.encode(), n=n, r=r, p=p,\n        dklen=_SCRYPT_DKLEN, maxmem=_SCRYPT_MAXMEM,\n    )\n\n\ndef hash_password(password: str, salt=None) -> str:\n    salt = salt or os.urandom(16).hex()\n    n, r, p = config.SCRYPT_N, config.SCRYPT_R, config.SCRYPT_P\n    return f\"scrypt${n}${r}${p}${salt}${_scrypt(password, salt, n, r, p).hex()}\"\n\n\ndef verify_password(password: str, stored: str) -> bool:\n    if not isinstance(stored, str):\n        return False\n    parts = stored.split(\"$\")\n    try:\n        if parts[0] == \"scrypt\" and len(parts) == 6:\n            _, n, r, p, salt, expected = parts\n            digest = _scrypt(password, salt, int(n), int(r), int(p))\n        elif parts[0] == \"pbkdf2\" and len(parts) == 4:\n            _, iterations, salt, expected = parts\n            digest = hashlib.pbkdf2_hmac(\"sha256\", password.encode(), salt.encode(), int(iterations))\n        else:\n            return False\n    except (ValueError, OverflowError, MemoryError):\n        return False\n    return hmac.compare_digest(digest.hex(), expected)\n\n\ndef needs_rehash(stored: str) -> bool:\n    \"\"\"True for hashes not made with the current scheme and cost parameters.\"\"\"\n    prefix = f\"scrypt${config.SCRYPT_N}${config.SCRYPT_R}${config.SCRYPT_P}$\"\n    return not (isinstance(stored, str) and stored.startswith(prefix))\n"
+    },
+    {
+      "file": "shop/services/users.py",
+      "find": "from shop.services.auth import hash_password, issue_token, verify_password",
+      "replace": "from shop.services.auth import hash_password, issue_token, needs_rehash, verify_password"
+    },
+    {
+      "file": "shop/services/users.py",
+      "find": "            raise AuthError(\"invalid email or password\")\n        return issue_token",
+      "replace": "            raise AuthError(\"invalid email or password\")\n        if needs_rehash(user.password_hash):\n            user.password_hash = hash_password(password)\n            self.users.update(user)\n        return issue_token"
+    }
+  ],
+  "gold_files": [
+    "shop/config.py",
+    "shop/services/auth.py",
+    "shop/services/users.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_scrypt_migration.py",
+      "dest": "tests/test_hidden_scrypt_migration.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_scrypt_migration"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

@@ -1,0 +1,85 @@
+{
+  "id": "java-ledger-012-transaction-reversal",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "bugfix",
+  "difficulty": "hard",
+  "prompt": "Transaction reversals (`Ledger.reverse(transactionId, date)`, shipped last release)\ndon't work. Reversing a plain transfer fails straight away:\n\n    com.example.ledger.LedgerException: transaction TX-00003 is unbalanced: entries sum to -200.00 USD\n        at com.example.ledger.Ledger.post(Ledger.java)\n        at com.example.ledger.Ledger.reverse(Ledger.java)\n\nAccounting's rules for reversals, as documented on the methods:\n\n* a reversal undoes every leg of the original, so all affected balances return to what\n  they were;\n* it is booked on the date passed to `reverse`, never back-dated: if we reverse a\n  March transaction on 2 April, March balances and statements must not change;\n* a transaction can be reversed only once, and a reversal can't itself be reversed.\n  Both attempts must be refused with a `LedgerException` and leave the books\n  untouched.\n\nPlease make reversals work according to these rules.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/Entry.java",
+      "find": "        if (amount == null) {\n            throw new IllegalArgumentException(\"amount is required\");\n        }\n    }\n}",
+      "replace": "        if (amount == null) {\n            throw new IllegalArgumentException(\"amount is required\");\n        }\n    }\n\n    /** The same leg with the opposite sign: a debit becomes a credit and vice versa. */\n    public Entry negated() {\n        return new Entry(accountId, amount.abs().negate());\n    }\n}"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Transaction.java",
+      "find": "import java.time.LocalDate;\nimport java.util.List;\n",
+      "replace": "import java.time.LocalDate;\nimport java.util.ArrayList;\nimport java.util.List;\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Transaction.java",
+      "find": "    private final List<Entry> entries;\n\n    public Transaction(String id, LocalDate date, String description, List<Entry> entries) {\n",
+      "replace": "    private final List<Entry> entries;\n    private final String reversalOf;\n\n    public Transaction(String id, LocalDate date, String description, List<Entry> entries) {\n        this(id, date, description, entries, null);\n    }\n\n    /** {@code reversalOf} is the id of the transaction this one reverses, or null. */\n    public Transaction(String id, LocalDate date, String description, List<Entry> entries, String reversalOf) {\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Transaction.java",
+      "find": "        this.entries = List.copyOf(entries);\n    }",
+      "replace": "        this.entries = List.copyOf(entries);\n        this.reversalOf = reversalOf;\n    }"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Transaction.java",
+      "find": "    @Override\n    public String toString() {",
+      "replace": "    public String reversalOf() {\n        return reversalOf;\n    }\n\n    public boolean isReversal() {\n        return reversalOf != null;\n    }\n\n    /**\n     * A transaction that undoes this one: every entry with the opposite sign, dated\n     * {@code date} (the day the reversal is booked, not the original date).\n     */\n    public Transaction reversal(String newId, LocalDate date) {\n        List<Entry> legs = new ArrayList<>();\n        for (Entry entry : entries) {\n            legs.add(entry.negated());\n        }\n        String memo = \"Reversal of \" + id + (description.isEmpty() ? \"\" : \": \" + description);\n        return new Transaction(newId, this.date, memo, legs, id);\n    }\n\n    @Override\n    public String toString() {"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "    public Money balance(String accountId) {",
+      "replace": "    public Transaction findTransaction(String transactionId) {\n        String wanted = Validation.nonBlank(transactionId, \"transaction id\");\n        for (Transaction tx : journal) {\n            if (tx.id().equals(wanted)) {\n                return tx;\n            }\n        }\n        throw new LedgerException(\"unknown transaction \" + transactionId);\n    }\n\n    /** True once a reversal of {@code transactionId} has been posted. */\n    public boolean isReversed(String transactionId) {\n        for (Transaction tx : journal) {\n            if (transactionId.equals(tx.reversalOf())) {\n                return true;\n            }\n        }\n        return false;\n    }\n\n    /**\n     * Books a transaction that undoes {@code transactionId}, dated {@code date}. A\n     * transaction can be reversed only once, and a reversal cannot itself be reversed;\n     * both are refused with a {@link LedgerException}.\n     */\n    public Transaction reverse(String transactionId, LocalDate date) {\n        Transaction original = findTransaction(transactionId);\n        return post(original.reversal(nextTransactionId(), date));\n    }\n\n    public Money balance(String accountId) {"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/Entry.java",
+      "find": "        return new Entry(accountId, amount.abs().negate());",
+      "replace": "        return new Entry(accountId, amount.negate());"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Transaction.java",
+      "find": "        return new Transaction(newId, this.date, memo, legs, id);",
+      "replace": "        return new Transaction(newId, date, memo, legs, id);"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "        Transaction original = findTransaction(transactionId);\n        return post(original.reversal(nextTransactionId(), date));",
+      "replace": "        Transaction original = findTransaction(transactionId);\n        if (original.isReversal()) {\n            throw new LedgerException(\"transaction \" + original.id() + \" is a reversal and cannot be reversed\");\n        }\n        if (isReversed(original.id())) {\n            throw new LedgerException(\"transaction \" + original.id() + \" has already been reversed\");\n        }\n        return post(original.reversal(nextTransactionId(), date));"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/Entry.java",
+    "src/main/java/com/example/ledger/Transaction.java",
+    "src/main/java/com/example/ledger/Ledger.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenReversalTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenReversalTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenReversalTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

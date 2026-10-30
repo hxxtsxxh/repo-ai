@@ -1,0 +1,72 @@
+{
+  "id": "java-ledger-011-journal-store-interface",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "architecture",
+  "difficulty": "medium",
+  "prompt": "We want to persist the ledger's journal (a file- or database-backed store comes next),\nso the journal storage needs to be pulled out of `Ledger`:\n\n* New interface `com.example.ledger.JournalStore` with `void append(Transaction tx)` and\n  `List<Transaction> all()` (transactions in posting order).\n* `com.example.ledger.InMemoryJournalStore` implements it with what `Ledger` does today.\n  `new Ledger()` keeps working and uses it.\n* New constructor `Ledger(JournalStore store)`. The ledger must not keep a private copy\n  of the journal: `journal()`, `balanceAsOf(...)` and `statement(...)` read from the\n  store.\n* Writing to the store can fail (disk full, lost connection). If `append` throws, the\n  posting fails with that exception and balances are left exactly as they were; a\n  rejected posting (unbalanced, frozen account, insufficient funds, ...) never reaches\n  the store.",
+  "setup": [],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/JournalStore.java",
+      "create": "package com.example.ledger;\n\nimport java.util.List;\n\n/** Where posted transactions are kept, in posting order. */\npublic interface JournalStore {\n    void append(Transaction tx);\n\n    List<Transaction> all();\n}\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/InMemoryJournalStore.java",
+      "create": "package com.example.ledger;\n\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.List;\n\n/** The default journal store: a list in memory. */\npublic final class InMemoryJournalStore implements JournalStore {\n    private final List<Transaction> transactions = new ArrayList<>();\n\n    @Override\n    public void append(Transaction tx) {\n        transactions.add(tx);\n    }\n\n    @Override\n    public List<Transaction> all() {\n        return Collections.unmodifiableList(transactions);\n    }\n}\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "    private final List<Transaction> journal = new ArrayList<>();\n    private int sequence;\n",
+      "replace": "    private final JournalStore journal;\n    private int sequence;\n\n    public Ledger() {\n        this(new InMemoryJournalStore());\n    }\n\n    public Ledger(JournalStore journal) {\n        if (journal == null) {\n            throw new IllegalArgumentException(\"journal store is required\");\n        }\n        this.journal = journal;\n    }\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "        return Collections.unmodifiableList(journal);",
+      "replace": "        return Collections.unmodifiableList(journal.all());"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "        balances.putAll(pending);\n        journal.add(tx);",
+      "replace": "        journal.append(tx);\n        balances.putAll(pending);"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "        for (Transaction tx : journal) {\n            if (!tx.date().isAfter(asOf)) {",
+      "replace": "        for (Transaction tx : journal.all()) {\n            if (!tx.date().isAfter(asOf)) {"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "        for (Transaction tx : journal) {\n            if (tx.date().isBefore(from)",
+      "replace": "        for (Transaction tx : journal.all()) {\n            if (tx.date().isBefore(from)"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/JournalStore.java",
+    "src/main/java/com/example/ledger/InMemoryJournalStore.java",
+    "src/main/java/com/example/ledger/Ledger.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenJournalStoreTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenJournalStoreTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenJournalStoreTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability (private)
+    url: https://github.com/hxxtsxxh/repo-ai/security/advisories/new
+    about: Report vulnerabilities privately, never in a public issue.
+  - name: Documentation
+    url: https://hxxtsxxh.github.io/repo-ai/docs/
+    about: Guides, CLI reference and troubleshooting.

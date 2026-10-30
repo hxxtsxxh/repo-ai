@@ -1,0 +1,12 @@
+{
+  "name": "@jobrunner/cli",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "main": "src/main.ts",
+  "bin": { "jobs": "src/main.ts" },
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,1374 @@
+{
+ "final": {
+  "summary": {
+   "tasks": 25,
+   "repo_ai": {
+    "recall_at_5": 0.853,
+    "all_gold_at_5": 0.8,
+    "mrr": 0.606
+   },
+   "naive": {
+    "recall_at_5": 0.58,
+    "all_gold_at_5": 0.56,
+    "mrr": 0.42
+   },
+   "hook_injection_rate": 0.92,
+   "hook_payload_has_all_gold": 0.72,
+   "hook_tokens_est_mean": 291.087,
+   "regressions_vs_naive": [
+    "oss-ct-004",
+    "oss-md-007",
+    "oss-pf-001",
+    "oss-pf-002",
+    "oss-pf-003",
+    "oss-pf-004",
+    "oss-sj-001",
+    "oss-sj-002"
+   ]
+  },
+  "tasks": [
+   {
+    "id": "oss-bt-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "oss-bt-002",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "oss-bt-003",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "oss-ct-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    }
+   },
+   {
+    "id": "oss-ct-002",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "oss-ct-003",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.1,
+     "first_rank": 10
+    }
+   },
+   {
+    "id": "oss-ct-004",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.0,
+     "first_rank": null
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    }
+   },
+   {
+    "id": "oss-md-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.2,
+     "first_rank": 5
+    }
+   },
+   {
+    "id": "oss-md-002",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.045,
+     "first_rank": 22
+    }
+   },
+   {
+    "id": "oss-md-003",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.091,
+     "first_rank": 11
+    }
+   },
+   {
+    "id": "oss-md-004",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.026,
+     "first_rank": 38
+    }
+   },
+   {
+    "id": "oss-md-005",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.077,
+     "first_rank": 13
+    }
+   },
+   {
+    "id": "oss-md-006",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.091,
+     "first_rank": 11
+    }
+   },
+   {
+    "id": "oss-md-007",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.0,
+     "first_rank": null
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.077,
+     "first_rank": 13
+    }
+   },
+   {
+    "id": "oss-md-008",
+    "repo_ai": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.059,
+     "first_rank": 17
+    }
+   },
+   {
+    "id": "oss-md-009",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.091,
+     "first_rank": 11
+    }
+   },
+   {
+    "id": "oss-md-010",
+    "repo_ai": {
+     "recall_at_k": 0.333,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.056,
+     "first_rank": 18
+    }
+   },
+   {
+    "id": "oss-pf-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "oss-pf-002",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "oss-pf-003",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.2,
+     "first_rank": 5
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    }
+   },
+   {
+    "id": "oss-pf-004",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.2,
+     "first_rank": 5
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "oss-sj-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "oss-sj-002",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    }
+   },
+   {
+    "id": "oss-sj-003",
+    "repo_ai": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 0.25,
+     "first_rank": 4
+    }
+   },
+   {
+    "id": "oss-tl-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   }
+  ]
+ },
+ "holdout": {
+  "summary": {
+   "tasks": 35,
+   "repo_ai": {
+    "recall_at_5": 0.703,
+    "all_gold_at_5": 0.629,
+    "mrr": 0.572
+   },
+   "naive": {
+    "recall_at_5": 0.735,
+    "all_gold_at_5": 0.714,
+    "mrr": 0.52
+   },
+   "hook_injection_rate": 0.914,
+   "hook_payload_has_all_gold": 0.629,
+   "hook_tokens_est_mean": 259.594,
+   "regressions_vs_naive": [
+    "java-ledger-004-failed-transfer-leaks-debit",
+    "java-ledger-005-uneven-expense-split",
+    "java-ledger-006-trial-balance-totals",
+    "py-shop-004-session-lifetime",
+    "py-shop-011-dedupe-money-formatting",
+    "py-shop-015-payment-retry-idempotency",
+    "py-shop-023-unit-of-work-rollback",
+    "py-shop-027-order-total-mismatch",
+    "ts-workspace-003-caret-range-zero-major",
+    "ts-workspace-007-cli-duration-syntax",
+    "ts-workspace-010-read-only-key-can-write",
+    "ts-workspace-011-flag-value-with-equals",
+    "ts-workspace-015-key-validity-last-day",
+    "ts-workspace-016-jobs-table-rendering"
+   ]
+  },
+  "tasks": [
+   {
+    "id": "java-ledger-001-month-end-balance",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "java-ledger-004-failed-transfer-leaks-debit",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "java-ledger-005-uneven-expense-split",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.0,
+     "first_rank": null
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.2,
+     "first_rank": 5
+    }
+   },
+   {
+    "id": "java-ledger-006-trial-balance-totals",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "java-ledger-007-importer-account-id-rules",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "java-ledger-008-mixed-currency-sum",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.143,
+     "first_rank": 7
+    }
+   },
+   {
+    "id": "java-ledger-009-csv-export-formula-injection",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "java-ledger-010-migration-version-order",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "py-shop-004-session-lifetime",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.167,
+     "first_rank": 6
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    }
+   },
+   {
+    "id": "py-shop-007-accented-slugs",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "py-shop-011-dedupe-money-formatting",
+    "repo_ai": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "py-shop-012-pagination-contract-tests",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "py-shop-015-payment-retry-idempotency",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.1,
+     "first_rank": 10
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "py-shop-016-plus-address-signup",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    }
+   },
+   {
+    "id": "py-shop-017-saturday-delivery-estimate",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    }
+   },
+   {
+    "id": "py-shop-019-page-size-limit",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.083,
+     "first_rank": 12
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.048,
+     "first_rank": 21
+    }
+   },
+   {
+    "id": "py-shop-021-receipt-html-injection",
+    "repo_ai": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "py-shop-022-act-as-privilege-escalation",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "py-shop-023-unit-of-work-rollback",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.0,
+     "first_rank": null
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.1,
+     "first_rank": 10
+    }
+   },
+   {
+    "id": "py-shop-024-catalog-import-slowdown",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "py-shop-026-inject-clock-into-auth",
+    "repo_ai": {
+     "recall_at_k": 0.667,
+     "all_at_k": false,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 0.333,
+     "all_at_k": false,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "py-shop-027-order-total-mismatch",
+    "repo_ai": {
+     "recall_at_k": 0.333,
+     "all_at_k": false,
+     "mrr": 0.2,
+     "first_rank": 5
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    }
+   },
+   {
+    "id": "ts-workspace-002-backoff-ignores-max",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.167,
+     "first_rank": 6
+    }
+   },
+   {
+    "id": "ts-workspace-003-caret-range-zero-major",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.0,
+     "first_rank": null
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "ts-workspace-004-daily-job-runs-twice",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.167,
+     "first_rank": 6
+    }
+   },
+   {
+    "id": "ts-workspace-005-cursor-pagination-gaps",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.125,
+     "first_rank": 8
+    }
+   },
+   {
+    "id": "ts-workspace-007-cli-duration-syntax",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.125,
+     "first_rank": 8
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "ts-workspace-008-pause-and-resume-jobs",
+    "repo_ai": {
+     "recall_at_k": 0.6,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.4,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "ts-workspace-009-rate-limit-never-recovers",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.125,
+     "first_rank": 8
+    }
+   },
+   {
+    "id": "ts-workspace-010-read-only-key-can-write",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "ts-workspace-011-flag-value-with-equals",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.0,
+     "first_rank": null
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.045,
+     "first_rank": 22
+    }
+   },
+   {
+    "id": "ts-workspace-013-root-test-script",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "ts-workspace-015-key-validity-last-day",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "ts-workspace-016-jobs-table-rendering",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "ts-workspace-017-job-form-stuck-after-error",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   }
+  ]
+ },
+ "sealedv2": {
+  "summary": {
+   "tasks": 25,
+   "repo_ai": {
+    "recall_at_5": 0.503,
+    "all_gold_at_5": 0.36,
+    "mrr": 0.542
+   },
+   "naive": {
+    "recall_at_5": 0.55,
+    "all_gold_at_5": 0.36,
+    "mrr": 0.546
+   },
+   "hook_injection_rate": 1.0,
+   "hook_payload_has_all_gold": 0.4,
+   "hook_tokens_est_mean": 273.04,
+   "regressions_vs_naive": [
+    "v2-ac-001",
+    "v2-ac-002",
+    "v2-asn-001",
+    "v2-asn-002",
+    "v2-dns-004",
+    "v2-sg-004",
+    "v2-sg-005",
+    "v2-sg-006",
+    "v2-sg-007"
+   ]
+  },
+  "tasks": [
+   {
+    "id": "v2-ac-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-ac-002",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-ac-003",
+    "repo_ai": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-ac-004",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "v2-asn-001",
+    "repo_ai": {
+     "recall_at_k": 0.333,
+     "all_at_k": false,
+     "mrr": 0.25,
+     "first_rank": 4
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-asn-002",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.167,
+     "first_rank": 6
+    },
+    "naive": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 0.333,
+     "first_rank": 3
+    }
+   },
+   {
+    "id": "v2-dns-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.125,
+     "first_rank": 8
+    }
+   },
+   {
+    "id": "v2-dns-002",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.077,
+     "first_rank": 13
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.029,
+     "first_rank": 35
+    }
+   },
+   {
+    "id": "v2-dns-003",
+    "repo_ai": {
+     "recall_at_k": 0.667,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.667,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-dns-004",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.0,
+     "first_rank": null
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "v2-dns-005",
+    "repo_ai": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 0.333,
+     "first_rank": 3
+    }
+   },
+   {
+    "id": "v2-dns-006",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-lk-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-lk-002",
+    "repo_ai": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.143,
+     "first_rank": 7
+    }
+   },
+   {
+    "id": "v2-mi-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-mk-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    },
+    "naive": {
+     "recall_at_k": 0.5,
+     "all_at_k": false,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "v2-sg-001",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.143,
+     "first_rank": 7
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.125,
+     "first_rank": 8
+    }
+   },
+   {
+    "id": "v2-sg-002",
+    "repo_ai": {
+     "recall_at_k": 0.75,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 0.25,
+     "all_at_k": false,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "v2-sg-003",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.111,
+     "first_rank": 9
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.043,
+     "first_rank": 23
+    }
+   },
+   {
+    "id": "v2-sg-004",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.143,
+     "first_rank": 7
+    },
+    "naive": {
+     "recall_at_k": 0.333,
+     "all_at_k": false,
+     "mrr": 0.25,
+     "first_rank": 4
+    }
+   },
+   {
+    "id": "v2-sg-005",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.143,
+     "first_rank": 7
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.25,
+     "first_rank": 4
+    }
+   },
+   {
+    "id": "v2-sg-006",
+    "repo_ai": {
+     "recall_at_k": 0.333,
+     "all_at_k": false,
+     "mrr": 0.333,
+     "first_rank": 3
+    },
+    "naive": {
+     "recall_at_k": 0.667,
+     "all_at_k": false,
+     "mrr": 1.0,
+     "first_rank": 1
+    }
+   },
+   {
+    "id": "v2-sg-007",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.111,
+     "first_rank": 9
+    },
+    "naive": {
+     "recall_at_k": 0.333,
+     "all_at_k": false,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   },
+   {
+    "id": "v2-sg-008",
+    "repo_ai": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.083,
+     "first_rank": 12
+    },
+    "naive": {
+     "recall_at_k": 0.0,
+     "all_at_k": false,
+     "mrr": 0.024,
+     "first_rank": 42
+    }
+   },
+   {
+    "id": "v2-te-001",
+    "repo_ai": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 1.0,
+     "first_rank": 1
+    },
+    "naive": {
+     "recall_at_k": 1.0,
+     "all_at_k": true,
+     "mrr": 0.5,
+     "first_rank": 2
+    }
+   }
+  ]
+ }
+}

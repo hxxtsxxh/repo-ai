@@ -1,0 +1,53 @@
+{
+  "acceptance_tests": [
+    "chunk.acceptance.test.js"
+  ],
+  "cluster": "node_array_chunking",
+  "id": "cal-node-chunk",
+  "language": "node",
+  "map_policy": "requirements.json and acceptance/ were written from the statement only and committed (stage-1 freeze, manifest.w.json) before any candidate, decoy or hidden test existed.",
+  "prompt": "In chunk.js (CommonJS), fix chunk(items, size) so that it meets every requirement below. R1: the last chunk may be shorter: chunk([1, 2, 3, 4, 5], 2) returns [[1, 2], [3, 4], [5]]. R2: size must be an integer >= 1 (Number.isSafeInteger); anything else (0, -1, 1.5, NaN, Infinity, '2') throws RangeError. R3: the input array is never modified and every returned chunk is a new array (never the input array itself). R4: items must be an array (Array.isArray); anything else (a string, a number, null, an array-like object) throws TypeError, and this check comes before the size check. R5: chunk([], 3) returns [] and exact multiples are unchanged: chunk([1, 2, 3, 4], 2) returns [[1, 2], [3, 4]].",
+  "provenance": {
+    "author": "AI agent (Claude Opus 5.5 session acting as abc-v5 calibration author); single author for every role",
+    "kind": "synthetic",
+    "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+    "note": "SYNTHETIC calibration task. Not upstream code, never confirmatory, never reused in a confirmatory split.",
+    "upstream_commit": null,
+    "upstream_url": null
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "kind": "change",
+      "text": "the last chunk may be shorter: chunk([1, 2, 3, 4, 5], 2) returns [[1, 2], [3, 4], [5]]"
+    },
+    {
+      "id": "R2",
+      "kind": "change",
+      "text": "size must be an integer >= 1 (Number.isSafeInteger); anything else (0, -1, 1.5, NaN, Infinity, '2') throws RangeError"
+    },
+    {
+      "id": "R3",
+      "kind": "preserve",
+      "text": "the input array is never modified and every returned chunk is a new array (never the input array itself)"
+    },
+    {
+      "id": "R4",
+      "kind": "change",
+      "text": "items must be an array (Array.isArray); anything else (a string, a number, null, an array-like object) throws TypeError, and this check comes before the size check"
+    },
+    {
+      "id": "R5",
+      "kind": "preserve",
+      "text": "chunk([], 3) returns [] and exact multiples are unchanged: chunk([1, 2, 3, 4], 2) returns [[1, 2], [3, 4]]"
+    }
+  ],
+  "shipped_tests": [
+    "chunk.test.js"
+  ],
+  "split": "calibration",
+  "test_command": "node --test",
+  "write_paths": [
+    "chunk.js"
+  ]
+}

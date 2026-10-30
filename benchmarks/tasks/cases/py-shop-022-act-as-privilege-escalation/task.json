@@ -1,0 +1,51 @@
+{
+  "id": "py-shop-022-act-as-privilege-escalation",
+  "base": "py-shop",
+  "language": "python",
+  "category": "auth",
+  "difficulty": "medium",
+  "prompt": "Two reports about the support \"act as\" feature (the `X-Act-As: <user id>` request header):\n\n1. Support agents can't use it at all. Any request where a support account acts as a\n   customer fails with `403 {\"error\": {\"code\": \"forbidden\", \"message\": \"only staff may\n   act as another user\"}}`.\n2. Much worse, found by security: an ordinary customer can send\n   `X-Act-As: usr_0001` (the seeded admin account) with their own token and is then\n   treated as the admin, e.g. `POST /products` succeeds.\n\nThe intended rules: staff (admin or support role) may act as a customer account;\nnobody may act as another staff account; customers can't act as anyone. Requests\nwithout the header must behave as before.",
+  "setup": [
+    {
+      "file": "shop/services/auth.py",
+      "find": "def require_role(payload: dict, role: str) -> None:\n    if role not in payload.get(\"roles\", []):\n        raise Forbidden(f\"{role} role required\")\n",
+      "replace": "def require_role(payload: dict, role: str) -> None:\n    if role not in payload.get(\"roles\", []):\n        raise Forbidden(f\"{role} role required\")\n\n\nSTAFF_ROLES = (\"admin\", \"support\")\n\n\ndef is_staff(payload: dict) -> bool:\n    return any(role in STAFF_ROLES for role in payload.get(\"roles\", []))\n"
+    },
+    {
+      "file": "shop/api/middleware.py",
+      "find": "from shop.errors import AuthError, ValidationError\nfrom shop.services.auth import require_role, verify_token",
+      "replace": "from shop.errors import AuthError, Forbidden, NotFound, ValidationError\nfrom shop.services.auth import is_staff, require_role, verify_token"
+    },
+    {
+      "file": "shop/api/middleware.py",
+      "find": "    return verify_token(header[len(\"Bearer \") :].strip())\n",
+      "replace": "    payload = verify_token(header[len(\"Bearer \") :].strip())\n    target_id = get_header(request, \"X-Act-As\")\n    if target_id:\n        payload = _act_as(ctx, payload, target_id.strip())\n    return payload\n\n\ndef _act_as(ctx, payload: dict, target_id: str) -> dict:\n    \"\"\"Let staff see the shop exactly as one customer sees it.\n\n    Only staff (admin or support) may act as another account, and only as a\n    customer account: acting as another staff member is refused.\n    \"\"\"\n    target = ctx.users.get(target_id)\n    if target is None:\n        raise NotFound(f\"user {target_id} not found\")\n    acting = {\"sub\": target.id, \"roles\": list(target.roles), \"act_by\": payload[\"sub\"]}\n    if not is_staff(acting):\n        raise Forbidden(\"only staff may act as another user\")\n    return acting\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/api/middleware.py",
+      "find": "    target = ctx.users.get(target_id)\n    if target is None:\n        raise NotFound(f\"user {target_id} not found\")\n    acting = {\"sub\": target.id, \"roles\": list(target.roles), \"act_by\": payload[\"sub\"]}\n    if not is_staff(acting):\n        raise Forbidden(\"only staff may act as another user\")\n    return acting",
+      "replace": "    if not is_staff(payload):\n        raise Forbidden(\"only staff may act as another user\")\n    target = ctx.users.get(target_id)\n    if target is None:\n        raise NotFound(f\"user {target_id} not found\")\n    acting = {\"sub\": target.id, \"roles\": list(target.roles), \"act_by\": payload[\"sub\"]}\n    if is_staff(acting):\n        raise Forbidden(\"cannot act as a staff account\")\n    return acting"
+    }
+  ],
+  "gold_files": [
+    "shop/api/middleware.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_act_as_rules.py",
+      "dest": "tests/test_hidden_act_as_rules.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_act_as_rules"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

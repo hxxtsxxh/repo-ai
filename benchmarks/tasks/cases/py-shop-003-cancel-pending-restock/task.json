@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-003-cancel-pending-restock",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Inventory leak: when a customer cancels an order *before* paying for it, the units\nnever come back. Repro on a fresh app: Wool Beanie has 20 in stock, place an order\nfor 2, cancel it right away -> product page still says 18 available. If they pay\nfirst and then cancel, availability goes back to 20 as expected.",
+  "setup": [
+    {
+      "file": "shop/services/orders.py",
+      "find": "        for line in order.lines:\n            self.inventory.release(line.sku, line.quantity)\n        self._transition(order, CANCELLED)",
+      "replace": "        if order.status == PAID:\n            for line in order.lines:\n                self.inventory.release(line.sku, line.quantity)\n        self._transition(order, CANCELLED)"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/orders.py",
+      "find": "        if order.status == PAID:\n            for line in order.lines:\n                self.inventory.release(line.sku, line.quantity)\n        self._transition(order, CANCELLED)",
+      "replace": "        for line in order.lines:\n            self.inventory.release(line.sku, line.quantity)\n        self._transition(order, CANCELLED)"
+    }
+  ],
+  "gold_files": [
+    "shop/services/orders.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_cancel_restock.py",
+      "dest": "tests/test_hidden_cancel_restock.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_cancel_restock"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

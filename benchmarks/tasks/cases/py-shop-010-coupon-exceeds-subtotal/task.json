@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-010-coupon-exceeds-subtotal",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Order ord_0042 looks wrong: one Sticker Pack ($6.00) with coupon SAVE10 shows\n`discount: $10.00`, tax came out *negative*, and the total charged was less than the\nshipping fee. A coupon should never take off more than the merchandise is worth --\nin this case the customer should simply pay shipping. Seems to affect any\ncombination of coupons that adds up to more than the cart.",
+  "setup": [
+    {
+      "file": "shop/services/discounts.py",
+      "find": "            amount = self.discount_for(coupon, remaining)\n            amount = min(amount, remaining)\n",
+      "replace": "            amount = self.discount_for(coupon, remaining)\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/discounts.py",
+      "find": "            amount = self.discount_for(coupon, remaining)\n",
+      "replace": "            amount = self.discount_for(coupon, remaining)\n            amount = min(amount, remaining)\n"
+    }
+  ],
+  "gold_files": [
+    "shop/services/discounts.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_coupon_cap.py",
+      "dest": "tests/test_hidden_coupon_cap.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_coupon_cap"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

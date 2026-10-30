@@ -1,0 +1,212 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  # manual runs (for example the full matrix with macOS on a release candidate)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]" ruff mypy
+      - name: ruff
+        run: ruff check src tests benchmarks/run.py scripts
+      - name: mypy
+        run: mypy
+      - name: Plugin bundle is current
+        run: python scripts/build_plugin.py --check
+      - name: CLI reference is current
+        run: python scripts/gen_cli_reference.py --check
+
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          # Windows is a required, supported platform (not best effort).
+          - os: windows-latest
+            python: "3.10"
+          - os: windows-latest
+            python: "3.13"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install
+        run: python -m pip install -e ".[dev]" build
+      - name: Tests
+        run: python -m pytest -q
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Release artifacts carry no research data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import glob, tarfile, zipfile
+          sdist = tarfile.open(glob.glob("dist/*.tar.gz")[0]).getnames()
+          wheel = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          bad = [n for n in sdist if "/benchmarks/" in n and "/benchmarks/tasks/" not in n]
+          bad += [n for n in wheel if n.startswith(("benchmarks/", "repo_ai/benchmarks/"))]
+          bad += [n for n in sdist + wheel if any(k in n for k in ("sealed-v2", "authoring", "verify-eval"))]
+          bad += [n for n in sdist + wheel if "docs/research/" in n]
+          assert not bad, f"research data in release artifacts: {bad[:5]}"
+          print(f"sdist {len(sdist)} entries, wheel {len(wheel)} entries: no research data")
+          PY
+      - name: Install wheel in a clean venv and smoke-test the console script
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          if [ -x "$RUNNER_TEMP/wheel-venv/bin/python" ]; then BIN="$RUNNER_TEMP/wheel-venv/bin"; else BIN="$RUNNER_TEMP/wheel-venv/Scripts"; fi
+          "$BIN/python" -m pip install dist/*.whl
+          "$BIN/repo-ai" --version
+          mkdir "$RUNNER_TEMP/smoke" && cp -R tests/fixtures/pyweb/. "$RUNNER_TEMP/smoke/"
+          cd "$RUNNER_TEMP/smoke" && git init -q && git add -A && git -c user.email=ci@example.invalid -c user.name=ci commit -qm init
+          "$BIN/repo-ai" init --agent claude --smart -q
+          "$BIN/repo-ai" context "fix the login validation bug" --format paths | head -3
+          "$BIN/repo-ai" doctor --agent claude
+
+  # macOS minutes cost 10x on private repositories: run on main and tags only.
+  test-macos:
+    if: github.event_name != 'pull_request'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e ".[dev]"
+      - name: seatbelt probe (diagnostic, never fails the job)
+        run: |
+          PY=$(python -c "import sys; print(sys.executable)")
+          ls -l "$PY"; xattr -l "$PY" || true
+          /usr/bin/sandbox-exec -p '(version 1)(allow default)' "$PY" -c 'print("allow-default: ok")' || true
+          python -m repo_ai sandbox status || true
+      - name: node under seatbelt probe (diagnostic, never fails the job)
+        run: |
+          which node; node --version; ls -l "$(which node)" || true
+          python - <<'PY' || true
+          import pathlib, subprocess, tempfile
+          from repo_ai.verify import isolate
+          from repo_ai.verify.execute import get_executor
+          with tempfile.TemporaryDirectory() as d:
+              subprocess.run(["git", "init", "-q", d], check=True)
+              ex = get_executor(pathlib.Path(d), "auto", "node")
+              print("node", ex.node, "reads", ex.extra_reads)
+              with isolate.materialize(pathlib.Path(d)) as ws:
+                  r = ex.in_workspace(ws).run(["node", "-e", "console.log(process.version)"], timeout_s=60, toolchain="node")
+                  print("exit", r.exit_code, "stdout", r.stdout.strip(), "stderr", r.stderr[-600:])
+          PY
+      - run: python -m pytest -q
+
+  sandbox:
+    # Escape tests and the coding lab's fake-client experiments, graded in a
+    # real container backend.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - run: docker pull docker.io/library/python:3.12-slim
+      - name: Sandbox escape tests and lab experiments (docker backend)
+        run: |
+          python -m repo_ai sandbox status
+          python -m pytest -q tests/test_sandbox.py tests/test_coding_lab.py tests/test_evals.py
+      - name: verify working-tree isolation (docker backend)
+        run: python -m pytest -q tests/test_verify_isolation.py tests/test_verify_engine.py tests/test_verify_adaptive.py tests/test_verify_watchdog.py
+      - name: Sealed open-source tasks - oracles validated in the sandbox
+        # third-party code never runs on the host; localization is not computed here
+        run: |
+          python -m repo_ai eval --offline --split final --no-localization --concurrency 2
+          python -m repo_ai eval --offline --split calibration --no-localization --concurrency 2
+
+  sandbox-bwrap:
+    # verify --run/--record on Linux's host sandbox: hostile tests, cancellation, integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - name: Install bubblewrap and allow unprivileged user namespaces
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: verify working-tree isolation (bwrap backend)
+        run: |
+          python -m repo_ai sandbox status
+          python -m pytest -q tests/test_verify_isolation.py tests/test_verify_engine.py tests/test_verify_adaptive.py tests/test_sandbox.py
+      - name: missions and providers (need the bwrap sandbox; skipped elsewhere)
+        run: python -m pytest -q tests/test_mission_*.py tests/test_provider_*.py tests/test_handoff_integrity.py tests/test_eval_integrity.py
+
+  eval-offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: python -m pip install -e ".[dev]"
+      - name: Task-suite oracles valid; localization must not regress
+        run: python -m repo_ai eval --offline --no-network --concurrency 4 --check benchmarks/results/eval-offline.json --out eval.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-offline
+          path: eval.json
+
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - name: Retrieval benchmark (quality must not regress)
+        run: |
+          python benchmarks/run.py --out bench.json
+          python - <<'PY'
+          import json
+          now = json.load(open("bench.json"))["summary"]
+          base = json.load(open("benchmarks/results/v0.5.0.json"))["summary"]
+          problems = []
+          if now["recall@5"] < base["recall@5"] - 0.05: problems.append("recall@5 regressed")
+          if now["mrr"] < base["mrr"] - 0.05: problems.append("MRR regressed")
+          if now["false_injection_rate"] > base["false_injection_rate"]: problems.append("false injection increased")
+          print(now)
+          raise SystemExit("; ".join(problems) if problems else 0)
+          PY

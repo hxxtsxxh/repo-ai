@@ -1,0 +1,565 @@
+{
+ "id": "20261021-001148-ee60",
+ "suite": "_evalsuite",
+ "arms": {
+  "baseline": [],
+  "core": [
+   "hooks",
+   "packet",
+   "rules"
+  ],
+  "full": [
+   "agents",
+   "hooks",
+   "orchestration",
+   "outcomes",
+   "packet",
+   "rules",
+   "skills",
+   "thirdparty"
+  ]
+ },
+ "repo_ai_version": "0.7.5",
+ "seed": 0,
+ "model": "claude-sonnet-5-5",
+ "effort": "medium",
+ "max_turns": 30,
+ "timeout_s": 1800,
+ "repeat": 2,
+ "budget_usd": 40.0,
+ "max_cost_per_run_usd": 0.75,
+ "reservation_per_run_usd": 0.9375,
+ "completion_budget_usd": 140.63,
+ "planned_runs": 150,
+ "worst_case_usd": 140.63,
+ "tasks": [
+  "oss-bt-001",
+  "oss-bt-002",
+  "oss-bt-003",
+  "oss-ct-001",
+  "oss-ct-002",
+  "oss-ct-003",
+  "oss-ct-004",
+  "oss-md-001",
+  "oss-md-002",
+  "oss-md-003",
+  "oss-md-004",
+  "oss-md-005",
+  "oss-md-006",
+  "oss-md-007",
+  "oss-md-008",
+  "oss-md-009",
+  "oss-md-010",
+  "oss-pf-001",
+  "oss-pf-002",
+  "oss-pf-003",
+  "oss-pf-004",
+  "oss-sj-001",
+  "oss-sj-002",
+  "oss-sj-003",
+  "oss-tl-001"
+ ],
+ "fake": false,
+ "blind": true,
+ "max_invalid_rate": 0.2,
+ "schedule": [
+  {
+   "rep": 0,
+   "task": "oss-bt-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-bt-002",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-bt-003",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-002",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-003",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-004",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-001",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-002",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-003",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-004",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-005",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-006",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-007",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-008",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-009",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-010",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-001",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-002",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-003",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-004",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-sj-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-sj-002",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-sj-003",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-tl-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-bt-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-bt-002",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-bt-003",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-002",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-003",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-004",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-001",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-002",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-003",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-004",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-005",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-006",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-007",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-008",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-009",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-010",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-001",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-002",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-003",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-004",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-sj-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-sj-002",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-sj-003",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-tl-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  }
+ ],
+ "permissions": {
+  "mode": "dontAsk",
+  "allowed": [
+   "Read",
+   "Edit",
+   "Write",
+   "MultiEdit",
+   "Glob",
+   "Grep",
+   "TodoWrite",
+   "Task",
+   "Bash(python -m unittest:*)",
+   "Bash(python3 -m unittest:*)",
+   "Bash(python -m pytest:*)",
+   "Bash(python3 -m pytest:*)",
+   "Bash(pytest:*)",
+   "Bash(node --test:*)",
+   "Bash(npm test:*)",
+   "Bash(javac:*)",
+   "Bash(java -cp:*)",
+   "Bash(make test:*)",
+   "Bash(ls:*)",
+   "Bash(git status:*)",
+   "Bash(git diff:*)",
+   "Bash(git log:*)",
+   "Bash(repo-ai context:*)",
+   "Bash(repo-ai impact:*)",
+   "Bash(repo-ai explain:*)",
+   "Bash(repo-ai symbol:*)",
+   "Bash(repo-ai related:*)",
+   "Bash(repo-ai packet:*)",
+   "Bash(repo-ai status:*)"
+  ],
+  "disallowed": [
+   "WebFetch",
+   "WebSearch",
+   "Bash(curl:*)",
+   "Bash(wget:*)",
+   "Bash(git push:*)",
+   "Bash(pip install:*)",
+   "Bash(npm install:*)"
+  ]
+ },
+ "cost_note": "reported costs are Claude Code client-side estimates, not billing",
+ "started": "2026-10-21T00:11:48",
+ "stopped": null,
+ "spent_usd_charged": 21.5482,
+ "finished": "2026-10-20T23:35:37"
+}

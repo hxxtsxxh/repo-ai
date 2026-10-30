@@ -1,0 +1,48 @@
+{
+  "id": "java-ledger-003-interest-half-cent",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Reconciliation against the core banking system flags a one-cent difference on a\nhandful of savings accounts every month. It is always our accrual that is one cent\n*higher*, and only when the exact interest lands on half a cent (for example $10.00 at\n3.65% for 5 days is exactly $0.005). The bank's figures follow the rounding rule that\nis documented for our interest calculations.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/InterestCalculator.java",
+      "find": ".divide(BigDecimal.valueOf(100L * DAYS_IN_YEAR), 2, RoundingMode.HALF_EVEN);",
+      "replace": ".divide(BigDecimal.valueOf(100L * DAYS_IN_YEAR), 2, RoundingMode.HALF_UP);"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/InterestCalculator.java",
+      "find": ".divide(BigDecimal.valueOf(100L * DAYS_IN_YEAR), 2, RoundingMode.HALF_UP);",
+      "replace": ".divide(BigDecimal.valueOf(100L * DAYS_IN_YEAR), 2, RoundingMode.HALF_EVEN);"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/InterestCalculator.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenHalfCentInterestTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenHalfCentInterestTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenHalfCentInterestTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

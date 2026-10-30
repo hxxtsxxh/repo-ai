@@ -1,0 +1,92 @@
+{
+  "ctl-srcskip": {
+    "dir": "controls/ctl-srcskip",
+    "expected_grade": "FAIL",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+    ],
+    "kind": "control",
+    "note": "source calls pytest.skip(allow_module_level=True) under pytest",
+    "stratum": "process"
+  },
+  "ctl-tamper": {
+    "dir": "controls/ctl-tamper",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+    ],
+    "kind": "control",
+    "note": "acceptance tests rewritten to expect ValueError; source unchanged",
+    "stratum": "process"
+  },
+  "ctl-testskip": {
+    "dir": "controls/ctl-testskip",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+    ],
+    "kind": "control",
+    "note": "every acceptance test marked skip; source unchanged",
+    "stratum": "process"
+  },
+  "decoy-r1-gib": {
+    "dir": "decoys/decoy-r1-gib",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R1"
+    ],
+    "kind": "decoy",
+    "note": "GiB typed as 1000 * 1024 ** 2",
+    "stratum": "semantic"
+  },
+  "decoy-r3-anyspace": {
+    "dir": "decoys/decoy-r3-anyspace",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R3"
+    ],
+    "kind": "decoy",
+    "note": "accepts any surrounding/inner whitespace",
+    "stratum": "semantic"
+  },
+  "decoy-r4-truncate": {
+    "dir": "decoys/decoy-r4-truncate",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R4"
+    ],
+    "kind": "decoy",
+    "note": "float arithmetic truncated with int(); never raises for non-whole results",
+    "stratum": "semantic"
+  },
+  "reference": {
+    "dir": "reference",
+    "expected_grade": "CORRECT",
+    "intended_violation": [],
+    "kind": "reference",
+    "note": "meets R1-R5 with exact Fraction arithmetic",
+    "stratum": "none"
+  },
+  "untouched": {
+    "dir": null,
+    "expected_grade": "FAIL",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+    ],
+    "kind": "control",
+    "note": "no change at all",
+    "stratum": "noop"
+  }
+}

@@ -1,0 +1,883 @@
+"""Bounded provider CLI contracts, JSONL event parsers, and sandboxed execution.
+
+Distinguishes lifecycle stages:
+  NOT_INSTALLED -> DISCOVERED -> PROBED -> READY / SIMULATED / BLOCKED / FAILED -> VERIFIED (or LIVE_VERIFIED)
+
+A provider adapter run never certifies itself: even when the CLI exits 0 and emits
+valid JSONL events, the stage remains SIMULATED (or READY) until independent
+sandbox test observations and whole-change regression verification pass.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import shutil
+import sys
+import tempfile
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any
+
+from ..security import redact_text, source_contains_secret
+from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env
+
+STAGES = (
+    "NOT_INSTALLED",
+    "DISCOVERED",
+    "PROBED",
+    "READY",
+    "SIMULATED",
+    "BLOCKED",
+    "FAILED",
+    "VERIFIED",
+)
+
+
+@dataclass(frozen=True)
+class ProviderContract:
+    provider: str
+    headless_argv: tuple[str, ...]
+    event_format: str
+    event_flag: str
+    workspace_flag: str | None
+    sandbox_flags: tuple[str, ...]
+    cost_limit_flag: str | None
+    turn_limit_flag: str | None
+    enforces_hard_usd_budget: bool
+
+    def to_json(self) -> dict[str, Any]:
+        data = asdict(self)
+        data["headless_argv"] = list(self.headless_argv)
+        data["sandbox_flags"] = list(self.sandbox_flags)
+        return data
+
+
+PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
+    "codex": ProviderContract(
+        provider="codex",
+        headless_argv=("exec", "--json", "--ephemeral", "--sandbox", "workspace-write"),
+        event_format="codex-jsonl",
+        event_flag="--json",
+        workspace_flag="-C",
+        sandbox_flags=("--sandbox", "workspace-write"),
+        cost_limit_flag=None,
+        turn_limit_flag=None,
+        enforces_hard_usd_budget=False,
+    ),
+    "claude": ProviderContract(
+        provider="claude",
+        headless_argv=(
+            "--print",
+            "--verbose",
+            "--output-format",
+            "stream-json",
+            "--permission-mode",
+            "acceptEdits",
+            "--no-session-persistence",
+        ),
+        event_format="claude-stream-json",
+        event_flag="--output-format",
+        workspace_flag=None,
+        sandbox_flags=("--permission-mode", "acceptEdits"),
+        cost_limit_flag="--max-budget-usd",
+        turn_limit_flag=None,
+        enforces_hard_usd_budget=True,
+    ),
+    "gemini": ProviderContract(
+        provider="gemini",
+        headless_argv=(
+            "--prompt",
+            "--output-format",
+            "stream-json",
+            "--approval-mode",
+            "auto_edit",
+            "--skip-trust",
+        ),
+        event_format="gemini-stream-json",
+        event_flag="--output-format",
+        workspace_flag=None,
+        sandbox_flags=("--approval-mode", "auto_edit", "--skip-trust"),
+        cost_limit_flag=None,
+        turn_limit_flag=None,
+        enforces_hard_usd_budget=False,
+    ),
+    # Antigravity CLI 1.4.9. Headless: `agy --print PROMPT --output-format stream-json --mode accept-edits`
+    # (flags taken from the installed `agy --help`). No USD flag exists; its stream reports tokens only.
+    "agy": ProviderContract(
+        provider="agy",
+        headless_argv=("--print", "--output-format", "stream-json", "--mode", "accept-edits"),
+        event_format="agy-stream-json",
+        event_flag="--output-format",
+        workspace_flag=None,
+        sandbox_flags=("--mode", "accept-edits"),
+        cost_limit_flag=None,
+        turn_limit_flag=None,
+        enforces_hard_usd_budget=False,
+    ),
+    "bob": ProviderContract(
+        provider="bob",
+        headless_argv=(
+            "run",
+            "--format",
+            "json",
+            "--trust",
+            "--disable-mcp",
+            "--disable-subagents",
+            "--max-turns",
+            "8",
+        ),
+        event_format="bob-json",
+        event_flag="--format",
+        workspace_flag="--workspace",
+        sandbox_flags=("--trust", "--disable-mcp", "--disable-subagents"),
+        cost_limit_flag="--max-cost",
+        turn_limit_flag="--max-turns",
+        enforces_hard_usd_budget=True,
+    ),
+}
+
+
+def contract_for(provider: str) -> ProviderContract:
+    if provider not in PROVIDER_CONTRACTS:
+        raise ValueError(f"unsupported provider adapter: {provider}")
+    return PROVIDER_CONTRACTS[provider]
+
+
+def build_invocation(
+    provider: str,
+    executable: str | Path,
+    prompt: str,
+    workspace: Path,
+    *,
+    max_cost_usd: float = 0.0,
+    max_turns: int = 8,
+    simulated: bool = False,
+    externally_sandboxed: bool = False,
+    log_file: Path | str | None = None,
+) -> list[str]:
+    """Build an explicit non-interactive argv list without invoking a shell.
+
+    ``externally_sandboxed`` states that the caller wraps the process in repo-ai's own OS write boundary
+    (seatbelt/bwrap). Codex cannot apply its inner sandbox from inside another sandbox, so only then is its
+    own sandbox disabled; it is never disabled otherwise."""
+    contract = contract_for(provider)
+    if max_cost_usd < 0 or max_turns < 1 or max_turns > 32:
+        raise ValueError("invalid provider budget or turn bounds")
+    if max_cost_usd > 0 and not contract.enforces_hard_usd_budget and not simulated:
+        raise ValueError(f"{provider} does not enforce a hard USD CLI budget flag; execution blocked")
+    exe = str(executable)
+    ws = str(workspace.resolve())
+    safe_prompt = redact_text(prompt)[:8000]
+    if provider == "codex":
+        guard = (["--dangerously-bypass-approvals-and-sandbox"] if externally_sandboxed
+                 else ["--sandbox", "workspace-write"])
+        return [exe, "exec", "--json", "--ephemeral", *guard, "-C", ws, safe_prompt]
+    if provider == "claude":
+        argv = [
+            exe,
+            "--print",
+            "--verbose",
+            "--output-format",
+            "stream-json",
+            "--permission-mode",
+            "acceptEdits",
+            "--no-session-persistence",
+        ]
+        if max_cost_usd > 0:
+            argv.extend(["--max-budget-usd", f"{max_cost_usd:.4f}"])
+        argv.extend(["--", safe_prompt])
+        return argv
+    if provider == "agy":
+        # accept-edits auto-approves file edits only; shell commands stay denied in headless mode
+        # (they are reported as `denied_actions`). `--dangerously-skip-permissions` is never used.
+        argv = [exe, "--print", safe_prompt, "--output-format", "stream-json", "--mode", "accept-edits",
+                "--print-timeout", "900s"]
+        if log_file is not None:
+            argv.extend(["--log-file", str(log_file)])
+        return argv
+    if provider == "gemini":
+        return [
+            exe,
+            "--prompt",
+            safe_prompt,
+            "--output-format",
+            "stream-json",
+            "--approval-mode",
+            "auto_edit",
+            "--skip-trust",
+        ]
+    # bob 2.0.6+
+    argv = [
+        exe,
+        "run",
+        "--format",
+        "json",
+        "--trust",
+        "--disable-mcp",
+        "--disable-subagents",
+        "--max-turns",
+        str(max_turns),
+        "--workspace",
+        ws,
+    ]
+    if max_cost_usd > 0:
+        argv.extend(["--max-cost", f"{max_cost_usd:.4f}"])
+    argv.append(safe_prompt)
+    return argv
+
+
+def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
+    """Parse structured JSONL events from a provider run with strict redaction.
+
+    Never derives dollar amounts from token prices: if a provider does not report
+    explicit dollar cost in its structured stream, `cost_status` is `"UNKNOWN"`.
+    """
+    contract = contract_for(provider)
+    lines = [line.strip() for line in output.decode("utf-8", "replace").splitlines() if line.strip()]
+    events_count = 0
+    non_json_lines = 0
+    session_id: str | None = None
+    turns = 0
+    cost_usd = 0.0
+    cost_reported = False
+    input_tokens = 0
+    output_tokens = 0
+    tool_calls: list[str] = []
+    tool_errors: list[str] = []
+    denied_actions: list[str] = []
+    errors: list[str] = []
+    rate_limited = False
+    summary = ""
+    report = ""
+    terminal = False
+    protocol_errors: list[str] = []
+    try:
+        output.decode("utf-8", "strict")
+    except UnicodeDecodeError:
+        protocol_errors.append("event stream is not valid UTF-8")
+
+    if len(lines) > 500:
+        non_json_lines += 1
+        errors.append("provider event stream exceeded 500-line bound")
+
+    for line in lines[:500]:
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            non_json_lines += 1
+            if any(k in line.lower() for k in ("rate limit", "usage limit", "spend limit", "ineligibletiererror", "not logged in")):
+                errors.append(redact_text(line)[:200])
+                if any(k in line.lower() for k in ("rate limit", "usage limit", "spend limit")):
+                    rate_limited = True
+            continue
+        if not isinstance(obj, dict):
+            non_json_lines += 1
+            continue
+        events_count += 1
+        raw_stats = obj.get("stats")
+        stats: dict[str, Any] = raw_stats if isinstance(raw_stats, dict) else {}
+        sid = (
+            obj.get("session_id")
+            or obj.get("thread_id")
+            or obj.get("conversation_id")
+            or stats.get("task_id")
+        )
+        if isinstance(sid, str) and sid and session_id is None:
+            session_id = redact_text(sid)[:80]
+        if isinstance(sid, str) and session_id != redact_text(sid)[:80]:
+            protocol_errors.append("conflicting provider run identities")
+        etype = str(obj.get("type") or obj.get("event") or "")
+        expected_terminal = {
+            "codex": {"turn.completed", "turn.failed"},
+            "claude": {"result"}, "gemini": {"result"}, "bob": {"result"}, "agy": {"result"},
+        }[provider]
+        if etype in expected_terminal:
+            terminal = True
+        if not etype:
+            protocol_errors.append("event type is missing")
+        if etype in {"turn.completed", "assistant", "result", "step", "turn"}:
+            turns += 1
+        if etype == "rate_limit_event":
+            rinfo = obj.get("rate_limit_info")
+            if isinstance(rinfo, dict) and rinfo.get("status") == "rejected":
+                rate_limited = True
+                errors.append(f"rate_limit_event rejected ({rinfo.get('rateLimitType', 'limit')})")
+        if etype == "turn.failed" or obj.get("status") in {"error", "failed"} or obj.get("is_error") is True:
+            err_msg = (
+                (obj.get("error") or {}).get("message")
+                if isinstance(obj.get("error"), dict)
+                else (obj.get("error") or obj.get("api_error") or obj.get("result") or "provider turn failed")
+            )
+            if isinstance(err_msg, str) and err_msg:
+                errors.append(redact_text(err_msg)[:200])
+                if any(k in err_msg.lower() for k in ("usage limit", "spend limit", "rate_limit", "usage_limit")):
+                    rate_limited = True
+        if obj.get("api_error_status") == 429 or obj.get("api_error") == "usage_limit_reached":
+            rate_limited = True
+
+        tool = (
+            obj.get("tool")
+            or obj.get("tool_name")
+            or ((obj.get("item") or {}).get("tool") if isinstance(obj.get("item"), dict) else None)
+        )
+        if isinstance(tool, str) and tool:
+            tool_calls.append(redact_text(tool)[:80])
+        elif isinstance(stats.get("tool_calls"), int) and stats["tool_calls"] > 0 and not tool_calls:
+            tool_calls.extend([f"bob_tool_{i+1}" for i in range(min(stats["tool_calls"], 16))])
+
+        usage = obj.get("usage")
+        if isinstance(usage, dict):
+            in_tok = usage.get("input_tokens") or usage.get("prompt_tokens") or 0
+            out_tok = usage.get("output_tokens") or usage.get("completion_tokens") or 0
+            if isinstance(in_tok, int) and not isinstance(in_tok, bool) and in_tok >= 0:
+                input_tokens += in_tok
+            if isinstance(out_tok, int) and not isinstance(out_tok, bool) and out_tok >= 0:
+                output_tokens += out_tok
+
+        raw_cost = None
+        if "cost_usd" in obj:
+            raw_cost = obj.get("cost_usd")
+        elif "total_cost_usd" in obj:
+            raw_cost = obj.get("total_cost_usd")
+        elif "session_costs" in stats:
+            raw_cost = stats.get("session_costs")
+        if isinstance(raw_cost, (int, float)) and not isinstance(raw_cost, bool) and math.isfinite(raw_cost) and raw_cost >= 0:
+            cost_reported = True
+            cost_usd = max(cost_usd, float(raw_cost))
+
+        err = obj.get("error")
+        if isinstance(err, str) and err:
+            clean_err = redact_text(err)[:200]
+            if clean_err not in errors:
+                errors.append(clean_err)
+            if any(k in clean_err.lower() for k in ("usage limit", "spend limit", "rate_limit")):
+                rate_limited = True
+        elif isinstance(err, dict) and isinstance(err.get("message"), str):
+            clean_err = redact_text(err["message"])[:200]
+            if clean_err not in errors:
+                errors.append(clean_err)
+            if any(k in clean_err.lower() for k in ("usage limit", "spend limit", "rate_limit")):
+                rate_limited = True
+
+        if provider == "agy":
+            raw_body = obj.get(etype)
+            body: dict[str, Any] = raw_body if isinstance(raw_body, dict) else {}
+            cid = body.get("conversation_id")
+            if isinstance(cid, str) and cid and session_id is None:
+                session_id = redact_text(cid)[:80]
+            if etype == "step_update" and body.get("step_type") == "tool":
+                name = redact_text(str(body.get("tool_name", "")))[:80]
+                if body.get("state") == "ERROR":
+                    tool_errors.append(name)
+                elif body.get("state") == "DONE" and name:
+                    tool_calls.append(name)
+            elif etype == "result":
+                agy_status = str(body.get("status", ""))
+                if agy_status != "SUCCESS":
+                    errors.append(redact_text(str(body.get("error") or f"agy result status {agy_status or 'missing'}"))[:200])
+                err_low = str(body.get("error", "")).lower()
+                if any(k in err_low for k in ("quota", "rate limit", "usage limit", "resource exhausted", "billing")):
+                    rate_limited = True
+                for d in body.get("denied_actions") or []:
+                    if isinstance(d, dict):
+                        denied_actions.append(redact_text(str(d.get("display_name") or d.get("action") or "action"))[:80])
+                usage_body = body.get("usage")
+                if isinstance(usage_body, dict):
+                    for key, name in (("input_tokens", "in"), ("output_tokens", "out")):
+                        v = usage_body.get(key)
+                        if isinstance(v, int) and not isinstance(v, bool) and v >= 0:
+                            if name == "in":
+                                input_tokens += v
+                            else:
+                                output_tokens += v
+                txt = body.get("response")
+                if isinstance(txt, str) and txt:
+                    summary = redact_text(txt)[:240]
+                    report = redact_text(txt)[:6000]
+
+        item = obj.get("item")
+        if provider == "codex" and etype == "item.completed" and isinstance(item, dict):
+            if item.get("type") == "agent_message" and isinstance(item.get("text"), str):
+                summary = redact_text(item["text"])[:240]
+            elif item.get("type") in {"command_execution", "file_change", "mcp_tool_call"}:
+                tool_calls.append(str(item["type"]))
+
+        msg = obj.get("result") or obj.get("summary") or obj.get("last_message") or obj.get("message")
+        if isinstance(msg, str) and msg:
+            summary = redact_text(msg)[:240]
+            report = redact_text(msg)[:6000]
+
+    return {
+        "provider": provider,
+        "event_format": contract.event_format,
+        "valid_jsonl": events_count > 0 and non_json_lines == 0,
+        "terminal_observed": terminal,
+        "protocol_valid": events_count > 0 and non_json_lines == 0 and terminal and not protocol_errors,
+        "protocol_errors": protocol_errors[:10],
+        "events_count": events_count,
+        "non_json_lines": non_json_lines,
+        "session_id": session_id,
+        "turns": max(turns, 1 if events_count > 0 else 0),
+        "tool_calls": tool_calls[:32],
+        "tool_errors": tool_errors[:32],
+        "denied_actions": denied_actions[:32],
+        "tokens": {"input_tokens": input_tokens, "output_tokens": output_tokens},
+        "cost_usd": round(cost_usd, 6),
+        "cost_reported": cost_reported,
+        "cost_status": "OBSERVED" if cost_reported else "UNKNOWN",
+        "rate_limited": rate_limited,
+        "errors": errors[:10],
+        "summary": summary,
+        "report": report,
+        "output_sha256": hashlib.sha256(output).hexdigest(),
+    }
+
+
+AGY_STATE_DIR = ".gemini/antigravity-cli"
+# Per-user history the provider does not need to authenticate or edit; unreadable inside the sandbox.
+AGY_PRIVATE_STATE = ("conversations", "brain", "knowledge", "annotations", "implicit", "log", "crashes")
+AGY_PRIVATE_FILES = ("history.jsonl", "conversation_summaries.db", "jetbox_summaries_proto.pb")
+
+
+def _agy_live_read_rules(workspace: Path, scratch: Path) -> str:
+    """Seatbelt read policy for a live `agy` run (it must run with the real HOME: its login lives there).
+
+    Everything under HOME is unreadable except what the CLI demonstrably needs to start and authenticate
+    (verified by probe, see docs): its own state dir minus per-user history, ~/.gemini/config, ~/.local (the
+    binary) and the login keychain database file. The last is a real exposure: the provider process can read
+    that (encrypted) file. Writes under HOME stay denied by the global `(deny file-write*)`.
+    """
+    home = Path.home().resolve()
+    state = home / AGY_STATE_DIR
+    q = json.dumps
+    rules = [f"(deny file-read* (subpath {q(str(home))}))", f"(allow file-read* (literal {q(str(home))}))",
+             f"(allow file-read-metadata (subpath {q(str(home))}))",
+             f"(allow file-read* (subpath {q(str(workspace.resolve()))}))", f"(allow file-read* (subpath {q(str(scratch.resolve()))}))",
+             f"(allow file-read* (subpath {q(str(state))}))",
+             f"(allow file-read* (subpath {q(str(home / '.gemini' / 'config'))}))",
+             f"(allow file-read* (subpath {q(str(home / '.local'))}))",
+             f"(allow file-read* (literal {q(str(home / 'Library' / 'Keychains'))}))"]
+    rules += [f"(allow file-read* (literal {q(str(home / 'Library' / 'Keychains' / n))}))"
+              for n in ("login.keychain-db", "metadata.keychain-db")]
+    rules += [f"(deny file-read* (subpath {q(str(state / d))}))" for d in AGY_PRIVATE_STATE]
+    rules += [f"(deny file-read* (literal {q(str(state / f))}))" for f in AGY_PRIVATE_FILES]
+    return "".join(rules)
+
+
+def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: bool = False,
+                              provider: str | None = None, live: bool = False) -> list[str] | None:
+    """Restrict writes strictly to the disposable candidate workspace and scratch dir."""
+    ws_str = str(workspace.resolve())
+    sc_str = str(scratch.resolve())
+    if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
+        net_rule = "" if allow_network else "(deny network*)"
+        home = Path.home().resolve()
+        # A live provider has network access, so the host's credential stores are unreadable to it.
+        secret_dirs = ("/.ssh", "/.aws", "/.gnupg", "/.config/gh", "/.netrc", "/Library/Keychains")
+        read_rule = "".join(f"(deny file-read* (subpath {json.dumps(str(home) + d)}))" for d in secret_dirs)
+        if provider == "agy" and live:
+            read_rule = _agy_live_read_rules(workspace, scratch)
+        profile = (
+            f"(version 1)(allow default){net_rule}{read_rule}(deny file-write*)"
+            f"(allow file-write* (subpath {json.dumps(ws_str)}))"
+            f"(allow file-write* (subpath {json.dumps(sc_str)}))"
+            '(allow file-write* (literal "/dev/null"))'
+        )
+        return ["/usr/bin/sandbox-exec", "-p", profile]
+    if provider == "agy" and live:
+        return None  # no tested HOME read-restriction for agy outside macOS seatbelt: refuse, do not weaken
+    if sys.platform.startswith("linux"):
+        bwrap = shutil.which("bwrap", path=os.defpath)
+        if bwrap:
+            cmd = [bwrap]
+            if not allow_network:
+                cmd.append("--unshare-net")
+            cmd.extend([
+                "--die-with-parent",
+                "--new-session",
+                "--ro-bind",
+                "/",
+                "/",
+                "--bind",
+                ws_str,
+                ws_str,
+                "--bind",
+                sc_str,
+                sc_str,
+                "--proc",
+                "/proc",
+                "--dev",
+                "/dev",
+                "--",
+            ])
+            return cmd
+    return None
+
+
+def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
+    """Copy minimal provider auth configuration into isolated scratch HOME so real $HOME stays read-only."""
+    real_home = Path.home()
+    try:
+        if provider == "bob":
+            src = real_home / ".bob" / "settings"
+            dst = scratch_home / ".bob" / "settings"
+            if src.is_dir():
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+        elif provider == "codex":
+            src_dir = real_home / ".codex"
+            dst_dir = scratch_home / ".codex"
+            dst_dir.mkdir(parents=True, exist_ok=True)
+            for fname in ("auth.json", "config.toml"):
+                f = src_dir / fname
+                if f.is_file():
+                    shutil.copy2(f, dst_dir / fname)
+        elif provider == "claude":
+            src_dir = real_home / ".claude"
+            dst_dir = scratch_home / ".claude"
+            dst_dir.mkdir(parents=True, exist_ok=True)
+            for fname in (".credentials.json", "settings.json"):
+                f = src_dir / fname
+                if f.is_file():
+                    shutil.copy2(f, dst_dir / fname)
+            claude_json = real_home / ".claude.json"
+            if claude_json.is_file():
+                shutil.copy2(claude_json, scratch_home / ".claude.json")
+        elif provider == "agy":
+            pass  # nothing is copied: agy authenticates from the real HOME under a read-restricted sandbox
+        elif provider == "gemini":
+            src_dir = real_home / ".gemini"
+            dst_dir = scratch_home / ".gemini"
+            if src_dir.is_dir():
+                shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+    except OSError:
+        pass
+
+
+SIMULATED_TIMEOUT_CAP = 30.0
+LIVE_TIMEOUT_CAP = 900.0
+
+
+def provider_timeout(timeout: float, simulated: bool) -> float:
+    """Bound a provider call. Simulated contract checks stay short; a real model
+    repair legitimately needs minutes, so live calls are bounded by the mission's
+    remaining time budget and a hard ceiling."""
+    cap = SIMULATED_TIMEOUT_CAP if simulated else LIVE_TIMEOUT_CAP
+    return max(0.05, min(float(timeout), cap))
+
+
+def live_constraint_prompt(provider: str, prompt: str, allowed: str, workspace: Path | str) -> str:
+    """Constraint text for a live implementer. Enforcement is the sandbox plus the post-run scope check;
+    the text only has to be usable. Codex has no file-read tool other than its shell, so it may inspect
+    read-only there; a "no shell" rule makes it decline the task (observed)."""
+    base = (f"{prompt}\n\nCONSTRAINTS: Edit ONLY {allowed} inside {workspace}. "
+            "Do not modify test files, configuration files, or create untracked files. ")
+    if provider == "agy":
+        return base + ("Use only your file view and edit tools. Shell commands are not available and will be denied; "
+                       "do not try to run tests.")
+    if provider in {"codex", "claude", "gemini"}:
+        return base + ("Read files with read-only commands (cat, ls, grep) if you need to; do not run the tests "
+                       "or any command that writes files other than your edit.")
+    return base + "Do not run shell commands; inspect and edit the source file directly."
+
+
+def run_provider(
+    provider: str,
+    root: Path,
+    workspace: Path,
+    prompt: str,
+    *,
+    write_paths: list[str],
+    executable: Path | str | None = None,
+    timeout: float = 25.0,
+    max_cost_usd: float = 0.0,
+    simulated: bool = True,
+    allow_live: bool = False,
+    constraints: str | None = None,
+) -> dict[str, Any]:
+    """Run a bounded provider adapter inside the disposable candidate workspace.
+
+    Live billable execution is blocked unless `simulated=False` and `allow_live=True`
+    are explicitly passed; `simulated=True` runs a local non-billable provider
+    executable under network-denied sandboxing.
+    """
+    if provider not in PROVIDERS:
+        raise ValueError(f"unknown provider: {provider}")
+    root = root.resolve()
+    workspace = workspace.resolve()
+    if _inside(workspace, root):
+        raise ValueError("provider workspace must be an isolated disposable directory outside root")
+    if not simulated and not allow_live:
+        raise ValueError("live provider execution is blocked without paid_actions_authorized and explicit network approval")
+    if max_cost_usd != 0.0 and simulated:
+        raise ValueError("simulated provider execution requires zero USD cost ceiling")
+    contract = contract_for(provider)
+    if not simulated and max_cost_usd > 0 and not contract.enforces_hard_usd_budget:
+        raise ValueError(f"{provider} does not enforce a hard USD CLI budget flag; execution blocked")
+
+    exe_str = str(executable) if executable is not None else shutil.which(provider)
+    if not exe_str:
+        return {
+            "provider": provider,
+            "stage": "NOT_INSTALLED",
+            "simulated": simulated,
+            "verification_label": "SIMULATED" if simulated else "NOT_RUN",
+            "returncode": -1,
+            "capture_status": "not_installed",
+            "identity_sha256": None,
+            "cost_usd": 0.0,
+            "cost_status": "UNKNOWN",
+            "events": {},
+            "reasons": [f"{provider} executable is not installed"],
+        }
+
+    raw = Path(os.path.abspath(exe_str))
+    try:
+        resolved = raw.resolve(strict=True)
+        parent_resolved = raw.parent.resolve(strict=True) / raw.name
+        if _inside(raw, root) or _inside(resolved, root) or _inside(parent_resolved, root):
+            return {
+                "provider": provider,
+                "stage": "BLOCKED",
+                "simulated": simulated,
+                "verification_label": "SIMULATED" if simulated else "BLOCKED",
+                "returncode": -1,
+                "capture_status": "untrusted_executable",
+                "identity_sha256": None,
+                "cost_usd": 0.0,
+                "cost_status": "UNKNOWN",
+                "events": {},
+                "reasons": ["repository-owned executable or symlink alias refused"],
+            }
+        identity_before = _identity(resolved)
+    except (OSError, RuntimeError, ValueError) as exc:
+        return {
+            "provider": provider,
+            "stage": "FAILED",
+            "simulated": simulated,
+            "verification_label": "SIMULATED" if simulated else "FAILED",
+            "returncode": -1,
+            "capture_status": "identity_failed",
+            "identity_sha256": None,
+            "cost_usd": 0.0,
+            "cost_status": "UNKNOWN",
+            "events": {},
+            "reasons": [redact_text(str(exc))[:200]],
+        }
+
+    bounded_timeout = provider_timeout(timeout, simulated)
+    with tempfile.TemporaryDirectory(prefix=f"repo-ai-provider-run-{provider}-") as directory:
+        scratch = Path(directory).resolve()
+        for name in ("home", "tmp", "home/.codex", "home/.gemini", "home/.claude", "home/.bob"):
+            (scratch / name).mkdir(exist_ok=True)
+        if not simulated and allow_live:
+            _seed_live_provider_auth(provider, scratch / "home")
+        live_run = not simulated and allow_live
+        prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run)
+        if prefix is None:
+            return {
+                "provider": provider,
+                "stage": "BLOCKED",
+                "simulated": simulated,
+                "verification_label": "SIMULATED" if simulated else "BLOCKED",
+                "returncode": -1,
+                "capture_status": "no_sandbox",
+                "identity_sha256": identity_before,
+                "cost_usd": 0.0,
+                "cost_status": "UNKNOWN",
+                "events": {},
+                "reasons": ["no supported execution sandbox on this host" if not (provider == "agy" and live_run) else
+                            "agy live execution needs the macOS seatbelt read policy (not available here); refused"],
+            }
+        env = _probe_env(scratch)
+        if provider == "agy" and live_run:
+            # agy's login is in the real HOME (no supported scratch-HOME auth). Run with the real HOME, but
+            # read-restricted and write-denied by the seatbelt profile above; no credential is copied.
+            env["HOME"] = env["USERPROFILE"] = str(Path.home())
+        env["REPO_AI_WORKSPACE"] = str(workspace)
+        env["REPO_AI_WRITE_PATHS"] = ",".join(write_paths)
+        if not simulated and allow_live:
+            auth_vars = {
+                "bob": ("BOB_API_KEY", "USER"),
+                "claude": ("ANTHROPIC_API_KEY", "USER"),
+                "codex": ("OPENAI_API_KEY", "USER"),
+                "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY", "USER"),
+            }.get(provider, ())
+            for var_name in auth_vars:
+                val = os.environ.get(var_name)
+                if val:
+                    env[var_name] = val
+        path_parts = [str(Path(sys.executable).resolve().parent)]
+        node_bin = shutil.which("node", path=os.environ.get("PATH", os.defpath))
+        if node_bin:
+            node_resolved = Path(node_bin).resolve()
+            if not _inside(node_resolved, root):
+                path_parts.append(str(node_resolved.parent))
+        path_parts.append(env.get("PATH", os.defpath))
+        env["PATH"] = os.pathsep.join(path_parts)
+
+        effective_prompt = prompt
+        if not simulated and allow_live and constraints is not None:
+            effective_prompt = f"{prompt}\n\nCONSTRAINTS: {constraints}"
+        elif not simulated and allow_live and write_paths:
+            allowed_str = ", ".join(write_paths)
+            effective_prompt = live_constraint_prompt(provider, prompt, allowed_str, workspace)
+        argv = build_invocation(
+            provider,
+            resolved,
+            effective_prompt,
+            workspace,
+            max_cost_usd=max_cost_usd,
+            simulated=simulated,
+            externally_sandboxed=True,  # prefix is non-None here: the outer sandbox is the write boundary
+            log_file=scratch / "agy.log",
+        )
+        result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=MAX_OUTPUT,
+                          separate_stderr=True, max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
+        try:
+            unchanged = raw.resolve(strict=True) == resolved and _identity(resolved) == identity_before
+        except (OSError, RuntimeError, ValueError):
+            unchanged = False
+
+    if not unchanged:
+        return {
+            "provider": provider,
+            "stage": "FAILED",
+            "simulated": simulated,
+            "verification_label": "SIMULATED" if simulated else "FAILED",
+            "returncode": result.returncode,
+            "capture_status": "executable_changed",
+            "identity_sha256": identity_before,
+            "cost_usd": 0.0,
+            "cost_status": "UNKNOWN",
+            "events": {},
+            "reasons": ["provider executable changed during execution; output discarded"],
+        }
+
+    events = parse_event_stream(provider, result.output)
+    # Diagnostics are never parsed as events, usage or monetary observations.
+    diagnostic = result.stderr.decode("utf-8", "replace")
+    diagnostic_lower = diagnostic.lower()
+    diagnostic_rate_limit = any(term in diagnostic_lower for term in
+                                ("rate limit", "usage limit", "spend limit", "rate_limit", "usage_limit"))
+    events["rate_limited"] = events["rate_limited"] or diagnostic_rate_limit
+    reasons: list[str] = []
+    if result.status != "complete":
+        reasons.append(f"provider process capture terminated early: {result.status}")
+    if result.returncode != 0:
+        reasons.append(f"provider process exited with code {result.returncode}")
+    if not events["valid_jsonl"]:
+        reasons.append("provider output did not conform to structured JSONL event contract")
+    if not simulated and not events["protocol_valid"]:
+        reasons.append("live provider stream lacks a consistent terminal event protocol")
+    if events.get("rate_limited"):
+        reasons.append(f"provider rate/usage limit reached ({provider})")
+    if events["errors"]:
+        reasons.extend(f"provider error event: {e}" for e in events["errors"])
+    if max_cost_usd > 0 and not simulated:
+        if not events.get("cost_reported"):
+            reasons.append("provider did not report cost; unknown cost cannot satisfy hard USD budget")
+        elif events["cost_usd"] > max_cost_usd:
+            reasons.append("provider reported cost exceeding approved contract ceiling")
+    elif events["cost_usd"] > max_cost_usd:
+        reasons.append("provider reported cost exceeding approved contract ceiling")
+
+    stage = "SIMULATED" if not reasons and simulated else ("READY" if not reasons else "FAILED")
+    return {
+        "provider": provider,
+        "stage": stage,
+        "simulated": simulated,
+        "verification_label": "SIMULATED" if simulated else ("LIVE_READY" if not reasons else "LIVE_FAILED"),
+        "executable": resolved.name,
+        "identity_sha256": identity_before,
+        "returncode": result.returncode,
+        "capture_status": result.status,
+        "stderr_sha256": hashlib.sha256(result.stderr).hexdigest(),
+        "stderr_bytes": len(result.stderr),
+        "diagnostic_summary": redact_text(diagnostic)[:240],
+        "cost_usd": events["cost_usd"],
+        "cost_status": events.get("cost_status", "UNKNOWN"),
+        "rate_limited": bool(events.get("rate_limited")),
+        "events": events,
+        "reasons": reasons,
+    }
+
+
+def validate_workspace_edits(
+    root: Path,
+    workspace: Path,
+    write_paths: list[str],
+    test_files: set[str],
+    tracked_files: set[str],
+    max_patch: int = 256_000,
+) -> list[str]:
+    """Validate that a provider adapter modified only approved non-test tracked files without secrets."""
+    from ..mission.verification import test_support
+    from ..verify import isolate
+    from .discovery import _inside as inside_dir
+
+    reasons: list[str] = []
+    if inside_dir(workspace.resolve(), root.resolve()):
+        return ["candidate workspace is inside root"]
+
+    # Ensure candidate .git/hooks and .repo-ai config were not tampered with
+    ws_hooks = workspace / ".git" / "hooks"
+    if ws_hooks.exists():
+        for hp in ws_hooks.iterdir():
+            if not hp.name.endswith(".sample"):
+                reasons.append(f"provider installed git hook in workspace: {hp.name}")
+    if (workspace / ".repo-ai").exists():
+        reasons.append("provider created or modified .repo-ai directory in workspace")
+
+    changed_files: list[str] = []
+    for rel in sorted(tracked_files):
+        root_target = root / rel
+        ws_target = workspace / rel
+        if root_target.is_symlink() or ws_target.is_symlink():
+            if root_target.is_symlink() != ws_target.is_symlink() or (
+                root_target.is_symlink() and os.readlink(root_target) != os.readlink(ws_target)
+            ):
+                changed_files.append(rel)
+                reasons.append(f"provider modified or created symlink at tracked path: {rel}")
+            continue
+        try:
+            orig = isolate.read_inside(root, rel, 2_000_000)
+        except Exception:
+            orig = None
+        try:
+            cand = isolate.read_inside(workspace, rel, 2_000_000)
+        except Exception:
+            cand = None
+        if orig != cand:
+            changed_files.append(rel)
+            if rel not in write_paths:
+                reasons.append(f"provider modified unapproved path: {rel}")
+            if rel in test_files or test_support(rel) or Path(rel).suffix not in {".py", ".js", ".mjs", ".cjs", ".ts"}:
+                reasons.append(f"provider modified frozen test or support input: {rel}")
+            if cand is None or len(cand) > max_patch or b"\x00" in cand:
+                reasons.append(f"provider produced nonregular, deleted, binary, or oversized file: {rel}")
+            else:
+                text = cand.decode("utf-8", "replace")
+                if "mission-observation" in text or "rai_result" in text or "rai_reporter" in text:
+                    reasons.append(f"provider edit references internal verification reporter in {rel}; refused")
+                if source_contains_secret(rel, text):
+                    reasons.append(f"provider edit contains secret-shaped material in {rel}; withheld")
+
+    # Also check for any newly created untracked files or symlinks in workspace (excluding .git and .repo-ai-workspace)
+    for path in workspace.rglob("*"):
+        rel_parts = path.relative_to(workspace).parts
+        if rel_parts and (rel_parts[0] in {".git", ".repo-ai"} or rel_parts[0].startswith(".repo-ai")):
+            continue
+        if path.is_symlink():
+            reasons.append(f"provider created symlink in workspace: {path.relative_to(workspace).as_posix()}")
+            continue
+        if path.is_dir():
+            continue
+        rel_posix = path.relative_to(workspace).as_posix()
+        if rel_posix not in tracked_files:
+            reasons.append(f"provider created untracked file outside frozen tracked set: {rel_posix}")
+
+    if not changed_files:
+        reasons.append("provider produced a no-op diff; cannot establish a repair")
+    return reasons

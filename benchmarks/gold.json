@@ -1,0 +1,31 @@
+{
+  "_doc": "Retrieval gold set. `expected` lists files a good shortlist must contain (any order); metrics use the first 5 results. Prompts with kind=irrelevant should produce NO hook injection. Edit freely; run `python benchmarks/run.py`.",
+  "cases": [
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "fix the login validation bug: users with a valid email are rejected", "expected": ["app/auth/login.py", "tests/test_login.py"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "change how validate_credentials checks the password hash", "expected": ["app/auth/login.py", "app/db/models.py"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "JWT tokens expire too early, increase the token lifetime", "expected": ["app/auth/tokens.py"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "stripe charges fail with zero amount error when creating a booking", "expected": ["app/billing/charges.py", "app/api/bookings.py"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "add a refund window check to the refund policy", "expected": ["app/billing/refunds.py"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "the DELETE /bookings/{booking_id} endpoint should return 404 for unknown bookings", "expected": ["app/api/bookings.py"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "the login form shows no error message for an invalid email address", "expected": ["web/src/components/LoginForm.tsx"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "Traceback (most recent call last):\n  File \"app/billing/charges.py\", line 10, in charge_card\nValueError: amount must be positive", "expected": ["app/billing/charges.py"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "the CI workflow fails on the make test step", "expected": [".github/workflows/ci.yml", "Makefile"]},
+    {"fixture": "pyweb", "kind": "relevant", "prompt": "auth middleware does not attach the user when the Authorization header has a Bearer token", "expected": ["app/auth/middleware.py"]},
+    {"fixture": "goservice", "kind": "relevant", "prompt": "ReserveItem should return 409 when stock is insufficient", "expected": ["internal/api/handlers.go"]},
+    {"fixture": "goservice", "kind": "relevant", "prompt": "make the postgres reserve run inside a transaction", "expected": ["internal/store/postgres.go"]},
+    {"fixture": "goservice", "kind": "relevant", "prompt": "add a new route to list all items", "expected": ["internal/api/router.go"]},
+    {"fixture": "goservice", "kind": "relevant", "prompt": "increase replicas in the kubernetes deployment", "expected": ["deploy/k8s/deployment.yaml"]},
+    {"fixture": "tsmonorepo", "kind": "relevant", "prompt": "discount codes should be case insensitive in applyDiscount", "expected": ["packages/core/src/pricing.ts", "packages/core/src/pricing.test.ts"]},
+    {"fixture": "tsmonorepo", "kind": "relevant", "prompt": "the checkout quote endpoint returns the wrong total", "expected": ["packages/api/src/routes/checkout.ts", "packages/core/src/cart.ts"]},
+    {"fixture": "tsmonorepo", "kind": "relevant", "prompt": "show the cart total with discount in the CartSummary component", "expected": ["packages/ui/src/CartSummary.tsx"]},
+    {"fixture": "javaspring", "kind": "relevant", "prompt": "transfers should reject overdrafts with a clearer error", "expected": ["src/main/java/com/example/ledger/service/TransferService.java"]},
+    {"fixture": "javaspring", "kind": "relevant", "prompt": "add validation to the POST /transfers endpoint", "expected": ["src/main/java/com/example/ledger/web/TransferController.java"]},
+    {"fixture": "dotnetapi", "kind": "relevant", "prompt": "OrderService.Find should throw for negative ids", "expected": ["src/Orders.Api/OrderService.cs"]},
+    {"fixture": "pyweb", "kind": "irrelevant", "prompt": "write me a short haiku about autumn leaves"},
+    {"fixture": "pyweb", "kind": "irrelevant", "prompt": "what's the difference between a list and a tuple in python?"},
+    {"fixture": "pyweb", "kind": "irrelevant", "prompt": "thanks, that looks great, please continue"},
+    {"fixture": "goservice", "kind": "irrelevant", "prompt": "explain the CAP theorem in simple terms please"},
+    {"fixture": "tsmonorepo", "kind": "irrelevant", "prompt": "can you summarize our conversation so far?"},
+    {"fixture": "javaspring", "kind": "irrelevant", "prompt": "how do I configure my terminal colors in zsh?"}
+  ]
+}

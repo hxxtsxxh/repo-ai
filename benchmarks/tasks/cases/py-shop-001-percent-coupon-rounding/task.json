@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-001-percent-coupon-rounding",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Support ticket: a customer used the PCT15 coupon on a single Logo Tee ($19.99).\nCheckout showed a discount of $2.99, but finance's reconciliation sheet expects\n$3.00 (15% of 19.99 is 2.9985). We've seen other percentage coupons come out a\ncent low too. Amounts in the shop are supposed to round to the nearest cent\n(halves up) everywhere. Please fix the underlying calculation, not just this coupon.",
+  "setup": [
+    {
+      "file": "shop/utils/money.py",
+      "find": "    share = (Decimal(cents) * Decimal(str(percent)) / 100).quantize(\n        _ONE, rounding=ROUND_HALF_UP\n    )\n    return int(share)",
+      "replace": "    share = Decimal(cents) * Decimal(str(percent)) / 100\n    return int(share)"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/utils/money.py",
+      "find": "    share = Decimal(cents) * Decimal(str(percent)) / 100\n    return int(share)",
+      "replace": "    share = (Decimal(cents) * Decimal(str(percent)) / 100).quantize(\n        _ONE, rounding=ROUND_HALF_UP\n    )\n    return int(share)"
+    }
+  ],
+  "gold_files": [
+    "shop/utils/money.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_pct_coupon.py",
+      "dest": "tests/test_hidden_pct_coupon.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_pct_coupon"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}
