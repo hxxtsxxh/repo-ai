@@ -131,7 +131,10 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     changes = git(root, 'status', '--porcelain=v1', '-z', '--untracked-files=all').split('\0')
     dirty = [p for p in changes if p and not (p.startswith('?? ' + state_rel + '/'))]
     if require_clean and dirty:
-        raise ValueError('dirty checkout: commit or preserve edits before isolated execution')
+        shown = [redact_text(p[3:])[:120] for p in dirty if len(p) > 3][:5]
+        more = f' and {len(dirty) - len(shown)} more' if len(dirty) > len(shown) else ''
+        raise ValueError('dirty checkout: commit or preserve edits before isolated execution (' + ', '.join(shown)
+                         + more + ')')
     contents = {}
     total = 0
     for path in tracked:

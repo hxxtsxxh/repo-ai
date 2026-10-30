@@ -119,3 +119,17 @@ def test_blocked_plan_names_the_changed_paths(bug):
     assert p['decision']=='BLOCKED'
     assert '.gitignore' in p['why'] and 'charge.py' in p['why'] and 'and 3 more' in p['why']
     assert 'commit or stash' in p['why']
+
+
+def test_dirty_checkout_refusal_names_the_paths(tmp_path):
+    import subprocess as sp
+    from repo_ai.mission.runtime import identity
+    sp.run(['git', 'init', '-q', str(tmp_path)], check=True)
+    (tmp_path / 'a.py').write_text('x = 1\n')
+    sp.run(['git', '-C', str(tmp_path), 'add', '.'], check=True)
+    sp.run(['git', '-C', str(tmp_path), '-c', 'user.email=t@example.invalid', '-c', 'user.name=t', 'commit', '-qm', 'i'],
+           check=True)
+    (tmp_path / '__pycache__').mkdir()
+    (tmp_path / '__pycache__' / 'a.cpython-312.pyc').write_bytes(b'\0')
+    with pytest.raises(ValueError, match=r'__pycache__/a\.cpython-312\.pyc'):
+        identity(tmp_path, require_clean=True)
