@@ -123,6 +123,19 @@ def git(root: Path, *args: str, raw: bool = False) -> str:
     return text.rstrip('\0\r\n') if '-z' in args else text.strip()
 
 
+def commit_snapshot(repo: Path, files: list[str] | Any, message: str) -> None:
+    """Commit a workspace built from the source's tracked `files` as a fresh repository. `git add -A` skips a tracked
+    file that a `.gitignore` pattern also matches (python-humanize tracks an ignored `_version.py` stub); those are
+    added by name, and nothing else the workspace holds (dependency links) is forced in."""
+    git(repo, 'init', '-q')
+    git(repo, 'add', '-A')
+    indexed = set(git(repo, 'ls-files', '-z').split('\0'))
+    missing = sorted(set(files) - indexed)
+    for i in range(0, len(missing), 200):  # literal names: `[id].py` or `:!x` must not act as patterns
+        git(repo, 'add', '--force', '--', *(':(literal)' + p for p in missing[i:i + 200]))
+    git(repo, 'commit', '-qm', message)
+
+
 def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     store = Store(root)
     head = git(root, 'rev-parse', '--verify', 'HEAD')
@@ -726,9 +739,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 candidate_path = candidate
                 state['workspace'] = candidate.name  # a name under the private workspaces root, never a path
                 store.save(state)
-                git(candidate, 'init', '-q')
-                git(candidate, 'add', '-A')
-                git(candidate, 'commit', '-qm', 'frozen mission baseline')
+                commit_snapshot(candidate, ws.files, 'frozen mission baseline')
                 from .scheduler import run as run_dag
                 nodes = state.setdefault('nodes', {})
 
@@ -818,7 +829,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 def regression() -> dict[str, Any]:
                     layout = resolve_layout(candidate, load_config(candidate))
                     vp, change = engine.build_plan(candidate, layout, command=contract.acceptance[0], use_runtime=False)
-                    executor = get_executor(candidate, 'auto', vp.runner.language)
+                    executor = get_executor(candidate, 'auto', vp.runner.language, interpreter_root=root)
                     try:
                         return engine.run_plan(candidate, layout, vp, change, executor,
                                                full=True, reuse=False, workers=1,
@@ -864,9 +875,9 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                             'claim': 'static relationships are hypotheses, not runtime observations'}
 
                 actions = {'context': lambda: planned['context'],
-                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining()),
+                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
                            'edit': edit_candidate,
-                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining()),
+                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
                            'review': regression}
                 if any(n['id'] == 'impact' for n in planned['dag']['nodes']):
                     actions.update(impact=impact_investigation, acceptance=acceptance_inventory)
@@ -916,7 +927,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 if verdict == 'PASS':
                     from .exercise import measure as measure_exercise
                     try:
-                        state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining())
+                        state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining(),
+                                                             project_root=root)
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}

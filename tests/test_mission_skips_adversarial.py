@@ -60,7 +60,7 @@ def test_futures_rehearsal_refuses_a_diff_that_makes_the_failing_test_skip(tmp_p
     monkeypatch.setattr(futures, "check_privacy", lambda r, c: True)
     real = verification.observe
     monkeypatch.setattr(verification, "observe",
-                        lambda p, c, timeout_s=60: real(p, c, timeout_s=timeout_s, sandbox_preference=PREF))
+                        lambda p, c, timeout_s=60, **kw: real(p, c, timeout_s=timeout_s, sandbox_preference=PREF, **kw))
     report = futures.analyze_futures(root, "m1", rehearse=True)
     # the same candidate never PASSes compare(): the skip set differs from the baseline
     (root / "calc.py").write_text("value = 1\nSKIP = True\n")

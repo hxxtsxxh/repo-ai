@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.2 — missions on real repositories: the project's interpreter, init's .gitignore, honest counts
 
 - Fixed (found on python-humanize): `repo-ai verify --run --full` printed "0 passed" when no test file was selected,
   although the full suite ran 738 passing tests. The summary now says "N selected test file(s) passed" and, for
@@ -17,6 +17,13 @@
   `.gitignore` (or creates the file), and `repo-ai do` then refused the "dirty checkout". A `.gitignore` whose only
   change is repo-ai's managed block no longer makes the checkout dirty, and a provider's candidate is compared with the
   committed file, so the block is not read as a provider edit. Any other change to the file still blocks the mission.
+- Fixed (found on a real repository, python-humanize): mission tests ran with the first `python3` on PATH instead of
+  the project's virtualenv. The interpreter was resolved from the disposable workspace, which never holds `.venv`.
+  Post-apply verification runs in the checkout and used the project's venv, which explains the python-slugify
+  discrepancy (20 failures in the sandbox, 0 after apply). Missions now resolve the interpreter from the checkout, like
+  `repo-ai verify`.
+- Fixed (same repository): a tracked file that a `.gitignore` pattern also matches (python-humanize's `_version.py`
+  stub) was dropped from mission workspaces, so every test failed to import the package.
 
 ## 0.11.1 — `init` then `do` works on the first try
 

@@ -23,7 +23,7 @@ from ..security import redact_text
 from ..verify import isolate
 from .context import MAX_FILE_BYTES, MAX_FILES
 from .contracts import digest, relative_path
-from .runtime import check_privacy, git, privacy_binding, status
+from .runtime import check_privacy, commit_snapshot, git, privacy_binding, status
 
 
 def analyze_futures(
@@ -116,9 +116,7 @@ def analyze_futures(
         cmd = mission_state['contract']['acceptance'][0]
         diff_text = mission_state['diff']
         with isolate.materialize_commit(root, base_head, label='futures-rehearsal', dependencies=True) as ws:
-            git(ws.path, 'init', '-q')
-            git(ws.path, 'add', '-A')
-            git(ws.path, 'commit', '-qm', 'futures rehearsal baseline')
+            commit_snapshot(ws.path, ws.files, 'futures rehearsal baseline')
             with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.patch', delete=False) as tf:
                 tf.write(diff_text if diff_text.endswith('\n') else diff_text + '\n')
                 patch_file = Path(tf.name)
@@ -126,7 +124,7 @@ def analyze_futures(
                 git(ws.path, 'apply', str(patch_file))
             finally:
                 patch_file.unlink(missing_ok=True)
-            obs = observe(ws.path, cmd, timeout_s=60.0)
+            obs = observe(ws.path, cmd, timeout_s=60.0, project_root=root)
             reran_tests = True
             # skipped tests must be exactly the baseline's: a diff that makes the failing test skip is not a pass
             base_outcomes = (mission_state.get('baseline') or {}).get('outcomes') or {}
