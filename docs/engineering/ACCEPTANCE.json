@@ -10,7 +10,10 @@
   "INCONCLUSIVE",
   "BLOCKED_EXTERNAL",
   "NOT_TESTED",
-  "NOT_STARTED"
+  "NOT_STARTED",
+  "PASS_WITH_LIMITS",
+  "NEGATIVE_RESULT_HISTORICAL",
+  "IN_PROGRESS"
  ],
  "gates": [
   {
@@ -50,8 +53,7 @@
    "test_run": "tests/test_provider_claude_isolation.py",
    "environment": "macOS Darwin 25.5 arm64, seatbelt, Claude Code 2.1.314, dedicated_config",
    "observations": [
-    "mission b59182197873f2b6a602afd6 PASS LIVE_CANDIDATE_VERIFIED; hidden oracle 17/17; apply/undo byte-exact",
-    "hostile repo journey PASS, no exfiltration; boundary verified by direct seatbelt probes (model never attempted it)"
+    "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code"
    ],
    "limits": [
     "n=1 synthetic tasks, single author",
@@ -59,7 +61,7 @@
     "in-sandbox token refresh not re-observed"
    ],
    "next_action": "re-observe token refresh; token_env live check if owner creates a setup-token",
-   "evidence": "docs/engineering/evidence/CLAUDE-JOURNEY-2026-10-30.md"
+   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
   },
   {
    "id": "C04",
@@ -70,8 +72,7 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "live-verified through repo-ai on the 0.10.0 build: Claude 2.1.314, Codex 0.165.0, agy 1.4.9 (hidden oracle 17/17 each), OpenCode 2.2.1 + local qwen3:8b (new, account-free; 1 of 4 passed, failures refused); Bob live on an earlier pre-release",
-    "Gemini BLOCKED (exit 41); 16 further agents catalogued as PLANNED from vendor docs, Roo Code/Windsurf UNSUPPORTED (repo-ai agents catalog)"
+    "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED"
    ],
    "limits": [
     "Bob not re-run on 0.10.0 (entitlement not re-checked)",
@@ -290,16 +291,20 @@
   {
    "id": "C19",
    "title": "Website/docs",
-   "status": "PASS_AT_0.9.0",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
-   "code_sha": null,
+   "code_sha": "8eeb8ef",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "Playwright/axe at launch"
+    "Pages run 41036040819 deployed 2026-10-30T09:48Z; all 20 sitemap URLs 200 over HTTPS, real 404; served HTML shows repo-ai-cli 0.10.0 from a verified PyPI read; provider matrix and Evidence Lab rendered from data files",
+    "an independent site review's findings (overstated statuses, stale provider text, a false capture date, unscoped method text) were corrected in a82f54d before merge",
+    "local QA re-run on the corrected content before a82f54d was committed: 0 broken links, 0 axe violations (21 pages x 2 themes x 2 widths), 0 third-party requests"
    ],
-   "limits": [],
-   "next_action": "evidence lab + source-of-truth facts"
+   "limits": [
+    "live pages checked from the development host only; Lighthouse not run"
+   ],
+   "next_action": "Lighthouse/performance pass and a probe from outside the development host"
   },
   {
    "id": "C20",
@@ -337,7 +342,9 @@
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
-   "observations": [],
+   "observations": [
+    "positioning: local verifier that names what tests do not pin; live evidence includes a local-model false assurance that a hidden oracle caught and that repo-ai labelled ASSURANCE_PARTIAL; requirement-erasure detection (PR #7) built from it"
+   ],
    "limits": [],
    "next_action": "positioning after features land"
   },

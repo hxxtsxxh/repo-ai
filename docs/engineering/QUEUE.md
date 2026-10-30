@@ -1,16 +1,16 @@
 # Work queue (living; top = next)
 
-Updated 2026-10-30T06:40Z. PRs: #3 provider stack (Claude, OpenCode, Gemini no-copy, sweep, probe; two reviews
-fixed), #4 skills autopilot (review fixed; stacked on #3), #5 site (stacked on #4; merge after PyPI 0.10.0).
+Updated 2026-10-30T10:00Z after the 0.10.0 release (public main `8eeb8ef`, PyPI `repo-ai-cli` 0.10.0, site deployed).
 
 | # | Item | Gate | State |
 |---|---|---|---|
-| 1 | Merge #3, #4 after CI; release prep + catalog; full-suite freeze on the final tip | C20 | in progress |
-| 2 | Tag v0.10.0 (owner-approved), verify PyPI/GitHub artifacts, clean install smoke | C01, C20 | next |
-| 3 | `site_facts.py --record-pypi` for 0.10.0, merge #5, verify deployed pages | C19 | after 2 |
-| 4 | Real-project journeys: one offline on a real OSS repo, one live provider + skill discovery | C21 | todo |
-| 5 | Codex: dedicated CODEX_HOME login to shrink token exposure | C18 | todo |
-| 6 | Verify speed profiling (C16); Linux live provider run in podman | C16, C17 | todo |
-| 7 | ACP client adapter to reach PLANNED agents with one permission policy | C04, C05 | todo |
-| 8 | Skill value: blinded paired trial with a predeclared outcome (budget: 12 calls left) | C10 | todo |
-| 9 | Claude token refresh inside the sandbox: re-observe after the access token expires | C03 | waiting |
+| 1 | Requirement-erasure detection (PR #7) and `--expect-fix` (PR #9): reviews, merge; ship in 0.11.0 | C11, C21, C22 | in review |
+| 2 | Missions on real suites, part 2 (PR #9): python-slugify replay verifies as PASS_WITH_PRE_EXISTING_FAILURES | C21 | in review |
+| 3 | Second real project journey (offline + live) | C21 | todo |
+| 4 | Skill value: blinded paired trial with a predeclared outcome (6 live calls left in the 2026-10-30 budget) | C10 | todo |
+| 5 | ACP client adapter to reach PLANNED agents with one permission policy | C04, C05 | todo |
+| 6 | Linux live provider run (podman + bwrap) | C17 | todo |
+| 7 | `verify` names tests a change fixed (needs a whole-file base run; design first) | C11 | todo |
+| 8 | Verify speed profiling | C16 | todo |
+| 9 | Codex: the token copied into its sandbox stays readable by its model (0.10.0 hid the rest of HOME and prefers a dedicated login); explore a token broker or document as permanent | C18 | todo |
+| 10 | Claude token-mode live check (needs the owner to create a `claude setup-token`) | C03 | blocked (owner) |

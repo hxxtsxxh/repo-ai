@@ -27,7 +27,7 @@ outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](
 | Claude Code | 2.1.314 | yes | yes (dedicated login) | yes | yes | yes (17/17) | notional $; hard cap |
 | Codex CLI | 0.165.0 | yes | yes | yes | yes | yes (17/17) | UNKNOWN (subscription) |
 | Antigravity agy | 1.4.9 | yes | yes | yes (macOS) | yes | yes (17/17) | UNKNOWN (subscription) |
-| OpenCode + qwen3:8b | 2.2.1 | yes | n/a (local) | yes (macOS) | yes | 1 of 4 (9/9 on the pass) | $0 |
+| OpenCode + qwen3:8b | 2.2.1 | yes | n/a (local) | yes (macOS) | yes | dev builds: 1 of 4 (9/9 on the pass); 0.10.0: a PASS that failed 1 of 9 hidden cases | $0 |
 | IBM Bob | 2.0.9 | yes | not re-checked | yes | earlier pre-release | earlier | provider-reported |
 | Gemini CLI | 0.65.0 | yes | **no** (exit 41) | — | — | — | BLOCKED |
 
@@ -61,10 +61,12 @@ repository is free.
 | What | Value |
 |---|---|
 | Public `main` at the tag | `f53d027416e1983bd04dfa7f4e437ff969f42cad` = tag `v0.10.0` (annotated, `18d2f0c2…`) |
-| Merged PRs | #3 providers (`90a3b94`), #4 skills (`f33e9fb`), #6 release (`f53d027`); #5 site after the release |
+| Merged PRs | #3 providers (`90a3b94`), #4 skills (`f33e9fb`), #6 release (`f53d027`), #5 site + docs (`8eeb8ef`) |
 | CI | every required check green on each PR (Linux py3.10–3.14, Windows py3.10/3.13, docker and bwrap sandboxes, lint, offline eval, benchmark) |
 | macOS full suite (freeze, `434a659`, `src/` identical to the tag) | 2,467 passed, 4 skipped, 9 xfailed, 1 failed (stale plugin bundle, fixed in `9c5f52f`, re-run green) |
 | Release workflow | <https://github.com/hxxtsxxh/repo-ai/actions/runs/41030084295>: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
 | PyPI | <https://pypi.org/project/repo-ai-cli/0.10.0/>: wheel `aa8278061511a26ea0d947b80af825711d073462ea6d74fcb6d63ff963eb51cf`, sdist `4cdcb886067eb59bbdeb54434af46b454a510297aa57f6d35dde6365a3c6bec3` |
 | Re-download check | PyPI and GitHub release files byte-identical; `SHA256SUMS` OK (wheel, sdist, SBOM); `gh attestation verify` exit 0 |
+| Website | Pages run 41036040819 (2026-10-30T09:48Z): all 20 sitemap URLs 200 over HTTPS, real 404, served HTML shows `repo-ai-cli 0.10.0` (verified PyPI read) |
+| Live journeys on the published wheel | Claude, Codex, agy PASS (hidden oracle 17/17, undo byte-exact); Claude hostile repository PASS; OpenCode (local qwen3:8b, 3 attempts): one refused, one returned the recorded mission, the third PASSed the visible tests but failed 1 of 9 hidden cases (kept on display) — [evidence](evidence/JOURNEYS-0.10.0-PYPI.md) |
 | Clean install | `sh scripts/release_smoke.sh 'repo-ai-cli==0.10.0' 0.10.0` from the default index on macOS: **SMOKE PASS** (offline first run, sandboxed verify, privacy audit, uninstall keeping user edits) |
