@@ -1,6 +1,7 @@
 """`repo-ai init` then `repo-ai do`: repo-ai's own files never block or fail a mission (found on a real repository)."""
 import subprocess
 import sys
+from pathlib import Path
 
 from repo_ai.mission.runtime import execute, plan
 from test_mission_runtime import git, replay
@@ -73,3 +74,23 @@ def test_a_provider_candidate_after_committed_init_is_verified(tmp_path):
     planned = runtime.plan(root, 'Fix duplicate charge', agent='codex', write_paths=['charge.py'], execute_local=True)
     result = runtime.execute(root, planned, None, provider_executable=cli)
     assert result['effective_verdict'] == 'PASS', result['passport']['negative']
+
+
+def test_mission_tests_run_with_the_projects_interpreter_not_the_workspaces(tmp_path, monkeypatch):
+    """Found on python-humanize: a workspace never holds the project's `.venv`, so resolving the interpreter from the
+    workspace fell back to the first `python3` on PATH (missing the project's test dependencies). Post-apply
+    verification, which runs in the checkout, used the project's venv: the python-slugify 20-vs-0 discrepancy."""
+    from repo_ai.verify import execute
+    seen = []
+    real = execute.interpreter
+
+    def spy(root, **kw):
+        seen.append(Path(root).resolve())
+        return real(root, **kw)
+
+    monkeypatch.setattr(execute, 'interpreter', spy)
+    root = _project(tmp_path)
+    git(root, 'add', '-A')
+    git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'repo-ai init')
+    assert _mission(root, tmp_path)['effective_verdict'] == 'PASS'
+    assert seen and set(seen) == {root.resolve()}, seen

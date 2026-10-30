@@ -312,10 +312,12 @@ def _static_prefixes(python: str, layout: VenvLayout) -> list[str]:
 
 
 def get_executor(root: Path, preference: str = "auto", language: str = "python",
-                 timeout_s: float = 600.0, image: str = "") -> Executor:
+                 timeout_s: float = 600.0, image: str = "", interpreter_root: Path | None = None) -> Executor:
     """Host sandboxes first (the project's own environment), then containers.
     `image`: a local container image with the project's dependencies (only
-    with a container backend; never pulled)."""
+    with a container backend; never pulled). `interpreter_root`: the checkout
+    whose virtualenv the tests use when `root` is a disposable workspace (a
+    workspace never holds the project's `.venv`)."""
     if image and preference not in CONTAINER_BACKENDS:
         raise sandbox.SandboxUnavailable("--image needs --sandbox podman or --sandbox docker")
     order = (*HOST_BACKENDS, *CONTAINER_BACKENDS) if preference == "auto" else (preference,)
@@ -331,7 +333,7 @@ def get_executor(root: Path, preference: str = "auto", language: str = "python",
             continue
         if isinstance(backend, sandbox.ContainerBackend):
             return Executor(backend, root, python="python", node="node", timeout_s=timeout_s)
-        found = interpreter(root) if language == "python" else Interpreter(sys.executable, [], [])
+        found = interpreter(interpreter_root or root) if language == "python" else Interpreter(sys.executable, [], [])
         python, reads = (found.python, found.reads) if found else ("python3", [])
         sites = [] if found is None else found.site_dirs if found.site_dirs is not None else site_dirs(python)
         found_node = shutil.which("node")

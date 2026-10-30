@@ -748,7 +748,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 def regression() -> dict[str, Any]:
                     layout = resolve_layout(candidate, load_config(candidate))
                     vp, change = engine.build_plan(candidate, layout, command=contract.acceptance[0], use_runtime=False)
-                    executor = get_executor(candidate, 'auto', vp.runner.language)
+                    executor = get_executor(candidate, 'auto', vp.runner.language, interpreter_root=root)
                     try:
                         return engine.run_plan(candidate, layout, vp, change, executor,
                                                full=True, reuse=False, workers=1,
@@ -794,9 +794,9 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                             'claim': 'static relationships are hypotheses, not runtime observations'}
 
                 actions = {'context': lambda: planned['context'],
-                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining()),
+                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
                            'edit': edit_candidate,
-                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining()),
+                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
                            'review': regression}
                 if any(n['id'] == 'impact' for n in planned['dag']['nodes']):
                     actions.update(impact=impact_investigation, acceptance=acceptance_inventory)
@@ -846,7 +846,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 if verdict == 'PASS':
                     from .exercise import measure as measure_exercise
                     try:
-                        state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining())
+                        state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining(),
+                                                             project_root=root)
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}

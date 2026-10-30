@@ -126,7 +126,7 @@ def analyze_futures(
                 git(ws.path, 'apply', str(patch_file))
             finally:
                 patch_file.unlink(missing_ok=True)
-            obs = observe(ws.path, cmd, timeout_s=60.0)
+            obs = observe(ws.path, cmd, timeout_s=60.0, project_root=root)
             reran_tests = True
             # skipped tests must be exactly the baseline's: a diff that makes the failing test skip is not a pass
             base_outcomes = (mission_state.get('baseline') or {}).get('outcomes') or {}
