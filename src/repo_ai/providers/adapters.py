@@ -1294,6 +1294,10 @@ def validate_workspace_edits(
             cand = isolate.read_inside(workspace, rel, MAX_SOURCE_FILE)
         except Exception:
             cand = b"\0unreadable-candidate\0"
+        if orig != cand and cand is not None:
+            # `repo-ai init` added its managed block to the working copy only; the workspace holds the committed bytes
+            from ..mission.runtime import committed_if_only_managed_blocks
+            orig = committed_if_only_managed_blocks(root, rel) or orig
         if orig != cand:
             changed_files.append(rel)
             if rel not in write_paths:

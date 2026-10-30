@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fixed (found on a real repository, python-humanize, with 0.11.1): `repo-ai init` adds its managed block to
+  `.gitignore` (or creates the file), and `repo-ai do` then refused the "dirty checkout". A `.gitignore` whose only
+  change is repo-ai's managed block no longer makes the checkout dirty, and a provider's candidate is compared with the
+  committed file, so the block is not read as a provider edit. Any other change to the file still blocks the mission.
+
 ## 0.11.1 — `init` then `do` works on the first try
 
 - Fixed (found on a real repository): `repo-ai init` followed by `repo-ai do` failed either way. Uncommitted

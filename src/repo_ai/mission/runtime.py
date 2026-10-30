@@ -138,6 +138,10 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     # state_dir elsewhere is exempt only for UNTRACKED entries (it can be set by configuration, so tracked source under
     # it must still count: otherwise state_dir = "lib" would hide a real edit to lib/)
     dirty = [p for p in changes if p and not (p[3:].startswith('.repo-ai/') or p.startswith('?? ' + state_rel + '/'))]
+    # `repo-ai init` adds a managed block to `.gitignore` (or creates it). A file whose only change is that block does
+    # not make the checkout dirty; its working bytes stay in the identity, as in the provider's workspace copy
+    dirty = [p for p in dirty if not (p.startswith(' M ') and _only_managed_blocks_changed(root, p[3:])
+                                      or p.startswith('?? ') and _only_managed_blocks(root, p[3:]))]
     if require_clean and dirty:
         shown = [redact_text(p[3:])[:120] for p in dirty if len(p) > 3][:5]
         more = f' and {len(dirty) - len(shown)} more' if len(dirty) > len(shown) else ''
@@ -163,6 +167,41 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     return {'head': head, 'files': contents, 'dirty': bool(dirty),
             'dirty_paths': [p[3:] for p in dirty if len(p) > 3 and p[2] == ' '][:5], 'dirty_count': len(dirty),
             'fingerprint': digest({'head': head, 'files': contents, 'dirty': dirty})}
+
+
+def _only_managed_blocks(root: Path, path: str) -> bool:
+    """An untracked file `repo-ai init` created that holds nothing but repo-ai managed blocks."""
+    from ..fsutil import strip_managed_blocks
+    try:
+        data = isolate.read_inside(root, path, 1_000_000)
+        return data is not None and not strip_managed_blocks(data.decode('utf-8')).strip()
+    except (isolate.ReportTooLarge, UnicodeError):
+        return False
+
+
+def _only_managed_blocks_changed(root: Path, path: str) -> bool:
+    """The working copy of tracked `path` differs from HEAD only by repo-ai managed blocks."""
+    return committed_if_only_managed_blocks(root, path) is not None
+
+
+def committed_if_only_managed_blocks(root: Path, path: str) -> bytes | None:
+    """The committed bytes of tracked `path` when its working copy differs from HEAD only by repo-ai managed
+    blocks (what `repo-ai init` adds to `.gitignore`); workspaces are built from HEAD, so this is what they hold."""
+    from ..fsutil import strip_managed_blocks
+    try:
+        work = isolate.read_inside(root, path, MAX_SOURCE_FILE)
+    except isolate.ReportTooLarge:
+        return None
+    if work is None:
+        return None
+    try:
+        head = git(root, 'show', 'HEAD:' + path, raw=True).encode('utf-8')
+        work_text, head_text = work.decode('utf-8'), head.decode('utf-8')
+    except (ValueError, UnicodeError):
+        return None
+    if work_text == head_text or strip_managed_blocks(work_text) != strip_managed_blocks(head_text):
+        return None
+    return head
 
 
 def _classify_orchestration_and_broker(task: str, context: dict[str, Any], max_parallel: int) -> tuple[dict[str, Any], dict[str, Any]]:

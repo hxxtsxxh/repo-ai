@@ -6,9 +6,11 @@ from repo_ai.mission.runtime import execute, plan
 from test_mission_runtime import git, replay
 
 
-def _project(tmp_path):
+def _project(tmp_path, gitignore=None):
     root = tmp_path / 'proj'
     root.mkdir()
+    if gitignore is not None:
+        (root / '.gitignore').write_text(gitignore)
     (root / 'charge.py').write_text('def charge(amount, retries):\n    return amount * (retries + 1)\n')
     (root / 'test_charge.py').write_text('from charge import charge\n\ndef test_retry():\n    assert charge(10, 2) == 10\n')
     (root / 'pyproject.toml').write_text('[tool.pytest.ini_options]\npythonpath = ["."]\n')
@@ -65,6 +67,50 @@ def test_a_provider_candidate_after_committed_init_is_verified(tmp_path):
     root = _project(tmp_path)
     git(root, 'add', '-A')
     git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'repo-ai init')
+    cli = _make_fake_cli(tmp_path, 'codex', (
+        "import json, os, pathlib\n"
+        "ws = pathlib.Path(os.environ['REPO_AI_WORKSPACE'])\n"
+        "(ws / 'charge.py').write_text('def charge(amount, retries):\\n    return amount\\n')\n"
+        "print(json.dumps({'type': 'turn.completed', 'cost_usd': 0.0}))\n"))
+    planned = runtime.plan(root, 'Fix duplicate charge', agent='codex', write_paths=['charge.py'], execute_local=True)
+    result = runtime.execute(root, planned, None, provider_executable=cli)
+    assert result['effective_verdict'] == 'PASS', result['passport']['negative']
+
+
+def test_init_editing_a_tracked_gitignore_does_not_block_the_mission(tmp_path):
+    """Found on python-humanize with 0.11.1: init's managed block in a tracked .gitignore made `do` refuse."""
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    assert git(root, 'status', '--porcelain').stdout.decode().split() == ['M', '.gitignore', '??', '.repo-ai/']
+    assert _mission(root, tmp_path)['effective_verdict'] == 'PASS'
+    assert '# >>> repo-ai managed >>>' in (root / '.gitignore').read_text()  # the user's working copy is untouched
+
+
+def test_init_creating_a_gitignore_does_not_block_the_mission(tmp_path):
+    root = _project(tmp_path)
+    assert '?? .gitignore' in git(root, 'status', '--porcelain').stdout.decode()
+    assert _mission(root, tmp_path)['effective_verdict'] == 'PASS'
+
+
+def test_a_real_gitignore_edit_next_to_the_block_still_blocks(tmp_path):
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    with open(root / '.gitignore', 'a') as fh:
+        fh.write('secrets.txt\n')
+    p = plan(root, 'Fix duplicate charge', agent='replay', write_paths=['charge.py'], execute_local=True)
+    assert p['decision'] == 'BLOCKED' and '.gitignore' in str(p)
+
+
+def test_an_untracked_file_with_more_than_the_block_still_blocks(tmp_path):
+    root = _project(tmp_path)
+    with open(root / '.gitignore', 'a') as fh:
+        fh.write('notes.txt\n')
+    p = plan(root, 'Fix duplicate charge', agent='replay', write_paths=['charge.py'], execute_local=True)
+    assert p['decision'] == 'BLOCKED'
+
+
+def test_a_provider_candidate_after_uncommitted_init_with_a_tracked_gitignore_is_verified(tmp_path):
+    from repo_ai.mission import runtime
+    from test_provider_runtime import _make_fake_cli
+    root = _project(tmp_path, gitignore='__pycache__/\n')
     cli = _make_fake_cli(tmp_path, 'codex', (
         "import json, os, pathlib\n"
         "ws = pathlib.Path(os.environ['REPO_AI_WORKSPACE'])\n"
