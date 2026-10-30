@@ -36,7 +36,8 @@ def compare_candidates(root: Path, planned: dict[str, Any], proposals: list[Path
     if len(set(prop_keys)) != len(proposals):
         raise ValueError('candidate comparison requires distinct proposals')
     acceptance = digest({'source': frozen, 'acceptance': contract.acceptance, 'paths': contract.write_paths,
-                         'network': contract.network, 'provider': contract.provider})
+                         'network': contract.network, 'provider': contract.provider,
+                         **({'expect_fix': contract.expect_fix} if contract.expect_fix else {})})
     started = time.monotonic()
     col = Collector(root, frozen, dedupe_proposals=True)
     for index, proposal in enumerate(proposals):
@@ -89,6 +90,9 @@ class Collector:
                'diff_sha256': result.get('diff_sha256'),
                'reasons': list((result.get('passport') or {}).get('negative', [])),
                'seconds_used': result.get('seconds_used', 0), **extra}
+        if (result.get('scoped') or {}).get('standing') == 'PASS_WITH_PRE_EXISTING_FAILURES':
+            row['standing'] = 'PASS_WITH_PRE_EXISTING_FAILURES'
+            row['pre_existing_count'] = result['scoped'].get('pre_existing_count')
         if self._dedupe and prop_sha in self._seen:
             row['verdict'] = 'INCONCLUSIVE'
             row['reasons'].append('duplicate candidate proposal in tournament')
@@ -188,6 +192,8 @@ def render_comparison(report: dict[str, Any]) -> str:
         if cand.get('provider'):
             cost = ', cost $' + str(cand['cost_usd']) if cand.get('cost_usd') is not None else ', cost UNKNOWN'
         claim = f", claims {cand['claims']}" if cand.get('claims') else ''
+        if cand.get('standing') and cverdict == 'PASS':
+            cverdict = f"PASS ({cand['standing']}: {cand.get('pre_existing_count')} pre-existing failure(s) remain)"
         lines.append(f"  [{cand.get('index', 0)}]{who} {cid}: {cverdict} ({sec}s{cost}{claim})")
         if cand.get('equivalent_to'):
             lines.append(f"      equivalent to {cand['equivalent_to']}")

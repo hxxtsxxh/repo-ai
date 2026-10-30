@@ -1425,7 +1425,8 @@ def _classify(r: dict[str, Any], o: _BaseOutcome | None, confirmed: dict[tuple[s
         r["classification"] = "new failure: passes at the base, fails with this change"
 
 
-_VOLATILE = re.compile(r"0x[0-9a-fA-F]+|\b\d+(?:\.\d+)?\s*(?:ms|s|sec|seconds)\b|at [^ ]+:\d+:\d+")
+_VOLATILE = re.compile(r"0x[0-9a-fA-F]+|\b\d+(?:\.\d+)?\s*(?:ms|s|sec|seconds)\b|at [^ ]+:\d+:\d+"
+                       r"|\S*pytest-of-[^/\s]+/pytest-\d+/\S*")  # pytest's per-run temp paths
 
 
 def _norm(msg: str) -> str:

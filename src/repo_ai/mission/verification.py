@@ -304,7 +304,7 @@ def pre_existing_failures(baseline: dict, candidate: dict, expect_fix: list[str]
     """For a scoped mission: what the declared tests did and which failures were already there and remain."""
     remaining = sorted(t for t, o in candidate.get("outcomes", {}).items()
                        if o == "fail" and baseline.get("outcomes", {}).get(t) == "fail" and t not in expect_fix)
-    return {"expect_fix": list(expect_fix), "pre_existing_failures": remaining[:200],
+    return {"expect_fix": list(expect_fix), "pre_existing_failures": remaining[:200], "pre_existing_count": len(remaining),
             "standing": "PASS_WITH_PRE_EXISTING_FAILURES" if remaining else "PASS"}
 
 

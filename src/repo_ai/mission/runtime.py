@@ -815,6 +815,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                     reasons.append('fresh whole-change regression verification did not pass')
                 if scoped and not reasons:
                     state['scoped'] = pre_existing_failures(state['baseline'], state['candidate'], scoped)
+                scoped_unclear = bool(scoped and observed == 'PASS' and state['regression'].get('verdict')
+                                      == 'failing (tests that fail at the base now fail differently)')
                 if not state['regression'].get('source_tree', {}).get('unchanged'):
                     reasons.append('candidate integrity check failed')
                 if identity(root, require_clean=True)['fingerprint'] != current['fingerprint']:
@@ -830,6 +832,12 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         reasons.append('independent acceptance inventory disagrees with observed test bytes')
                 observations = [digest(state[k]) for k in ('baseline', 'candidate', 'regression')]
                 verdict = 'PASS' if not reasons else ('FAIL' if state['candidate'].get('failed', 0) else 'INCONCLUSIVE')
+                if verdict == 'FAIL' and scoped_unclear and len(reasons) == 1:
+                    # the declared tests were fixed and nothing regressed by test outcome; only a pre-existing
+                    # failure's message changed: that cannot be judged either way here
+                    verdict = 'INCONCLUSIVE'
+                if scoped:
+                    state['standing'] = (state.get('scoped') or {}).get('standing', verdict) if verdict == 'PASS' else verdict
                 if verdict == 'PASS':
                     from .exercise import measure as measure_exercise
                     try:
@@ -1029,11 +1037,14 @@ def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
                           verdict=state['effective_verdict'], freshness=state['freshness'],
                           exercise=state.get('exercise'), diff=state.get('diff') or '',
                           base_source=_base_source(root, (state.get('source') or {}).get('head')))
-    remaining = (state.get('scoped') or {}).get('pre_existing_failures') or []
-    if remaining and value['headline'] in {'OBSERVED_TESTS_PASS', 'ASSURANCE_PARTIAL'}:
-        value['headline'] = 'ASSURANCE_PARTIAL'
+    scoped = state.get('scoped') or {}
+    remaining = scoped.get('pre_existing_failures') or []
+    if remaining:
+        if value['headline'] in {'OBSERVED_TESTS_PASS', 'ASSURANCE_PARTIAL'}:
+            value['headline'] = 'ASSURANCE_PARTIAL'
         from .coverage import display_test_id
-        value['notes'].insert(1, f"{len(remaining)} test(s) already failed at the base and still fail (scoped by "
+        count = scoped.get('pre_existing_count', len(remaining))
+        value['notes'].insert(1, f"{count} test(s) already failed at the base and still fail (scoped by "
                                  "--expect-fix; not part of this result): "
                                  + ', '.join(display_test_id(t) for t in remaining[:5]))
     return value
@@ -1311,6 +1322,7 @@ def continue_from_handoff(
     allow_live: bool = False,
     max_cost_usd: float | None = None,
     extra_write_paths: list[str] | None = None,
+    expect_fix: list[str] | None = None,
 ) -> dict[str, Any]:
     """Continue an interrupted or provider-blocked mission using a verified HandoffCapsule.
 
@@ -1337,19 +1349,23 @@ def continue_from_handoff(
             return _continue_verified_handoff(root, capsule_data, agent=agent, replay_path=replay_path,
                                               provider_executable=provider_executable,
                                               allow_live=allow_live, max_cost_usd=max_cost_usd,
-                                              extra_write_paths=extra_write_paths)
+                                              extra_write_paths=extra_write_paths, expect_fix=expect_fix)
 
 
 def _continue_verified_handoff(
     root: Path, capsule_data: dict[str, Any], *, agent: str | None,
     replay_path: Path | None, provider_executable: Path | None,
     allow_live: bool, max_cost_usd: float | None, extra_write_paths: list[str] | None = None,
+    expect_fix: list[str] | None = None,
 ) -> dict[str, Any]:
     ver = verify_handoff(root, capsule_data)
     if not ver['valid']:
         raise ValueError('cannot continue from invalid or stale handoff capsule: ' + '; '.join(ver['reasons']))
     orig = status(root, capsule_data['mission'])
     orig_contract = orig['contract']
+    if expect_fix and sorted(set(expect_fix)) != sorted(orig_contract.get('expect_fix') or []):
+        raise ValueError('a continuation keeps the original --expect-fix scope exactly; '
+                         f"it was {sorted(orig_contract.get('expect_fix') or []) or 'none'}")
     if orig.get('continuation_started'):
         raise ValueError('continuation already attempted; inspect recorded child or create a fresh approved plan')
     recovery = classify_recovery(orig)
@@ -1413,6 +1429,7 @@ def _continue_verified_handoff(
         max_seconds=rem_seconds,
         command=orig_contract['acceptance'][0],
         allow_live=allow_live and target_agent in LIVE_PROVIDERS,
+        expect_fix=list(orig_contract.get('expect_fix') or []),  # a continuation keeps the declared scope exactly
     )
     # Claim the attempt durably before any external side effect. A crash requires
     # inspecting the child; re-exporting cannot replay the parent's allowance.

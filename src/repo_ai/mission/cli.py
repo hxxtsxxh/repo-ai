@@ -96,8 +96,9 @@ def _emit(value: dict[str, Any], args) -> None:
         if value.get('effective_verdict') == 'PASS' and scoped.get('standing') == 'PASS_WITH_PRE_EXISTING_FAILURES':
             from .coverage import display_test_id
             remaining = [display_test_id(t) for t in scoped.get('pre_existing_failures') or []]
+            count = scoped.get('pre_existing_count', len(remaining))
             print(f"  Standing: PASS_WITH_PRE_EXISTING_FAILURES — the declared test(s) went from failing to passing and "
-                  f"nothing that passed at the base fails; {len(remaining)} test(s) already failed at the base and still "
+                  f"nothing that passed at the base fails; {count} test(s) already failed at the base and still "
                   "do (not declared): " + ', '.join(remaining[:5]) + (' …' if len(remaining) > 5 else ''))
         claim = value.get('claims') or {}
         if claim.get('headline') and claim['headline'] != 'OBSERVED_TESTS_PASS' and value.get('effective_verdict') == 'PASS':
@@ -132,6 +133,8 @@ def cmd_do(args) -> int:
         args.action = 'resume'
         return cmd_mission(args)
     root = _root(args)
+    if getattr(args, 'expect_fix', None) and getattr(args, 'tournament', None):
+        raise ValueError('--expect-fix is not supported with --tournament yet; run single-provider missions')
     if getattr(args, 'from_handoff', None):
         if not args.run:
             raise ValueError('--from-handoff continuation requires --run')
@@ -144,6 +147,7 @@ def cmd_do(args) -> int:
             allow_live=bool(getattr(args, 'allow_live_provider', False)),
             max_cost_usd=args.max_cost_usd if args.max_cost_usd > 0 else None,
             extra_write_paths=list(args.allow_write or []),
+            expect_fix=list(getattr(args, 'expect_fix', None) or []),
         )
         if getattr(args, 'apply', False) and value.get('effective_verdict') == 'PASS':
             apply_res = apply_mission(root, value['id'])
