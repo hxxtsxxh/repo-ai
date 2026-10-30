@@ -64,28 +64,36 @@
   {
    "id": "C04",
    "title": "Provider breadth (5 live paths)",
-   "status": "NOT_YET_DEMONSTRATED",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "installed: claude, codex, agy, bob, gemini; codex+agy live n=1 at 0.9.0; gemini rejected"
+    "live-verified through repo-ai on the 0.10.0 build: Claude 2.1.314, Codex 0.165.0, agy 1.4.9 (hidden oracle 17/17 each), OpenCode 2.2.1 + local qwen3:8b (new, account-free; 1 of 4 passed, failures refused); Bob live on an earlier pre-release",
+    "Gemini BLOCKED (exit 41); 16 further agents catalogued as PLANNED from vendor docs, Roo Code/Windsurf UNSUPPORTED (repo-ai agents catalog)"
    ],
-   "limits": [],
-   "next_action": "research Tier-1; find an account-free new agent path"
+   "limits": [
+    "Bob not re-run on 0.10.0 (entitlement not re-checked)",
+    "n=1 per provider, synthetic tasks, macOS only"
+   ],
+   "next_action": "Linux live run; ACP client to reach PLANNED agents"
   },
   {
    "id": "C05",
    "title": "Extensible provider SDK",
-   "status": "NOT_YET_DEMONSTRATED",
+   "status": "EXPERIMENTAL",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
-   "observations": [],
-   "limits": [],
-   "next_action": "ProviderManifest + conformance kit"
+   "observations": [
+    "schema-versioned provider catalog + validation tying EXECUTION to adapters; per-provider setup checks; conformance via isolation probe (Claude)"
+   ],
+   "limits": [
+    "no out-of-process adapter SDK or conformance kit for third parties yet"
+   ],
+   "next_action": "adapter SDK + conformance harness"
   },
   {
    "id": "C06",
@@ -96,10 +104,10 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "route: zero/one/many, consent, cooldown, USD policy; SETUP_REQUIRED added"
+    "route reports SETUP_REQUIRED (offline, no credential read) for Claude, OpenCode, Gemini"
    ],
    "limits": [],
-   "next_action": "measure decisions"
+   "next_action": "measure routing decisions"
   },
   {
    "id": "C07",
@@ -110,36 +118,45 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "capability recommendation top-3 recall 0.385 vs 0.80 gate (historical)"
+    "local vetting + honest NO_RECOMMENDATION-style output observed (fixture skill: 'do not install, matches no gap')"
    ],
-   "limits": [],
-   "next_action": "skills specialist"
+   "limits": [
+    "top-3 recall 0.385 unchanged; online radar not re-validated"
+   ],
+   "next_action": "re-evaluate matcher on a fresh corpus"
   },
   {
    "id": "C08",
    "title": "Skill/Plugin/MCP security",
-   "status": "NOT_YET_DEMONSTRATED",
+   "status": "EXPERIMENTAL",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "plugin inspection fresh validation FAILED (historical)"
+    "autonomy policy, five kinds, strict inert check; independent review: 10 findings fixed with regression tests"
    ],
-   "limits": [],
-   "next_action": "skills specialist: unseen adversarial corpus"
+   "limits": [
+    "plugin vet fresh-validation failure not re-measured",
+    "inert precision unmeasured (strict by design)"
+   ],
+   "next_action": "unseen adversarial/benign corpus"
   },
   {
    "id": "C09",
    "title": "Two-host skills integration",
-   "status": "NOT_YET_DEMONSTRATED",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
-   "observations": [],
-   "limits": [],
-   "next_action": "after translators land"
+   "observations": [
+    "repo-ai-installed skill loaded and invoked on Claude Code (model-chosen, paired 2/2 vs 0/2) and loaded by OpenCode from .agents/skills (explicit invocation); uninstall byte-exact"
+   ],
+   "limits": [
+    "n=1; OpenCode model never chose the skill unprompted"
+   ],
+   "next_action": "repeat with a second skill"
   },
   {
    "id": "C10",
@@ -149,9 +166,11 @@
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
-   "observations": [],
+   "observations": [
+    "paired run shows the instruction is followed, not that outcomes improve"
+   ],
    "limits": [],
-   "next_action": "paired trials need live spend authorization"
+   "next_action": "blinded paired trial with a predeclared outcome"
   },
   {
    "id": "C11",
@@ -260,10 +279,11 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "credential copying removed for Claude"
+    "two independent adversarial reviews of provider isolation: 1 high + 3 medium + others, then 3 + 4 more; all fixed or disclosed (Codex token exposure, reads outside HOME)",
+    "credential copying removed (Claude files, whole ~/.gemini)"
    ],
    "limits": [],
-   "next_action": "independent adversarial review of this cycle"
+   "next_action": "review of the final release diff"
   },
   {
    "id": "C19",
