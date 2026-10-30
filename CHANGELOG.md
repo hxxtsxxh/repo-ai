@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Added: **requirement erasure** — when a candidate deletes documentation that states a requirement (a docstring or
+  comment line with words such as "raise", "must", "never", "only"), the mission names it and a clean PASS drops to
+  `ASSURANCE_PARTIAL`. Observed live on 0.10.0: a local model removed "Raise ValueError if lo > hi" together with the
+  behaviour, and the visible tests passed (`docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md`). Heuristic, read from
+  the diff only; it never changes a verdict.
+
 ## 0.10.0 — Claude Code and OpenCode as isolated providers; safe skill autopilot
 
 - **Claude Code runs as an isolated `repo-ai do` provider** (it was blocked in 0.9.0). It authenticates with its own

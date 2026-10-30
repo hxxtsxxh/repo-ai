@@ -1003,7 +1003,7 @@ def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
             texts[rel] = data.decode('utf-8', 'replace')
     return claims.assess((state.get('contract') or {}).get('objective', ''), texts,
                          verdict=state['effective_verdict'], freshness=state['freshness'],
-                         exercise=state.get('exercise'))
+                         exercise=state.get('exercise'), diff=state.get('diff') or '')
 
 
 RECOVERY_CLASSES = (

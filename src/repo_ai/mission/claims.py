@@ -11,6 +11,12 @@ correct. This module adds an additive, deterministic disclosure on top of the ex
             FAIL / STALE         failing result / evidence no longer matches the source
   task_correct is always CLAIM_UNVERIFIED: repo-ai never certifies task correctness.
 
+Requirement erasure: a candidate that deletes documentation stating a requirement (a docstring or comment line with
+words such as "raise", "must", "never", "only", "reject") is named, and a clean PASS drops to ASSURANCE_PARTIAL.
+Observed live: a local model dropped "Raise ValueError if lo > hi" from a docstring together with the behaviour, and
+the visible tests passed. Read from the unified diff only; a docstring that starts before a hunk's context is a blind
+spot.
+
 The requirement-to-test mapping is a lexical heuristic (words of each stated requirement versus words of the
 non-comment test text). It can only *lower* confidence; it cannot prove coverage, and it is blind to a test
 that mentions a word without asserting it. It is deliberately conservative: on the four abc-v1 tasks every
@@ -118,9 +124,59 @@ def requirements(objective: str, tests: dict[str, str]) -> list[dict[str, Any]]:
     return rows
 
 
+_REQUIREMENT_WORDS = re.compile(
+    r"(?i)\b(raises?|errors?|exceptions?|must|shall|should|never|always|only|reject\w*|invalid|valid\w*|empty|"
+    r"unless|at (?:least|most)|if)\b")
+_DOC_FILES = (".py", ".pyi", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx")
+
+
+def removed_requirement_text(diff: str) -> list[dict[str, str]]:
+    """Documentation lines a candidate removed (docstrings, comments) that state a requirement and that the candidate
+    did not re-add verbatim. Heuristic, from the diff alone; a prompt for a human, never evidence of a defect."""
+    found: list[dict[str, str]] = []
+    path = ""
+    in_doc = False
+    added: set[str] = set()
+    removed: list[tuple[str, str]] = []
+    for line in diff.splitlines():
+        if line.startswith("diff --git "):
+            path, in_doc = "", False
+            continue
+        if line.startswith("+++ "):
+            target = line[4:].strip()
+            path = target[2:] if target.startswith("b/") else target
+            continue
+        if line.startswith(("--- ", "index ", "new file", "deleted file", "similarity", "rename ", "Binary")):
+            continue
+        if line.startswith("@@"):
+            in_doc = False  # unknown at a hunk start: only docstrings that open inside the hunk are tracked
+            continue
+        if not path.endswith(_DOC_FILES) or not line:
+            continue
+        mark, text = line[0], line[1:]
+        if mark == "+":
+            added.add(" ".join(text.split()))
+            continue
+        if mark not in {" ", "-"}:
+            continue
+        stripped = text.strip()
+        quotes = stripped.count('"""') + stripped.count("\'\'\'")
+        is_doc = in_doc or quotes > 0
+        if quotes % 2:
+            in_doc = not in_doc
+        is_comment = stripped.startswith(("#", "//", "*", "/*"))
+        if mark == "-" and (is_doc or is_comment) and _REQUIREMENT_WORDS.search(stripped):
+            removed.append((path, stripped))
+    for file, text in removed:
+        if " ".join(text.split()) not in added and len(found) < 8:
+            found.append({"file": file, "text": _clean(text.strip("#/*\"' "), 160)})
+    return found
+
+
 def assess(objective: str, tests: dict[str, str], *, verdict: str, freshness: str,
-           exercise: dict[str, Any] | None) -> dict[str, Any]:
+           exercise: dict[str, Any] | None, diff: str = "") -> dict[str, Any]:
     rows = requirements(objective, tests) if tests else []
+    erased = removed_requirement_text(diff) if diff else []
     notes: list[str] = ["repo-ai does not certify that the task is correct; it reports what the frozen tests observed"]
     exercise_level = (exercise or {}).get("assurance")
     weak = [r for r in rows if r["evidence"] != "STRONG"]
@@ -135,7 +191,7 @@ def assess(objective: str, tests: dict[str, str], *, verdict: str, freshness: st
     elif not rows:
         headline = "CLAIM_UNVERIFIED"
         notes.append("no stated requirement could be compared with the test text")
-    elif weak or exercise_level in {"PARTIAL", "UNMEASURED"}:
+    elif weak or erased or exercise_level in {"PARTIAL", "UNMEASURED"}:
         headline = "ASSURANCE_PARTIAL"
     else:
         headline = "OBSERVED_TESTS_PASS"
@@ -148,5 +204,9 @@ def assess(objective: str, tests: dict[str, str], *, verdict: str, freshness: st
                      "the unstated clause; not a finding): " + ", ".join(scoped[:8]))
     if exercise_level in {"PARTIAL", "UNMEASURED"}:
         notes.append(f"change-exercise {exercise_level}: some changed lines were not shown to run under the frozen tests")
+    for item in erased:
+        notes.append(f"the candidate removed documentation that states a requirement ({item['file']}): {item['text']!r}; "
+                     "check the behaviour it described is still met (tests passing does not show it)")
     return {"schema": SCHEMA, "headline": headline, "task_correct": "CLAIM_UNVERIFIED",
-            "unechoed_qualifiers": scoped, "requirements": rows, "notes": [_clean(n, 300) for n in notes]}
+            "unechoed_qualifiers": scoped, "requirements": rows, "removed_requirement_text": erased,
+            "notes": [_clean(n, 300) for n in notes]}
