@@ -131,8 +131,8 @@ def commit_snapshot(repo: Path, files: list[str] | Any, message: str) -> None:
     git(repo, 'add', '-A')
     indexed = set(git(repo, 'ls-files', '-z').split('\0'))
     missing = sorted(set(files) - indexed)
-    for i in range(0, len(missing), 200):
-        git(repo, 'add', '--force', '--', *missing[i:i + 200])
+    for i in range(0, len(missing), 200):  # literal names: `[id].py` or `:!x` must not act as patterns
+        git(repo, 'add', '--force', '--', *(':(literal)' + p for p in missing[i:i + 200]))
     git(repo, 'commit', '-qm', message)
 
 

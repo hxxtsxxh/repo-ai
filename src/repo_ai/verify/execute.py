@@ -50,18 +50,21 @@ class Executor:
     links: dict[str, str] = field(default_factory=dict)      # workspace rel -> read-only source dir
     pythonpath: list[str] = field(default_factory=list)      # editable-install redirects (inside paths)
     workspace: Workspace | None = None
+    # the checkout the interpreter's editable installs point at, when it is not the workspace's own source (a mission
+    # workspace is materialized from a workspace, but the venv's `.pth` names the checkout)
+    editable_source: Path | None = None
 
     def in_workspace(self, ws: Workspace) -> Executor:
         """This executor, bound to a disposable workspace."""
         bound = Executor(self.backend, ws.path, self.python, self.node, [*self.extra_reads], self.timeout_s,
-                         [*self.site_dirs], dict(ws.readonly), [], ws)
+                         [*self.site_dirs], dict(ws.readonly), [], ws, self.editable_source)
         if bound.is_container:
             ws.expose_dependencies("mountpoint")
         else:
             ws.expose_dependencies("link")
             bound.extra_reads += [d for d in ws.readonly.values() if d not in bound.extra_reads]
             bound.pythonpath = [bound.inside_root if rel in {"", "."} else f"{bound.inside_root}/{rel}"
-                                for rel in editable_redirects(self.site_dirs, ws.source)
+                                for rel in editable_redirects(self.site_dirs, self.editable_source or ws.source)
                                 if (ws.path / rel).is_dir()]
         return bound
 
@@ -345,6 +348,6 @@ def get_executor(root: Path, preference: str = "auto", language: str = "python",
         if language == "python" and not Path(python).is_absolute():
             raise sandbox.SandboxUnavailable("no Python interpreter found for the tests; nothing was run")
         return Executor(backend, root, python=python, node=node, extra_reads=reads, timeout_s=timeout_s,
-                        site_dirs=sites)
+                        site_dirs=sites, editable_source=interpreter_root.resolve() if interpreter_root else None)
     raise sandbox.SandboxUnavailable("no sandbox backend available for running tests ("
                                      + "; ".join(reasons) + "); nothing was run")
