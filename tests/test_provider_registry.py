@@ -239,6 +239,7 @@ def test_every_readiness_state_has_a_status_class_and_no_host_ready_is_invented(
 
 
 def test_status_class_distinguishes_auth_quota_sandbox_and_unsupported(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GEMINI_API_KEY", "k")  # gemini needs a key variable to be isolated-ready
     registry.note_observation(repo, "bob", "USAGE_LIMITED", "id1", now=1000.0)
     registry.note_observation(repo, "codex", "AUTHORIZED_BUT_UNREADY", "id1", now=1000.0)
     r = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex", "gemini"), now=1100.0)

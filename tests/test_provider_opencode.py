@@ -196,3 +196,33 @@ def test_verbose_opencode_streams_get_a_larger_bounded_capture(tmp_path, monkeyp
     res = adapters.run_provider("opencode", tmp_path / "root", tmp_path / "ws", "fix", write_paths=["a.py"],
                                 executable=exe, timeout=10, simulated=False, allow_live=True)
     assert seen["output_limit"] == adapters.MAX_OUTPUT * 4 and res["stage"] == "READY"
+
+
+# ---------------------------------------------------------------- gemini (same no-copy rule)
+
+def test_gemini_state_is_never_copied_into_the_scratch_home(tmp_path, monkeypatch):
+    real = tmp_path / "real"
+    (real / ".gemini" / "antigravity-cli" / "conversations").mkdir(parents=True)
+    (real / ".gemini" / "oauth_creds.json").write_text('{"refresh_token": "x"}')
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: real))
+    scratch_home = tmp_path / "scratch"
+    scratch_home.mkdir()
+    adapters._seed_live_provider_auth("gemini", scratch_home)
+    assert not any(scratch_home.rglob("*"))
+
+
+def test_gemini_without_an_api_key_is_setup_required_and_never_started(tmp_path, monkeypatch):
+    for v in adapters.GEMINI_KEY_VARS:
+        monkeypatch.delenv(v, raising=False)
+    assert adapters.setup_problems("gemini")
+    marker = tmp_path / "started"
+    exe = tmp_path / "gemini"
+    exe.write_text(f"#!/bin/sh\ntouch {marker}\n")
+    exe.chmod(0o755)
+    (tmp_path / "root").mkdir()
+    (tmp_path / "ws").mkdir()
+    res = adapters.run_provider("gemini", tmp_path / "root", tmp_path / "ws", "fix", write_paths=["a.py"],
+                                executable=exe, timeout=10, simulated=False, allow_live=True)
+    assert res["stage"] == "BLOCKED" and res["capture_status"] == "not_configured" and not marker.exists()
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    assert adapters.setup_problems("gemini") == []

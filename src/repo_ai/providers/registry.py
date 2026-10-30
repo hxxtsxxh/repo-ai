@@ -164,13 +164,8 @@ def _isolated_ready(provider: str) -> bool:
 
 def setup_problems(provider: str) -> list[str]:
     """Offline: what stops repo-ai's isolation from authenticating this provider at all. Reads no secret."""
-    if provider == "claude":
-        from . import claude_auth
-        return list(claude_auth.plan().problems)
-    if provider == "opencode":
-        from . import opencode_cfg
-        return opencode_cfg.setup_problems()
-    return []
+    from .adapters import setup_problems as adapter_setup_problems
+    return adapter_setup_problems(provider)
 
 
 def _readiness(name: str, prof: dict[str, Any], installed: bool, isolated: bool, limited: bool,

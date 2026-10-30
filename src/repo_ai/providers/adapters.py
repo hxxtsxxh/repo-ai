@@ -670,10 +670,9 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
         elif provider == "agy":
             pass  # nothing is copied: agy authenticates from the real HOME under a read-restricted sandbox
         elif provider == "gemini":
-            src_dir = real_home / ".gemini"
-            dst_dir = scratch_home / ".gemini"
-            if src_dir.is_dir():
-                shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
+            # nothing is copied: ~/.gemini holds OAuth tokens, account lists and other agents' state (agy's
+            # conversation history lives under ~/.gemini/antigravity-cli). Live Gemini needs an API key variable.
+            pass
     except OSError:
         pass
 
@@ -790,14 +789,14 @@ def run_provider(
         }
 
     live_run = not simulated and allow_live
-    if provider == "opencode" and live_run:
-        problems = opencode_cfg.setup_problems()
+    if provider in {"opencode", "gemini"} and live_run:
+        problems = setup_problems(provider)
         if problems:
             return {
                 "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
                 "returncode": -1, "capture_status": "not_configured", "identity_sha256": identity_before,
                 "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
-                "reasons": [f"opencode not configured for isolated execution: {p}" for p in problems],
+                "reasons": [f"{provider} not configured for isolated execution: {p}" for p in problems],
             }
     claude_plan = claude_auth.plan() if provider == "claude" and live_run else None
     if claude_plan is not None:
@@ -929,6 +928,8 @@ def run_provider(
         reasons.append(f"provider process capture terminated early: {result.status}")
     if result.returncode != 0:
         reasons.append(f"provider process exited with code {result.returncode}")
+    if provider == "gemini" and result.returncode == 41:  # Gemini CLI's documented authentication-failure exit code
+        reasons.append("gemini not authenticated for isolated execution (exit 41): check GEMINI_API_KEY / GOOGLE_API_KEY")
     if not events["valid_jsonl"]:
         reasons.append("provider output did not conform to structured JSONL event contract")
     if not simulated and not events["protocol_valid"]:
@@ -965,6 +966,21 @@ def run_provider(
         "events": events,
         "reasons": reasons,
     }
+
+
+GEMINI_KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
+
+
+def setup_problems(provider: str) -> list[str]:
+    """Offline: what stops repo-ai's isolation from authenticating this provider at all. Reads no secret value."""
+    if provider == "claude":
+        return list(claude_auth.plan().problems)
+    if provider == "opencode":
+        return opencode_cfg.setup_problems()
+    if provider == "gemini" and not any(os.environ.get(v) for v in GEMINI_KEY_VARS):
+        return ["set GEMINI_API_KEY (or GOOGLE_API_KEY) in repo-ai's environment; repo-ai no longer copies ~/.gemini "
+                "(OAuth tokens and other agents' state) into the sandbox"]
+    return []
 
 
 def _claude_preflight(executable: Path, plan: claude_auth.ClaudeAuthPlan) -> tuple[str, list[str]] | None:
