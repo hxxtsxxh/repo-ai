@@ -52,12 +52,13 @@ magnitude up to 10^102.
 - **Claude (#33 and #34, the same code apart from a comment): identical to upstream on every value.** It uses `>=`
   where upstream uses `==`, on the same integer ratio.
 - **Codex (#35): not identical.** It uses float division (`/`). It differs from upstream only just below a googol:
-  Codex renders "1.0 googol" (or "1.0e+00 googol"), upstream a 67-digit "… decillion" count. A dense follow-up sample
+  Codex renders "1.0 googol" (or "1.0e+00 googol"), upstream a 67-digit "… decillion" count (or "1.0e+67 decillion"). A dense follow-up sample
   was run in the sandbox: 244 values from 10^100 − 9·10^99 up to 10^100 − 1. It measured how far below a googol the
   divergence reaches:
   - up to about 9×10^83 for `%.1f`, `%.0f`, `%.2f`, `%.3f` and `%d`;
   - up to 5×10^97 for `%.1e`;
-  - no value below 10^99 differs in any format.
+  - below 10^99 the sample has no values. There the scaled value stays under 1e66, so no carry can happen (by
+    reasoning, not sampling).
 
   An independent fact-check found the `%.1e` range first. The original oracle sampled only 10^100 − 1 and 10^100 − 2
   near a googol, so it under-reported the scope. The power table jumps from 10^33 to 10^100, so Codex's output is
