@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Fixed (found on python-humanize): `repo-ai verify --run --full` printed "0 passed" when no test file was selected,
+  although the full suite ran 738 passing tests. The summary now says "N selected test file(s) passed" and, for
+  pytest, quotes pytest's own final line ("full suite, as pytest printed it: 1 failed, 738 passed, 112 skipped"), only when it agrees with repo-ai's per-test report (test code could print a look-alike); counts
+  are never derived, so other runners show none. The JSON `passed` field keeps its meaning (selected files);
+  `full_suite_counts` is new.
+- Changed: `repo-ai skills recommend` / `explain` count a local skill (`discover --from-path`) as relevant when its
+  description names one of this repository's own Python packages (common names such as `app` or `data` excluded).
+  Before, a skill written for the repository's own conventions was advised against ("matches no evidence-backed
+  capability gap"); found in the C10 skill-value pilot (`docs/engineering/evidence/SKILL-VALUE-PILOT-2026-10-30.md`).
+  This is advice only: a network skill that names the package gets no credit, and `skills autopilot` never
+  auto-installs a skill on this ground; it does so only for a skill that fills a gap or that you name.
 - Fixed (found on a real repository, python-humanize, with 0.11.1): `repo-ai init` adds its managed block to
   `.gitignore` (or creates the file), and `repo-ai do` then refused the "dirty checkout". A `.gitignore` whose only
   change is repo-ai's managed block no longer makes the checkout dirty, and a provider's candidate is compared with the
@@ -13,7 +24,8 @@
   `.repo-ai/` files made the checkout "dirty", and once committed (as the message advised) a live provider's candidate
   was refused because repo-ai's own `.repo-ai/config.toml` was compared as if the provider had deleted it. repo-ai's
   own directory is no longer mission source, never makes a checkout dirty, and is never materialized into a candidate
-  workspace (not even as an empty directory).
+  workspace (not even as an empty directory). The same applies to the other local-state paths repo-ai already kept out
+  of candidate workspaces (`.bob/`, `.claude/settings.local.json`): tracked copies no longer count as mission source.
 
 ## 0.11.0 — missions on real suites; requirement erasure
 

@@ -22,14 +22,14 @@
       "note": "published is true on the site only while verified_read is present and matches pyproject.toml. Write it with `python scripts/site_facts.py --record-pypi` (network) after a real read; never by hand-editing published.",
       "verified_read": {
         "distribution": "repo-ai-cli",
-        "version": "0.11.0",
-        "url": "https://pypi.org/project/repo-ai-cli/0.11.0/",
-        "verified_at": "2026-10-30T16:57:23Z",
-        "method": "GET https://pypi.org/pypi/repo-ai-cli/0.11.0/json; downloaded the wheel and recomputed its sha256, which matched PyPI's digest",
-        "wheel": "repo_ai_cli-0.11.0-py3-none-any.whl",
-        "wheel_sha256": "5a28fd1787a18b7098635cefd86c079ef83e49f538d3961b0c8b8e293657874e",
-        "sdist": "repo_ai_cli-0.11.0.tar.gz",
-        "sdist_sha256": "95316697ad2e160260c2367d55a67ae55b230fb2198c8f551cca5718d56adaa9"
+        "version": "0.11.1",
+        "url": "https://pypi.org/project/repo-ai-cli/0.11.1/",
+        "verified_at": "2026-10-30T19:23:08Z",
+        "method": "GET https://pypi.org/pypi/repo-ai-cli/0.11.1/json; downloaded the wheel and recomputed its sha256, which matched PyPI's digest",
+        "wheel": "repo_ai_cli-0.11.1-py3-none-any.whl",
+        "wheel_sha256": "92cc761432439b583658c5aa5369541070802367a397466d92fc7a824008025c",
+        "sdist": "repo_ai_cli-0.11.1.tar.gz",
+        "sdist_sha256": "cedd5f33b254c9463c42c61e2bd252bb493a3e66a81cdf04129472e2c29b29f7"
       }
     }
   },
@@ -365,7 +365,7 @@
       "date": "2026-10-30",
       "sample_size": "1 real repository; 1 successful live run (after 3 failed attempts on 0.11.0)",
       "method": "repo-ai do --agent codex --expect-fix … on a development build of the init-then-do fix (0.11.0 itself refused the run because of that first-run bug).",
-      "limits": "One repository, one task, regression injected by the author; the claim stays ASSURANCE_PARTIAL. The passing run used a development build of the init-then-do fix (PR #11, unreleased): 0.11.0 itself refused the run. The Claude provider attempt was blocked by a revoked login. The post-apply run in the real checkout reported 0 failures where the sandbox saw 20 (unexplained).",
+      "limits": "One repository, one task, regression injected by the author; the claim stays ASSURANCE_PARTIAL. The passing run used a development build of the init-then-do fix (PR #11, released in 0.11.1): 0.11.0 itself refused the run. The Claude provider attempt was blocked by a revoked login. The post-apply run in the real checkout reported 0 failures where the sandbox saw 20 (unexplained).",
       "source": "docs/engineering/evidence/REAL-PROJECT-2026-10-30.md",
       "featured": true
     }

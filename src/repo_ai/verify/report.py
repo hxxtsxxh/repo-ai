@@ -167,7 +167,8 @@ def summarize(rec: dict[str, Any]) -> dict[str, Any]:
         "unverified": [r["test"] for r in rows if r.get("unverified")],
         "unconfirmed": [r["test"] for r in unconfirmed],
         "not_compared": [r["test"] for r in other],
-        "passed": sum(1 for r in rows if r["status"] == "pass"),
+        "passed": sum(1 for r in rows if r["status"] == "pass"),  # selected test FILES that passed
+        "full_suite_counts": (rec.get("full_suite") or {}).get("counts"),
         "no_tests": [r["test"] for r in rows if r["status"] == "no-tests"],
         "not_run": [x["test"] for x in rec.get("not_run") or []],
         "strategy": (rec.get("strategy") or {}).get("kind"),
@@ -277,7 +278,10 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
         out += [f"  | {line[:150]}" for line in (full.get("output_tail") or "").strip().splitlines()[-6:]]
     elif full and full.get("status") == "not-run":
         out.append(f"  full suite not run: {full.get('reason')}")
-    counts = [f"{s['passed']} passed"]
+    counts = [f"{s['passed']} selected test file(s) passed"]
+    if s.get("full_suite_counts"):
+        counts.append("full suite, as pytest printed it: "
+                      + ", ".join(f"{n} {w}" for w, n in s["full_suite_counts"].items()))
     if s["no_tests"]:
         counts.append(f"{len(s['no_tests'])} define no tests")
     if s["not_run"]:
