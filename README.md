@@ -14,8 +14,8 @@ them under isolation, frozen acceptance tests and explicit apply/undo.
   base, flags stale evidence, and says when a verdict rests only on static links.
   `coverage` checks a requirement→test map you declare against the tests that actually
   ran. A PASS means *the selected tests passed* — never *the task is correct*.
-- **Agents, if and when you want them.** `repo-ai do` runs a provider (Bob, Codex,
-  Antigravity) in an isolated worktree with an explicit cost ceiling. Tournaments abstain
+- **Agents, if and when you want them.** `repo-ai do` runs a provider (Claude Code, Codex,
+  Antigravity, OpenCode with a local model, Bob) in an isolated worktree with an explicit cost ceiling. Tournaments abstain
   instead of crowning an arbitrary winner; handoff capsules are integrity-checked; nothing
   is applied without your command, and `undo` restores the bytes.
 
@@ -95,11 +95,12 @@ explains an abstention. Recipes: [docs/roadmap/REALITY-ENGINE-USAGE.md](docs/roa
 
 | Provider | Through `repo-ai do` (isolated) | Notes |
 |---|---|---|
-| IBM Bob | live, verified changes on small tasks | hard USD cap supported |
-| OpenAI Codex CLI | live, verified changes on small tasks | runs under repo-ai's outer sandbox; cost UNKNOWN under subscription |
+| Claude Code | live, verified changes on small tasks (macOS) | its own login, never copied: `repo-ai agents setup claude`; file tools only; each run first checks, at no cost, that the session loads nothing else; hard USD cap |
+| OpenAI Codex CLI | live, verified changes on small tasks | runs under repo-ai's outer sandbox; cost UNKNOWN under subscription; its login token is readable by a model with shell access (disclosed) |
 | Antigravity `agy` | live on macOS only | cost UNKNOWN under subscription |
-| Claude Code | **blocked** as an execution provider (login is not usable in the isolated scratch HOME) | fully supported as the *host* for context and hooks |
-| Gemini CLI | rejected for the tested account | |
+| OpenCode + a local model | live on macOS, account-free, $0 (`repo-ai agents setup opencode`) | loopback-only network, deny-by-default tools; small local models often fail (1 of 4 passed) and repo-ai refuses those runs |
+| IBM Bob | live, verified changes on small tasks (earlier release) | hard USD cap supported |
+| Gemini CLI | rejected for the tested account; needs `GEMINI_API_KEY` | |
 
 "Live" means a model-generated change was independently re-verified through repo-ai on this
 project's development machine, with small n. Your account, quota and platform decide what works for you;
