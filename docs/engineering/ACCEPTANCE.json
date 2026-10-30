@@ -337,15 +337,15 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
-    "first-run bug (init then do) found on the published 0.11.0; fixed in 0.11.1 (PR #11, #13)"
+    "first-run bug (init then do) found on the published 0.11.0; fixed in 0.11.1 (PR #11, #13)",
+    "python-humanize (second real repository, real upstream defect ca892b3): live Claude and Codex scoped missions PASS [LIVE_CANDIDATE_VERIFIED] on a development build; Claude equal to upstream on the sampled domain, Codex differs just below a googol; found and fixed 3 repo-ai bugs (#16 init .gitignore, #17 interpreter + tracked-ignored files) and the slugify 20-vs-0 discrepancy (wrong interpreter); evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md"
    ],
    "limits": [
     "one real repository; regression injected by the author",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
-    "post-apply 0-failure vs sandbox 20-failure discrepancy unexplained",
-    "second real project not yet done"
+    "two repositories; verified runs used development builds of the fixes (not yet released)"
    ],
-   "next_action": "second real project (needs owner approval to run its suite); re-run the scoped mission on the published 0.11.1"
+   "next_action": "release the fixes (0.11.2, owner approval) and re-run both scoped missions on the published build"
   },
   {
    "id": "C22",
