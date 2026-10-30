@@ -906,7 +906,15 @@ def _full_cap(ctx: _Ctx) -> float:
     return ctx.timeout_s if ctx.timeout_explicit else max(ctx.timeout_s, 1800.0)
 
 
-_PYTEST_SUMMARY = re.compile(r"^=*\s*((?:\d+ [a-z]+, )*\d+ [a-z]+) in [0-9.]+s(?: \([^)]*\))?\s*=*$")
+_PYTEST_SUMMARY = re.compile(r"^=*\s*((?:\d+ [a-z]+(?: [a-z]+)?, )*\d+ [a-z]+(?: [a-z]+)?) in [0-9.]+s(?: \([^)]*\))?\s*=*$")
+
+
+def _agrees(summary: dict[str, int], att: results.Attribution) -> bool:
+    """pytest's printed counts are consistent with the per-test report: the same failures, at least its passes."""
+    failing = sum(len(f.failing) for f in att.files.values())
+    passing = sum(max(0, f.tests - f.skipped - len(f.failing)) for f in att.files.values())
+    printed_failing = summary.get("failed", 0) + summary.get("error", 0) + summary.get("errors", 0)
+    return printed_failing == failing and summary.get("passed", 0) >= passing
 
 
 def pytest_summary(stdout: str) -> dict[str, int] | None:
@@ -935,8 +943,10 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
     rec["full_suite"] = {"status": status, "exit_code": res.exit_code, "duration_s": round(res.duration_s, 2),
                          "command": runner.display(argv), "attributed": trusted or status == "pass",
                          "output_tail": evidence.failure_excerpt(text) if status != "pass" else ""}
-    summary = pytest_summary(res.stdout) if runner.kind == "pytest" else None
-    if summary:  # quoted from pytest's own last line, never derived (doctests, subtests, errors count as pytest counts)
+    summary = pytest_summary(res.stdout) if runner.kind == "pytest" and trusted and att is not None else None
+    if summary and att is not None and _agrees(summary, att):
+        # quoted from pytest's own line, never derived; the tests' own code could print a line like it, so it is kept
+        # only when it agrees with repo-ai's per-test report, and it is never used for a verdict
         rec["full_suite"]["counts"] = summary
     if status == "pass":
         ctx.timings.note_full(res.duration_s)

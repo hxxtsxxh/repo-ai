@@ -141,8 +141,20 @@ def test_a_full_run_reports_the_suites_test_counts_not_only_selected_files(tmp_p
     ("= 4 passed, 2 failed, 1 xfailed, 1 xpassed, 3 warnings in 2.01s (0:00:02) =",
      {"passed": 4, "failed": 2, "xfailed": 1, "xpassed": 1, "warnings": 3}),
     ("no summary here\n", None),
+    ("= 2 failed, 1 passed, 2 subtests passed in 0.1s =", {"failed": 2, "passed": 1, "subtests passed": 2}),
     ("== 3 passed in 0.1s ==\nextra trailing output\n", {"passed": 3}),
 ])
 def test_pytest_summary_is_quoted_not_derived(stdout, expected):
     from repo_ai.verify.engine import pytest_summary
     assert pytest_summary(stdout) == expected
+
+
+@needs_sandbox
+def test_a_summary_line_printed_by_the_tests_themselves_is_not_quoted(tmp_path: Path):
+    """Test code can print a line that looks like pytest's summary (atexit, a plugin): it is quoted only when it agrees
+    with repo-ai's per-test report, and it never decides a verdict."""
+    root = _project(tmp_path, {"conftest.py": "import atexit\natexit.register(lambda: print('===== 500 passed in 0.10s ====='))\n",
+                               "pyproject.toml": '[tool.pytest.ini_options]\ntestpaths = ["tests"]\n'})
+    (root / "calc" / "core.py").write_text(BROKEN)
+    out = run_cli(root, "verify", "--run", "--full", "--test-command", "python -m pytest").stdout
+    assert "REGRESSION" in out and "as pytest printed it" not in out, out
