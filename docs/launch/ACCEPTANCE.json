@@ -1,7 +1,7 @@
 {
   "schema": "repo-ai.launch-acceptance/1",
-  "updated": "2026-10-29",
-  "launch_status": "NOT_LAUNCHED",
+  "updated": "2026-10-30",
+  "launch_status": "PUBLIC_LAUNCH_COMPLETE",
   "result_vocabulary": [
     "PASS",
     "FAIL",
@@ -191,11 +191,11 @@
       "id": "G17",
       "owner": "release",
       "criterion": "GitHub readiness: README, community files, templates, CI with explicit skips, release automation, changelog, green branch-protected merge",
-      "evidence_path": "public repo community files, workflows, branch protection on main (12 required checks, admins enforced, no force-push)",
-      "code_sha": "7ca4c51",
-      "verified_at": "2026-10-30T01:34Z",
-      "result": "INCONCLUSIVE",
-      "limitations": "Awaiting the first branch-protected PR merge (launch docs PR).",
+      "evidence_path": "https://github.com/hxxtsxxh/repo-ai/pull/1 (merged 2026-10-30T01:57Z as 6c3b40c after 12/12 required checks); branch protection on main; community files; ci/release/pages workflows",
+      "code_sha": "6c3b40c",
+      "verified_at": "2026-10-30T01:58Z",
+      "result": "PASS",
+      "limitations": "test-macos is skipped on pull requests by its own condition and runs on main pushes and tags (green on 7ca4c51). No force-push or bypass; historical tags/releases untouched (they live on the private repo-ai-dev).",
       "blocker": null
     },
     {
@@ -246,11 +246,11 @@
       "id": "G22",
       "owner": "integrator",
       "criterion": "Final launch report with gate matrix, URLs, environment matrix, install transcript, benchmark, security review, budgets, blockers",
-      "evidence_path": null,
-      "code_sha": null,
-      "verified_at": null,
-      "result": "NOT_RUN",
-      "limitations": null,
+      "evidence_path": "docs/launch/LAUNCH_REPORT.md (gate matrix, URLs, identifiers, environment matrix, install transcript, evaluation, security review, budget, follow-ups)",
+      "code_sha": "6c3b40c",
+      "verified_at": "2026-10-30T01:58Z",
+      "result": "PASS",
+      "limitations": "The report states what was not shown: comparative lift NOT_YET_DEMONSTRATED; abc-v5 confirmatory phase not run; Windows missions unsupported; Claude isolated execution blocked.",
       "blocker": null
     }
   ]

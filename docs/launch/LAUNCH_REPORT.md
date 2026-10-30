@@ -45,7 +45,7 @@ it does not judge semantic correctness, and comparative lift over a standalone a
 See [ACCEPTANCE.json](ACCEPTANCE.json) for evidence paths, SHAs and limitations. Summary at the freeze:
 
 <!-- gate-table:begin -->
-Launch status in the registry: `NOT_LAUNCHED`. Counts: INCONCLUSIVE 1, NOT_RUN 1, PASS 20.
+Launch status in the registry: `PUBLIC_LAUNCH_COMPLETE`. Counts: PASS 22.
 
 | Gate | Result | At | Limits / blocker |
 |---|---|---|---|
@@ -65,12 +65,12 @@ Launch status in the registry: `NOT_LAUNCHED`. Counts: INCONCLUSIVE 1, NOT_RUN 1
 | G14 | **PASS** | 91780ad | Local build and Playwright/axe QA only: 20 pages x light/dark x 390/1440 px, 0 axe violations, 0 broken of 1,103 internal links/anchors, no overflow at 390/768/1440, 0 third-party requests, landing 19 KB gzipped. Lighth… |
 | G15 | **PASS** | 7ca4c51 | Fetched over the public internet from the development host (not a second network). Rollback: re-run pages.yml on an earlier commit (workflow_dispatch) or disable Pages in settings. robots.txt under a project path is not… |
 | G16 | **PASS** | 7ca4c51 | Published by Trusted Publishing (OIDC; no token). Wheel sha256 b351d80e… is byte-identical to the local freeze build and to a wheel rebuilt from the sdist; sdist b328ca0f… (built from the public tree; differs from the l… |
-| G17 | **INCONCLUSIVE** | 7ca4c51 | Awaiting the first branch-protected PR merge (launch docs PR). |
+| G17 | **PASS** | 6c3b40c | test-macos is skipped on pull requests by its own condition and runs on main pushes and tags (green on 7ca4c51). No force-push or bypass; historical tags/releases untouched (they live on the private repo-ai-dev). |
 | G18 | **PASS** | 7ca4c51 | Owner chose the curated export (L-009). Public history is one commit by the noreply address; the export audit (corporate address, local paths, enterprise host, private-only text) and gitleaks (42 verified false positive… |
 | G19 | **PASS** | 509e54f | Mission §9 fallback taken and declared: harness built and validated (sealed grader, negative controls, immutable manifests, exact power), bounded calibration run (n=4 synthetic, single author, $0), primary result NOT_YE… |
 | G20 | **PASS** | 9663ac3 | Real executables/auth/sandbox exercised for Codex 0.165.0 and agy 1.4.9 (macOS); Claude 2.1.312 re-observed as BLOCKED_AUTH in the isolated HOME and labelled so; Bob not re-run; Gemini not tried. n=1 workflows. |
 | G21 | **PASS** | 7ca4c51 | Re-downloaded PyPI and GitHub assets: identical bytes, SHA256SUMS OK, attestations verified; wheel == freeze build. pip install repo-ai-cli==0.9.0 from the default index: scripts/release_smoke.sh PASS on a clean Linux c… |
-| G22 | **NOT_RUN** | – |  |
+| G22 | **PASS** | 6c3b40c | The report states what was not shown: comparative lift NOT_YET_DEMONSTRATED; abc-v5 confirmatory phase not run; Windows missions unsupported; Claude isolated execution blocked. |
 <!-- gate-table:end -->
 
 ## What changed in this cycle (all with failing-first tests unless noted)
