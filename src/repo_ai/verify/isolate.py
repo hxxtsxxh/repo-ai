@@ -552,7 +552,10 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
             members = []
             for m in tar.getmembers():
                 rel = PurePosixPath(m.name)
-                if rel.is_absolute() or ".." in rel.parts or str(rel).startswith(STATE_PREFIXES):
+                # also a state DIRECTORY entry itself (`.repo-ai`, no trailing slash), or an empty one would appear; a
+                # tracked regular FILE named `.bob` or `.repo-ai` is ordinary source and is kept
+                if rel.is_absolute() or ".." in rel.parts or str(rel).startswith(STATE_PREFIXES) or \
+                        (m.isdir() and str(rel) + "/" in STATE_PREFIXES):
                     continue
                 if m.issym():
                     resolved = (path / rel.parent / m.linkname).resolve()

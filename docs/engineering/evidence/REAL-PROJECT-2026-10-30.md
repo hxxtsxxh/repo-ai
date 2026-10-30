@@ -37,3 +37,18 @@ Claude's recorded candidate from step 6 (it restores the removed `strip()`) was 
 | `--expect-fix` with the three `tests/test_release.py` tests the regression broke | **`PASS_WITH_PRE_EXISTING_FAILURES`**: the declared tests went from failing to passing, nothing that passed at the base fails; the 20 pre-existing failures (all `tests/test_legacy.py`, missing optional backends) are listed; claim `ASSURANCE_PARTIAL` |
 
 The skipped tests were identical at base and candidate, which 0.10.0 already accepts.
+
+## Live, on the published 0.11.0 wheel (2026-10-30T16:47–16:56Z)
+
+`repo-ai-cli==0.11.0` from PyPI in a clean venv, same bad commit, `--expect-fix` with the three
+`tests/test_release.py` tests:
+
+| # | Step | Result |
+|---|---|---|
+| 1 | `repo-ai init --agent none`, then `do` | refused: dirty checkout (repo-ai's own uncommitted `.repo-ai/` files) — a first-run bug |
+| 2 | committed `.repo-ai/` as advised; `do --agent claude` | `INCONCLUSIVE — BLOCKED`: "OAuth token revoked" for the dedicated login (external; the owner must log in again); classified `provider_unavailable` with the setup command, no retry |
+| 3 | `do --agent codex` | refused: the committed `.repo-ai/config.toml` was compared as a provider deletion — the same first-run bug, second half |
+| 4 | development build with the fix (`fix/init-then-do`), `do --agent codex` | **`PASS [LIVE_CANDIDATE_VERIFIED]`, standing `PASS_WITH_PRE_EXISTING_FAILURES`** (20 unrelated failures listed), claim `ASSURANCE_PARTIAL`; the candidate is **byte-identical to the upstream line** (`.strip(DEFAULT_SEPARATOR)`); `apply` (post-apply 131 ran, 0 failed) then `undo` restored the file byte-exactly |
+
+Open question: the post-apply run in the real checkout reported 0 failures where the sandboxed observations saw the 20
+legacy failures; the two environments apparently resolve the optional backend differently. Not yet explained.

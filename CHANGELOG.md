@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Fixed (found on a real repository): `repo-ai init` followed by `repo-ai do` failed either way. Uncommitted
+  `.repo-ai/` files made the checkout "dirty", and once committed (as the message advised) a live provider's candidate
+  was refused because repo-ai's own `.repo-ai/config.toml` was compared as if the provider had deleted it. repo-ai's
+  own directory is no longer mission source, never makes a checkout dirty, and is never materialized into a candidate
+  workspace (not even as an empty directory).
+
 ## 0.11.0 — missions on real suites; requirement erasure
 
 - Added: `repo-ai do --expect-fix TEST` (repeatable) for real suites with failures the task does not touch. The
