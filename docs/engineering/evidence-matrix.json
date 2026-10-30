@@ -1,6 +1,6 @@
 {
   "schema": "repo-ai.evidence-matrix/1",
-  "updated": "2026-10-29",
+  "updated": "2026-10-30",
   "about": "Machine-readable evidence ledger behind the website's Evidence Lab. Condensed from docs/launch/ACCEPTANCE.json, docs/STATUS.md, docs/launch/EVALUATION.md and the study results they cite; when an entry and its source disagree, the source is the record. scripts/site_facts.py validates this file and copies it into site/src/data/release-facts.json. Dates given as YYYY-MM are not recorded more precisely in the public tree; date_note says what is known.",
   "statuses": {
     "DEMONSTRATED": "Measured on fresh or held-out data under a frozen protocol; the claim holds within the stated scope.",
@@ -255,14 +255,14 @@
     {
       "id": "claude-isolated-execution",
       "title": "Claude Code as an isolated execution provider",
-      "status": "BLOCKED",
-      "stat": "BLOCKED_AUTH",
-      "result": "Claude Code 2.1.312 failed authentication (“Not logged in”) inside repo-ai's scratch HOME, before any model call. It is supported as a host for context and hooks.",
-      "date": "2026-10-29",
-      "sample_size": "1 probe",
-      "method": "Real run through repo-ai do on the freeze build; the provider's login is not a copyable file, and repo-ai does not work around that.",
-      "limits": "Blocked by the provider's authentication model, not by a repo-ai verdict. Update docs/engineering/evidence-matrix.json and site/src/data/providers.json together when this changes.",
-      "source": "docs/launch/ACCEPTANCE.json",
+      "status": "DEMONSTRATED",
+      "stat": "PASS, oracle 17/17",
+      "result": "Claude Code 2.1.314 produced a model-generated fix inside repo-ai's isolation; repo-ai re-ran the frozen tests (PASS LIVE_CANDIDATE_VERIFIED), an author-written hidden oracle passed 17/17, apply and undo were byte-exact; a hostile repository's injected instructions were not followed.",
+      "date": "2026-10-30",
+      "sample_size": "n = 1 per journey",
+      "method": "Installed wheel; repo-ai do --agent claude --run --allow-live-provider; Claude's own login (dedicated repo-ai login dir), file tools only, seatbelt, per-run isolation probe.",
+      "limits": "Synthetic task, single author. The model refused the boundary probes, so the OS boundary is verified by direct sandbox probes and an independent adversarial review, not by a model attempt. Token mode and Linux not live-verified.",
+      "source": "docs/engineering/evidence/CLAUDE-JOURNEY-2026-10-30.md",
       "featured": true
     },
     {
@@ -316,6 +316,32 @@
       "limits": "pytest, unittest and node --test are split per file.",
       "source": "docs/STATUS.md",
       "featured": false
+    },
+    {
+      "id": "opencode-local-model",
+      "title": "An account-free local model as a repo-ai provider",
+      "status": "EXPERIMENTAL",
+      "stat": "1 of 4 PASS",
+      "result": "OpenCode 2.2.1 with qwen3:8b (Ollama, loopback only, $0) produced one independently verified change (hidden oracle 9/9) in four end-to-end attempts; the other three were refused (stream limit, deadline, a syntax-broken edit). Run alone, its patch for a harder task passed every visible test but only 12 of 17 hidden cases.",
+      "date": "2026-10-30",
+      "sample_size": "4 attempts",
+      "method": "Installed wheel; repo-ai do --agent opencode; deny-by-default tools, loopback-only network.",
+      "limits": "One small model, synthetic tasks, single author. Shows the path works and that failures are refused, not that local models are good at this.",
+      "source": "docs/engineering/evidence/OPENCODE-JOURNEY-2026-10-30.md",
+      "featured": true
+    },
+    {
+      "id": "skill-two-hosts",
+      "title": "A repo-ai-installed skill loads on two real hosts",
+      "status": "DEMONSTRATED",
+      "stat": "2 hosts",
+      "result": "A skill vetted and installed by repo-ai was listed and invoked by Claude Code (paired run: the convention it states appeared in 2 of 2 tests with the skill, 0 of 2 without) and loaded by OpenCode from .agents/skills on request; uninstall restored every file byte-for-byte.",
+      "date": "2026-10-30",
+      "sample_size": "n = 1 per arm",
+      "method": "repo-ai skills discover --from-path / install --approve / disable; host-mode runs.",
+      "limits": "Load and invocation only: whether a skill improves outcomes is not shown (no blinded trial). OpenCode's model never chose the skill unprompted.",
+      "source": "docs/engineering/evidence/SKILL-HOSTS-2026-10-30.md",
+      "featured": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "schema": "repo-ai.providers/1",
-  "as_of": "2026-10-29",
+  "as_of": "2026-10-30",
   "about": "Provider compatibility matrix rendered on the landing page and /docs/providers/. Edit by hand when a provider's state changes, then run `python scripts/site_facts.py` (it validates this file) and rebuild the site. `label` is the row's overall state; `execution.status` is the isolated `repo-ai do` path only. label EXECUTION requires execution.status EXECUTION with a dated, versioned observation.",
   "labels": {
     "EXECUTION": "repo-ai runs it as an isolated mission provider (repo-ai do), and a live, independently re-verified change has been observed.",
@@ -18,7 +18,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live, independently re-verified changes through repo-ai do: a single-provider mission with apply and undo, tournaments and a handoff. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed.",
+        "observed": "Live, independently re-verified changes through repo-ai do: a single-provider mission with apply and undo, tournaments and a handoff. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Re-verified on the 0.10.0 build (2026-10-30, hidden oracle 17/17). Disclosed risk: Codex's copied login token is readable by a model that has shell access.",
         "verified_on": "2026-10-29",
         "version": "0.165.0",
         "sample": "n = 1 workflow per journey per build",
@@ -35,7 +35,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live candidates in the tournament and handoff journeys, independently re-verified. Must read the encrypted login keychain files to authenticate; refused on other platforms.",
+        "observed": "Live candidates in the tournament and handoff journeys, independently re-verified. Must read the encrypted login keychain files to authenticate; refused on other platforms. Re-verified on the 0.10.0 build (2026-10-30, hidden oracle 17/17).",
         "verified_on": "2026-10-29",
         "version": "1.4.9",
         "sample": "n = 1 workflow per journey per build",
@@ -66,18 +66,35 @@
       "id": "claude",
       "name": "Claude Code",
       "agent": "claude",
-      "label": "HOST_ONLY",
+      "label": "EXECUTION",
       "execution": {
-        "status": "BLOCKED",
-        "observed": "Cannot authenticate in repo-ai's isolated scratch HOME (“Not logged in”, re-observed on the 0.9.0 freeze build): its login is not a copyable file, and repo-ai does not work around that.",
-        "verified_on": "2026-10-29",
-        "version": "2.1.312",
-        "sample": "1 probe, failed before any model call",
-        "platforms": "macOS",
-        "source": "docs/launch/ACCEPTANCE.json"
+        "status": "EXECUTION",
+        "observed": "From repo-ai-cli 0.10.0: live, independently re-verified change through repo-ai do (mission PASS, hidden oracle 17/17, apply and undo byte-exact) and a hostile-repository run. Uses Claude Code's own login: a token from `claude setup-token`, or a separate repo-ai login (`repo-ai agents setup claude`); nothing is copied. The model gets file tools only, and every live run first checks (at no cost) that the session would load nothing else.",
+        "verified_on": "2026-10-30",
+        "version": "2.1.314",
+        "sample": "n = 1 per journey",
+        "platforms": "macOS (seatbelt) verified live; Linux bubblewrap profile covered by tests, not live-verified",
+        "source": "docs/engineering/evidence/CLAUDE-JOURNEY-2026-10-30.md"
       },
       "host": "Fully supported as a host: repo-ai init --agent claude writes a marked CLAUDE.md block, path-scoped rules, curated skills and hooks that attach ranked context to prompts.",
-      "cost": "—"
+      "cost": "Hard USD cap through --max-budget-usd (checked between turns; one turn of overshoot observed); on a subscription the reported cost is notional"
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode (local model)",
+      "agent": "opencode",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "From repo-ai-cli 0.10.0: OpenCode against a local, loopback-only model endpoint (Ollama). Account-free; the sandbox allows network to loopback only, and a deny-by-default tool policy allows only read, edit, glob, grep and list. With a small local model (qwen3:8b) 1 of 4 end-to-end attempts passed; repo-ai refused every failure.",
+        "verified_on": "2026-10-30",
+        "version": "2.2.1 with qwen3:8b via Ollama 0.40",
+        "sample": "4 attempts, 1 pass",
+        "platforms": "macOS only (no tested restriction elsewhere: refused)",
+        "source": "docs/engineering/evidence/OPENCODE-JOURNEY-2026-10-30.md"
+      },
+      "host": "Reads repo-ai-installed skills from .agents/skills (observed 2026-10-30).",
+      "cost": "$0 (local model); cloud-routed models are refused"
     },
     {
       "id": "gemini",
@@ -86,12 +103,12 @@
       "label": "BLOCKED",
       "execution": {
         "status": "BLOCKED",
-        "observed": "Rejected for the account that was tested. Not retried; no further claim either way.",
-        "verified_on": "2026-10",
-        "version": "not recorded",
-        "sample": "1 account",
-        "platforms": "platform not recorded",
-        "source": "docs/launch/LAUNCH_REPORT.md"
+        "observed": "Rejected for the tested account (exit 41, authentication) on 2026-10-30. From 0.10.0 repo-ai no longer copies ~/.gemini into the sandbox; live Gemini needs GEMINI_API_KEY or GOOGLE_API_KEY.",
+        "verified_on": "2026-10-30",
+        "version": "0.65.0",
+        "sample": "1 bounded retry",
+        "platforms": "macOS",
+        "source": "docs/engineering/INTEGRATIONS.md"
       },
       "host": "Not wired as a host by repo-ai init.",
       "cost": "—"
