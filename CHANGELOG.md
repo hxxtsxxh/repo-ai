@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.2 — missions on real repositories: the project's interpreter, init's .gitignore, honest counts
 
 - Fixed (found on python-humanize): `repo-ai verify --run --full` printed "0 passed" when no test file was selected,
   although the full suite ran 738 passing tests. The summary now says "N selected test file(s) passed" and, for
