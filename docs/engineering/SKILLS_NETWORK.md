@@ -97,7 +97,10 @@ writes are refused.
 | `MANUAL_ONLY` | allowed | full 64-hex hash only | nothing | allowed |
 
 - **Raising** to `SAFE_AUTO` or `TRIAL` is refused (exit 5) when any agent, hook or CI marker
-  (`capabilities.AGENT_ENV`) is set, or when stdin is not a TTY.
+  (`capabilities.AGENT_ENV`) is set, or when stdin is not a TTY. This is defence in depth, not a
+  boundary: an agent shell can unset the markers and fake a TTY (`env -u … script -q /dev/null …`),
+  as the adversarial review showed. The agent host's permission prompt for running the command is the
+  boundary.
 - **Lowering** and `revoke` are always allowed.
 - **`revoke`** returns to `PROPOSE` and removes, byte-exactly, every skill that the policy installed
   (`approved_by: policy:*`) rather than a human.
@@ -185,7 +188,7 @@ dependencies). `registry_objects()` lists `provider_adapter` (the five provider 
 - **`skills policy [show|set LEVEL|revoke] [--json]`:**
   - Exit 0 on success.
   - Exit 2 on a usage error or an unknown level.
-  - Exit 5 when raising the level is refused (no human terminal).
+  - Exit 5 when raising the level is refused (agent/CI marker set, or no TTY; defence in depth only).
 - **`skills autopilot [names…] [--dry-run] [--online] [--json]`:** applies the policy to the
   candidates vetted by the last discovery.
   - Without names it acts only on candidates recommended for an evidence-backed gap.
@@ -199,6 +202,21 @@ dependencies). `registry_objects()` lists `provider_adapter` (the five provider 
 - **Policy gates in existing actions:** `OFFLINE` refuses `discover --online`, `updates`, `vet <URL>`,
   remote installs and live trials. `DISCOVER_ONLY` refuses installs and live trials. `MANUAL_ONLY`
   requires the full hash.
+
+### 2.5 Fixes after the adversarial review of `98011a5`
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | A committed lockfile could make install delete or overwrite a user file, and disable remove it | Pre-manifest ("legacy") ownership needs machine-local evidence: the approved content is in this machine's object store, and the file holds exactly the bytes the old installer wrote from it. A directory that already existed is never recorded as created. Without evidence the install is a conflict and removal leaves files in place |
+| 2 | `revoke` and the kill switch trusted the lockfile's `approved_by`, `status` and entries | The manifest keeps a machine-local `record` (`approved_by`, hosts, content hash, status) that survives uninstall. `revoke` reads only records; the kill switch and `repo-ai uninstall` cover the lockfile **and** every manifest with live files |
+| 3 | `enable` and `rollback` re-installed without any approval | Both are gated like an install: the level must allow it (`DISCOVER_ONLY` refuses, `MANUAL_ONLY` needs the full hash). The object is re-inspected and re-assessed, scripts need `--allow-scripts`, and content the policy installed returns only under `SAFE_AUTO` while still inert, or with `--approve <hash>` (the user becomes the approver) |
+| 4 | Remote instructions without a scheme were inert | `network-reference` also covers a bare host with a path or port, agent fetch and browse tools (WebFetch, web search, browser tool) and in-code fetches (`urlopen`, `requests.get`, `fetch(`) |
+| 5 | A front-matter `name` other than the directory was inert | `name-dir-mismatch` blocks inertness; `translate` refuses a SKILL.md that names another skill; curated repo-ai names are refused for Claude Code |
+| 6 | The lockfile's `hosts` chose install targets | Previous hosts come from the machine-local record, else `claude-code` |
+| 7 | Raising the policy is bypassable from an agent shell | The check stays, documented as defence in depth; the agent host's permission prompt is the boundary |
+| 8 | Licence text was copied but never assessed | Licence files get the SKILL.md text checks, minus licence vocabulary and standard licence URLs; any code span is a surface |
+| 9 | Case-colliding paths (`SKILL.md` and `skill.md`) | NFC + casefold + trailing-dot/space collisions, and any file folding to `skill.md`, refuse the bundle |
+| 10 | Markdown reference comments (`[//]: # (…)`) were inert | They are a `hidden-markdown-comment` surface |
 
 ## 3. Not done, or not verified
 
@@ -214,8 +232,10 @@ dependencies). `registry_objects()` lists `provider_adapter` (the five provider 
   with a URL, a risky word or an extra file. Its precision on real skills was not measured, and it will
   refuse many harmless skills.
 - **Trials.** No paid trial was run, so third-party benefit is still not demonstrated.
-- **Upgrades from 0.9.0.** A third-party skill installed before this change has no manifest. Its
-  removal still uses the lockfile hashes, and it leaves parent directories in place.
+- **Upgrades from 0.9.0.** A third-party skill installed before this change has no manifest. It is
+  recognised only on a machine whose object store holds its approved content; on a fresh clone its files
+  are left in place by `disable` and `uninstall` rather than trusted from the committed lockfile.
+- **Raising the policy from an agent shell** is not prevented (markers can be unset, a TTY faked).
 - **`repo-ai uninstall`.** It removes bundle files through the manifest but does not delete the
   manifest files themselves in the machine directory. A stale manifest only claims files whose bytes
   still match what repo-ai wrote.

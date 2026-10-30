@@ -224,10 +224,12 @@ def install(root: Path, name: str, src_dir: Path, report: firewall.Report, candi
             raise capbundle.BundleError("only an inert skill can be installed without a per-hash approval")
         lock = load_lock(root)
         entry = lock["skills"].get(name)
-        previous_hosts = tuple(h for h in ((entry or {}).get("hosts") or ["claude-code"]) if h in capbundle.HOSTS)
+        # hosts come from the machine-local record, never from the committed lockfile
+        active_hosts = tuple(capbundle.load_manifest(root, name)["hosts"])
+        previous_hosts = tuple(capbundle.get_record(root, name).get("hosts") or ()) or active_hosts
         if hosts is None:
-            hosts = previous_hosts if entry else capbundle.DEFAULT_HOSTS
-        dropped = tuple(h for h in previous_hosts if entry and h not in hosts)
+            hosts = previous_hosts or capbundle.DEFAULT_HOSTS
+        dropped = tuple(h for h in active_hosts if h not in hosts)
         ip = capbundle.plan_install(root, bundle, hosts, _legacy_files(root, name, entry))
     except (capbundle.BundleError, firewall.QuarantineError) as exc:
         raise PortfolioError(str(exc)) from exc
@@ -243,6 +245,8 @@ def install(root: Path, name: str, src_dir: Path, report: firewall.Report, candi
     except capbundle.BundleError as exc:
         raise PortfolioError(str(exc)) from exc
     _store_object(src_dir, report.content_hash)
+    capbundle.set_record(root, name, approved_by=approved_by, hosts=list(hosts), content_hash=report.content_hash,
+                         status="active")
     history = list((entry or {}).get("history", []))
     if entry:
         history.append({k: entry[k] for k in ("content_hash", "commit", "approved_at", "files")
@@ -287,21 +291,47 @@ def _host_files(ip, host: str) -> list[dict[str, Any]]:
 
 
 def _legacy_files(root: Path, name: str, entry: dict[str, Any] | None) -> dict[str, list[dict[str, Any]]]:
-    """For a skill installed before manifests existed: its lockfile file list counts as repo-ai's
-    (only files still byte-identical to it are ever replaced or removed)."""
+    """For a skill installed before manifests existed, the files repo-ai can prove it wrote.
+
+    The committed lockfile alone proves nothing (a clone can list any file and any
+    hash). Ownership needs machine-local evidence: the approved content is in this
+    machine's object store, and the file holds exactly the bytes the pre-manifest
+    installer wrote from it (the upstream file, SKILL.md front matter sanitized).
+    Lockfile paths without that evidence are not repo-ai's."""
+    import hashlib
+
     from .capbundle import load_manifest
     if not entry or load_manifest(root, name)["hosts"].get("claude-code"):
         return {}
-    return {"claude-code": list(entry.get("files") or [])}
+    try:
+        obj, files = verified_object(str(entry.get("content_hash", "")))
+    except PortfolioError:
+        return {}
+    expected: dict[str, str] = {}
+    for f in files:
+        try:
+            text = _exact_text((obj / firewall.safe_rel(f["path"])).read_bytes(), f["path"])
+        except (PortfolioError, firewall.QuarantineError, OSError):
+            continue
+        if f["path"] == "SKILL.md":
+            text, _ = firewall.sanitize_front_matter(text)
+        expected[f["path"]] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    listed = {str(f.get("path")): str(f.get("sha256")) for f in entry.get("files") or [] if isinstance(f, dict)}
+    return {"claude-code": [{"path": p, "sha256": sha} for p, sha in sorted(expected.items())
+                            if listed.get(p) == sha]}
 
 
 def _plan_remove(root: Path, plan, entry: dict[str, Any]) -> list[str]:
+    """Remove a pre-manifest install: only files proven repo-ai's (`_legacy_files`)."""
     import hashlib
     kept: list[str] = []
     target = root / ".claude" / "skills" / entry["name"]
     if target.is_symlink() or (target.exists() and not target.is_dir()):
         return ["(skill directory is a symlink or not a directory: left untouched)"]
-    for f in entry.get("files", []):
+    proven = _legacy_files(root, entry["name"], entry).get("claude-code", [])
+    if not proven and entry.get("files"):
+        return ["(no machine-local evidence that repo-ai wrote these files: left in place)"]
+    for f in proven:
         path = target / f["path"]
         if any(p.is_symlink() for p in [path, *path.parents] if p != root and root in p.parents):
             kept.append(f["path"] + " (symlink: left untouched)")
@@ -319,31 +349,43 @@ def _plan_remove(root: Path, plan, entry: dict[str, Any]) -> list[str]:
     return kept
 
 
+def _installed_names(root: Path, lock: dict[str, Any]) -> list[str]:
+    """Every skill repo-ai may have written here: the lockfile's active entries, plus every
+    machine-local manifest with live host files (a pulled lockfile can drop or rewrite entries)."""
+    from . import capbundle
+    names = {n for n, e in lock["skills"].items() if e.get("status") == "active"}
+    names |= {n for n, m in capbundle.all_manifests(root).items() if m["hosts"]}
+    return sorted(names)
+
+
 def disable(root: Path, names: list[str] | None = None) -> list[str]:
-    """Remove installed third-party skills from `.claude/skills` (kill switch
-    when `names` is None). Lock entries and objects stay for re-enabling."""
+    """Remove installed third-party skills (kill switch when `names` is None).
+    Lock entries, manifests' records and objects stay for re-enabling."""
+    from . import capbundle
     from .fsutil import Plan
     lock = load_lock(root)
     out = []
-    for name, entry in sorted(lock["skills"].items()):
+    for name in _installed_names(root, lock):
         if names is not None and name not in names:
             continue
-        if entry.get("status") != "active":
-            continue
+        entry = lock["skills"].get(name) or {"name": name, "files": []}
         plan = Plan(root)  # one plan per skill: one bad entry never stops the kill switch
         try:
             kept = _remove_installed(root, plan, entry)
+            if capbundle.get_record(root, name):
+                capbundle.set_record(root, name, status="disabled")
         except Exception as exc:  # noqa: BLE001 - report and keep disabling the rest
             out.append(f"{name} (FAILED: {exc})")
             continue
-        entry["status"] = "disabled"
+        if name in lock["skills"]:
+            lock["skills"][name]["status"] = "disabled"
         out.append(name + (f" (kept: {', '.join(kept)})" if kept else ""))
     save_lock(root, lock)
     return out
 
 
 def _remove_installed(root: Path, plan, entry: dict[str, Any]) -> list[str]:
-    """Byte-exact removal through the manifest when there is one; the lockfile's hashes otherwise."""
+    """Byte-exact removal through the manifest when there is one; proven legacy files otherwise."""
     from . import capbundle
     man = capbundle.load_manifest(root, entry["name"])
     if not man["hosts"]:
@@ -354,22 +396,34 @@ def _remove_installed(root: Path, plan, entry: dict[str, Any]) -> list[str]:
     return [k.split("/", 3)[-1] if k.startswith(".claude/skills/") else k for k in result["kept"]]
 
 
-def enable(root: Path, name: str) -> dict[str, Any]:
-    """Re-install a disabled skill from the object store after verifying it."""
+def policy_installed(root: Path) -> list[str]:
+    """Skills the autonomy policy (not a per-hash approval) installed, per the machine-local record."""
+    from . import capbundle
+    return sorted(n for n, m in capbundle.all_manifests(root).items()
+                  if str((m.get("record") or {}).get("approved_by", "")).startswith("policy:")
+                  and (m["hosts"] or (m.get("record") or {}).get("status") == "active"))
+
+
+def enable(root: Path, name: str, *, approve: str = "", allow_scripts: bool = False,
+           level: str | None = None) -> dict[str, Any]:
+    """Re-install a disabled skill from the object store after verifying it (gated like an install)."""
     lock = load_lock(root)
     entry = lock["skills"].get(name)
     if not entry:
         raise PortfolioError(f"{name} is not in the portfolio")
-    return _restore(root, entry, entry["content_hash"], lock)
+    return _restore(root, entry, entry["content_hash"], lock, approve=approve, allow_scripts=allow_scripts,
+                    level=level)
 
 
-def rollback(root: Path, name: str) -> dict[str, Any]:
+def rollback(root: Path, name: str, *, approve: str = "", allow_scripts: bool = False,
+             level: str | None = None) -> dict[str, Any]:
     lock = load_lock(root)
     entry = lock["skills"].get(name)
     if not entry or not entry.get("history"):
         raise PortfolioError(f"{name}: no previous version recorded")
     prev = entry["history"].pop()
-    return _restore(root, entry, prev["content_hash"], lock, commit=prev.get("commit"))
+    return _restore(root, entry, prev["content_hash"], lock, commit=prev.get("commit"), approve=approve,
+                    allow_scripts=allow_scripts, level=level)
 
 
 def verified_object(chash: str) -> tuple[Path, list[dict[str, Any]]]:
@@ -393,26 +447,60 @@ def verified_object(chash: str) -> tuple[Path, list[dict[str, Any]]]:
 
 
 def _restore(root: Path, entry: dict[str, Any], chash: str, lock: dict[str, Any],
-             commit: str | None = None) -> dict[str, Any]:
+             commit: str | None = None, *, approve: str = "", allow_scripts: bool = False,
+             level: str | None = None) -> dict[str, Any]:
     """Re-install `chash` from the object store through the bundle translators.
 
-    The translation is deterministic, so a rollback writes exactly the bytes the
-    earlier install wrote."""
-    from . import capbundle
+    Gated like an install: the policy level must allow installs; the object is
+    re-inspected and re-assessed; scripts need `allow_scripts`; and content the
+    policy installed (not a per-hash approval) comes back only under SAFE_AUTO
+    while it is still inert, or with an explicit `approve` of its hash (which
+    makes the user the approver). The translation is deterministic, so a
+    rollback writes exactly the bytes the earlier install wrote."""
+    from . import autonomy, capbundle
+    name = entry["name"]
+    level = level or autonomy.level(root)
+    explicit = bool(approve) and chash.startswith(approve) and len(approve) >= 12
+    problem = autonomy.install_problem(level, remote=False, approve=approve if explicit else "")
+    if problem:
+        raise PortfolioError(problem)
     obj, files = verified_object(chash)
-    hosts = tuple(h for h in (entry.get("hosts") or ["claude-code"]) if h in capbundle.HOSTS) or ("claude-code",)
+    record = capbundle.get_record(root, name)
+    by = str(record.get("approved_by") or "user")
     try:
-        kind = capbundle.classify(files, lambda rel: (obj / firewall.safe_rel(rel)).read_bytes())["kind"]
-        if kind != "skill":
-            raise capbundle.BundleError(f"object store content {chash[:12]} is a {kind}, not a skill")
-        bundle = capbundle.from_files(entry["name"], obj, files, chash)
-        ip = capbundle.plan_install(root, bundle, hosts, _legacy_files(root, entry["name"], entry))
+        src = entry.get("source") or {}
+        report = firewall.inspect(obj.parent, files, {"id": f"object/{chash[:12]}", "name": name, "path": name,
+                                                      "repo_license": entry.get("license") or "",
+                                                      "owner": src.get("owner") or "", "repo": src.get("repo") or ""},
+                                  {})
+        assessment = capbundle.assess(obj.parent, report, name)
+        if assessment["kind"] != "skill" or not assessment["installable"]:
+            raise capbundle.BundleError(f"object store content {chash[:12]} is not installable: "
+                                        + "; ".join(assessment["reasons"][:3]))
+        if by.startswith("policy:") and not explicit:
+            if level != "SAFE_AUTO" or not assessment["inert"]:
+                raise capbundle.BundleError(
+                    f"{name} was installed by the skill policy, not by your approval; under {level} it comes back "
+                    f"only with --approve {chash[:16]} (or under SAFE_AUTO while it is still inert)")
+        scripts = has_scripts(files)
+        if scripts and not allow_scripts:
+            raise capbundle.BundleError(f"this content ships scripts ({', '.join(scripts[:4])}); re-run with "
+                                        "--allow-scripts after reviewing them")
+        if report.verdict == "review" and not explicit and not entry.get("accepted_review"):
+            raise capbundle.BundleError("high-severity findings: approve the hash explicitly after reading them")
+        hosts = tuple(record.get("hosts") or ()) or capbundle.DEFAULT_HOSTS
+        bundle = capbundle.from_files(name, obj, files, chash, assessment=assessment)
+        ip = capbundle.plan_install(root, bundle, hosts, _legacy_files(root, name, entry))
         if ip.conflicts:
             raise capbundle.BundleError("refusing (nothing was written): " + "; ".join(ip.conflicts[:6]))
         capbundle.apply_install(ip)
     except (capbundle.BundleError, firewall.QuarantineError) as exc:
         raise PortfolioError(str(exc)) from exc
-    entry.update(status="active", content_hash=chash, files=_host_files(ip, "claude-code"))
+    approved_by = "user" if explicit else by
+    capbundle.set_record(root, name, approved_by=approved_by, hosts=list(hosts), content_hash=chash,
+                         status="active")
+    entry.update(status="active", content_hash=chash, files=_host_files(ip, "claude-code"), hosts=list(hosts),
+                 approved_by=approved_by)
     if commit:
         entry["source"]["commit"] = commit
     save_lock(root, lock)
@@ -424,17 +512,17 @@ def remove_all_plan(root: Path, plan) -> None:
     (unmodified files only) and the lockfile."""
     from . import capbundle
     lock = load_lock(root)
-    for entry in lock["skills"].values():
-        if entry.get("status") == "active":
-            try:  # one bad entry never stops the rest of the uninstall
-                if capbundle.load_manifest(root, entry["name"])["hosts"]:
-                    result = capbundle.plan_uninstall(root, entry["name"], plan)
-                    for d in result["created_dirs"]:
-                        plan.remove_dir_if_empty(root / d)
-                else:
-                    _plan_remove(root, plan, entry)
-            except Exception:  # noqa: BLE001,S112 - its files are simply left in place
-                continue
+    for name in _installed_names(root, lock):
+        entry = lock["skills"].get(name) or {"name": name, "files": []}
+        try:  # one bad entry never stops the rest of the uninstall
+            if capbundle.load_manifest(root, name)["hosts"]:
+                result = capbundle.plan_uninstall(root, name, plan)
+                for d in result["created_dirs"]:
+                    plan.remove_dir_if_empty(root / d)
+            else:
+                _plan_remove(root, plan, entry)
+        except Exception:  # noqa: BLE001,S112 - its files are simply left in place
+            continue
     if lock_path(root).exists():
         plan.delete(lock_path(root))
 

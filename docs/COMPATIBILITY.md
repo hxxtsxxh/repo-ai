@@ -8,7 +8,7 @@
 | Python 3.10 – 3.14 (Linux) | required CI jobs (ubuntu-latest) |
 | Windows (Python 3.10, 3.13) | **supported**: required CI jobs (windows-latest, git `autocrlf` on). Paths are POSIX-normalised, CRLF files round-trip byte for byte, output is UTF-8 on pipes, locking uses `msvcrt`, and the background refresh uses `DETACHED_PROCESS`. Hooks need `sh`, which Claude Code on Windows provides through Git Bash. Live hook invocation by Claude Code on Windows has not been observed by the maintainers |
 | macOS CI | Python 3.13 on pushes to `main` and tags |
-| tree-sitter | optional (`repo-ai[ast]`); a regex fallback is used without it |
+| tree-sitter | optional (`repo-ai-cli[ast]`); a regex fallback is used without it |
 | git | optional; without it, recency, hotspots and co-change are off |
 
 ## Claude Code

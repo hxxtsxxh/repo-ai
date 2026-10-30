@@ -47,7 +47,7 @@ export const transcripts: Transcript[] = [
       o('    create  .repo-ai/config.toml'),
       o('    (+ 11 generated docs under .repo-ai/context/)'),
       o("  rules: 0 active, 3 proposed (`repo-ai learn` to review)"),
-      { k: 'warn', t: "  ! tree-sitter not installed: non-Python symbol extraction uses the regex fallback. Install with `pip install 'repo-ai[ast]'` for higher fidelity." },
+      { k: 'warn', t: "  ! tree-sitter not installed: non-Python symbol extraction uses the regex fallback. Install with `pip install 'repo-ai-cli[ast]'` for higher fidelity." },
     ],
   },
   {

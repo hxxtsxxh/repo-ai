@@ -25,9 +25,11 @@ changes or network execution needs a per-capability approval at every level
 Where it lives: the machine-local directory for this checkout
 (`registry.machine_dir`), never the repository. A cloned repository can commit
 anything under `.repo-ai/`, so a committed file must not be able to grant
-itself `SAFE_AUTO`. Raising the level to `SAFE_AUTO` or `TRIAL` is refused from
-an agent shell, hook or CI, or without a terminal; lowering it and `revoke` are
-always allowed.
+itself `SAFE_AUTO`. Raising the level to `SAFE_AUTO` or `TRIAL` is refused when an
+agent, hook or CI marker is set, or without a TTY; lowering it and `revoke` are
+always allowed. That check is defence in depth, not a boundary: an agent shell
+can unset the markers and fake a TTY (`env -u … script -q /dev/null …`). The
+agent host's own permission prompt for running the command is the boundary.
 """
 
 from __future__ import annotations
@@ -139,7 +141,8 @@ def _save(root: Path, current: dict[str, Any], new_level: str, event: str, by: s
 
 def set_level(root: Path, new_level: str, *, env: dict[str, str] | None = None,
               interactive: bool = True) -> dict[str, Any]:
-    """Set the level. Raising it (SAFE_AUTO, TRIAL) needs a human in a terminal."""
+    """Set the level. Raising it (SAFE_AUTO, TRIAL) is refused with an agent/CI marker or
+    without a TTY: defence in depth only; the agent host's permission prompt is the boundary."""
     wanted = str(new_level or "").strip().upper().replace("-", "_")
     if wanted not in LEVELS:
         raise PolicyError(f"unknown level {new_level!r}; choose one of: {', '.join(LEVELS)}")

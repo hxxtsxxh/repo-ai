@@ -85,7 +85,18 @@ _HIDDEN = re.compile("[​-‏ -‮⁠-⁤⁦-⁩﻿­᠎͏"
                      "\U000e0000-\U000e007f]")
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _HTML_COMMENT = re.compile(r"<!--")
-_URL = re.compile(r"(?i)\b(?:https?|ftp|file|ssh|git|wss?)://|\bwww\.[a-z0-9-]+\.")
+_URL = re.compile(r"(?i)\b(?:https?|ftp|file|ssh|git|wss?)://|\bwww\.[a-z0-9-]+\.|"
+                  # a bare host with a path or port ("raw.githubusercontent.com/acme/x", "gist.github.com/a")
+                  r"(?<![\w@.-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}(?::\d{2,5})?/[\w~%.-]|"
+                  # an agent's own fetch/browse tools, and in-code fetches
+                  r"\bweb\s?fetch\b|\bweb\s?search\b|\bfetch\s+tool\b|\bbrowser\s+tool\b|\bbrowse\s+to\b|"
+                  r"\burlopen\b|\brequests\.(?:get|post|put)\b|\bfetch\s*\(|\bhttpx\.|\bXMLHttpRequest\b|"
+                  r"\bsocket\.(?:socket|create_connection)\b")
+# Markdown that never renders: link-reference "comments" such as `[//]: # (hidden text)`
+_MD_COMMENT = re.compile(r"(?m)^[ \t]{0,3}\[[^\]\n]*\]:[ \t]*(?:#|<>)")
+# Licence URLs that standard licence texts carry; anything else in a licence file is a surface
+_LICENSE_HOSTS = re.compile(r"(?i)\b(?:https?://)?(?:www\.)?(?:apache\.org|opensource\.org|gnu\.org|fsf\.org|"
+                            r"mozilla\.org|creativecommons\.org|spdx\.org|unlicense\.org)(?:/[^\s)>\]]*)?")
 _NETWORK_CMD = re.compile(r"(?i)(?<![\w-])(curl|wget|invoke-webrequest|iwr|nc|ncat|netcat|telnet|ssh|scp|sftp|rsync|"
                           r"ftp|git\s+(clone|pull|fetch|push|submodule)|pip3?\s+install|uv\s+(add|pip\s+install)|"
                           r"npm\s+(i|install|exec)|pnpm\s+(add|dlx)|yarn\s+(add|dlx)|npx|bunx|uvx|pipx|"
@@ -102,7 +113,7 @@ _HIDDEN_CMD = re.compile(r"(?i)\bbase64\s+(-d|--decode)\b|\bfrom_?base64\b|\bato
                          r"\bsource\s+<\(|\$\(|`[^`\n]*\$\(")
 _FIREWALL_INFO_BLOCKERS = {"executable-bit", "external-host", "removed-front-matter", "dependency", "asset",
                            "binary-file"}
-_FIREWALL_LOW_BLOCKERS = {"long-skill-md", "compatibility-length"}
+_FIREWALL_LOW_BLOCKERS = {"long-skill-md", "compatibility-length", "name-dir-mismatch"}
 
 
 class BundleError(RuntimeError):
@@ -183,6 +194,8 @@ def _text_surfaces(text: str) -> list[str]:
         out.append("control-characters")
     if _HTML_COMMENT.search(text):
         out.append("hidden-html-comment")
+    if _MD_COMMENT.search(text):
+        out.append("hidden-markdown-comment")
     if any(len(line) > INERT_MAX_LINE for line in text.splitlines()):
         out.append("overlong-line")
     if _URL.search(text):
@@ -203,11 +216,51 @@ def _text_surfaces(text: str) -> list[str]:
     return out
 
 
-def assess(dest: Path, report: firewall.Report) -> dict[str, Any]:
+def front_name(text: str) -> str:
+    """The SKILL.md front-matter `name`, as the firewall reads it ('' when absent)."""
+    front = firewall._loose_front(text or "") or {}
+    return str(front.get("name", "")).strip()
+
+
+def path_key(rel: str) -> str:
+    """How a case-insensitive, normalising filesystem (APFS, NTFS) sees a path."""
+    import unicodedata
+    return "/".join(unicodedata.normalize("NFC", part).rstrip(". ").casefold() for part in rel.split("/"))
+
+
+def path_collisions(paths: list[str]) -> list[str]:
+    """Paths that land on the same file under case folding or trailing dots/spaces,
+    a trailing dot or space anywhere, and any file other than SKILL.md that folds to skill.md."""
+    out: list[str] = []
+    seen: dict[str, str] = {}
+    for rel in sorted(paths):
+        key = path_key(rel)
+        if any(part != part.rstrip(". ") for part in rel.split("/")):
+            out.append(f"{rel} (trailing dot or space)")
+        if key in seen:
+            out.append(f"{rel} collides with {seen[key]}")
+        seen.setdefault(key, rel)
+        if rel != "SKILL.md" and key == "skill.md":
+            out.append(f"{rel} folds to SKILL.md")
+    return out
+
+
+def _license_surfaces(rel: str, text: str) -> list[str]:
+    """A licence file ships with the skill, so its text gets the same checks as SKILL.md,
+    minus the licence vocabulary ("publish", "distribute") and the standard licence URLs."""
+    cleaned = _LICENSE_HOSTS.sub(" ", text)
+    out = [s for s in _text_surfaces(cleaned) if s != "risky-command"]
+    if "`" in text:
+        out.append("code-span")
+    return [f"{s}:{rel}" for s in out]
+
+
+def assess(dest: Path, report: firewall.Report, name: str | None = None) -> dict[str, Any]:
     """Kind, installability and inertness of one quarantined candidate.
 
     `inert` is true only when every structural check passes *and* the firewall
-    found nothing that matters. It is the only thing SAFE_AUTO may act on."""
+    found nothing that matters. It is the only thing SAFE_AUTO may act on.
+    `name` is the install name; a front-matter name that differs is a surface."""
     root = dest / "files"
 
     def read(rel: str) -> bytes:
@@ -252,15 +305,21 @@ def assess(dest: Path, report: firewall.Report) -> dict[str, Any]:
         surfaces.append("front-matter-keys:" + ",".join(sorted(keys - INERT_FRONT_KEYS))[:120])
     if firewall.strict_front_problem(skill_text):
         surfaces.append("front-matter-not-strict")
-    for f in report.files:  # license files are not loaded by any host, but they must be plain text too
+    declared = front_name(skill_text)
+    if name is not None and declared != name:
+        surfaces.append(f"name-mismatch:{declared[:40]}")
+    for problem in path_collisions([str(f["path"]) for f in report.files]):
+        installable = False
+        reasons.append(f"path collision: {problem}")
+        surfaces.append("path-collision")
+    for f in report.files:  # licence files are copied into the host directory: their text is checked too
         if f["path"] in LICENSE_FILES:
             try:
                 lic = read(f["path"]).decode("utf-8")
             except (OSError, UnicodeDecodeError, firewall.QuarantineError):
                 surfaces.append(f"non-utf8:{f['path']}")
                 continue
-            if _HIDDEN.search(lic) or _CONTROL.search(lic):
-                surfaces.append(f"hidden-unicode:{f['path']}")
+            surfaces.extend(_license_surfaces(f["path"], lic))
     surfaces.extend(_text_surfaces(skill_text))
 
     # the firewall: necessary, never sufficient
@@ -269,6 +328,8 @@ def assess(dest: Path, report: firewall.Report) -> dict[str, Any]:
     if not report.complete:
         surfaces.append("firewall-incomplete")
     for fnd in report.findings:
+        if fnd.rule == "external-host" and fnd.file in LICENSE_FILES and _LICENSE_HOSTS.search(fnd.evidence or ""):
+            continue  # a standard licence's own URL (apache.org, opensource.org, ...)
         sev = firewall.SEVERITY_ORDER.get(fnd.severity, 0)
         if sev >= firewall.SEVERITY_ORDER["medium"] or (fnd.severity == "low" and fnd.rule in
                                                         _FIREWALL_LOW_BLOCKERS) \
@@ -351,7 +412,7 @@ def from_files(name: str, root: Path, files: list[dict[str, Any]], expected_hash
 
 def from_quarantine(name: str, dest: Path, report: firewall.Report, expected_hash: str,
                     source: dict[str, Any] | None = None) -> CapabilityBundle:
-    assessment = assess(dest, report)
+    assessment = assess(dest, report, name)
     if report.content_hash != expected_hash:
         raise BundleError(f"content changed since it was reviewed ({expected_hash[:16]} → "
                           f"{report.content_hash[:16]}); vet it again")
@@ -456,6 +517,14 @@ def translate(bundle: CapabilityBundle, host: str) -> tuple[dict[str, str], list
         raise BundleError(f"only skills are installed; this is a {bundle.kind} ({KIND_RULES.get(bundle.kind, '')})")
     translator = HOSTS[host]
     base = translator.target_dir(bundle.name)
+    collisions = path_collisions([f.path for f in bundle.files])
+    if collisions:
+        raise BundleError("paths collide on a case-insensitive filesystem: " + "; ".join(collisions[:4]))
+    skill = next((f for f in bundle.files if f.path == "SKILL.md"), None)
+    declared = front_name(skill.data.decode("utf-8", errors="replace")) if skill else ""
+    if declared != bundle.name:
+        raise BundleError(f"SKILL.md names itself {declared[:40]!r}, not {bundle.name!r}: a skill may not "
+                          "claim another skill's name")
     out: dict[str, str] = {}
     modified: list[str] = []
     for f in bundle.files:
@@ -509,7 +578,33 @@ def load_manifest(root: Path, name: str) -> dict[str, Any]:
         dirs = [d for d in (entry.get("created_dirs") or []) if isinstance(d, str) and d in allowed]
         clean[host] = {**entry, "paths": paths, "created_dirs": dirs}
     data["hosts"] = clean
+    raw_record = data.get("record")
+    record: dict[str, Any] = raw_record if isinstance(raw_record, dict) else {}
+    data["record"] = {
+        "approved_by": str(record.get("approved_by", ""))[:40] if isinstance(record.get("approved_by"), str) else "",
+        "hosts": [h for h in (record.get("hosts") or []) if isinstance(h, str) and h in HOSTS],
+        "content_hash": str(record.get("content_hash", "")) if re.fullmatch(
+            r"[0-9a-f]{64}", str(record.get("content_hash", ""))) else "",
+        "status": record.get("status") if record.get("status") in ("active", "disabled") else "",
+    } if record else {}
     return data
+
+
+def get_record(root: Path, name: str) -> dict[str, Any]:
+    """The machine-local install record: who approved it, for which hosts, which content.
+
+    This, not the committed lockfile, is authoritative for `approved_by`, hosts and
+    status: a `git pull` can rewrite the lockfile, not this."""
+    return dict(load_manifest(root, name).get("record") or {})
+
+
+def set_record(root: Path, name: str, **fields: Any) -> dict[str, Any]:
+    man = load_manifest(root, name)
+    record = dict(man.get("record") or {})
+    record.update(fields)
+    man["record"] = record
+    save_manifest(root, man)
+    return get_record(root, name)
 
 
 def _safe_project_rel(rel: str) -> bool:
@@ -529,7 +624,7 @@ def save_manifest(root: Path, data: dict[str, Any]) -> None:
     except ValueError:
         pass
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if not data.get("hosts"):
+    if not data.get("hosts") and not data.get("record"):
         try:
             path.unlink()
         except FileNotFoundError:
@@ -628,12 +723,22 @@ def plan_install(root: Path, bundle: CapabilityBundle, hosts: tuple[str, ...],
     """Plan writes for every host. Nothing is written; `conflicts` lists every refusal.
 
     `previous_files` (host -> lock-style file list) lets a skill installed before
-    manifests existed be upgraded: a file still byte-identical to what was
-    recorded counts as repo-ai's."""
+    manifests existed be upgraded. The caller must derive it from machine-local
+    evidence (the object store), never from the committed lockfile alone: a file
+    listed there counts as repo-ai's when its bytes are exactly that evidence."""
     from .fsutil import Plan, UnsafePath, ensure_inside
     plan = Plan(root)
     ip = InstallPlan(root, bundle, hosts, plan)
     man = load_manifest(root, bundle.name)
+    collisions = path_collisions([f.path for f in bundle.files])
+    if collisions:
+        ip.conflicts.extend(f"bundle: {c}" for c in collisions)
+        return ip
+    if "claude-code" in hosts:
+        from .adapters.claude_content import CURATED_SKILL_NAMES, NATIVE_MANAGEMENT_SKILLS
+        if bundle.name in CURATED_SKILL_NAMES or bundle.name in NATIVE_MANAGEMENT_SKILLS:
+            ip.conflicts.append(f"claude-code: {bundle.name} is reserved for a curated repo-ai skill")
+            return ip
     for host in hosts:
         texts, modified = translate(bundle, host)
         for m in modified:
@@ -652,7 +757,7 @@ def plan_install(root: Path, bundle: CapabilityBundle, hosts: tuple[str, ...],
         if target_dir.exists() and not mine and not legacy and not _owned_by_others(root, target_dir):
             ip.conflicts.append(f"{host}: {base.as_posix()} already exists and is not repo-ai managed")
             continue
-        ip.created_dirs[host] = _missing_dirs(root, base) or ([base.as_posix()] if legacy and not mine else [])
+        ip.created_dirs[host] = _missing_dirs(root, base)  # never a directory that already existed
         ip.legacy[host] = sorted(rel for rel, sha in legacy.items() if _sha_file(root / rel) == sha)
         writes: dict[str, str] = {}
         shared: list[str] = []

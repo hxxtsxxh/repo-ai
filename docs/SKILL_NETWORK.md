@@ -398,7 +398,7 @@ Treat `blocked` as "look closely" and `review` as "read it yourself before enabl
 
 ```sh
 repo-ai skills policy                      # show the level (default PROPOSE) and what each level allows
-repo-ai skills policy set SAFE_AUTO        # only from your own terminal: refused from agents, hooks, CI
+repo-ai skills policy set SAFE_AUTO        # run it yourself: refused with agent/CI markers or no TTY
 repo-ai skills policy revoke               # back to PROPOSE; removes what the policy installed
 repo-ai skills autopilot [names] [--dry-run]
 repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-run   # diff + conflicts
@@ -406,6 +406,8 @@ repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-ru
 
 **Levels:** `OFFLINE`, `DISCOVER_ONLY`, `PROPOSE` (default), `SAFE_AUTO`, `TRIAL`, `MANUAL_ONLY`.
 - The level is stored outside the repository, so a clone cannot grant itself autonomy.
+- Refusing to raise the level from an agent shell is defence in depth, not a boundary: an agent can
+  unset the markers and fake a terminal. Your agent's permission prompt for the command is the boundary.
 - **What `SAFE_AUTO` may install:** only an **inert** skill, under every one of these conditions:
   - its directory holds a SKILL.md and plain licence files, and nothing else;
   - it is pinned to the hash that was vetted and re-checked at install;

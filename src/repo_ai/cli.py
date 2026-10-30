@@ -2602,12 +2602,19 @@ def _skills_network(args, root, cfg, layout) -> int:
                     (f"disabled {', '.join(out)}" if out else "nothing to disable"))
 
     if action == "enable":
-        entry = portfolio.enable(root, args.names[0])
+        if not args.names:
+            raise SystemExit("error: repo-ai skills enable <name> [--approve <hash>]")
+        try:
+            entry = portfolio.enable(root, args.names[0], approve=args.approve or "",
+                                     allow_scripts=args.allow_scripts, level=level)
+        except portfolio.PortfolioError as exc:
+            raise SystemExit(f"error: {exc}") from exc
         return emit(entry, f"re-enabled {args.names[0]} ({entry['content_hash'][:16]}, verified)")
 
     if action == "rollback":
         try:
-            entry = portfolio.rollback(root, args.names[0])
+            entry = portfolio.rollback(root, args.names[0], approve=args.approve or "",
+                                       allow_scripts=args.allow_scripts, level=level)
         except portfolio.PortfolioError as exc:
             raise SystemExit(f"error: {exc}") from exc
         return emit(entry, f"rolled back {args.names[0]} to {entry['content_hash'][:16]}")
@@ -2697,8 +2704,7 @@ def _skills_policy(args, root: Path) -> int:
             data = autonomy.set_level(root, args.names[1], interactive=sys.stdin.isatty())
         elif verb == "revoke" and len(args.names) == 1:
             data = autonomy.revoke(root)
-            auto = sorted(n for n, e in portfolio.load_lock(root)["skills"].items()
-                          if str(e.get("approved_by", "")).startswith("policy:") and e.get("status") == "active")
+            auto = portfolio.policy_installed(root)  # the machine-local record, never the lockfile
             data["disabled"] = portfolio.disable(root, auto) if auto else []
         else:
             raise autonomy.PolicyError("usage: repo-ai skills policy [show | set LEVEL | revoke]; levels: "
@@ -2709,9 +2715,7 @@ def _skills_policy(args, root: Path) -> int:
         else:
             print(f"error: {exc}", file=sys.stderr)
         return exc.code
-    lock = portfolio.load_lock(root)
-    data["auto_installed"] = sorted(n for n, e in lock["skills"].items()
-                                    if str(e.get("approved_by", "")).startswith("policy:"))
+    data["auto_installed"] = portfolio.policy_installed(root)
     data["levels"] = dict(autonomy.DESCRIPTIONS)
     data["kinds"] = dict(capbundle.KIND_RULES)
     data["hosts"] = [t.to_json() for t in capbundle.HOSTS.values()]
@@ -3618,7 +3622,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         except ValueError:
             pass
     add("tree-sitter", "info", "installed" if tree_sitter_available()
-        else "not installed — regex fallback for non-Python symbols (`pip install 'repo-ai[ast]'`)")
+        else "not installed — regex fallback for non-Python symbols (`pip install 'repo-ai-cli[ast]'`; with pipx: "
+        "`pipx inject repo-ai-cli 'tree-sitter>=0.23' 'tree-sitter-language-pack>=0.7,<1.0'`)")
 
     configured = recorded_agents(root, cfg, layout) or ()
     wanted = configured if args.agent in (None, "all") else (args.agent,)
@@ -4456,10 +4461,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-firewall", action="store_true",
                    help="inventory: skip the static firewall pass over installed skills")
     p.add_argument("--third-party", action="store_true", help="disable: third-party skills")
-    p.add_argument("--approve", metavar="HASH", help="install: the content hash you reviewed")
+    p.add_argument("--approve", metavar="HASH", help="install, enable, rollback: the content hash you reviewed")
     p.add_argument("--accept-review", action="store_true",
                    help="install: accept high-severity findings you have read")
-    p.add_argument("--allow-scripts", action="store_true", help="install: the skill ships scripts")
+    p.add_argument("--allow-scripts", action="store_true",
+                   help="install, enable, rollback: the skill ships scripts")
     p.add_argument("--host", metavar="HOSTS",
                    help="install: comma-separated hosts (default claude-code; codex, gemini-cli, antigravity "
                         "and ibm-bob are export-only)")

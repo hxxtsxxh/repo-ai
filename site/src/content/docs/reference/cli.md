@@ -685,9 +685,9 @@ skill lifecycle (experimental, except the read-only inventory and vet): list \| 
 | `--all` | audit: every quarantined candidate; disable --third-party: the kill switch; inventory: list every item |
 | `--no-firewall` | inventory: skip the static firewall pass over installed skills |
 | `--third-party` | disable: third-party skills |
-| `--approve` `HASH` | install: the content hash you reviewed |
+| `--approve` `HASH` | install, enable, rollback: the content hash you reviewed |
 | `--accept-review` | install: accept high-severity findings you have read |
-| `--allow-scripts` | install: the skill ships scripts |
+| `--allow-scripts` | install, enable, rollback: the skill ships scripts |
 | `--host` `HOSTS` | install: comma-separated hosts (default claude-code; codex, gemini-cli, antigravity and ibm-bob are export-only) |
 | `--check` | updates: check upstream (network); inventory: exit 1 on a high-severity issue |
 | `--max-cost-per-run` `MAX_COST_PER_RUN` | benchmark: cap per run |
