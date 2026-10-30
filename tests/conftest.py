@@ -158,3 +158,6 @@ def claude_fake_login(monkeypatch):
     from repo_ai.providers import adapters
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "fake-token-for-tests")
     monkeypatch.setattr(adapters, "_claude_preflight", lambda executable, plan: None)
+    monkeypatch.setattr(adapters, "_claude_isolation_probe", lambda *a, **k: [])
+    monkeypatch.setattr(adapters, "_claude_init_problems", lambda init, read_only: [])
+    monkeypatch.setattr(adapters, "_claude_init_event", lambda output: {"fake": True})

@@ -326,15 +326,18 @@ def test_claude_profile_denies_foreign_unix_sockets(tmp_path):
 
 def _probe_claude(tmp_path, init: dict) -> Path:
     marker = tmp_path / "ws" / "inferred"  # inside the workspace: the only place the sandbox lets it write
+    probe_end = {"type": "result", "is_error": True, "total_cost_usd": 0, "session_id": "s"}
     body = ('for a in "$@"; do if [ "$a" = "repo-ai-isolation-probe-not-a-model" ]; then\n'
-            f"  echo '{json.dumps(init)}'; exit 1; fi; done\n"
+            f"  echo '{json.dumps(init)}'; echo '{json.dumps(probe_end)}'; exit 1; fi; done\n"
             f"touch {marker}\n"
+            f"echo '{json.dumps(CLEAN_INIT)}'\n"
             'echo \'{"type":"result","is_error":false,"result":"ok","session_id":"s","total_cost_usd":0.01}\'')
     return _fake_claude(tmp_path, FULL_HELP, body)
 
 
 CLEAN_INIT = {"type": "system", "subtype": "init", "session_id": "s", "tools": ["Edit", "Glob", "Grep", "Read", "Write"],
-              "mcp_servers": [], "skills": [], "slash_commands": [],
+              "mcp_servers": [], "skills": [], "slash_commands": [], "output_style": "default",
+              "agents": ["claude", "Explore", "general-purpose", "Plan"],
               "plugins": [{"name": "cc-plugin-agents-md", "path": "builtin"}]}
 
 
@@ -367,3 +370,53 @@ def test_account_sync_cache_is_left_to_the_isolation_probe_but_user_skills_are_r
     (cfg / "skills" / "mine").mkdir()
     (cfg / "skills" / "mine" / "SKILL.md").write_text("x")
     assert not claude_auth.plan({"REPO_AI_CLAUDE_CONFIG_DIR": str(cfg), "USER": "u"}).usable
+
+
+
+@pytest.mark.parametrize("init,ok", [
+    (CLEAN_INIT, True),
+    ({k: v for k, v in CLEAN_INIT.items() if k != "tools"}, False),
+    ({k: v for k, v in CLEAN_INIT.items() if k != "mcp_servers"}, False),
+    ({**CLEAN_INIT, "tools": ["Read", "Edit"]}, False),                        # not the requested set either
+    ({**CLEAN_INIT, "plugins": [{"name": "cc-plugin-evil", "path": "/tmp/x"}]}, False),
+    ({**CLEAN_INIT, "agents": [*CLEAN_INIT["agents"], "my-agent"]}, False),
+    ({**CLEAN_INIT, "output_style": "pirate"}, False),
+])
+def test_init_checks_require_every_field_and_exact_tools(init, ok):
+    assert (adapters._claude_init_problems(init, read_only=False) == []) is ok
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="exercises the seatbelt path")
+def test_a_probe_that_reached_inference_is_refused(tmp_path, monkeypatch):
+    real = {"type": "assistant", "message": {"model": "claude-x", "content": []}}
+    end = {"type": "result", "is_error": False, "total_cost_usd": 0.02}
+    body = f"echo '{json.dumps(CLEAN_INIT)}'; echo '{json.dumps(real)}'; echo '{json.dumps(end)}'"
+    exe = _fake_claude(tmp_path, FULL_HELP, body)
+    res = _run_live(tmp_path, exe, monkeypatch, {"CLAUDE_CODE_OAUTH_TOKEN": "t", "USER": "u"})
+    assert res["capture_status"] == "isolation_probe_failed"
+    assert any("before inference" in r for r in res["reasons"])
+
+
+def test_probe_model_flag_follows_the_executable_even_under_a_prefix_ending_in_double_dash(tmp_path, monkeypatch):
+    seen = []
+
+    def fake_capture(cmd, *a, **k):
+        seen.append(cmd)
+        from repo_ai.providers.discovery import ProbeResult
+        return ProbeResult(1, "complete", b"", b"")
+    monkeypatch.setattr(adapters, "_capture", fake_capture)
+    adapters._claude_isolation_probe(["/usr/bin/bwrap", "--ro-bind", "/", "/", "--"], ["/x/claude", "-p", "--", "hi"],
+                                     tmp_path, {}, read_only=False)
+    cmd = seen[0]
+    assert cmd[cmd.index("/x/claude") + 1: cmd.index("/x/claude") + 3] == ["--model", adapters.ISOLATION_PROBE_MODEL]
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="seatbelt is macOS-only")
+def test_provider_profile_denies_launchservices_open(tmp_path):
+    ws, sc = tmp_path / "w", tmp_path / "s"
+    ws.mkdir()
+    sc.mkdir()
+    prefix = adapters._execution_sandbox_prefix(ws, sc, allow_network=True, provider="codex", live=True)
+    assert "(deny lsopen)" in prefix[2] and "(deny appleevent-send)" in prefix[2]
+    r = subprocess.run([*prefix, "/usr/bin/open", "-g", "-a", "TextEdit"], capture_output=True, timeout=20)
+    assert r.returncode != 0

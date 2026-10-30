@@ -100,7 +100,9 @@ def audit_config_dir(path: Path) -> list[str]:
         d = path / sub
         # `<sub>/synced` is the account's own sync cache (any non-safe-mode session of the account fills it); whether
         # anything from it would load is checked per run by the isolation probe, which reads the session's init event
-        if d.is_dir() and any(p.is_file() and "synced" not in p.relative_to(d).parts[:1] for p in d.rglob("*")):
+        synced_ok = sub == "skills"  # the account sync cache observed here; anything else must be empty
+        if d.is_dir() and any(p.is_file() and not (synced_ok and p.relative_to(d).parts[:1] == ("synced",))
+                              for p in d.rglob("*")):
             problems.append(f"{path}/{sub} is not empty; repo-ai's Claude login must carry no customisations")
     try:
         installed = json.loads((path / "plugins" / "installed_plugins.json").read_text("utf-8"))

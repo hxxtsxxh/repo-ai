@@ -580,8 +580,9 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             net_rule += ('(deny network-outbound (remote unix-socket))'
                          '(allow network-outbound (remote unix-socket (path-literal "/private/var/run/mDNSResponder")))'
                          f"(allow network-outbound (remote unix-socket (subpath {json.dumps(sc_str)})))")
+        # `open` (LaunchServices) and Apple events would start programs outside this sandbox and outside the sweep
         profile = (
-            f"(version 1)(allow default){net_rule}{read_rule}(deny file-write*)"
+            f"(version 1)(allow default)(deny lsopen)(deny appleevent-send){net_rule}{read_rule}(deny file-write*)"
             f"(allow file-write* (subpath {json.dumps(ws_str)}))"
             f"(allow file-write* (subpath {json.dumps(sc_str)}))"
             '(allow file-write* (literal "/dev/null"))'
@@ -914,8 +915,13 @@ def run_provider(
             log_file=scratch / "agy.log",
             read_only=not write_paths,
         )
+        is_seatbelt = prefix[:1] == ["/usr/bin/sandbox-exec"]
         if claude_plan is not None:
-            unexpected = _claude_isolation_probe([*prefix, *argv], workspace, env, read_only=not write_paths)
+            try:
+                unexpected = _claude_isolation_probe(prefix, argv, workspace, env, read_only=not write_paths)
+            finally:  # the probe runs under the same profile and marker: nothing it started may outlive it
+                probe_cleanup = _reap_provider_run(run_marker) if is_seatbelt else []
+            unexpected += probe_cleanup
             if unexpected:
                 return {
                     "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
@@ -925,9 +931,12 @@ def run_provider(
                 }
         # OpenCode's events embed whole tool inputs/outputs (observed 68 KB for a 28-edit local run)
         limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
-        result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
-                          separate_stderr=True, max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
-        cleanup_problems = _reap_provider_run(run_marker) if prefix[:1] == ["/usr/bin/sandbox-exec"] else []
+        try:
+            result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
+                              separate_stderr=True,
+                              max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
+        finally:  # also on an exception or Ctrl-C: setsid'd descendants are not in the process group
+            cleanup_problems = _reap_provider_run(run_marker) if is_seatbelt else []
         try:
             unchanged = raw.resolve(strict=True) == resolved and _identity(resolved) == identity_before
         except (OSError, RuntimeError, ValueError):
@@ -960,6 +969,12 @@ def run_provider(
         reasons.append(f"provider process capture terminated early: {result.status}")
     if cleanup_problems and not simulated:
         reasons.extend(cleanup_problems)
+    if claude_plan is not None:
+        # the same checks on the real session's own init event (account state could change after the probe)
+        init = _claude_init_event(result.output)
+        reasons.extend(f"live session: {r}" for r in
+                       (_claude_init_problems(init, read_only=not write_paths) if init else
+                        ["no init event; what the session loaded is unknown"]))
     if result.returncode != 0:
         reasons.append(f"provider process exited with code {result.returncode}")
     if provider == "gemini" and result.returncode == 41:  # Gemini CLI's documented authentication-failure exit code
@@ -1018,43 +1033,90 @@ def setup_problems(provider: str) -> list[str]:
 
 
 ISOLATION_PROBE_MODEL = "repo-ai-isolation-probe-not-a-model"
+BUILTIN_AGENTS = frozenset({"claude", "Explore", "general-purpose", "Plan"})
 
 
-def _claude_isolation_probe(cmd: list[str], workspace: Path, env: dict[str, str], *, read_only: bool) -> list[str]:
-    """Start the exact live invocation with a model name Claude Code rejects before any API request, and read what the
-    session loaded from its init event. A login's account can sync plugins, MCP connectors and skills into every
-    session (observed: a dedicated login carrying shell and mail connectors); the flags should remove them, and this
-    checks that they did before the model ever runs. Returns reasons to refuse (empty means as requested)."""
-    split = cmd.index("--") if "--" in cmd else len(cmd)
-    probe = [*cmd[:split], "--model", ISOLATION_PROBE_MODEL, *cmd[split:]]
-    result = _capture(probe, workspace, env, timeout=60.0, max_timeout=60.0, separate_stderr=True)
-    init: dict[str, Any] = {}
-    for line in result.output.decode("utf-8", "replace").splitlines():
+def _claude_init_event(output: bytes) -> dict[str, Any]:
+    for line in output.decode("utf-8", "replace").splitlines():
         try:
             obj = json.loads(line)
         except json.JSONDecodeError:
             continue
         if isinstance(obj, dict) and obj.get("type") == "system" and obj.get("subtype") == "init":
-            init = obj
-            break
-    if not init:
-        return ["claude isolation probe produced no init event; what the session would load is unknown"]
-    allowed = set((claude_auth.READ_TOOLS if read_only else claude_auth.EDIT_TOOLS).split(","))
-    tools = [str(t) for t in init.get("tools") or []]
-    plugins = [str(p.get("name", p)) if isinstance(p, dict) else str(p) for p in init.get("plugins") or []]
-    reasons = []
-    if set(tools) - allowed:
-        reasons.append("claude would load tools repo-ai did not request: " + ", ".join(sorted(set(tools) - allowed)))
-    if init.get("mcp_servers"):
-        names = [str(m.get("name", m)) if isinstance(m, dict) else str(m) for m in init["mcp_servers"]]
-        reasons.append("claude would connect MCP servers: " + ", ".join(names[:8]))
-    extra_plugins = [p for p in plugins if not p.startswith("cc-plugin-")]
-    if extra_plugins:
-        reasons.append("claude would load plugins: " + ", ".join(extra_plugins[:8]))
-    if init.get("skills") or init.get("slash_commands"):
-        reasons.append("claude would load skills or commands: "
-                       + ", ".join([str(s) for s in [*(init.get("skills") or []), *(init.get("slash_commands") or [])]][:8]))
-    return [f"isolation probe refused the run: {r}" for r in reasons]
+            return obj
+    return {}
+
+
+def _claude_init_problems(init: dict[str, Any], *, read_only: bool) -> list[str]:
+    """What a Claude session loaded beyond repo-ai's request. Missing or renamed fields are problems, not passes."""
+    problems = []
+    for key in ("tools", "mcp_servers", "plugins", "skills", "slash_commands", "agents"):
+        if not isinstance(init.get(key), list):
+            problems.append(f"init event has no `{key}` list; cannot confirm isolation")
+    if problems:
+        return problems
+    wanted = set((claude_auth.READ_TOOLS if read_only else claude_auth.EDIT_TOOLS).split(","))
+    tools = {str(t) for t in init["tools"]}
+    if tools != wanted:
+        problems.append(f"tools {sorted(tools)} differ from the requested {sorted(wanted)}")
+    if init["mcp_servers"]:
+        problems.append("MCP servers: " + ", ".join(str(m.get("name", m)) if isinstance(m, dict) else str(m)
+                                                     for m in init["mcp_servers"][:8]))
+    foreign = [str(p.get("name", p)) if isinstance(p, dict) else str(p) for p in init["plugins"]
+               if not (isinstance(p, dict) and str(p.get("name", "")).startswith("cc-plugin-")
+                       and p.get("path") == "builtin")]
+    if foreign:
+        problems.append("plugins: " + ", ".join(foreign[:8]))
+    if init["skills"] or init["slash_commands"]:
+        problems.append("skills or commands: " + ", ".join(str(x) for x in [*init["skills"], *init["slash_commands"]][:8]))
+    agents = {str(a.get("name", a)) if isinstance(a, dict) else str(a) for a in init["agents"]}
+    if agents - BUILTIN_AGENTS:
+        problems.append("custom agents: " + ", ".join(sorted(agents - BUILTIN_AGENTS)[:8]))
+    if init.get("output_style", "default") != "default":
+        problems.append(f"output style {init.get('output_style')!r}")
+    return problems
+
+
+def _workspace_snapshot(workspace: Path) -> list[tuple[str, int, int]]:
+    out = []
+    for path in sorted(workspace.rglob("*")):
+        try:
+            st = path.lstat()
+        except OSError:
+            continue
+        out.append((path.relative_to(workspace).as_posix(), st.st_size, st.st_mtime_ns))
+    return out
+
+
+def _claude_isolation_probe(prefix: list[str], argv: list[str], workspace: Path, env: dict[str, str], *,
+                            read_only: bool) -> list[str]:
+    """Start the exact live invocation with a model name Claude Code rejects before any API request, and read what the
+    session loaded from its init event. A login's account can sync plugins, MCP connectors and skills into every
+    session (observed: a dedicated login carrying shell and mail connectors); the flags should remove them, and this
+    checks that they did before the model ever runs. The probe must also provably stop before inference (error result,
+    zero cost, no model turn, workspace untouched). Returns reasons to refuse (empty means as requested)."""
+    probe = [*prefix, argv[0], "--model", ISOLATION_PROBE_MODEL, *argv[1:]]  # right after the executable
+    before = _workspace_snapshot(workspace)
+    result = _capture(probe, workspace, env, timeout=60.0, max_timeout=60.0, separate_stderr=True)
+    problems: list[str] = []
+    if _workspace_snapshot(workspace) != before:
+        problems.append("the probe changed the workspace")
+    events = []
+    for line in result.output.decode("utf-8", "replace").splitlines():
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict):
+            events.append(obj)
+    init = next((e for e in events if e.get("type") == "system" and e.get("subtype") == "init"), {})
+    final = next((e for e in reversed(events) if e.get("type") == "result"), {})
+    inferred = any(e.get("type") == "assistant" and isinstance(e.get("message"), dict)
+                   and e["message"].get("model") != "<synthetic>" for e in events)
+    if inferred or final.get("is_error") is not True or final.get("total_cost_usd") not in (0, 0.0):
+        problems.append("the probe did not stop before inference (its model name was accepted?)")
+    problems += _claude_init_problems(init, read_only=read_only) if init else ["the probe produced no init event"]
+    return [f"isolation probe refused the run: {r}" for r in problems]
 
 
 def _reap_provider_run(run_marker: str | None) -> list[str]:
