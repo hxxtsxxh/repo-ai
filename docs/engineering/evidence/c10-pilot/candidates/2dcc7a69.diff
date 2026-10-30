@@ -1,6 +1,3 @@
-diff --git a/invoicekit/__pycache__/lines.cpython-312.pyc b/invoicekit/__pycache__/lines.cpython-312.pyc
-index b459d34..bfae9d5 100644
-Binary files a/invoicekit/__pycache__/lines.cpython-312.pyc and b/invoicekit/__pycache__/lines.cpython-312.pyc differ
 diff --git a/invoicekit/lines.py b/invoicekit/lines.py
 index bb73121..171a7e8 100644
 --- a/invoicekit/lines.py
@@ -26,9 +23,6 @@ index bb73121..171a7e8 100644
 +    subtotal = sum(line_total(qty, unit_cents) for qty, unit_cents in lines)
 +    tax = Decimal(subtotal) * Decimal(str(tax_rate)) / 100
 +    return subtotal + int(tax.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
-diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc
-index 4ccb815..74f6a5f 100644
-Binary files a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc and b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc differ
 diff --git a/tests/test_money.py b/tests/test_money.py
 index c937b98..7a37991 100644
 --- a/tests/test_money.py

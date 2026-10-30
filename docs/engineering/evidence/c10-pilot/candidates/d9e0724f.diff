@@ -1,6 +1,3 @@
-diff --git a/invoicekit/__pycache__/money.cpython-312.pyc b/invoicekit/__pycache__/money.cpython-312.pyc
-index 3698e3c..9e07730 100644
-Binary files a/invoicekit/__pycache__/money.cpython-312.pyc and b/invoicekit/__pycache__/money.cpython-312.pyc differ
 diff --git a/invoicekit/money.py b/invoicekit/money.py
 index 5cc842b..4c1e101 100644
 --- a/invoicekit/money.py
@@ -21,9 +18,6 @@ index 5cc842b..4c1e101 100644
 +        raise InvoiceError(f"parts must be a positive integer: {parts!r}")
 +    base, remainder = divmod(int(cents), parts)
 +    return [base + 1] * remainder + [base] * (parts - remainder)
-diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc
-index 4ccb815..c8095be 100644
-Binary files a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc and b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc differ
 diff --git a/tests/test_money.py b/tests/test_money.py
 index c937b98..9a512de 100644
 --- a/tests/test_money.py

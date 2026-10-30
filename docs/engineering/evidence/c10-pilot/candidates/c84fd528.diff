@@ -1,6 +1,3 @@
-diff --git a/invoicekit/__pycache__/money.cpython-312.pyc b/invoicekit/__pycache__/money.cpython-312.pyc
-index 3698e3c..48aa72f 100644
-Binary files a/invoicekit/__pycache__/money.cpython-312.pyc and b/invoicekit/__pycache__/money.cpython-312.pyc differ
 diff --git a/invoicekit/money.py b/invoicekit/money.py
 index 5cc842b..13ad717 100644
 --- a/invoicekit/money.py
@@ -26,9 +23,6 @@ index 5cc842b..13ad717 100644
  def format_amount(cents, currency):
      """Render integer cents with an ISO 4217 code, e.g. "USD 12.34"."""
      code = str(currency).strip()
-diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc
-index 4ccb815..79f3b3f 100644
-Binary files a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc and b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc differ
 diff --git a/tests/test_money.py b/tests/test_money.py
 index c937b98..4f68e3b 100644
 --- a/tests/test_money.py

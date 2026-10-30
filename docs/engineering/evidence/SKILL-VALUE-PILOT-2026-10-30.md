@@ -4,8 +4,9 @@ Protocol predeclared in `EXPERIMENTS.md` and pushed to the public repository as 
 19:00:03Z, GitHub activity log) before the harness started the first live call (19:00:50Z). After a rebase onto the 0.11.1 merge, the same text is commit `2e25d87`; `263b24d`
 is still fetchable from GitHub by its hash, and `EXPERIMENTS.md` is identical in both. Everything needed to
 re-run is in `c10-pilot/`: the fixture (`base/`), the skill (`skill/`), the hidden oracle (`oracle/`), the harness
-(`pilot.py`, `grade.sh`), the random arm assignment (`mapping.json`), per-run results (`results.json`) and each run's
-candidate diff (`candidates/`).
+(`pilot.py`, `grade.sh`), the random arm assignment (`mapping.json`), per-run results (`results.json`), each run's
+candidate diff (`candidates/`) and a tool-call trace extracted from the raw streams (`tool-trace.txt`; the raw streams
+stay local because they carry session metadata).
 
 Setup: repo-ai 0.11.1 development build at `029e6fa`; the skill installed in the skill arm through `repo-ai skills
 discover --from-path` and `skills install --approve ab942622969d0a1e --host claude-code`; both arms ran `repo-ai init
@@ -36,7 +37,8 @@ NOT_YET_DEMONSTRATED.
   (125 → 113); the oracle and the control round the amount left (125 → 112). Both read the rule literally. Rescoring
   t1 as a tie would still give INCONCLUSIVE (one task higher, none lower).
 - **Isolation held:** three runs (two skill, one control) tried `Bash` to run pytest; each got "No such tool
-  available: Bash". No run read or wrote a path outside its project. Visible tests passed in all six projects.
+  available: Bash". Every file-tool call (Read, Edit, Glob, Grep, including patterns) stayed inside its project: `c10-pilot/tool-trace.txt`
+  lists each call, the init event (tools, no MCP server, model) and the result of every run. Visible tests passed in all six projects.
 - **Cost:** $0.0255 notional for six runs (skill arm $0.0145, control $0.0110: the skill read adds a turn).
 
 ## Product findings

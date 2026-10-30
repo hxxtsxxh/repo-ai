@@ -1,6 +1,3 @@
-diff --git a/invoicekit/__pycache__/money.cpython-312.pyc b/invoicekit/__pycache__/money.cpython-312.pyc
-index 3698e3c..79682bc 100644
-Binary files a/invoicekit/__pycache__/money.cpython-312.pyc and b/invoicekit/__pycache__/money.cpython-312.pyc differ
 diff --git a/invoicekit/money.py b/invoicekit/money.py
 index 5cc842b..39e17d1 100644
 --- a/invoicekit/money.py
@@ -17,9 +14,6 @@ index 5cc842b..39e17d1 100644
 +        raise InvoiceError(f"discount out of range: {percent!r}")
 +    remaining = Decimal(int(cents)) * (100 - Decimal(str(percent))) / 100
 +    return int(remaining.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
-diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc
-index 4ccb815..4fabc2a 100644
-Binary files a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc and b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc differ
 diff --git a/tests/test_money.py b/tests/test_money.py
 index c937b98..1c14d95 100644
 --- a/tests/test_money.py
