@@ -53,3 +53,24 @@ def test_detection_is_a_path_lookup_and_refuses_repository_executables(tmp_path,
 def test_generic_names_are_not_used_for_detection():
     for p in catalog.load()["providers"]:
         assert not {"agent", "q", "cn"} & set(p["executables"])
+
+
+def test_codex_prefers_a_dedicated_login_and_never_copies_more_than_its_two_files(tmp_path, monkeypatch):
+    from pathlib import Path
+    from repo_ai.providers import adapters
+    real = tmp_path / "real"
+    (real / ".codex" / "sessions").mkdir(parents=True)
+    (real / ".codex" / "auth.json").write_text("personal")
+    (real / ".codex" / "sessions" / "s.jsonl").write_text("history")
+    ded = tmp_path / "ded"
+    ded.mkdir()
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: real))
+    monkeypatch.setenv("REPO_AI_CODEX_HOME", str(ded))
+    assert adapters.codex_login_source() == "personal"
+    (ded / "auth.json").write_text("dedicated")
+    assert adapters.codex_login_source() == "dedicated"
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    adapters._seed_live_provider_auth("codex", scratch)
+    assert (scratch / ".codex" / "auth.json").read_text() == "dedicated"
+    assert sorted(p.name for p in (scratch / ".codex").iterdir()) == ["auth.json"]

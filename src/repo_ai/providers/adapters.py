@@ -679,7 +679,10 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
             if src.is_dir():
                 shutil.copytree(src, dst, dirs_exist_ok=True)
         elif provider == "codex":
-            src_dir = real_home / ".codex"
+            # Codex needs its token file, and its shell tool can read it (disclosed). A dedicated repo-ai login
+            # (`CODEX_HOME=<dir> codex login`) makes that a separate, revocable session; otherwise ~/.codex is used.
+            dedicated = codex_home()
+            src_dir = dedicated if (dedicated / "auth.json").is_file() else real_home / ".codex"
             dst_dir = scratch_home / ".codex"
             dst_dir.mkdir(parents=True, exist_ok=True)
             for fname in ("auth.json", "config.toml"):
@@ -1018,6 +1021,23 @@ def run_provider(
 
 
 GEMINI_KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
+CODEX_HOME_ENV = "REPO_AI_CODEX_HOME"
+
+
+def codex_home() -> Path:
+    """The dedicated repo-ai Codex login directory (may not exist)."""
+    override = os.environ.get(CODEX_HOME_ENV)
+    if override:
+        return Path(override).expanduser()
+    from ..registry import registry_home
+    return registry_home() / "codex-provider"
+
+
+def codex_login_source() -> str:
+    """`dedicated` when a separate repo-ai Codex login exists, `personal` (~/.codex) otherwise, `none` if neither."""
+    if (codex_home() / "auth.json").is_file():
+        return "dedicated"
+    return "personal" if (Path.home() / ".codex" / "auth.json").is_file() else "none"
 
 
 def setup_problems(provider: str) -> list[str]:
