@@ -41,7 +41,8 @@ plus live provider fixes from the second live budget.
 
 - `init` then `do` worked on the first try with findings 1–3 fixed: no extra commit and no manual step.
 - **On the published 0.11.2** (2026-10-30T23:46Z, call #36), from a fresh first run with `init` uncommitted, Claude
-  scored **`PASS [LIVE_CANDIDATE_VERIFIED]`** at $0.066148.
+  scored **`PASS [LIVE_CANDIDATE_VERIFIED]`** at $0.066148. Its claim is `ASSURANCE_PARTIAL`: tests passed, task
+  correctness not established.
   - The tests used the project's `.venv`. Baseline: 739 ran, 1 failed. Candidate: 739 ran, 0 failed.
   - `apply`: post-apply 739 ran, 0 failed. `undo` was byte-exact.
   - The candidate is `>=` on the integer ratio, the same logic as #33 and #34, so the upstream equivalence holds.
