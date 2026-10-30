@@ -99,6 +99,7 @@ def test_skill_md_plus_executable_or_extra_files_is_not_inert(tmp_path: Path, ex
     assert expect in a["surfaces"], a["surfaces"]
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows files have no executable bit")
 def test_executable_bit_makes_a_markdown_file_not_inert(tmp_path: Path):
     s = skill(tmp_path, "exec-md")
     (s / "SKILL.md").chmod(0o755)
