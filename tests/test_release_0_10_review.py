@@ -3,14 +3,20 @@ import json
 import os
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 import pytest
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib  # type: ignore[no-redef]
+
 from repo_ai.providers import adapters, catalog
 from repo_ai.mission import runtime
 from repo_ai.mission.ledger import Store
+
+posix_only = pytest.mark.skipif(os.name == "nt", reason="POSIX executables, symlinks, FIFOs or HOME semantics")
 
 
 def git(cwd, *a):
@@ -72,6 +78,7 @@ def test_config_tables_dropped(tmp_path):
     assert adapters._codex_config_subset(cfg) == 'model = "m"\n'
 
 
+@posix_only
 def test_a_symlinked_dedicated_auth_is_never_copied(fakehome, tmp_path, monkeypatch):
     secret = fakehome / ".ssh" / "id_rsa"
     secret.parent.mkdir()
@@ -89,6 +96,7 @@ def test_a_symlinked_dedicated_auth_is_never_copied(fakehome, tmp_path, monkeypa
     )
 
 
+@posix_only
 def test_an_explicit_dedicated_dir_without_login_never_falls_back(fakehome, tmp_path, monkeypatch):
     (fakehome / ".codex").mkdir()
     (fakehome / ".codex" / "auth.json").write_text('{"personal":1}')
@@ -102,6 +110,7 @@ def test_an_explicit_dedicated_dir_without_login_never_falls_back(fakehome, tmp_
     assert not copied.exists(), "explicit REPO_AI_CODEX_HOME fell back to personal ~/.codex token"
 
 
+@posix_only
 def test_an_override_pointing_at_the_personal_login_is_invalid(fakehome, monkeypatch):
     (fakehome / ".codex").mkdir()
     (fakehome / ".codex" / "auth.json").write_text("{}")
@@ -109,6 +118,7 @@ def test_an_override_pointing_at_the_personal_login_is_invalid(fakehome, monkeyp
     assert adapters.codex_login_source() != "dedicated"
 
 
+@posix_only
 def test_relative_override_is_refused_not_resolved_against_cwd(fakehome, tmp_path, monkeypatch):
     repo = tmp_path / "repo"
     (repo / "creds").mkdir(parents=True)
@@ -133,6 +143,7 @@ def _fake_exe(d: Path, name: str):
     return f
 
 
+@posix_only
 def test_catalog_relative_path_entry_in_repo(tmp_path, monkeypatch):
     repo = tmp_path / "repo"
     _fake_exe(repo / "bin", "codex")
@@ -147,6 +158,7 @@ def test_catalog_relative_path_entry_in_repo(tmp_path, monkeypatch):
     assert not (repo / "bin" / "RAN").exists()
 
 
+@posix_only
 def test_catalog_case_variant_path_on_case_insensitive_fs(tmp_path, monkeypatch):
     repo = tmp_path / "repo"
     _fake_exe(repo / "bin", "codex")
@@ -203,6 +215,7 @@ def test_both_oversize_never_equal(tmp_path):
     assert any("huge.bin" in p for p in probs)
 
 
+@posix_only
 def test_fifo_at_tracked_path_flagged(tmp_path):
     root, ws = _ws(tmp_path, {"src/a.py": b"x=1\n", "src/b.py": b"y=1\n"})
     (ws / "src/b.py").unlink()
@@ -243,6 +256,7 @@ def test_a_large_pinned_fixture_stays_fresh(tmp_path):
     assert not any("pinned test input changed" in r for r in st["freshness_reasons"]), st["freshness_reasons"]
 
 
+@posix_only
 def test_discovery_refuses_a_case_variant_repo_path(tmp_path, monkeypatch):
     """Pre-existing (discovery): doctor probe would run a repo-owned binary reached through a case-variant PATH."""
     from repo_ai.providers import discovery
@@ -258,6 +272,7 @@ def test_discovery_refuses_a_case_variant_repo_path(tmp_path, monkeypatch):
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="seatbelt")
+@posix_only
 def test_codex_live_sandbox_cannot_read_personal_or_dedicated_tokens(fakehome, tmp_path, monkeypatch):
     """The dedicated login is meant to keep the personal ~/.codex token out of reach; the live codex profile only
     denies .ssh/.aws/.gnupg/gh/netrc/Keychains, so both token files stay readable by absolute path."""
@@ -287,6 +302,7 @@ def test_codex_live_sandbox_cannot_read_personal_or_dedicated_tokens(fakehome, t
     assert "PERSONAL" not in out.stdout, "personal Codex token readable inside the live codex sandbox"
 
 
+@posix_only
 def test_catalog_refuses_a_repo_symlink_alias(tmp_path, monkeypatch):
     """discovery._one refuses a repo-owned alias (raw path inside root); catalog only checks the resolved target."""
     repo = tmp_path / "repo"

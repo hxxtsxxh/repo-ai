@@ -5,6 +5,8 @@ import json
 import os
 import subprocess
 
+import pytest
+
 from repo_ai.providers import catalog
 from repo_ai.providers.discovery import PROVIDERS
 
@@ -27,6 +29,7 @@ def test_labels_cannot_be_inflated():
     assert any("claude" in p for p in catalog.validate(bad))
 
 
+@pytest.mark.skipif(os.name == "nt", reason="fake POSIX executables")
 def test_detection_is_a_path_lookup_and_refuses_repository_executables(tmp_path, monkeypatch):
     repo = tmp_path / "repo"
     (repo / "bin").mkdir(parents=True)
