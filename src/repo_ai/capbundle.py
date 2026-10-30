@@ -433,6 +433,7 @@ class HostTranslator:
     skills_dir: str
     support: str
     evidence: str
+    observed: str = ""  # a dated observation of the host loading a repo-ai-installed skill; "" = never observed
 
     def target_dir(self, name: str) -> PurePosixPath:
         check_name(name)
@@ -440,13 +441,15 @@ class HostTranslator:
 
     def to_json(self) -> dict[str, Any]:
         return {"host": self.host, "skills_dir": self.skills_dir, "support": self.support,
-                "runtime_observed": False, "evidence": self.evidence}
+                "runtime_observed": bool(self.observed), "evidence": self.evidence,
+                **({"observed": self.observed} if self.observed else {})}
 
 
 HOSTS: dict[str, HostTranslator] = {t.host: t for t in (
     HostTranslator("claude-code", ".claude/skills", INSTALL_TARGET,
-                   "the project skills directory repo-ai's portfolio has always installed to; loading by "
-                   "Claude Code was not re-observed for this change"),
+                   "the project skills directory repo-ai's portfolio has always installed to",
+                   "2026-10-30, Claude Code 2.1.314: listed in the session's skills and invoked by the model "
+                   "(docs/engineering/evidence/SKILL-HOSTS-2026-10-30.md)"),
     HostTranslator("codex", ".agents/skills", EXPORT_ONLY,
                    "codex-cli 0.165.0 binary strings name `.agents/skills` (a repository skills root) and "
                    "`$CODEX_HOME/skills`; not observed loading a skill"),
@@ -456,6 +459,11 @@ HOSTS: dict[str, HostTranslator] = {t.host: t for t in (
     HostTranslator("antigravity", ".agents/skills", EXPORT_ONLY,
                    "agy binary strings: `{workspace}/.agents/skills/{skill_name}/SKILL.md`; not observed "
                    "loading a skill"),
+    HostTranslator("opencode", ".agents/skills", INSTALL_TARGET,
+                   "OpenCode reads repository skills from `.agents/skills` by default (not when "
+                   "OPENCODE_DISABLE_CLAUDE_CODE is set)",
+                   "2026-10-30, OpenCode 2.2.1: its skill tool returned the installed bytes on request "
+                   "(docs/engineering/evidence/SKILL-HOSTS-2026-10-30.md)"),
     HostTranslator("ibm-bob", ".bob/skills", EXPORT_ONLY,
                    "repo-ai's Bob notes (bobsetup.py, from IBM's published docs): `.bob/skills/<name>/SKILL.md`; "
                    "not observed loading a skill"),

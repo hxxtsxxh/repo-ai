@@ -280,7 +280,11 @@ def test_host_support_is_labelled_honestly():
     assert capbundle.HOSTS["claude-code"].support == capbundle.INSTALL_TARGET
     for host in ("codex", "gemini-cli", "antigravity", "ibm-bob"):
         assert capbundle.HOSTS[host].support == capbundle.EXPORT_ONLY
-    assert all(not t.to_json()["runtime_observed"] for t in capbundle.HOSTS.values())
+    # only hosts seen loading a repo-ai-installed skill say so, with the dated observation
+    observed = {h for h, t in capbundle.HOSTS.items() if t.to_json()["runtime_observed"]}
+    assert observed == {"claude-code", "opencode"}
+    assert all("2026-" in capbundle.HOSTS[h].to_json()["observed"] for h in observed)
+    assert capbundle.HOSTS["opencode"].skills_dir == capbundle.HOSTS["codex"].skills_dir == ".agents/skills"
     with pytest.raises(capbundle.BundleError):
         capbundle.parse_hosts("claude-code,cursor")
 
