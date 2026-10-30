@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from ..security import redact_text, source_contains_secret
-from . import claude_auth
+from . import claude_auth, opencode_cfg
 from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env, _sandbox_prefix
 
 STAGES = (
@@ -116,6 +116,19 @@ PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
         turn_limit_flag=None,
         enforces_hard_usd_budget=False,
     ),
+    # OpenCode 2.2.1 against a loopback model endpoint (see opencode_cfg): `opencode run --standalone --format json`.
+    # Cost is what the stream reports per step (0 for a local model); there is no USD flag.
+    "opencode": ProviderContract(
+        provider="opencode",
+        headless_argv=("run", "--standalone", "--format", "json"),
+        event_format="opencode-json",
+        event_flag="--format",
+        workspace_flag=None,
+        sandbox_flags=("OPENCODE_CONFIG_CONTENT permission *=deny", "OPENCODE_DISABLE_PROJECT_CONFIG=1"),
+        cost_limit_flag=None,
+        turn_limit_flag=None,
+        enforces_hard_usd_budget=False,
+    ),
     "bob": ProviderContract(
         provider="bob",
         headless_argv=(
@@ -199,6 +212,9 @@ def build_invocation(
         if log_file is not None:
             argv.extend(["--log-file", str(log_file)])
         return argv
+    if provider == "opencode":
+        # the tool policy and model endpoint travel in the environment (opencode_cfg.environment)
+        return [exe, "run", "--standalone", "--format", "json", "--model", opencode_cfg.model_ref(), "--", safe_prompt]
     if provider == "gemini":
         return [
             exe,
@@ -282,6 +298,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         stats: dict[str, Any] = raw_stats if isinstance(raw_stats, dict) else {}
         sid = (
             obj.get("session_id")
+            or obj.get("sessionID")
             or obj.get("thread_id")
             or obj.get("conversation_id")
             or stats.get("task_id")
@@ -294,6 +311,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         expected_terminal = {
             "codex": {"turn.completed", "turn.failed"},
             "claude": {"result"}, "gemini": {"result"}, "bob": {"result"}, "agy": {"result"},
+            "opencode": {"text"},
         }[provider]
         if etype in expected_terminal:
             terminal = True
@@ -411,6 +429,46 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                     if isinstance(d, dict):
                         denied_actions.append(redact_text(str(d.get("tool_name") or "tool"))[:80])
 
+        if provider == "opencode":
+            raw_part = obj.get("part")
+            part: dict[str, Any] = raw_part if isinstance(raw_part, dict) else {}
+            if etype == "step_finish":
+                turns += 1
+                step_cost = part.get("cost")
+                if isinstance(step_cost, (int, float)) and not isinstance(step_cost, bool) and math.isfinite(step_cost) \
+                        and step_cost >= 0:
+                    cost_reported = True
+                    cost_usd += float(step_cost)
+                toks = part.get("tokens")
+                if isinstance(toks, dict):
+                    for key, name in (("input", "in"), ("output", "out")):
+                        v = toks.get(key)
+                        if isinstance(v, int) and not isinstance(v, bool) and v >= 0:
+                            if name == "in":
+                                input_tokens += v
+                            else:
+                                output_tokens += v
+            elif etype == "tool_use":
+                name = redact_text(str(part.get("tool") or "tool"))[:80]
+                state_raw = part.get("state")
+                state: dict[str, Any] = state_raw if isinstance(state_raw, dict) else {}
+                if state.get("status") == "error":
+                    tool_errors.append(name)
+                    if "permission denied" in str(state.get("error", "")).lower():
+                        denied_actions.append(name)
+                else:
+                    tool_calls.append(name)
+            elif etype == "text" and isinstance(part.get("text"), str) and part["text"]:
+                summary = redact_text(part["text"])[:240]
+                report = redact_text(part["text"])[:6000]
+            elif etype == "error":
+                raw_err = obj.get("error")
+                msg_text = raw_err.get("message") if isinstance(raw_err, dict) else raw_err
+                if isinstance(msg_text, str) and msg_text:
+                    errors.append(redact_text(msg_text)[:200])
+                    if any(k in msg_text.lower() for k in ("rate limit", "quota", "usage limit")):
+                        rate_limited = True
+
         item = obj.get("item")
         if provider == "codex" and etype == "item.completed" and isinstance(item, dict):
             if item.get("type") == "agent_message" and isinstance(item.get("text"), str):
@@ -419,7 +477,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                 tool_calls.append(str(item["type"]))
 
         msg = obj.get("result") or obj.get("summary") or obj.get("last_message") or obj.get("message")
-        if isinstance(msg, str) and msg:
+        if isinstance(msg, str) and msg and provider != "opencode":
             summary = redact_text(msg)[:240]
             report = redact_text(msg)[:6000]
 
@@ -495,6 +553,12 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
     sc_str = str(scratch.resolve())
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
         net_rule = "" if allow_network else "(deny network*)"
+        if provider == "opencode" and live:
+            # a local model only: the provider may reach loopback (its own server and the model endpoint), nothing else
+            # (`(allow network* (local ip "localhost:*"))` would also admit outbound connections to any host: observed)
+            net_rule = ('(deny network*)(allow network-outbound (remote ip "localhost:*"))'
+                        '(allow network-inbound (local ip "localhost:*"))(allow network-bind (local ip "localhost:*"))'
+                        "(allow network-outbound (remote unix-socket))")
         home = Path.home().resolve()
         # A live provider has network access, so the host's credential stores are unreadable to it.
         secret_dirs = ("/.ssh", "/.aws", "/.gnupg", "/.config/gh", "/.netrc", "/Library/Keychains")
@@ -502,6 +566,8 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
         extra_write = ""
         if provider == "agy" and live:
             read_rule = _agy_live_read_rules(workspace, scratch)
+        elif provider == "opencode" and live:
+            read_rule = _home_read_only_rules([workspace, scratch, *([executable] if executable else [])])
         elif claude_live:
             assert claude_plan is not None
             read_rule, extra_write = claude_auth.seatbelt_rules(workspace, scratch, executable, claude_plan,
@@ -514,8 +580,8 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             f"{extra_write}"
         )
         return ["/usr/bin/sandbox-exec", "-p", profile]
-    if provider == "agy" and live:
-        return None  # no tested HOME read-restriction for agy outside macOS seatbelt: refuse, do not weaken
+    if provider in {"agy", "opencode"} and live:
+        return None  # no tested read/network restriction for these outside macOS seatbelt: refuse, do not weaken
     if sys.platform.startswith("linux"):
         bwrap = shutil.which("bwrap", path=os.defpath)
         if bwrap:
@@ -557,6 +623,18 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             ])
             return cmd
     return None
+
+
+def _home_read_only_rules(allowed: list[Path]) -> str:
+    """Deny every read under HOME except the given paths (and, for an executable, its installation directory)."""
+    home = Path.home().resolve()
+    q = json.dumps
+    rules = [f"(deny file-read* (subpath {q(str(home))}))", f"(allow file-read* (literal {q(str(home))}))",
+             f"(allow file-read-metadata (subpath {q(str(home))}))"]
+    for path in allowed:
+        target = path.resolve()
+        rules.append(f"(allow file-read* (subpath {q(str(target.parent if target.is_file() else target))}))")
+    return "".join(rules)
 
 
 def _node_roots() -> list[Path]:
@@ -618,7 +696,7 @@ def live_constraint_prompt(provider: str, prompt: str, allowed: str, workspace: 
     read-only there; a "no shell" rule makes it decline the task (observed)."""
     base = (f"{prompt}\n\nCONSTRAINTS: Edit ONLY {allowed} inside {workspace}. "
             "Do not modify test files, configuration files, or create untracked files. ")
-    if provider == "agy":
+    if provider in {"agy", "opencode"}:
         return base + ("Use only your file view and edit tools. Shell commands are not available and will be denied; "
                        "do not try to run tests.")
     if provider in {"codex", "claude", "gemini"}:
@@ -712,6 +790,15 @@ def run_provider(
         }
 
     live_run = not simulated and allow_live
+    if provider == "opencode" and live_run:
+        problems = opencode_cfg.setup_problems()
+        if problems:
+            return {
+                "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+                "returncode": -1, "capture_status": "not_configured", "identity_sha256": identity_before,
+                "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
+                "reasons": [f"opencode not configured for isolated execution: {p}" for p in problems],
+            }
     claude_plan = claude_auth.plan() if provider == "claude" and live_run else None
     if claude_plan is not None:
         blocked = _claude_preflight(resolved, claude_plan)
@@ -765,6 +852,8 @@ def run_provider(
             assert claude_plan.config_dir is not None
             env["HOME"] = env["USERPROFILE"] = str(Path.home())
             env["CLAUDE_CONFIG_DIR"] = str(claude_plan.config_dir)
+        if provider == "opencode":
+            env.update(opencode_cfg.environment(read_only=not write_paths))
         env["REPO_AI_WORKSPACE"] = str(workspace)
         env["REPO_AI_WRITE_PATHS"] = ",".join(write_paths)
         if not simulated and allow_live:

@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 from ..locks import file_lock
 from .ledger import TERMINAL, Store, transition
+from ..providers.discovery import PROVIDERS
 from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, handoff, plan, status, undo_mission, verify_handoff
 
 
@@ -302,9 +304,25 @@ def cmd_agents(args) -> int:
 
 def _agents_setup(args) -> int:
     """Offline: how this provider authenticates inside repo-ai's isolation, and the one command that fixes it."""
+    if args.provider == 'opencode':
+        from ..providers import opencode_cfg
+        problems = opencode_cfg.setup_problems()
+        value: dict[str, Any] = {'schema': 'repo-ai.provider-setup/1', 'provider': 'opencode', 'mode': 'local_endpoint',
+                 'endpoint': opencode_cfg.base_url(), 'model': os.environ.get(opencode_cfg.MODEL_ENV) or None,
+                 'problems': problems, 'ready_to_try': not problems, 'model_invoked': False, 'credential_read': False}
+        if args.json:
+            print(json.dumps(value, indent=2, sort_keys=True))
+        else:
+            print(f"opencode: local model endpoint {value['endpoint']} (loopback only; code never leaves this machine)")
+            for problem in problems:
+                print(f'  - {problem}')
+            print('Ready to try.' if not problems else 'Example: ollama pull qwen3:8b && export '
+                  f'{opencode_cfg.MODEL_ENV}=qwen3:8b')
+            print('No model was invoked.')
+        return 0 if not problems else 2
     if args.provider != 'claude':
-        raise ValueError('agents setup currently explains: claude (other providers authenticate as documented in '
-                         'docs/engineering/INTEGRATIONS.md)')
+        raise ValueError('agents setup currently explains: claude, opencode (other providers authenticate as '
+                         'documented in docs/engineering/INTEGRATIONS.md)')
     from ..providers import claude_auth
     plan = claude_auth.plan()
     value = {'schema': 'repo-ai.provider-setup/1', 'provider': 'claude', **plan.to_json(), 'ready_to_try': plan.usable,
@@ -525,7 +543,7 @@ def register(sub, common) -> None:
     p.add_argument('--from-handoff', metavar='FILE', help='continue an interrupted/failed mission from a verified handoff capsule JSON file')
     p.add_argument('--apply', action='store_true', help='apply the candidate diff to the working tree after fresh PASS verification')
     p.add_argument('--json', action='store_true', help='machine-readable JSON output')
-    p.add_argument('--agent', choices=['auto', 'none', 'replay', 'codex', 'claude', 'gemini', 'bob', 'agy'], default='auto')
+    p.add_argument('--agent', choices=['auto', 'none', 'replay', *PROVIDERS], default='auto')
     p.add_argument('--replay', metavar='FILE', help='explicitly simulated bounded JSON edit proposal; never a live agent')
     p.add_argument('--provider-executable', metavar='FILE', help='local non-billable provider executable for contract simulation')
     p.add_argument('--candidate', action='append', default=[], metavar='FILE', help='opt-in tournament: repeat for 2–3 isolated simulated proposals')
@@ -560,7 +578,7 @@ def register(sub, common) -> None:
         p.add_argument('--json', action='store_true', help='machine-readable JSON output')
         p.add_argument('--format', choices=['text', 'json'], default='text')
         if name == 'handoff':
-            p.add_argument('--to', choices=['none', 'replay', 'codex', 'claude', 'gemini', 'bob', 'agy'],
+            p.add_argument('--to', choices=['none', 'replay', *PROVIDERS],
                            help='optional target provider for local handoff adaptation')
             p.add_argument('--verify', metavar='FILE', help='verify a local handoff capsule JSON file against current repository state')
         p.set_defaults(func=cmd_read)

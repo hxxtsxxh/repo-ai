@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-PROVIDERS = ("codex", "claude", "gemini", "bob", "agy")
+PROVIDERS = ("codex", "claude", "gemini", "bob", "agy", "opencode")
 MAX_OUTPUT = 65_536
 MAX_EXECUTABLE = 512 * 1024 * 1024
 
@@ -195,21 +195,26 @@ def _version(provider: str, output: bytes) -> str | None:
     if not line:
         return None
     version = r"(\d+\.\d+\.\d+(?:[-+][\w.]+)?)"
-    pattern = {"codex": rf"codex-cli {version}", "claude": rf"{version} \(Claude Code\)"}.get(provider, version)
+    pattern = {"codex": rf"codex-cli {version}", "claude": rf"{version} \(Claude Code\)",
+               "opencode": rf"opencode v?{version}"}.get(provider, version)
     match = re.fullmatch(pattern, line[0].strip())
     return match.group(1) if match else None
 
 
 def _observed_modes(provider: str, output: bytes) -> list[str]:
     text = output.decode("utf-8", "replace")
-    expected = {"codex": "codex exec", "claude": "claude", "gemini": "gemini", "bob": "bob run", "agy": "agy"}[provider]
-    if not re.search(rf"(?m)^Usage(?: of)?:? {re.escape(expected)}:?(?:\s|$)", text):
+    expected = {"codex": "codex exec", "claude": "claude", "gemini": "gemini", "bob": "bob run", "agy": "agy",
+                "opencode": "opencode run"}[provider]
+    if provider == "opencode":  # "USAGE" heading, usage line indented below it
+        if not re.search(rf"(?m)^USAGE\s*\n\s+{re.escape(expected)}(?:\s|$)", text):
+            return []
+    elif not re.search(rf"(?m)^Usage(?: of)?:? {re.escape(expected)}:?(?:\s|$)", text):
         return []
     flags = set(re.findall(r"(?m)^\s+(?:-\w, )?(--[\w-]+)(?=[\s,=]|$)", text))
-    headless = provider in {"codex", "bob"} or ("--prompt" if provider == "gemini" else "--print") in flags
+    headless = provider in {"codex", "bob", "opencode"} or ("--prompt" if provider == "gemini" else "--print") in flags
     modes = ["headless"] if headless else []
     event_flag = {"codex": "--json", "claude": "--output-format", "gemini": "--output-format", "bob": "--format",
-                  "agy": "--output-format"}[provider]
+                  "agy": "--output-format", "opencode": "--format"}[provider]
     if event_flag in flags:
         modes.append("structured_events")
     if "--resume" in flags or re.search(r"(?m)^\s+resume\s", text):
@@ -270,7 +275,7 @@ def _one(provider: str, root: Path, probe: bool) -> dict[str, Any]:
             if not _inside(runtime_path, root) and not _inside(Path(os.path.abspath(runtime)), root):
                 env["PATH"] = str(runtime_path.parent) + os.pathsep + os.defpath
         commands = [["--version"], ["exec", "--help"] if provider == "codex" else
-                    ["run", "--help"] if provider == "bob" else ["--help"]]
+                    ["run", "--help"] if provider in {"bob", "opencode"} else ["--help"]]
         results: list[ProbeResult] = []
         for args in commands:
             result = _capture([*prefix, str(resolved), *args], scratch / "work", env)

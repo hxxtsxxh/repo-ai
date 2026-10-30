@@ -42,7 +42,7 @@ from .adapters import _execution_sandbox_prefix, contract_for
 from .discovery import PROVIDERS, discover
 
 POLICY_SCHEMA = "repo-ai.provider-policy/1"
-DEFAULT_ORDER = ("bob", "claude", "codex", "agy", "gemini")
+DEFAULT_ORDER = ("bob", "claude", "codex", "agy", "gemini", "opencode")
 COOLDOWN_SECONDS = 3600.0
 OBSERVATION_TTL = {"READY": 86_400.0, "USAGE_LIMITED": COOLDOWN_SECONDS, "AUTHORIZED_BUT_UNREADY": 3600.0,
                    "ACCOUNT_INELIGIBLE": 43_200.0}
@@ -167,6 +167,9 @@ def setup_problems(provider: str) -> list[str]:
     if provider == "claude":
         from . import claude_auth
         return list(claude_auth.plan().problems)
+    if provider == "opencode":
+        from . import opencode_cfg
+        return opencode_cfg.setup_problems()
     return []
 
 
@@ -182,7 +185,8 @@ def _readiness(name: str, prof: dict[str, Any], installed: bool, isolated: bool,
     if not installed:
         return "UNKNOWN"
     if not isolated:
-        return "RUNTIME_UNSUPPORTED" if name == "agy" and not sys.platform == "darwin" else "ISOLATION_BLOCKED"
+        return ("RUNTIME_UNSUPPORTED" if name in {"agy", "opencode"} and not sys.platform == "darwin"
+                else "ISOLATION_BLOCKED")
     if setup_missing:
         return "SETUP_REQUIRED"
     if limited or (obs and obs["state"] == "USAGE_LIMITED"):
