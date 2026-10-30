@@ -10,7 +10,10 @@
   "INCONCLUSIVE",
   "BLOCKED_EXTERNAL",
   "NOT_TESTED",
-  "NOT_STARTED"
+  "NOT_STARTED",
+  "PASS_WITH_LIMITS",
+  "NEGATIVE_RESULT_HISTORICAL",
+  "IN_PROGRESS"
  ],
  "gates": [
   {
@@ -288,18 +291,20 @@
   {
    "id": "C19",
    "title": "Website/docs",
-   "status": "PASS",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
    "code_sha": "8eeb8ef",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "Pages run 41036040819 deployed 2026-10-30T09:48Z; all 20 sitemap URLs 200 over HTTPS, real 404; served HTML shows repo-ai-cli 0.10.0 from a verified PyPI read; provider matrix and Evidence Lab rendered from data files; independent site review's 10 findings corrected before merge; local QA 0 broken links, 0 axe violations (21 pages x 2 themes x 2 widths)"
+    "Pages run 41036040819 deployed 2026-10-30T09:48Z; all 20 sitemap URLs 200 over HTTPS, real 404; served HTML shows repo-ai-cli 0.10.0 from a verified PyPI read; provider matrix and Evidence Lab rendered from data files",
+    "an independent site review's findings (overstated statuses, stale provider text, a false capture date, unscoped method text) were corrected in a82f54d before merge",
+    "local QA re-run on the corrected content before a82f54d was committed: 0 broken links, 0 axe violations (21 pages x 2 themes x 2 widths), 0 third-party requests"
    ],
    "limits": [
     "live pages checked from the development host only; Lighthouse not run"
    ],
-   "next_action": "evidence lab + source-of-truth facts"
+   "next_action": "Lighthouse/performance pass and a probe from outside the development host"
   },
   {
    "id": "C20",
