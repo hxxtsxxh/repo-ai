@@ -44,17 +44,22 @@
   {
    "id": "C03",
    "title": "Claude provider",
-   "status": "EXPERIMENTAL",
+   "status": "PASS",
    "owner": "principal",
    "code_sha": null,
-   "test_run": null,
-   "environment": "macOS Darwin 25.5 arm64",
+   "test_run": "tests/test_provider_claude_isolation.py",
+   "environment": "macOS Darwin 25.5 arm64, seatbelt, Claude Code 2.1.314, dedicated_config",
    "observations": [
-    "root cause found; isolated auth + tool restriction implemented with 24 tests",
-    "run_provider live edit LIVE_READY (sonnet, $0.0139 notional)"
+    "mission b59182197873f2b6a602afd6 PASS LIVE_CANDIDATE_VERIFIED; hidden oracle 17/17; apply/undo byte-exact",
+    "hostile repo journey PASS, no exfiltration; boundary verified by direct seatbelt probes (model never attempted it)"
    ],
-   "limits": [],
-   "next_action": "end-to-end do/coverage/apply/undo + hidden oracle after owner authorizes live spend"
+   "limits": [
+    "n=1 synthetic tasks, single author",
+    "token_env mode and Linux not live-verified",
+    "in-sandbox token refresh not re-observed"
+   ],
+   "next_action": "re-observe token refresh; token_env live check if owner creates a setup-token",
+   "evidence": "docs/engineering/evidence/CLAUDE-JOURNEY-2026-10-30.md"
   },
   {
    "id": "C04",
