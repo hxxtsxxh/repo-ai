@@ -84,7 +84,41 @@ The end-to-end `repo-ai do --agent claude --run --allow-live-provider` journey (
 apply/undo) is **pending owner authorization of live spend** (the session's tool guard classifies it as a spending
 action). Until it runs, C03 stays `EXPERIMENTAL`, not PASS.
 
-## Other providers
+## OpenCode (`opencode`) — local model, account-free
 
-See `docs/launch/LAUNCH_REPORT.md` (0.9.0): Codex 0.165.0 and agy 1.4.9 live-verified n=1 on macOS; Bob earlier;
-Gemini rejected (account) and not retried. Provider-fabric research for further agents: in progress.
+Host: macOS, OpenCode **2.2.1** (Homebrew, MIT), Ollama **0.40.12/0.40.13** serving `qwen3:8b` (5.2 GB) on
+`127.0.0.1:11434`, started as a session-owned process (no launchd service). Observations:
+
+* `opencode run --format json` emits `step_start`, `tool_use` (`part.tool`, `part.state.status`, errors such as
+  `Permission denied: external_directory`), `step_finish` (`part.cost`, `part.tokens`) and a final `text`; failures
+  are `{"type":"error","error":{"message":…}}` with exit 1. A run where the model stops after `step_start` exits 0
+  with no `text`: repo-ai treats that as no terminal event.
+* Tool permissions default to allow, and 2.2.1 ships an undocumented `execute` (JavaScript) tool. Deny-by-name is
+  therefore unsafe; repo-ai sends `"*": "deny"` plus explicit allows. Verified: with the wildcard policy the model is
+  offered no execute/bash tool, and edits still work.
+* Without `--standalone`, a detached `opencode serve --service` (parent PID 1) outlives the command. repo-ai always
+  passes `--standalone`; every run in this cycle left no `opencode` process.
+* Seatbelt: `(allow network* (local ip "localhost:*"))` **also admits outbound connections to any host** (observed:
+  `nc` reached 1.1.1.1:443). The profile uses `network-outbound (remote ip "localhost:*")` plus loopback inbound/bind,
+  and a test probes a real external address.
+* Events embed whole tool inputs/outputs: a 28-edit local run produced 68 KB (86 lines), over repo-ai's 64 KB
+  default; OpenCode gets a 256 KB bounded capture.
+
+## Gemini CLI
+
+0.9.0 copied the entire `~/.gemini` (OAuth tokens, account list and **agy's per-user state under
+`antigravity-cli/`**, including conversation history) into the provider's scratch HOME. Removed: live Gemini now needs
+`GEMINI_API_KEY` or `GOOGLE_API_KEY`. A bounded retry on 2026-10-30 (Gemini CLI 0.65.0, OAuth copy still in place)
+exited 41 (authentication failure) before any edit; with no key on this host it stays `BLOCKED`.
+
+## Codex CLI — residual risk (disclosed, not fixed)
+
+Codex authenticates from `~/.codex/auth.json`, which repo-ai copies into the provider's scratch HOME, and Codex runs
+with its shell tool and network access (its own sandbox is bypassed only under repo-ai's verified outer sandbox).
+The model can therefore read that token file; a prompt-injected repository could ask it to send the token out.
+repo-ai cannot hide a credential from the process that needs it. Planned mitigation: a dedicated repo-ai Codex login
+(`CODEX_HOME`) so a leaked token is a separate, revocable session. Until then the provider matrix states it.
+
+Live re-verification on the 0.10.0 development build (2026-10-30, same durations task and hidden oracle): Codex
+0.165.0 PASS in 41 s, oracle 17/17, undo clean; agy 1.4.9 PASS in 43 s, oracle 17/17, undo clean. Bob not re-run
+(its account entitlement was not re-checked this cycle).
