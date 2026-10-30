@@ -1,4 +1,4 @@
-"""Adversarial probes for d99c1fb (identical per-test skips accepted). Real seatbelt observations on macOS."""
+"""Adversarial probes for accepting identical per-test skips: real sandbox observations (skipped without a backend)."""
 import os
 import subprocess
 import sys
@@ -11,7 +11,11 @@ from repo_ai.mission import coverage, diagnosis, futures, verification
 REAL_OBSERVE = verification.observe
 
 PREF = "seatbelt" if sys.platform == "darwin" else "bwrap"
-if not sandbox.get_backend(PREF).available()[0]:
+try:
+    _available = sandbox.get_backend(PREF).available()[0]
+except sandbox.SandboxUnavailable:
+    _available = False
+if not _available:
     pytest.skip("host sandbox unavailable", allow_module_level=True)
 
 
