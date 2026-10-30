@@ -321,7 +321,8 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke",
-    "0.11.0: Trusted Publishing, assets identical across PyPI/GitHub, SHA256SUMS and attestation verified, clean install smoke PASS"
+    "0.11.0: Trusted Publishing, assets identical across PyPI/GitHub, SHA256SUMS and attestation verified, clean install smoke PASS",
+    "0.11.1 published 2026-10-30 (tag v0.11.1 at a0bbe36): PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS"
    ],
    "limits": [],
    "next_action": "next release"
@@ -336,15 +337,15 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
-    "first-run bug (init then do) found on the published 0.11.0; fix in PR #11, not yet released"
+    "first-run bug (init then do) found on the published 0.11.0; fixed in 0.11.1 (PR #11, #13)"
    ],
    "limits": [
     "one real repository; regression injected by the author",
-    "the passing run used a development build (PR #11); 0.11.0 refused it",
+    "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
     "post-apply 0-failure vs sandbox 20-failure discrepancy unexplained",
     "second real project not yet done"
    ],
-   "next_action": "ship the PR #11 fix; second real project; owner re-login for the Claude provider"
+   "next_action": "second real project (needs owner approval to run its suite); re-run the scoped mission on the published 0.11.1"
   },
   {
    "id": "C22",
