@@ -13,8 +13,9 @@ plus live provider fixes from the second live budget.
   - `pythonpath = ["src"]` in `[tool.pytest]`, so the uninstalled src layout imports;
   - a tracked stub `src/humanize/_version.py`. hatch-vcs generates that file at build time, and the project's
     `.gitignore` matches it.
-- Test environment: an untracked `.venv` with pytest 9.2.0, freezegun 1.5.5 and pytest-codspeed 5.0.3, the test
-  extras `test_benchmarks.py` declares. humanize itself was not installed.
+- Test environment: an untracked `.venv` with pytest 9.2.0, freezegun 1.5.5 and pytest-codspeed 5.0.3, from the
+  `tests` extra. `test_benchmarks.py` names pytest-codspeed; the extra also lists pytest-benchmark and pytest-cov,
+  which were left out. humanize itself was not installed.
   - With pytest-benchmark instead of pytest-codspeed, 15 benchmark tests error at setup (`'Function' object has no
     attribute '_nodeid'`, a plugin incompatible with pytest 9.2). See finding 5.
 - Prompt to each provider: a one-sentence bug report naming the function, the wrong and the right output, and
@@ -45,15 +46,23 @@ plus live provider fixes from the second live budget.
 ## Oracle: equivalence to the upstream fix
 
 A differential test compared each candidate's `intword()` with `ca892b3`'s. It ran inside repo-ai's sandbox over
-3,000+ values, their negatives and six format strings: powers of ten ±2, runs of nines, and 30 random values per
+3,000+ values, their negatives and six format strings: powers of ten minus 2, minus 1, plus 0 and plus 1, runs of nines, and 30 random values per
 magnitude up to 10^102.
 - The oracle is live: on the original buggy code it fails for all six formats.
 - **Claude (#33 and #34, the same code apart from a comment): identical to upstream on every value.** It uses `>=`
   where upstream uses `==`, on the same integer ratio.
-- **Codex (#35): not identical.** It uses float division (`/`). It differs from upstream only for values within
-  10^85 below a googol: Codex renders "1 googol", upstream a 67-digit "… decillion". The power table jumps from 10^33
-  to 10^100, so the Codex output is arguably the better rounding. It is still a behaviour change that upstream's tests
-  do not catch. That is exactly what `ASSURANCE_PARTIAL` warns about.
+- **Codex (#35): not identical.** It uses float division (`/`). It differs from upstream only just below a googol:
+  Codex renders "1.0 googol" (or "1.0e+00 googol"), upstream a 67-digit "… decillion" count. A dense follow-up sample
+  was run in the sandbox: 244 values from 10^100 − 9·10^99 up to 10^100 − 1. It measured how far below a googol the
+  divergence reaches:
+  - up to about 9×10^83 for `%.1f`, `%.0f`, `%.2f`, `%.3f` and `%d`;
+  - up to 5×10^97 for `%.1e`;
+  - no value below 10^99 differs in any format.
+
+  An independent fact-check found the `%.1e` range first. The original oracle sampled only 10^100 − 1 and 10^100 − 2
+  near a googol, so it under-reported the scope. The power table jumps from 10^33 to 10^100, so Codex's output is
+  arguably the better rounding. It is still a behaviour change that upstream's tests do not catch, which is what
+  `ASSURANCE_PARTIAL` warns about.
 
 ## Product findings (fixed or queued)
 
@@ -64,7 +73,8 @@ magnitude up to 10^102.
 2. **Missions ran tests with the wrong interpreter.** The interpreter was resolved from the disposable workspace,
    which never holds `.venv`. Post-apply verification runs in the checkout and used the project's venv. **This
    explains the open python-slugify discrepancy (20 failures in the sandbox, 0 after apply).** Fixed in PR #17, which also
-   handles editable installs, found in its review.
+   handles editable installs (found in its review). The verified runs used an earlier development build of #16
+   and #17 (`86c9e19`), from before their review rounds.
 3. **A tracked file that `.gitignore` also matches was dropped from mission workspaces**, because the workspace was
    re-committed with `git add -A`. Fixed in PR #17 (`commit_snapshot`, literal pathspecs).
 4. `verify --run --full` printed "0 passed" when no file was selected but the full suite ran (738 passed here). Fixed
