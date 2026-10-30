@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.0 — missions on real suites; requirement erasure
 
 - Added: `repo-ai do --expect-fix TEST` (repeatable) for real suites with failures the task does not touch. The
   declared tests must fail at the base and pass on the candidate, and no test that passed at the base may fail; tests

@@ -91,7 +91,9 @@ repo-ai undo <mission-id>          # restores the original bytes
 Execution needs a clean committed checkout, explicit write paths, pytest or `node --test`,
 and a sandbox backend (macOS or Linux; missions are not supported on Windows). `--tournament codex,agy` runs independent candidates against the
 same frozen tests and abstains unless exactly one distinct candidate passes; `shortlist`
-explains an abstention. Recipes: [docs/roadmap/REALITY-ENGINE-USAGE.md](docs/roadmap/REALITY-ENGINE-USAGE.md).
+explains an abstention. On a real suite with failures your task does not touch, `--expect-fix TEST` declares the
+tests the task must fix: the result is then `PASS_WITH_PRE_EXISTING_FAILURES`, listing what still fails, never a plain
+PASS. A candidate that deletes a docstring or comment stating a requirement is named in the result. Recipes: [docs/roadmap/REALITY-ENGINE-USAGE.md](docs/roadmap/REALITY-ENGINE-USAGE.md).
 
 | Provider | Through `repo-ai do` (isolated) | Notes |
 |---|---|---|

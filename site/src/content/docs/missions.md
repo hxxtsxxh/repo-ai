@@ -68,8 +68,26 @@ This starts IBM Bob as a child process with network access, under repo-ai's oute
 - **PASS** means: the candidate came from an isolated worktree, touched only the paths you allowed, and the enumerated
   checks passed, with a failing baseline that now passes. It does **not** mean the change is correct. Use
   [Requirement coverage](/repo-ai/docs/coverage/) to check the requirements you wrote down.
-- Missing baseline failure, skipped, empty or incomplete tests, changed test IDs, or source and environment changes
-  prevent a PASS.
+- Missing baseline failure, empty or incomplete tests, changed test IDs, or source and environment changes prevent a
+  PASS. A test (or a whole file) skipped **identically** at the base and on the candidate is allowed; a candidate that
+  makes a test skip, or un-skips one, never passes. xfail and skipped suites still prevent a PASS.
+- From 0.11.0, if the candidate **removes documentation that states a requirement** (a docstring or comment line with
+  words such as "raise", "must", "never", "reject"), the result names it and the claim drops to `ASSURANCE_PARTIAL`.
+
+### Suites with failures the task does not touch (`--expect-fix`)
+
+Real repositories often carry failures unrelated to your task (a missing optional dependency, a legacy test). Without
+help, a mission cannot PASS there. Declare the tests the task must fix:
+
+```sh
+repo-ai do "separators must be stripped again" --agent claude --run --allow-live-provider \
+    --allow-write slugify/slugify.py --expect-fix tests/test_release.py::ReleaseRegressionTests::test_empty_and_whitespace
+```
+
+Then PASS requires every declared test to fail at the base and pass on the candidate, and **no test that passed at the
+base may fail**. Tests that already failed at the base and are not declared may keep failing: they are listed, and the
+standing is `PASS_WITH_PRE_EXISTING_FAILURES` (claim `ASSURANCE_PARTIAL`), never a plain whole-suite PASS. `apply` and
+handoff continuations keep the same scope; tournaments do not support it yet.
 
 ## Offline: replay proposals
 
