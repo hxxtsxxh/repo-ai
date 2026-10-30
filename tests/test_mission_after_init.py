@@ -94,3 +94,17 @@ def test_mission_tests_run_with_the_projects_interpreter_not_the_workspaces(tmp_
     git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'repo-ai init')
     assert _mission(root, tmp_path)['effective_verdict'] == 'PASS'
     assert seen and set(seen) == {root.resolve()}, seen
+
+
+def test_a_tracked_file_that_gitignore_also_matches_reaches_the_tests(tmp_path):
+    """Found on python-humanize: its `.gitignore` matches `src/*/_version.py`, and the task tracks a stub. The mission
+    re-committed its workspace with `git add -A`, which dropped the file, so every test failed to import the package."""
+    root = _project(tmp_path)
+    (root / 'version_stub.py').write_text('VERSION = "1"\n')
+    (root / 'test_version.py').write_text('from version_stub import VERSION\n\ndef test_version():\n    assert VERSION\n')
+    (root / '.gitignore').write_text((root / '.gitignore').read_text() + 'version_stub.py\n')
+    git(root, 'add', '-A')
+    git(root, 'add', '--force', 'version_stub.py')
+    git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'tracked but ignored')
+    result = _mission(root, tmp_path)
+    assert result['effective_verdict'] == 'PASS', result.get('passport', {}).get('negative')
