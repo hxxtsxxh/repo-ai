@@ -22,14 +22,14 @@
       "note": "published is true on the site only while verified_read is present and matches pyproject.toml. Write it with `python scripts/site_facts.py --record-pypi` (network) after a real read; never by hand-editing published.",
       "verified_read": {
         "distribution": "repo-ai-cli",
-        "version": "0.9.0",
-        "url": "https://pypi.org/project/repo-ai-cli/0.9.0/",
-        "verified_at": "2026-10-30T02:54:44Z",
-        "method": "GET https://pypi.org/pypi/repo-ai-cli/0.9.0/json; downloaded the wheel and recomputed its sha256, which matched PyPI's digest",
-        "wheel": "repo_ai_cli-0.9.0-py3-none-any.whl",
-        "wheel_sha256": "b351d80e737764d749c52ed0f9af8d96c5e3ec313ed25f68ca743ab2238db17f",
-        "sdist": "repo_ai_cli-0.9.0.tar.gz",
-        "sdist_sha256": "b328ca0feb1d4648946e2e7d23d50ca389f257a1be10f6773f6844756898552d"
+        "version": "0.10.0",
+        "url": "https://pypi.org/project/repo-ai-cli/0.10.0/",
+        "verified_at": "2026-10-30T09:03:03Z",
+        "method": "GET https://pypi.org/pypi/repo-ai-cli/0.10.0/json; downloaded the wheel and recomputed its sha256, which matched PyPI's digest",
+        "wheel": "repo_ai_cli-0.10.0-py3-none-any.whl",
+        "wheel_sha256": "aa8278061511a26ea0d947b80af825711d073462ea6d74fcb6d63ff963eb51cf",
+        "sdist": "repo_ai_cli-0.10.0.tar.gz",
+        "sdist_sha256": "4cdcb886067eb59bbdeb54434af46b454a510297aa57f6d35dde6365a3c6bec3"
       }
     }
   },

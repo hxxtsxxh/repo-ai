@@ -18,7 +18,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live, independently re-verified changes through repo-ai do: a single-provider mission with apply and undo, tournaments and a handoff. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Re-verified on the 0.10.0 build (2026-10-30, hidden oracle 17/17). Disclosed risk: Codex's copied login token is readable by a model that has shell access.",
+        "observed": "Live, independently re-verified changes through repo-ai do: a single-provider mission with apply and undo, tournaments and a handoff. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Re-verified on the 0.10.0 build (2026-10-30, hidden oracle 17/17). From 0.10.0 the rest of HOME is unreadable to it, but the login token copied into its sandbox is still readable by a model with shell access (disclosed): use a separate repo-ai login (`repo-ai agents setup codex`).",
         "verified_on": "2026-10-29",
         "version": "0.165.0",
         "sample": "n = 1 workflow per journey per build",
