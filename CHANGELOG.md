@@ -21,6 +21,11 @@
   with ownership markers, conflict refusal and byte-exact uninstall/rollback; OpenCode is an install target
   (`.agents/skills`). A repo-ai-installed skill was observed loading on Claude Code and OpenCode. An independent
   review's 10 findings are fixed (e.g. a committed lockfile could make uninstall delete a user file).
+- Missions accept a test skipped identically at base and candidate (real suites have platform and
+  optional-dependency skips); a candidate that makes a test skip, or un-skips one, never passes; a module skipped at
+  collection is now reported instead of silently vanishing; `futures --rehearse` no longer counts a new skip as a pass.
+- Codex live runs are HOME read-restricted like Claude and OpenCode (a model with a shell could read
+  `~/.codex/auth.json` and other HOME files) and reach only DNS/scratch unix sockets.
 - Gemini live runs need `GEMINI_API_KEY`/`GOOGLE_API_KEY`; exit 41 is reported as an authentication failure.
 - Added: `repo-ai agents catalog` — 24 coding agents with what repo-ai can honestly do with each (EXECUTION, BLOCKED,
   PLANNED from vendor docs, UNSUPPORTED); detection is a PATH lookup that never runs anything.
