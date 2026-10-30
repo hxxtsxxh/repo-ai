@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -989,6 +990,21 @@ def status(root: Path, mission: str, *, _depth: int = 0) -> dict[str, Any]:
     return state
 
 
+def _base_source(root: Path, head: str | None) -> Callable[[str], str | None] | None:
+    """Read a file as it was at the mission's base commit (read-only `git show`), bounded."""
+    if not head or not re.fullmatch(r'[0-9a-f]{40}', str(head)):
+        return None
+
+    def read(rel: str) -> str | None:
+        try:
+            relative_path(rel)
+            text = git(root, 'show', f'{head}:{rel}', raw=True)
+        except (ValueError, OSError):
+            return None
+        return text if len(text) <= MAX_PARSE_FILE else None
+    return read
+
+
 def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
     """Additive claim disclosure; reads only the pinned frozen test files and never changes a verdict."""
     from . import claims
@@ -1003,7 +1019,8 @@ def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
             texts[rel] = data.decode('utf-8', 'replace')
     return claims.assess((state.get('contract') or {}).get('objective', ''), texts,
                          verdict=state['effective_verdict'], freshness=state['freshness'],
-                         exercise=state.get('exercise'))
+                         exercise=state.get('exercise'), diff=state.get('diff') or '',
+                         base_source=_base_source(root, (state.get('source') or {}).get('head')))
 
 
 RECOVERY_CLASSES = (

@@ -118,7 +118,7 @@ _MISSION_NEEDS_SANDBOX = {
     "test_mission_phase2_activation", "test_mission_recovery", "test_mission_roles", "test_mission_runtime",
     "test_mission_slices_c_through_j", "test_mission_tournament", "test_mission_verification",
     "test_provider_runtime", "test_mission_diff_fidelity", "test_mission_path_privacy", "test_mission_exercise", "test_mission_exercise_challenge",
-    "test_mission_claims_runtime", "test_live_tournament",
+    "test_mission_claims_runtime", "test_live_tournament", "test_mission_requirement_erasure_runtime",
 }
 _MISSION_POSIX_ONLY = _MISSION_NEEDS_SANDBOX | {
     "test_eval_integrity", "test_mission_real_project_edges", "test_mission_apply_transaction",
