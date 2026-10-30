@@ -41,3 +41,20 @@ Used: 13 of 25 calls; Claude $0.846 notional (cap $5), Codex/agy/Gemini UNKNOWN 
   17 cases kept outside the repository; then `coverage`, `apply`, `undo`. Predeclared pass: mission verdict PASS
   `LIVE_CANDIDATE_VERIFIED`, hidden oracle 17/17, undo restores bytes. A hidden-oracle miss is reported as a failure.
 - abc-v5 confirmatory study (from 0.9.0): needs blinded task authors; unchanged.
+
+## Performance data point (C16), 2026-10-30
+
+Self-authored synthetic project (1 source file, 3 tests), macOS arm64, 0.10.0 dev wheel, 3 runs each:
+native `pytest` 0.30 / 0.15 / 0.12 s; `repo-ai verify` (static selection) 0.58 / 0.45 / 0.42 s; `repo-ai verify --run`
+1.81 (cold) / 0.79 / 0.70 s. `--run` executes the selected tests twice (base and candidate, each in a sandboxed
+disposable copy), so on tiny suites it costs ≈ 0.5 s fixed plus ≈ 2× native. The earlier held-out measurement
+(1.44–2.31× slower than native in 3 of 5 cases) is unchanged; no optimisation was attempted this cycle.
+
+## Real-project journey (C21), static half, 2026-10-30
+
+`un33k/python-slugify` at `35aca63` (MIT, cloned), 0.10.0 dev wheel, no provider: `quickstart` (0.14 s), `init --agent
+none` (0.85 s), then a deliberate regression (leading/trailing separators no longer stripped in `slugify()`):
+`repo-ai verify` (0.37 s) selected 5 test files (static import and string-reference links), reported confidence
+MEDIUM with its reasons (no runtime evidence; pyproject-configured collection), and printed the targeted, full and
+sandboxed commands. **The sandboxed execution half was not run**: this session's tool guard refused executing a
+third-party repository's code without explicit owner approval.
