@@ -1,0 +1,66 @@
+diff --git a/invoicekit/__pycache__/money.cpython-312.pyc b/invoicekit/__pycache__/money.cpython-312.pyc
+index 3698e3c..ce9c63c 100644
+Binary files a/invoicekit/__pycache__/money.cpython-312.pyc and b/invoicekit/__pycache__/money.cpython-312.pyc differ
+diff --git a/invoicekit/money.py b/invoicekit/money.py
+index 5cc842b..2c05d05 100644
+--- a/invoicekit/money.py
++++ b/invoicekit/money.py
+@@ -14,6 +14,20 @@ def parse_amount(text):
+     return int((value * 100).quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
+ 
+ 
++def split_amount(cents, parts):
++    """Split integer cents into `parts` near-equal shares that sum exactly to `cents`.
++
++    Leftover cents go to the earliest shares, so the list is non-increasing.
++    """
++    if isinstance(cents, bool) or not isinstance(cents, int):
++        raise InvoiceError(f"amount must be integer cents: {cents!r}")
++    if isinstance(parts, bool) or not isinstance(parts, int) or parts < 1:
++        raise InvoiceError(f"parts must be a positive integer: {parts!r}")
++    sign = -1 if cents < 0 else 1
++    base, extra = divmod(abs(cents), parts)
++    return [sign * (base + 1 if i < extra else base) for i in range(parts)]
++
++
+ def format_amount(cents, currency):
+     """Render integer cents with an ISO 4217 code, e.g. "USD 12.34"."""
+     code = str(currency).strip()
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc
+index 4ccb815..ee2c776 100644
+Binary files a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc and b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc differ
+diff --git a/tests/test_money.py b/tests/test_money.py
+index c937b98..357c8c9 100644
+--- a/tests/test_money.py
++++ b/tests/test_money.py
+@@ -2,7 +2,7 @@ import pytest
+ 
+ from invoicekit.errors import InvoiceError
+ from invoicekit.lines import line_total
+-from invoicekit.money import format_amount, parse_amount
++from invoicekit.money import format_amount, parse_amount, split_amount
+ 
+ 
+ def test_parse_amount():
+@@ -20,3 +20,21 @@ def test_format_amount():
+ 
+ def test_line_total():
+     assert line_total(3, 250) == 750
++
++
++def test_split_amount_leftover_goes_to_earliest_shares():
++    shares = split_amount(10, 3)
++    assert shares == [4, 3, 3]
++    assert sum(shares) == 10
++
++
++def test_split_amount_exact_and_negative():
++    assert split_amount(9, 3) == [3, 3, 3]
++    assert split_amount(-10, 3) == [-4, -3, -3]
++
++
++def test_split_amount_rejects_bad_input():
++    with pytest.raises(InvoiceError):
++        split_amount(10, 0)
++    with pytest.raises(InvoiceError):
++        split_amount(10.0, 2)

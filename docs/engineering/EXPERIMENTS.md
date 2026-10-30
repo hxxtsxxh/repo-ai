@@ -42,11 +42,22 @@ Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call b
 | 25 | 2026-10-30T16:48Z | codex 0.165.0 | same, 0.11.0 | refused by the init-then-do bug (no verdict on the candidate) | UNKNOWN | same |
 | 26 | 2026-10-30T16:55Z | codex 0.165.0 | same, fixed development build | PASS_WITH_PRE_EXISTING_FAILURES; candidate = upstream line | UNKNOWN | **over budget by one if #24 counts** |
 
+| 27 | 2026-10-30T19:00Z | claude / haiku (host mode) | C10 pilot t1, control | 8/8 hidden | $0.003491 | owner 2026-10-30: second budget, 15 calls / $3 |
+| 28 | 2026-10-30T19:00Z | claude / haiku (host mode) | C10 pilot t1, skill | 6/8 hidden; `Skill` invoked | $0.004590 | same |
+| 29 | 2026-10-30T19:01Z | claude / haiku (host mode) | C10 pilot t2, skill | 7/7 hidden; `Skill` invoked | $0.005349 | same |
+| 30 | 2026-10-30T19:01Z | claude / haiku (host mode) | C10 pilot t2, control | 4/7 hidden | $0.004069 | same |
+| 31 | 2026-10-30T19:02Z | claude / haiku (host mode) | C10 pilot t3, skill | 7/7 hidden; `Skill` invoked | $0.004567 | same |
+| 32 | 2026-10-30T19:02Z | claude / haiku (host mode) | C10 pilot t3, control | 7/7 hidden | $0.003470 | same |
+
 **Budget note:** counting the authentication failure (#24, no inference) as an invocation, call #26 exceeded the
 25-call authorization by one. No further live calls are made without new approval.
 
 **Authorization (owner, 2026-10-30):** up to 25 live provider calls, $5 notional total, Claude ≤ $0.50 per run.
 Used: 22 of 25 counted calls with inference (26 invocations including one auth failure and two pre-authorization-style probes); Claude $0.923 notional (cap $5), Codex/agy/Gemini UNKNOWN; OpenCode $0. Live calls paused pending new approval.
+
+**Second authorization (owner, 2026-10-30):** 15 more live calls, $3 notional cap, same rules; the owner re-logged
+the dedicated Claude login at about 18:55Z. Used: 6 of 15 (#27–#32), $0.0255 notional. Result of #27–#32:
+`evidence/SKILL-VALUE-PILOT-2026-10-30.md` (INCONCLUSIVE under the predeclared rule).
 
 ## Open experiment protocols (not run)
 
@@ -55,7 +66,7 @@ Used: 22 of 25 counted calls with inference (26 invocations including one auth f
   17 cases kept outside the repository; then `coverage`, `apply`, `undo`. Predeclared pass: mission verdict PASS
   `LIVE_CANDIDATE_VERIFIED`, hidden oracle 17/17, undo restores bytes. A hidden-oracle miss is reported as a failure.
 - abc-v5 confirmatory study (from 0.9.0): needs blinded task authors; unchanged.
-- **C10 skill-value pilot (predeclared 2026-10-30, before any live call).** Second budget (owner: 15 calls, $3
+- **C10 skill-value pilot (predeclared 2026-10-30, before any live call; run as #27–#32, INCONCLUSIVE).** Second budget (owner: 15 calls, $3
   notional). Fixture `invoicekit` (3 source files, 4 visible tests, written for this pilot) and skill
   `invoicekit-conventions` (6 rules). Rules 1–3 (integer cents, `ROUND_HALF_EVEN`, `InvoiceError`) are visible in the
   existing code; rules 4–6 (percent range 0–100, tax rounded per line, leftover split cents to the earliest shares)

@@ -1,0 +1,63 @@
+diff --git a/invoicekit/__pycache__/money.cpython-312.pyc b/invoicekit/__pycache__/money.cpython-312.pyc
+index 3698e3c..9e07730 100644
+Binary files a/invoicekit/__pycache__/money.cpython-312.pyc and b/invoicekit/__pycache__/money.cpython-312.pyc differ
+diff --git a/invoicekit/money.py b/invoicekit/money.py
+index 5cc842b..4c1e101 100644
+--- a/invoicekit/money.py
++++ b/invoicekit/money.py
+@@ -22,3 +22,15 @@ def format_amount(cents, currency):
+     sign = "-" if cents < 0 else ""
+     whole, frac = divmod(abs(int(cents)), 100)
+     return f"{code.upper()} {sign}{whole}.{frac:02d}"
++
++
++def split_amount(cents, parts):
++    """Split integer cents into `parts` shares that differ by at most one cent.
++
++    The remainder cents go to the first shares, so the shares always sum to
++    `cents`: split_amount(100, 3) == [34, 33, 33].
++    """
++    if isinstance(parts, bool) or not isinstance(parts, int) or parts < 1:
++        raise InvoiceError(f"parts must be a positive integer: {parts!r}")
++    base, remainder = divmod(int(cents), parts)
++    return [base + 1] * remainder + [base] * (parts - remainder)
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc
+index 4ccb815..c8095be 100644
+Binary files a/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc and b/tests/__pycache__/test_money.cpython-312-pytest-9.1.1.pyc differ
+diff --git a/tests/test_money.py b/tests/test_money.py
+index c937b98..9a512de 100644
+--- a/tests/test_money.py
++++ b/tests/test_money.py
+@@ -2,7 +2,7 @@ import pytest
+ 
+ from invoicekit.errors import InvoiceError
+ from invoicekit.lines import line_total
+-from invoicekit.money import format_amount, parse_amount
++from invoicekit.money import format_amount, parse_amount, split_amount
+ 
+ 
+ def test_parse_amount():
+@@ -20,3 +20,23 @@ def test_format_amount():
+ 
+ def test_line_total():
+     assert line_total(3, 250) == 750
++
++
++def test_split_amount_distributes_remainder_first():
++    assert split_amount(100, 3) == [34, 33, 33]
++
++
++def test_split_amount_even():
++    assert split_amount(900, 3) == [300, 300, 300]
++
++
++def test_split_amount_sums_to_total():
++    shares = split_amount(1000, 7)
++    assert sum(shares) == 1000
++    assert max(shares) - min(shares) <= 1
++
++
++def test_split_amount_rejects_bad_parts():
++    for parts in (0, -1, 2.0, True):
++        with pytest.raises(InvoiceError):
++            split_amount(100, parts)

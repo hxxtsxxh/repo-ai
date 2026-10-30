@@ -168,10 +168,15 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "paired run shows the instruction is followed, not that outcomes improve"
+    "paired run shows the instruction is followed, not that outcomes improve",
+    "pilot 2026-10-30 (6 haiku calls, predeclared rule): INCONCLUSIVE - skill higher on t2 (per-line tax, 7/7 vs 4/7), control higher on t1 (6/8 vs 8/8; oracle rounding ambiguity found post hoc), tie on t3; skill invoked unprompted 3/3; evidence/SKILL-VALUE-PILOT-2026-10-30.md"
    ],
-   "limits": [],
-   "next_action": "blinded paired trial with a predeclared outcome"
+   "limits": [
+    "single author of fixture, skill, tasks and oracle",
+    "one model, n = 3 pairs",
+    "designed knowledge gap"
+   ],
+   "next_action": "confirmatory trial with independently written tasks/oracles and unambiguous rules"
   },
   {
    "id": "C11",

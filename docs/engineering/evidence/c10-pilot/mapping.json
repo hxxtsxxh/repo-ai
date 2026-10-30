@@ -1,0 +1,32 @@
+[
+ {
+  "id": "ce33981a",
+  "task": "t1",
+  "arm": "control"
+ },
+ {
+  "id": "c84fd528",
+  "task": "t1",
+  "arm": "skill"
+ },
+ {
+  "id": "ccb90fd7",
+  "task": "t2",
+  "arm": "skill"
+ },
+ {
+  "id": "2dcc7a69",
+  "task": "t2",
+  "arm": "control"
+ },
+ {
+  "id": "24086367",
+  "task": "t3",
+  "arm": "skill"
+ },
+ {
+  "id": "d9e0724f",
+  "task": "t3",
+  "arm": "control"
+ }
+]
