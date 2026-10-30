@@ -28,6 +28,7 @@ never state "unique across the whole list") is the motivating counterexample.
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
 SCHEMA = "repo-ai.claims/1"
@@ -60,7 +61,9 @@ _BLOCK = re.compile(r"/\*.*?\*/", re.S)
 
 
 def _clean(text: str, limit: int) -> str:
-    return _CTRL.sub("", text)[:limit]
+    # control characters and Unicode format characters (bidi overrides, zero-width) never reach a note
+    text = _CTRL.sub("", text)
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Cf")[:limit]
 
 
 def _stem(word: str) -> str:
@@ -125,51 +128,105 @@ def requirements(objective: str, tests: dict[str, str]) -> list[dict[str, Any]]:
 
 
 _REQUIREMENT_WORDS = re.compile(
-    r"(?i)\b(raises?|errors?|exceptions?|must|shall|should|never|always|only|reject\w*|invalid|valid\w*|empty|"
-    r"unless|at (?:least|most)|if)\b")
-_DOC_FILES = (".py", ".pyi", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx")
+    r"(?i)\b(raises?|raising|throws?|must|shall|never|always|reject\w*|invalid|forbid\w*|required|"
+    r"at (?:least|most)|no (?:more|less|fewer) than)\b")
+_NOTE_PREFIX = re.compile(r"(?i)^(todo|fixme|xxx|hack|note)\b")
+_PY_FILES = (".py", ".pyi")
+_JS_FILES = (".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx")
+_DOC_OPEN = re.compile(r"""^[rRbBuUfF]{0,2}("{3}|'{3})""")
+_HUNK = re.compile(r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@")
+_DECORATION = re.compile(r"""^\s*(?:#+|//+|/\*+|\*+/?|[rRbBuUfF]{0,2}"{3}|[rRbBuUfF]{0,2}'{3})\s*|\s*(?:\*/|"{3}|'{3})\s*$""")
+
+
+def _plain(text: str) -> str:
+    """Documentation text without comment/quote decoration, whitespace collapsed, for moved-text matching."""
+    return " ".join(_DECORATION.sub("", text).split()).lower()
 
 
 def removed_requirement_text(diff: str) -> list[dict[str, str]]:
-    """Documentation lines a candidate removed (docstrings, comments) that state a requirement and that the candidate
-    did not re-add verbatim. Heuristic, from the diff alone; a prompt for a human, never evidence of a defect."""
-    found: list[dict[str, str]] = []
-    path = ""
-    in_doc = False
-    added: set[str] = set()
+    """Documentation lines a candidate removed (docstrings, comments) that state a requirement and whose text does not
+    reappear among the file's added lines. Heuristic, from the diff alone; a prompt for a human, never evidence.
+
+    Python docstrings are recognised only when they open as the first statement after a `def`/`class` line (or at the
+    top of the file) inside the hunk; a hunk that starts inside a docstring is not guessed at (a blind spot, like a
+    docstring opened before the hunk's context)."""
     removed: list[tuple[str, str]] = []
-    for line in diff.splitlines():
-        if line.startswith("diff --git "):
-            path, in_doc = "", False
+    added: dict[str, list[str]] = {}
+    path = ""
+    old_left = new_left = 0
+    in_doc = False
+    doc_quote = ""
+    prev_old = ""
+    first_old = False
+    for raw in diff.split("\n"):
+        line = raw[:-1] if raw.endswith("\r") else raw
+        if old_left <= 0 and new_left <= 0:  # between hunks: headers
+            if line.startswith("diff --git "):
+                path = ""
+            elif line.startswith("+++ "):
+                target = line[4:].strip().strip('"')
+                if target != "/dev/null":  # a whole-file deletion keeps the old path from its `---` line
+                    path = target[2:] if target.startswith("b/") else target
+            elif line.startswith("--- ") and not path:
+                source = line[4:].strip().strip('"')
+                path = source[2:] if source.startswith("a/") else ""  # whole-file deletion: judge the old path
+            else:
+                m = _HUNK.match(line)
+                if m:
+                    old_left = int(m.group(1) or 1)
+                    new_left = int(m.group(2) or 1)
+                    in_doc, doc_quote, prev_old = False, "", ""
+                    first_old = line.startswith("@@ -1,") or line.startswith("@@ -1 ") or line.startswith("@@ -0,")
             continue
-        if line.startswith("+++ "):
-            target = line[4:].strip()
-            path = target[2:] if target.startswith("b/") else target
-            continue
-        if line.startswith(("--- ", "index ", "new file", "deleted file", "similarity", "rename ", "Binary")):
-            continue
-        if line.startswith("@@"):
-            in_doc = False  # unknown at a hunk start: only docstrings that open inside the hunk are tracked
-            continue
-        if not path.endswith(_DOC_FILES) or not line:
-            continue
-        mark, text = line[0], line[1:]
+        if line.startswith("\\"):
+            continue  # "\ No newline at end of file"
+        mark, text = (line[0], line[1:]) if line else (" ", "")
         if mark == "+":
-            added.add(" ".join(text.split()))
+            new_left -= 1
+            added.setdefault(path, []).append(_plain(text))
             continue
         if mark not in {" ", "-"}:
+            old_left = new_left = 0
+            continue
+        old_left -= 1
+        if mark == " ":
+            new_left -= 1
+        if not path.endswith(_PY_FILES + _JS_FILES):
             continue
         stripped = text.strip()
-        quotes = stripped.count('"""') + stripped.count("\'\'\'")
-        is_doc = in_doc or quotes > 0
-        if quotes % 2:
-            in_doc = not in_doc
-        is_comment = stripped.startswith(("#", "//", "*", "/*"))
+        is_doc = False
+        if path.endswith(_PY_FILES):
+            if in_doc:
+                is_doc = True
+                if doc_quote in stripped:
+                    in_doc = False
+            else:
+                opener = _DOC_OPEN.match(stripped)
+                if opener and (prev_old.rstrip().endswith(":") or (first_old and not prev_old)):
+                    is_doc = True
+                    doc_quote = opener.group(1)
+                    rest = stripped[opener.end():]
+                    in_doc = doc_quote not in rest
+            is_comment = stripped.startswith("#")
+        else:
+            is_comment = stripped.startswith(("//", "/*", "*"))
+        if stripped:
+            prev_old = text
         if mark == "-" and (is_doc or is_comment) and _REQUIREMENT_WORDS.search(stripped):
-            removed.append((path, stripped))
-    for file, text in removed:
-        if " ".join(text.split()) not in added and len(found) < 8:
-            found.append({"file": file, "text": _clean(text.strip("#/*\"' "), 160)})
+            body = _DECORATION.sub("", stripped).strip()
+            if body and not _NOTE_PREFIX.match(body):
+                removed.append((path, body))
+    found: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for file, body in removed:
+        key = (file, " ".join(body.split()))
+        blob = " ".join(added.get(file, []))
+        if key in seen or _plain(body) in blob:
+            continue
+        seen.add(key)
+        found.append({"file": _clean(file, 200), "text": _clean(body, 160)})
+        if len(found) >= 8:
+            break
     return found
 
 
@@ -178,6 +235,9 @@ def assess(objective: str, tests: dict[str, str], *, verdict: str, freshness: st
     rows = requirements(objective, tests) if tests else []
     erased = removed_requirement_text(diff) if diff else []
     notes: list[str] = ["repo-ai does not certify that the task is correct; it reports what the frozen tests observed"]
+    for item in erased:  # first after the disclaimer: the CLI shows only the leading notes
+        notes.append(f"the candidate removed documentation that states a requirement ({item['file']}): {item['text']!r}; "
+                     "check the behaviour it described is still met (tests passing does not show it)")
     exercise_level = (exercise or {}).get("assurance")
     weak = [r for r in rows if r["evidence"] != "STRONG"]
     if freshness == "stale":
@@ -204,9 +264,6 @@ def assess(objective: str, tests: dict[str, str], *, verdict: str, freshness: st
                      "the unstated clause; not a finding): " + ", ".join(scoped[:8]))
     if exercise_level in {"PARTIAL", "UNMEASURED"}:
         notes.append(f"change-exercise {exercise_level}: some changed lines were not shown to run under the frozen tests")
-    for item in erased:
-        notes.append(f"the candidate removed documentation that states a requirement ({item['file']}): {item['text']!r}; "
-                     "check the behaviour it described is still met (tests passing does not show it)")
     return {"schema": SCHEMA, "headline": headline, "task_correct": "CLAIM_UNVERIFIED",
             "unechoed_qualifiers": scoped, "requirements": rows, "removed_requirement_text": erased,
             "notes": [_clean(n, 300) for n in notes]}
