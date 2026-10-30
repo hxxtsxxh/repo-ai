@@ -120,3 +120,26 @@ def test_autopilot_does_not_act_on_project_relevance_alone():
     filled = recommend.score({**cand(desc=DESC), "matched_gaps": ["test-coverage"]}, ELIGIBLE,
                              {"gaps": [gap], "own_packages": []}, {}).to_json()
     assert recommend.autopilot_wants(filled) is True
+
+
+def gap(strength: float) -> dict:
+    return {"id": "g1", "title": "tests", "evidence": ["x"], "strength": strength, "covered_by": [], "query_terms": []}
+
+
+def test_project_credit_never_lifts_a_weak_gap_match_into_autopilot():
+    profile = {"gaps": [gap(0.2)], "own_packages": ["invoicekit"]}
+    r = recommend.score({**cand(), "matched_gaps": ["g1"]}, ELIGIBLE, profile, {}).to_json()
+    assert r["install_recommended"] is True  # advice: it names the package
+    assert r["gap_recommended"] is False and recommend.autopilot_wants(r) is False
+
+
+def test_project_credit_never_takes_a_gap_slot_from_the_real_gap_filler():
+    profile = {"gaps": [gap(0.45)], "own_packages": ["invoicekit"]}
+    project = {**cand(), "matched_gaps": ["g1"]}
+    tester = {"id": "github/o/r/tester@1", "name": "tester", "provider": "github", "owner": "anthropics",
+              "stars": 10, "matched_gaps": ["g1"], "description": "Writes unit tests. Use when adding tests."}
+    rec = recommend.recommend([project, tester], {project["id"]: ELIGIBLE, tester["id"]: ELIGIBLE}, profile, {})
+    by_name = {r["name"]: r for r in rec["recommendations"]}
+    assert by_name["tester"]["gap_recommended"] is True and by_name["tester"]["install_recommended"] is True
+    assert by_name["invoicekit-conventions"]["install_recommended"] is True
+    assert rec["summary"] == "2 skill(s) recommended: 1 for 1 gap(s), 1 written for this repository"

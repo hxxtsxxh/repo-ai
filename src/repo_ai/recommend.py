@@ -45,6 +45,8 @@ class Recommendation:
     evidence_status: str
     permissions: list[str] = field(default_factory=list)
     project_packages: list[str] = field(default_factory=list)
+    gap_score: float = 0.0             # the score without project credit: ranks gap slots, drives autopilot
+    gap_recommended: bool = False      # recommended on gap evidence alone
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -67,7 +69,6 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
     # could name the package to promote itself. The name alone is not enough (it is just the directory name).
     project = names_packages(desc, profile.get("own_packages", []))
     if project and candidate.get("provider") == "local":
-        relevance = max(relevance, PROJECT_RELEVANCE)
         reasons.append(f"written for this repository: names its package {', '.join(project)}")
     else:
         if project:
@@ -97,8 +98,12 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
         elif "worse" in trial.get("verdict", ""):
             empirical = -0.5
             reasons.append("controlled trial: outcomes were worse with this skill")
-    total = round(relevance * (1 - redundancy) * 0.7 + doc_quality * 0.1 + provenance
-                  - cost_penalty + empirical, 3)
+    def scored(rel: float) -> float:
+        return round(rel * (1 - redundancy) * 0.7 + doc_quality * 0.1 + provenance - cost_penalty + empirical, 3)
+
+    gap_total = scored(relevance)
+    # project credit is kept apart from gap evidence, so it can never win a gap's slot or move autopilot
+    total = scored(max(relevance, PROJECT_RELEVANCE)) if project else gap_total
     verdict = (report or {}).get("verdict", "not audited")
     no_license = any(f.get("rule") in firewall.LICENSE_GATE_RULES for f in (report or {}).get("findings", []))
     eligible = verdict in {"eligible", "review"} and not no_license
@@ -112,9 +117,11 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
     for f in (report or {}).get("findings", []):
         if f["rule"] in {"allowed-tools", "external-host", "external-requirements"}:
             perms.append(f"{f['rule']}: {f['evidence'][:80]}")
-    recommended = eligible and total >= THRESHOLD and bool(matched or project)
+    gap_recommended = eligible and gap_total >= THRESHOLD and bool(matched)
+    recommended = gap_recommended or (eligible and total >= THRESHOLD and bool(project))
     return Recommendation(candidate.get("id", ""), candidate.get("name", ""), total, eligible, verdict,
-                          recommended, reasons, matched, overlaps, tokens, evidence_status, perms[:6], project)
+                          recommended, reasons, matched, overlaps, tokens, evidence_status, perms[:6], project,
+                          gap_total, gap_recommended)
 
 
 def names_packages(text: str, packages: list[str]) -> list[str]:
@@ -129,9 +136,9 @@ def names_packages(text: str, packages: list[str]) -> list[str]:
 
 
 def autopilot_wants(rec: dict[str, Any]) -> bool:
-    """Autopilot acts on a recommendation only when it fills an evidence-backed gap. A skill recommended because it
-    names this repository's package is advice for `explain`/`recommend`: autopilot installs it only when named."""
-    return bool(rec.get("install_recommended")) and bool(rec.get("gaps"))
+    """Autopilot acts on a recommendation only when gap evidence alone earns it. Project credit (the skill names this
+    repository's package) is advice for `explain`/`recommend`: autopilot installs such a skill only when named."""
+    return bool(rec.get("gap_recommended"))
 
 
 def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any]],
@@ -142,10 +149,10 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
                   (trials or {}).get(c["id"]) or (trials or {}).get(c.get("name", "")))
             for c in candidates]
     recs.sort(key=lambda r: (not r.install_recommended, -r.score, r.name))
-    # portfolio optimisation: one recommendation per gap (smallest high-performing set)
+    # portfolio optimisation: one recommendation per gap (smallest high-performing set), on gap evidence alone
     chosen: dict[str, Recommendation] = {}
-    for r in recs:
-        if r.install_recommended:
+    for r in sorted(recs, key=lambda r: (not r.gap_recommended, -r.gap_score, r.name)):
+        if r.gap_recommended:
             for gap in r.gaps:
                 if gap not in chosen:
                     chosen[gap] = r
