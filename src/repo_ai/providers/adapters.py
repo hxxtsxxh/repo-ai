@@ -16,6 +16,7 @@ import os
 import shutil
 import sys
 import tempfile
+import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -542,7 +543,8 @@ def _agy_live_read_rules(workspace: Path, scratch: Path) -> str:
 def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: bool = False,
                               provider: str | None = None, live: bool = False,
                               executable: Path | None = None,
-                              claude_plan: claude_auth.ClaudeAuthPlan | None = None) -> list[str] | None:
+                              claude_plan: claude_auth.ClaudeAuthPlan | None = None,
+                              run_marker: str | None = None) -> list[str] | None:
     """Restrict writes strictly to the disposable candidate workspace and scratch dir (plus, for a live Claude
     run with a dedicated login, that login's own state; see ``claude_auth``)."""
     claude_live = provider == "claude" and live
@@ -585,6 +587,11 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             '(allow file-write* (literal "/dev/null"))'
             f"{extra_write}"
         )
+        if run_marker:
+            # identity for the post-run sweep (`_seatbelt_procs`): every descendant inherits this profile, even after
+            # setsid or a double fork, and is found by "this preference domain allowed, other run domains denied"
+            profile += ('(deny user-preference-read (preference-domain-regex #"^com\\.repo-ai\\.run\\."))'
+                        f'(allow user-preference-read (preference-domain "{run_marker}"))')
         return ["/usr/bin/sandbox-exec", "-p", profile]
     if provider in {"agy", "opencode"} and live:
         return None  # no tested read/network restriction for these outside macOS seatbelt: refuse, do not weaken
@@ -597,6 +604,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             cmd.extend([
                 "--die-with-parent",
                 "--new-session",
+                "--unshare-pid",  # descendants (even setsid'd ones) die with the namespace when the run ends
                 "--ro-bind",
                 "/",
                 "/",
@@ -836,8 +844,10 @@ def run_provider(
             (scratch / name).mkdir(exist_ok=True)
         if not simulated and allow_live:
             _seed_live_provider_auth(provider, scratch / "home")
+        from .. import sandbox as _sandbox
+        run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex if sys.platform == "darwin" else None
         prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run,
-                                           executable=resolved, claude_plan=claude_plan)
+                                           executable=resolved, claude_plan=claude_plan, run_marker=run_marker)
         if prefix is None:
             return {
                 "provider": provider,
@@ -908,6 +918,7 @@ def run_provider(
         limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
         result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
                           separate_stderr=True, max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
+        cleanup_problems = _reap_provider_run(run_marker) if prefix[:1] == ["/usr/bin/sandbox-exec"] else []
         try:
             unchanged = raw.resolve(strict=True) == resolved and _identity(resolved) == identity_before
         except (OSError, RuntimeError, ValueError):
@@ -938,6 +949,8 @@ def run_provider(
     reasons: list[str] = []
     if result.status != "complete":
         reasons.append(f"provider process capture terminated early: {result.status}")
+    if cleanup_problems and not simulated:
+        reasons.extend(cleanup_problems)
     if result.returncode != 0:
         reasons.append(f"provider process exited with code {result.returncode}")
     if provider == "gemini" and result.returncode == 41:  # Gemini CLI's documented authentication-failure exit code
@@ -993,6 +1006,19 @@ def setup_problems(provider: str) -> list[str]:
         return ["set GEMINI_API_KEY (or GOOGLE_API_KEY) in repo-ai's environment; repo-ai no longer copies ~/.gemini "
                 "(OAuth tokens and other agents' state) into the sandbox"]
     return []
+
+
+def _reap_provider_run(run_marker: str | None) -> list[str]:
+    """Kill every process the provider run left behind (setsid, double fork, reparented to launchd) before anything
+    is verified, so nothing can change the workspace afterwards. Returns why that could not be confirmed."""
+    if not run_marker:
+        return ["provider run was not tagged for cleanup; its descendants could not be confirmed stopped"]
+    from .. import sandbox as _sandbox
+    why_not = _sandbox._identification_problem()
+    if why_not:
+        return [f"provider descendants could not be enumerated ({why_not}); cleanup not confirmed"]
+    _, problems = _sandbox._procs.sweep({run_marker}, _sandbox._CONTROL)
+    return [f"provider cleanup not confirmed: {p}" for p in problems]
 
 
 def _claude_preflight(executable: Path, plan: claude_auth.ClaudeAuthPlan) -> tuple[str, list[str]] | None:

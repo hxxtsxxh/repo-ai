@@ -253,3 +253,35 @@ def test_executables_directly_in_home_expose_only_themselves(tmp_path, monkeypat
     rules = adapters._home_read_only_rules([exe])
     assert f"(allow file-read* (literal {json.dumps(str(exe.resolve()))}))" in rules
     assert f"(allow file-read* (subpath {json.dumps(str(tmp_path.resolve()))}))" not in rules
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="seatbelt is macOS-only")
+def test_a_daemonised_descendant_is_killed_before_verification(tmp_path, monkeypatch):
+    """A provider whose child calls setsid and outlives the CLI (as `opencode serve --service` would) must not
+    survive the run: it could edit the workspace after verification."""
+    monkeypatch.setenv(opencode_cfg.MODEL_ENV, "qwen3:8b")
+    pidfile = tmp_path / "ws" / "daemon.pid"
+    exe = tmp_path / "opencode"
+    exe.write_text("#!/usr/bin/python3 -I\nimport os,sys,time,json\n"
+                   "if os.fork()==0:\n    os.setsid()\n    if os.fork()==0:\n"
+                   f"        open({str(pidfile)!r},'w').write(str(os.getpid()))\n        time.sleep(60)\n"
+                   "    os._exit(0)\n"
+                   "time.sleep(0.5)\n"
+                   f"print({json.dumps(OBSERVED_OK.decode())!r})\n")
+    exe.chmod(0o755)
+    (tmp_path / "root").mkdir()
+    (tmp_path / "ws").mkdir()
+    adapters.run_provider("opencode", tmp_path / "root", tmp_path / "ws", "fix", write_paths=["a.py"],
+                          executable=exe, timeout=20, simulated=False, allow_live=True)
+    pid = int(pidfile.read_text())
+    import os
+    import time
+    time.sleep(0.3)
+    try:
+        os.kill(pid, 0)
+        alive = True
+    except ProcessLookupError:
+        alive = False
+    if alive:
+        os.kill(pid, 9)
+    assert not alive
