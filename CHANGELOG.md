@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.1 — `init` then `do` works on the first try
 
 - Fixed (found on a real repository): `repo-ai init` followed by `repo-ai do` failed either way. Uncommitted
   `.repo-ai/` files made the checkout "dirty", and once committed (as the message advised) a live provider's candidate
