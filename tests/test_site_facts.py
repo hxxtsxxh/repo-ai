@@ -37,7 +37,16 @@ def inputs():
     return copy.deepcopy(matrix), copy.deepcopy(providers)
 
 
-def _build(matrix, providers, *, distribution="repo-ai-cli", version="0.9.0", tag="v0.9.0"):
+def _released(matrix=None) -> str:
+    """The version of the committed verified PyPI read (the release the site describes), read from the committed
+    file so tests that mutate their copy still know it."""
+    committed = json.loads(site_facts.MATRIX.read_text(encoding="utf-8"))
+    return committed["distribution"]["pypi"]["verified_read"]["version"]
+
+
+def _build(matrix, providers, *, distribution="repo-ai-cli", version=None, tag=None):
+    version = version or _released(matrix)
+    tag = tag or "v" + _released(matrix)
     dist = {"distribution": distribution, "command": "repo-ai", "requires_python": ">=3.10"}
     return site_facts.build_facts(matrix=matrix, providers=providers, dist=dist, version=version, tag=tag)
 
@@ -103,16 +112,17 @@ def test_verified_read_needs_a_sha256_and_date(inputs):
 
 def test_verified_read_must_match_the_latest_release_tag(inputs):
     matrix, providers = inputs
-    _, problems = _build(matrix, providers, tag="v0.9.1")
+    _, problems = _build(matrix, providers, tag="v99.0.1")
     assert any("latest release tag" in p for p in problems)
 
 
 def test_site_describes_the_published_release_when_source_moves_ahead(inputs):
     matrix, providers = inputs
-    facts, problems = _build(matrix, providers, version="0.9.1.dev0")
+    ahead = _released(matrix) + ".post1.dev0"
+    facts, problems = _build(matrix, providers, version=ahead)
     assert problems == []
-    assert facts["site_version"] == "0.9.0"
-    assert facts["package"]["version"] == "0.9.1.dev0"
+    assert facts["site_version"] == _released(matrix)
+    assert facts["package"]["version"] == ahead
 
 
 def test_unknown_status_and_missing_source_are_rejected(inputs):
@@ -130,11 +140,11 @@ def test_unknown_status_and_missing_source_are_rejected(inputs):
 
 def test_provider_execution_label_needs_an_execution_observation(inputs):
     _, providers = inputs
-    claude = next(p for p in providers["providers"] if p["id"] == "claude")
-    claude["label"] = "EXECUTION"  # flipped without recording an EXECUTION observation
+    gemini = next(p for p in providers["providers"] if p["id"] == "gemini")
+    gemini["label"] = "EXECUTION"  # flipped without recording an EXECUTION observation
     problems = site_facts.validate_providers(providers)
     assert any("must go together" in p for p in problems)
-    claude["label"] = "WORKS"
+    gemini["label"] = "WORKS"
     problems = site_facts.validate_providers(providers)
     assert any("unknown label 'WORKS'" in p for p in problems)
 

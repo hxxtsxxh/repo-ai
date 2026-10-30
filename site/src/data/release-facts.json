@@ -372,6 +372,20 @@
         "source": "docs/engineering/evidence/SKILL-HOSTS-2026-10-30.md",
         "featured": true,
         "source_url": "https://github.com/hxxtsxxh/repo-ai/blob/main/docs/engineering/evidence/SKILL-HOSTS-2026-10-30.md"
+      },
+      {
+        "id": "gemini-execution",
+        "title": "Gemini CLI as an isolated execution provider",
+        "status": "BLOCKED",
+        "stat": "exit 41",
+        "result": "A bounded retry through repo-ai do failed authentication (Gemini CLI exit 41) before any edit, for the tested account. From 0.10.0 repo-ai no longer copies ~/.gemini into the sandbox; live Gemini needs GEMINI_API_KEY or GOOGLE_API_KEY.",
+        "date": "2026-10-30",
+        "sample_size": "1 bounded retry",
+        "method": "Installed wheel; repo-ai do --agent gemini --run --allow-live-provider (Gemini CLI 0.65.0, macOS).",
+        "limits": "Blocked by the tested account's authentication, not by a repo-ai verdict; not tried with an API key.",
+        "source": "docs/engineering/INTEGRATIONS.md",
+        "featured": false,
+        "source_url": "https://github.com/hxxtsxxh/repo-ai/blob/main/docs/engineering/INTEGRATIONS.md"
       }
     ]
   }
