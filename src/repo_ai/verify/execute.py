@@ -50,18 +50,21 @@ class Executor:
     links: dict[str, str] = field(default_factory=dict)      # workspace rel -> read-only source dir
     pythonpath: list[str] = field(default_factory=list)      # editable-install redirects (inside paths)
     workspace: Workspace | None = None
+    # the checkout the interpreter's editable installs point at, when it is not the workspace's own source (a mission
+    # workspace is materialized from a workspace, but the venv's `.pth` names the checkout)
+    editable_source: Path | None = None
 
     def in_workspace(self, ws: Workspace) -> Executor:
         """This executor, bound to a disposable workspace."""
         bound = Executor(self.backend, ws.path, self.python, self.node, [*self.extra_reads], self.timeout_s,
-                         [*self.site_dirs], dict(ws.readonly), [], ws)
+                         [*self.site_dirs], dict(ws.readonly), [], ws, self.editable_source)
         if bound.is_container:
             ws.expose_dependencies("mountpoint")
         else:
             ws.expose_dependencies("link")
             bound.extra_reads += [d for d in ws.readonly.values() if d not in bound.extra_reads]
             bound.pythonpath = [bound.inside_root if rel in {"", "."} else f"{bound.inside_root}/{rel}"
-                                for rel in editable_redirects(self.site_dirs, ws.source)
+                                for rel in editable_redirects(self.site_dirs, self.editable_source or ws.source)
                                 if (ws.path / rel).is_dir()]
         return bound
 
@@ -312,10 +315,12 @@ def _static_prefixes(python: str, layout: VenvLayout) -> list[str]:
 
 
 def get_executor(root: Path, preference: str = "auto", language: str = "python",
-                 timeout_s: float = 600.0, image: str = "") -> Executor:
+                 timeout_s: float = 600.0, image: str = "", interpreter_root: Path | None = None) -> Executor:
     """Host sandboxes first (the project's own environment), then containers.
     `image`: a local container image with the project's dependencies (only
-    with a container backend; never pulled)."""
+    with a container backend; never pulled). `interpreter_root`: the checkout
+    whose virtualenv the tests use when `root` is a disposable workspace (a
+    workspace never holds the project's `.venv`)."""
     if image and preference not in CONTAINER_BACKENDS:
         raise sandbox.SandboxUnavailable("--image needs --sandbox podman or --sandbox docker")
     order = (*HOST_BACKENDS, *CONTAINER_BACKENDS) if preference == "auto" else (preference,)
@@ -331,7 +336,7 @@ def get_executor(root: Path, preference: str = "auto", language: str = "python",
             continue
         if isinstance(backend, sandbox.ContainerBackend):
             return Executor(backend, root, python="python", node="node", timeout_s=timeout_s)
-        found = interpreter(root) if language == "python" else Interpreter(sys.executable, [], [])
+        found = interpreter(interpreter_root or root) if language == "python" else Interpreter(sys.executable, [], [])
         python, reads = (found.python, found.reads) if found else ("python3", [])
         sites = [] if found is None else found.site_dirs if found.site_dirs is not None else site_dirs(python)
         found_node = shutil.which("node")
@@ -343,6 +348,6 @@ def get_executor(root: Path, preference: str = "auto", language: str = "python",
         if language == "python" and not Path(python).is_absolute():
             raise sandbox.SandboxUnavailable("no Python interpreter found for the tests; nothing was run")
         return Executor(backend, root, python=python, node=node, extra_reads=reads, timeout_s=timeout_s,
-                        site_dirs=sites)
+                        site_dirs=sites, editable_source=interpreter_root.resolve() if interpreter_root else None)
     raise sandbox.SandboxUnavailable("no sandbox backend available for running tests ("
                                      + "; ".join(reasons) + "); nothing was run")

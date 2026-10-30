@@ -142,7 +142,7 @@ def _replace(root: Path, rel: str, expected: bytes, replacement: bytes) -> None:
 
 
 def _prepare(root: Path, state: dict[str, Any]) -> dict[str, Any]:
-    from .runtime import git
+    from .runtime import commit_snapshot, git
     text = state.get('diff', '')
     if not isinstance(text, str) or not text or len(text.encode()) > LIMIT or _sha(text.encode()) != state.get('diff_sha256'):
         raise ValueError('candidate patch hash integrity mismatch or size bound exceeded')
@@ -160,9 +160,7 @@ def _prepare(root: Path, state: dict[str, Any]) -> dict[str, Any]:
             target.chmod(stat.S_IMODE((root / rel).stat().st_mode))
             if rel in allowed:
                 before[rel] = data
-        git(scratch, 'init', '-q')
-        git(scratch, 'add', '-A')
-        git(scratch, 'commit', '-qm', 'application validation baseline')
+        commit_snapshot(scratch, list(state['source']['files']), 'application validation baseline')
         patch = scratch.parent / (scratch.name + '.patch')
         try:
             patch.write_text(text + ('\n' if not text.endswith('\n') else ''), encoding='utf-8')
