@@ -140,8 +140,8 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
     dirty = [p for p in changes if p and not (p[3:].startswith('.repo-ai/') or p.startswith('?? ' + state_rel + '/'))]
     # `repo-ai init` adds a managed block to `.gitignore` (or creates it). A file whose only change is that block does
     # not make the checkout dirty; its working bytes stay in the identity, as in the provider's workspace copy
-    dirty = [p for p in dirty if not (p.startswith(' M ') and _only_managed_blocks_changed(root, p[3:])
-                                      or p.startswith('?? ') and _only_managed_blocks(root, p[3:]))]
+    dirty = [p for p in dirty if not (p.startswith(' M ') and committed_if_only_managed_blocks(root, p[3:]) is not None
+                                      or p.startswith('?? ') and _only_managed_blocks(root, p[3:], state_rel))]
     if require_clean and dirty:
         shown = [redact_text(p[3:])[:120] for p in dirty if len(p) > 3][:5]
         more = f' and {len(dirty) - len(shown)} more' if len(dirty) > len(shown) else ''
@@ -169,25 +169,48 @@ def identity(root: Path, *, require_clean: bool = False) -> dict[str, Any]:
             'fingerprint': digest({'head': head, 'files': contents, 'dirty': dirty})}
 
 
-def _only_managed_blocks(root: Path, path: str) -> bool:
-    """An untracked file `repo-ai init` created that holds nothing but repo-ai managed blocks."""
-    from ..fsutil import strip_managed_blocks
+def _without_init_block(text: str, state_rel: str) -> str | None:
+    """`.gitignore` text with `repo-ai init`'s managed block removed (line endings normalized), or None when the
+    block ignores anything but repo-ai's own state: a pattern there could hide real files from the dirty check."""
+    from ..adapters.base import GITIGNORE_BEGIN, GITIGNORE_END
+    from ..fsutil import remove_block
+    text = text.replace('\r\n', '\n')
+    own = (*isolate.STATE_PREFIXES, state_rel.rstrip('/') + '/')
+    inside = False
+    for line in text.split('\n'):
+        entry = line.strip()
+        if entry == GITIGNORE_BEGIN:
+            inside = True
+        elif entry == GITIGNORE_END:
+            inside = False
+        elif inside and entry and not entry.startswith('#') and not (entry.startswith(own) or entry + '/' in own):
+            return None
+    while True:
+        stripped = remove_block(text, GITIGNORE_BEGIN, GITIGNORE_END)
+        if stripped == text:
+            return text
+        text = stripped
+
+
+def _only_managed_blocks(root: Path, path: str, state_rel: str) -> bool:
+    """An untracked root `.gitignore` that `repo-ai init` created: nothing but its managed block."""
+    from ..adapters.base import GITIGNORE_BEGIN
+    if path != '.gitignore':
+        return False
     try:
         data = isolate.read_inside(root, path, 1_000_000)
-        return data is not None and not strip_managed_blocks(data.decode('utf-8')).strip()
+        text = data.decode('utf-8') if data is not None else ''
     except (isolate.ReportTooLarge, UnicodeError):
         return False
-
-
-def _only_managed_blocks_changed(root: Path, path: str) -> bool:
-    """The working copy of tracked `path` differs from HEAD only by repo-ai managed blocks."""
-    return committed_if_only_managed_blocks(root, path) is not None
+    rest = _without_init_block(text, state_rel)
+    return GITIGNORE_BEGIN in text and rest is not None and not rest.strip()
 
 
 def committed_if_only_managed_blocks(root: Path, path: str) -> bytes | None:
-    """The committed bytes of tracked `path` when its working copy differs from HEAD only by repo-ai managed
-    blocks (what `repo-ai init` adds to `.gitignore`); workspaces are built from HEAD, so this is what they hold."""
-    from ..fsutil import strip_managed_blocks
+    """The committed bytes of the root `.gitignore` when its working copy differs from HEAD only by `repo-ai init`'s
+    managed block (workspaces are built from HEAD, so this is what they hold); None otherwise."""
+    if path != '.gitignore':
+        return None
     try:
         work = isolate.read_inside(root, path, MAX_SOURCE_FILE)
     except isolate.ReportTooLarge:
@@ -195,11 +218,13 @@ def committed_if_only_managed_blocks(root: Path, path: str) -> bytes | None:
     if work is None:
         return None
     try:
-        head = git(root, 'show', 'HEAD:' + path, raw=True).encode('utf-8')
+        state_rel = Store(root).layout.state_dir.relative_to(root).as_posix()
+        head = git(root, 'show', 'HEAD:.gitignore', raw=True).encode('utf-8')
         work_text, head_text = work.decode('utf-8'), head.decode('utf-8')
     except (ValueError, UnicodeError):
         return None
-    if work_text == head_text or strip_managed_blocks(work_text) != strip_managed_blocks(head_text):
+    work_rest, head_rest = _without_init_block(work_text, state_rel), _without_init_block(head_text, state_rel)
+    if work == head or work_rest is None or head_rest is None or work_rest != head_rest:
         return None
     return head
 

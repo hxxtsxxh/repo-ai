@@ -119,3 +119,68 @@ def test_a_provider_candidate_after_uncommitted_init_with_a_tracked_gitignore_is
     planned = runtime.plan(root, 'Fix duplicate charge', agent='codex', write_paths=['charge.py'], execute_local=True)
     result = runtime.execute(root, planned, None, provider_executable=cli)
     assert result['effective_verdict'] == 'PASS', result['passport']['negative']
+
+
+BLOCK = '# >>> repo-ai managed >>>\n# Machine-local repo-ai state.\n.repo-ai/state/\n# <<< repo-ai managed <<<\n'
+
+
+def test_markers_in_source_never_hide_a_real_edit(tmp_path):
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    with open(root / 'charge.py', 'a') as fh:
+        fh.write('\n' + BLOCK.replace('.repo-ai/state/', 'def charge(amount, retries):\n    return amount * 1000'))
+    p = plan(root, 'Fix duplicate charge', agent='replay', write_paths=['charge.py'], execute_local=True)
+    assert p['decision'] == 'BLOCKED' and 'charge.py' in str(p)
+
+
+def test_an_untracked_conftest_wrapped_in_markers_is_dirty(tmp_path):
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    (root / 'conftest.py').write_text(BLOCK.replace('.repo-ai/state/', 'import charge; charge.charge = lambda a, r: a'))
+    p = plan(root, 'Fix duplicate charge', agent='replay', write_paths=['charge.py'], execute_local=True)
+    assert p['decision'] == 'BLOCKED'
+
+
+def test_a_block_that_ignores_more_than_repo_ai_state_is_dirty(tmp_path):
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    text = (root / '.gitignore').read_text().replace('.repo-ai/state/', '.repo-ai/state/\n*.py')
+    (root / '.gitignore').write_text(text)
+    p = plan(root, 'Fix duplicate charge', agent='replay', write_paths=['charge.py'], execute_local=True)
+    assert p['decision'] == 'BLOCKED'
+
+
+def test_an_empty_committed_gitignore(tmp_path):
+    root = _project(tmp_path, gitignore='')
+    assert _mission(root, tmp_path)['effective_verdict'] == 'PASS'
+
+
+def test_a_crlf_gitignore(tmp_path):
+    root = _project(tmp_path, gitignore='__pycache__/\r\n*.log\r\n')
+    (root / '.gitignore').write_bytes((root / '.gitignore').read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
+    assert _mission(root, tmp_path)['effective_verdict'] == 'PASS'
+
+
+def test_a_provider_that_copies_the_working_gitignore_has_edited_it(tmp_path):
+    from repo_ai.mission import runtime
+    from test_provider_runtime import _make_fake_cli
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    working = (root / '.gitignore').read_text()
+    cli = _make_fake_cli(tmp_path, 'codex', (
+        "import json, os, pathlib\n"
+        "ws = pathlib.Path(os.environ['REPO_AI_WORKSPACE'])\n"
+        f"(ws / '.gitignore').write_text({working!r})\n"
+        "(ws / 'charge.py').write_text('def charge(amount, retries):\\n    return amount\\n')\n"
+        "print(json.dumps({'type': 'turn.completed', 'cost_usd': 0.0}))\n"))
+    planned = runtime.plan(root, 'Fix duplicate charge', agent='codex', write_paths=['charge.py'], execute_local=True)
+    result = runtime.execute(root, planned, None, provider_executable=cli)
+    assert result['effective_verdict'] != 'PASS'
+    assert any('.gitignore' in n for n in result['passport']['negative'])
+
+
+def test_apply_after_an_uncommitted_init_leaves_the_users_gitignore_alone(tmp_path):
+    from repo_ai.mission.application import apply
+    root = _project(tmp_path, gitignore='__pycache__/\n')
+    before = (root / '.gitignore').read_bytes()
+    result = _mission(root, tmp_path)
+    assert result['effective_verdict'] == 'PASS'
+    apply(root, result['id'])
+    assert (root / '.gitignore').read_bytes() == before
+    assert (root / 'charge.py').read_text() == 'def charge(amount, retries):\n    return amount\n'
