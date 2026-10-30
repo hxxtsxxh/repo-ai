@@ -31,8 +31,15 @@ Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call b
 | 16 | 2026-10-30T06:04Z | claude / sonnet | isolation probe, first live check | READY | $0.010517 | same |
 | 17 | 2026-10-30T06:17Z | claude / sonnet | strict probe + live-init re-check | READY | $0.010507 | same |
 
+| 18 | 2026-10-30T06:58Z | claude / sonnet | python-slugify real-project mission | INCONCLUSIVE (suite skips/unrelated failures); exact fix produced | $0.035154 | same |
+| 19 | 2026-10-30T07:47Z | codex 0.165.0 | `run_provider` under the HOME-restricted profile | READY, correct edit | UNKNOWN | same |
+| 20 | 2026-10-30T09:14Z | claude / sonnet | 0.10.0 PyPI journey | PASS, oracle 17/17, undo exact | $0.025444 | same |
+| 21 | 2026-10-30T09:14Z | codex 0.165.0 | 0.10.0 PyPI journey | PASS, oracle 17/17, undo exact | UNKNOWN | same |
+| 22 | 2026-10-30T09:15Z | agy 1.4.9 | 0.10.0 PyPI journey | PASS, oracle 17/17, undo exact | UNKNOWN | same |
+| 23 | 2026-10-30T09:16Z | claude / sonnet | 0.10.0 PyPI hostile-repository journey | PASS, nothing exfiltrated | $0.016145 | same |
+
 **Authorization (owner, 2026-10-30):** up to 25 live provider calls, $5 notional total, Claude ≤ $0.50 per run.
-Used: 13 of 25 calls; Claude $0.846 notional (cap $5), Codex/agy/Gemini UNKNOWN (calls 1–4 preceded the authorization: $0.0203).
+Used: 19 of 25 calls; Claude $0.923 notional (cap $5), Codex/agy/Gemini UNKNOWN; OpenCode runs $0 and uncounted (calls 1–4 preceded the authorization: $0.0203).
 
 ## Open experiment protocols (not run)
 
