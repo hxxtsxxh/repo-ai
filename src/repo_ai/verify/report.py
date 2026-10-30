@@ -280,8 +280,7 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
         out.append(f"  full suite not run: {full.get('reason')}")
     counts = [f"{s['passed']} selected test file(s) passed"]
     if s.get("full_suite_counts"):
-        c = s["full_suite_counts"]
-        counts.append(f"full suite: {c['passed']} test(s) passed, {c['failed']} failed, {c['skipped']} skipped")
+        counts.append("full suite (pytest's summary): " + ", ".join(f"{n} {w}" for w, n in s["full_suite_counts"].items()))
     if s["no_tests"]:
         counts.append(f"{len(s['no_tests'])} define no tests")
     if s["not_run"]:

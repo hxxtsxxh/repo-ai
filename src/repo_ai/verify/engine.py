@@ -906,6 +906,18 @@ def _full_cap(ctx: _Ctx) -> float:
     return ctx.timeout_s if ctx.timeout_explicit else max(ctx.timeout_s, 1800.0)
 
 
+_PYTEST_SUMMARY = re.compile(r"^=*\s*((?:\d+ [a-z]+, )*\d+ [a-z]+) in [0-9.]+s(?: \([^)]*\))?\s*=*$")
+
+
+def pytest_summary(stdout: str) -> dict[str, int] | None:
+    """pytest's final counts line ("1 failed, 738 passed, 112 skipped in 0.83s"), in its own order and words."""
+    for line in reversed(re.sub(r"\x1b\[[0-9;]*m", "", stdout).strip().splitlines()[-5:]):
+        m = _PYTEST_SUMMARY.match(line.strip())
+        if m:
+            return {word: int(n) for n, word in (part.split(" ", 1) for part in m.group(1).split(", "))}
+    return None
+
+
 def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strategy.Decision) -> list[dict[str, Any]]:
     """The project's own full-suite command as one process. With a trusted
     per-test report, every test file gets its own result row (the selected
@@ -923,12 +935,9 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
     rec["full_suite"] = {"status": status, "exit_code": res.exit_code, "duration_s": round(res.duration_s, 2),
                          "command": runner.display(argv), "attributed": trusted or status == "pass",
                          "output_tail": evidence.failure_excerpt(text) if status != "pass" else ""}
-    if trusted and att is not None:  # per-test totals from the runner's own report
-        tests = sum(f.tests for f in att.files.values())
-        skipped = sum(f.skipped for f in att.files.values())
-        failed = sum(len(f.failing) for f in att.files.values())
-        rec["full_suite"]["counts"] = {"tests": tests, "passed": max(0, tests - skipped - failed),
-                                       "failed": failed, "skipped": skipped}
+    summary = pytest_summary(res.stdout) if runner.kind == "pytest" else None
+    if summary:  # quoted from pytest's own last line, never derived (doctests, subtests, errors count as pytest counts)
+        rec["full_suite"]["counts"] = summary
     if status == "pass":
         ctx.timings.note_full(res.duration_s)
         if trusted and not ctx.timings.startup_s:

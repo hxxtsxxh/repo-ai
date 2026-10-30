@@ -9,6 +9,7 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
 from conftest import run_cli
 
 from test_verify_adaptive import CMD, needs_sandbox
@@ -129,5 +130,19 @@ def test_a_full_run_reports_the_suites_test_counts_not_only_selected_files(tmp_p
     (root / "NOTES.txt").write_text("a change that selects no test file\n")
     out = run_cli(root, "verify", "--run", "--full", "--test-command", CMD).stdout
     assert "0 selected test file(s) passed" in out, out
-    assert "full suite: 2 test(s) passed, 0 failed, 0 skipped" in out, out
     assert "\n  0 passed" not in out, out
+    assert "full suite (" not in out, out  # unittest prints no pytest summary; counts are never derived
+
+
+@pytest.mark.parametrize("stdout, expected", [
+    ("....\n=== 1 failed, 738 passed, 112 skipped in 0.83s ===\n", {"failed": 1, "passed": 738, "skipped": 112}),
+    ("\x1b[32m6 passed\x1b[0m in 0.02s\n", {"passed": 6}),
+    ("== 2 passed, 1 error in 1.00s ==", {"passed": 2, "error": 1}),
+    ("= 4 passed, 2 failed, 1 xfailed, 1 xpassed, 3 warnings in 2.01s (0:00:02) =",
+     {"passed": 4, "failed": 2, "xfailed": 1, "xpassed": 1, "warnings": 3}),
+    ("no summary here\n", None),
+    ("== 3 passed in 0.1s ==\nextra trailing output\n", {"passed": 3}),
+])
+def test_pytest_summary_is_quoted_not_derived(stdout, expected):
+    from repo_ai.verify.engine import pytest_summary
+    assert pytest_summary(stdout) == expected
