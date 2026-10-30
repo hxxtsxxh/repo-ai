@@ -1,0 +1,440 @@
+{
+ "schema": "repo-ai.provider-catalog/1",
+ "as_of": "2026-10-30",
+ "about": "Which coding agents exist and what repo-ai can honestly do with each. `upstream` is what the vendor documents (HEADLESS_CLI = a documented non-interactive file-editing CLI); `repo_ai` is repo-ai's state: EXECUTION (an adapter, live-verified on the development host), BLOCKED (adapter exists, an external blocker is named), PLANNED (documented headless surface, no adapter yet: nothing claims it works), UNSUPPORTED. `basis` says whether the row rests on observation on the development host or only on vendor documentation (2026-10-30 research, unverified against binaries). Generic executable names (`agent`, `q`, `cn`) are not used for detection: they collide with unrelated tools.",
+ "providers": [
+  {
+   "id": "claude",
+   "name": "Claude Code",
+   "executables": [
+    "claude"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "EXECUTION",
+   "basis": "observed",
+   "note": "Isolated provider from 0.10.0 (macOS live; Linux by tests). Own login, file tools only, per-run isolation probe.",
+   "account": "Claude subscription or API key",
+   "local_model": false,
+   "acp": false,
+   "docs": [
+    "https://code.claude.com/docs"
+   ]
+  },
+  {
+   "id": "codex",
+   "name": "OpenAI Codex CLI",
+   "executables": [
+    "codex"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "EXECUTION",
+   "basis": "observed",
+   "note": "Live-verified; its login token is readable by a model with shell access (disclosed).",
+   "account": "ChatGPT plan or API key",
+   "local_model": false,
+   "acp": false,
+   "docs": [
+    "https://developers.openai.com/codex/cli"
+   ]
+  },
+  {
+   "id": "agy",
+   "name": "Google Antigravity CLI",
+   "executables": [
+    "agy"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "EXECUTION",
+   "basis": "observed",
+   "note": "Live-verified on macOS only (needs the read-restricted real HOME).",
+   "account": "Google account",
+   "local_model": false,
+   "acp": false,
+   "docs": []
+  },
+  {
+   "id": "opencode",
+   "name": "OpenCode",
+   "executables": [
+    "opencode"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "EXECUTION",
+   "basis": "observed",
+   "note": "Local, loopback-only model endpoints only (account-free); macOS. Cloud models through this adapter are refused.",
+   "account": "none (local model)",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://opencode.ai/docs/cli/",
+    "https://opencode.ai/docs/permissions/",
+    "https://opencode.ai/docs/providers/"
+   ]
+  },
+  {
+   "id": "bob",
+   "name": "IBM Bob",
+   "executables": [
+    "bob"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "EXECUTION",
+   "basis": "observed",
+   "note": "Live-verified on an earlier pre-release; not re-run for 0.10.0.",
+   "account": "IBM Bob entitlement",
+   "local_model": false,
+   "acp": false,
+   "docs": []
+  },
+  {
+   "id": "gemini",
+   "name": "Gemini CLI",
+   "executables": [
+    "gemini"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "BLOCKED",
+   "basis": "observed",
+   "note": "Adapter exists; the tested account was rejected (exit 41). Needs GEMINI_API_KEY.",
+   "account": "Google account or API key",
+   "local_model": false,
+   "acp": false,
+   "docs": [
+    "https://github.com/google-gemini/gemini-cli"
+   ]
+  },
+  {
+   "id": "qwen-code",
+   "name": "Qwen Code",
+   "executables": [
+    "qwen"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Gemini-CLI fork with the cleanest headless contract (result event, distinct exit codes for turn/budget limits, auto-edit mode = edits without shell approval). Local: OPENAI_BASE_URL=http://localhost:11434/v1, any non-empty OPENAI_API_KEY. Watch for stale exported OPENAI_BASE_URL overriding settings.",
+   "account": "OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL (alias QWEN_MODEL) for OpenAI-compatible; modelProviders in ~/.qwen/settings.json; /auth interactively. Qwen OAuth",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://qwenlm.github.io/qwen-code-docs/en/users/features/headless/",
+    "https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/",
+    "https://qwenlm.github.io/qwen-code-docs/fr/users/configuration/auth/"
+   ]
+  },
+  {
+   "id": "github-copilot-cli",
+   "name": "GitHub Copilot CLI",
+   "executables": [
+    "copilot"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "`gh copilot` (suggest/explain extension) is NOT an editing agent; the standalone `copilot` binary is. Install page says a Copilot subscription is needed, but the auth + BYOK pages state GitHub auth is not required with BYOK; with COPILOT_OFFLINE=true + Ollama (providers.json type openai, baseUrl htt",
+   "account": "Env COPILOT_GITHUB_TOKEN > GH_TOKEN > GITHUB_TOKEN (fine-grained PAT with 'Copilot Requests' or OAuth from Copilot/gh CLI; classic ghp_ not supported); `copilot",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
+    "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-byok-models",
+    "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli"
+   ]
+  },
+  {
+   "id": "goose",
+   "name": "Goose",
+   "executables": [
+    "goose"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Good local-model candidate (Ollama is first-class; GOOSE_INPUT_LIMIT maps to num_ctx; GOOSE_TOOLSHIM_OLLAMA_MODEL for models without native tool calling). Default GOOSE_MODE=auto means no prompts - set explicitly. No path/shell allowlist confirmed, so rely on external sandbox.",
+   "account": "GOOSE_PROVIDER + GOOSE_MODEL (required) and provider key env vars; keyring by default, GOOSE_DISABLE_KEYRING=1 for headless with env credentials. Ollama provide",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://goose-docs.ai/docs/guides/goose-cli-commands",
+    "https://goose-docs.ai/docs/guides/environment-variables",
+    "https://goose-docs.ai/docs/guides/config-files"
+   ]
+  },
+  {
+   "id": "cline-cli",
+   "name": "Cline CLI",
+   "executables": [
+    "cline"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Headless auto-triggers on --json, piped stdin or redirected stdout. Auto-approve defaults TRUE (dangerous default). Has the best config/data isolation flags of the OSS set. Ollama/LM Studio provider IDs documented; account-less BYOK not explicitly stated (medium).",
+   "account": "`cline auth -p <provider> -k <apikey> -m <modelid> -b <baseurl>`; -k/--key per run; Cline Provider / ClinePass accounts optional; providers include ollama, lmst",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://docs.cline.bot/cline-cli/three-core-flows.md",
+    "https://docs.cline.bot/cli/cli-reference.md",
+    "https://docs.cline.bot/usage/acp.md"
+   ]
+  },
+  {
+   "id": "factory-droid",
+   "name": "Factory Droid",
+   "executables": [
+    "droid"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Best-designed tiered autonomy (--auto low == 'edits only, no shell side effects') and a documented terminal event. Ollama BYOK documented (http://localhost:11434/v1, any key, >=32k ctx) but docs never say a Factory login/FACTORY_API_KEY is unnecessary -> assume account required (low).",
+   "account": "FACTORY_API_KEY (generated in Factory settings). BYOK customModels in ~/.factory/settings.json (model, baseUrl, apiKey, provider) referenced as custom:<Name>-<i",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://docs.factory.com/cli/droid-exec/overview",
+    "https://docs.factory.com/cli/byok/overview.md",
+    "https://docs.factory.ai/cli/byok/ollama"
+   ]
+  },
+  {
+   "id": "kilo-code-cli",
+   "name": "Kilo Code CLI",
+   "executables": [
+    "kilo"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "'The Kilo CLI is a fork of OpenCode and supports the same configuration options.' Better documented fail-closed run semantics than upstream (exit 0/1/124). Local Ollama not mentioned on Kilo page but inherited OpenCode provider config should work (medium). Redundant with OpenCode adapter.",
+   "account": "Kilo account (Kilo Gateway) or BYOK via /connect, `kilo auth`, provider.<id>.options.apiKey {env:..}; KILO_PROVIDER, KILO_<FIELD>.",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://kilo.ai/docs/cli",
+    "https://github.com/Kilo-Org/kilocode"
+   ]
+  },
+  {
+   "id": "openhands-cli",
+   "name": "OpenHands CLI",
+   "executables": [
+    "openhands"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Local LLM: LiteLLM naming 'openai/<model>' with LLM_BASE_URL http://localhost:11434/v1 and placeholder key (local-LLM page is written for the Docker GUI; CLI applicability inferred). Forced always-approve in headless means zero in-agent permission control - only usable inside an external sandbox.",
+   "account": "LLM_API_KEY, LLM_MODEL, LLM_BASE_URL (model/base_url only applied with --override-with-envs); `openhands login` for OpenHands Cloud (optional).",
+   "local_model": false,
+   "acp": true,
+   "docs": [
+    "https://docs.openhands.dev/openhands/usage/cli/headless",
+    "https://docs.openhands.dev/openhands/usage/cli/command-reference",
+    "https://docs.openhands.dev/openhands/usage/cli/installation"
+   ]
+  },
+  {
+   "id": "continue-cli",
+   "name": "Continue CLI",
+   "executables": [],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Clean 'ask => excluded in headless' semantics (fail-closed). Ollama via config.yaml `provider: ollama` is the same format as the IDE extension (not verified on CLI docs) - treat local/account-less as medium-low until tested.",
+   "account": "Local config.yaml with provider keys via ${{ secrets.X }}/env; CONTINUE_API_KEY for Hub configs in CI; login gating reportedly removed (mirror commit - low).",
+   "local_model": true,
+   "acp": false,
+   "docs": [
+    "https://docs.continue.dev/cli/headless-mode",
+    "https://docs.continue.dev/cli/tool-permissions",
+    "https://docs.continue.dev/cli/configuration"
+   ]
+  },
+  {
+   "id": "aider",
+   "name": "Aider",
+   "executables": [
+    "aider"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Single-shot edit-format model (not an agentic tool loop); you must name files to edit (or rely on repo-map + add requests, which need confirmation -> --yes). Ollama: OLLAMA_API_BASE=http://127.0.0.1:11434, model ollama_chat/<m>; Ollama defaults to 2k ctx (aider sizes num_ctx per request). Auto-commi",
+   "account": "Provider env vars (OPENAI_API_KEY, ANTHROPIC_API_KEY, ...), OLLAMA_API_BASE (+ optional OLLAMA_API_KEY), OpenAI-compatible via OPENAI_API_BASE; every flag also ",
+   "local_model": true,
+   "acp": false,
+   "docs": [
+    "https://aider.chat/docs/scripting.html",
+    "https://aider.chat/docs/llms/ollama.html",
+    "https://aider.chat/docs/config/options.html"
+   ]
+  },
+  {
+   "id": "cursor-cli",
+   "name": "Cursor CLI (agent)",
+   "executables": [
+    "cursor-agent"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Binary now documented as `agent` (cursor-agent is the legacy name). Requires Cursor account/API key; no local model support.",
+   "account": "CURSOR_API_KEY / --api-key; `agent login`; CURSOR_AUTH_TOKEN/--auth-token (ACP page).",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://cursor.com/docs/cli/headless",
+    "https://cursor.com/docs/cli/reference/parameters",
+    "https://cursor.com/docs/cli/reference/permissions"
+   ]
+  },
+  {
+   "id": "crush",
+   "name": "Crush",
+   "executables": [
+    "crush"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Local Ollama documented (base-url http://localhost:11434/v1/). No structured output and undocumented permission semantics in run mode make it weaker for a ledgered integration; would need empirical verification before use.",
+   "account": "Provider API keys via env/config; Charm 'Hyper' subscription provider optional; local providers type ollama/lmstudio/llamacpp/omlx/litellm/completions.",
+   "local_model": true,
+   "acp": false,
+   "docs": [
+    "https://github.com/charmbracelet/crush",
+    "https://raw.githubusercontent.com/charmbracelet/crush/main/internal/cmd/run.go",
+    "https://raw.githubusercontent.com/charmbracelet/crush/main/internal/cmd/root.go"
+   ]
+  },
+  {
+   "id": "amp",
+   "name": "Amp",
+   "executables": [
+    "amp"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Execute mode and SDK consume PAID credits only (ad-supported Amp Free not usable non-interactively); Amp Free allowance being reduced (2026-05-23). No local/BYOK models. Requires account.",
+   "account": "AMP_API_KEY (sgamp_ access token from Settings); `amp login` session token rejected for scripts.",
+   "local_model": false,
+   "acp": false,
+   "docs": [
+    "https://ampcode.com/docs/cli/execute-mode",
+    "https://ampcode.com/docs/cli/settings",
+    "https://ampcode.com/news/streaming-json"
+   ]
+  },
+  {
+   "id": "augment-auggie",
+   "name": "Augment (auggie)",
+   "executables": [
+    "auggie"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Requires Augment account (session token tied to user); non-interactive may be disabled by enterprise agreement. No local models.",
+   "account": "`auggie auth login` then `auggie token print` -> AUGMENT_SESSION_AUTH='<json>'.",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://docs.augmentcode.com/cli/automation",
+    "https://docs.augmentcode.com/cli/reference",
+    "https://docs.augmentcode.com/cli/permissions"
+   ]
+  },
+  {
+   "id": "jetbrains-junie",
+   "name": "JetBrains Junie",
+   "executables": [
+    "junie"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "EAP. Headless page shows --auth token in the canonical example; BYOK-only headless run not shown. No documented per-tool permission control in headless.",
+   "account": "Junie token (--auth, from junie.jetbrains.com/cli), --auth-license, JetBrains account; BYOK flags --anthropic-api-key, --openai-api-key, --google-api-key, --gro",
+   "local_model": false,
+   "acp": true,
+   "docs": [
+    "https://junie.jetbrains.com/docs/parameters.html",
+    "https://junie.jetbrains.com/docs/junie-headless.html",
+    "https://junie.jetbrains.com/docs/byok.html"
+   ]
+  },
+  {
+   "id": "kiro-cli",
+   "name": "Kiro CLI (formerly Amazon Q Developer CLI)",
+   "executables": [
+    "kiro-cli"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Amazon Q Developer CLI has been rebranded to Kiro CLI (Nov 2025); `q`/`q chat` remain as compatibility aliases; open-source Q CLI frozen at v1.19.7. Headless requires a paid Kiro subscription API key. No local models.",
+   "account": "KIRO_API_KEY (headless; only Kiro Pro/Pro+/Pro Max/Power subscribers).",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://kiro.dev/docs/cli/headless/",
+    "https://kiro.dev/docs/cli/reference/cli-commands",
+    "https://kiro.dev/docs/cli/acp/"
+   ]
+  },
+  {
+   "id": "devin",
+   "name": "Devin CLI",
+   "executables": [
+    "devin"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "PLANNED",
+   "basis": "docs",
+   "note": "Two surfaces: (1) Devin CLI = local headless editing (EXECUTION, account required, frontier/SWE models only, no local models); (2) Devin cloud sessions API = REMOTE_SERVICE (POST /v1/sessions legacy; v3 current). accept-edits mode is a clean 'edits only' policy, but no JSON stream for -p.",
+   "account": "`devin auth login [--force-manual-token-flow]`; WINDSURF_API_KEY (ACP). Cloud API: bearer personal/service key against api.devin.ai.",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://docs.devin.ai/cli/reference/commands",
+    "https://cli.devin.ai/docs/reference/permissions",
+    "https://cognition.com/blog/devin-for-terminal"
+   ]
+  },
+  {
+   "id": "roo-code",
+   "name": "Roo Code",
+   "executables": [],
+   "upstream": "DISCONTINUED",
+   "repo_ai": "UNSUPPORTED",
+   "basis": "docs",
+   "note": "DISCONTINUED: RooCodeInc/Roo-Code archived 2026-05-15 (read-only); extension/Cloud/Router shut down; docs.roocode.com redirects to a 404. Do not integrate. Community fork 'Zoo Code' exists (unvetted).",
+   "account": "",
+   "local_model": false,
+   "acp": false,
+   "docs": [
+    "https://github.com/RooCodeInc/Roo-Code/tree/main/apps/cli",
+    "https://kilo.ai/compare/roo-code-shutdown-roomote"
+   ]
+  },
+  {
+   "id": "windsurf",
+   "name": "Windsurf",
+   "executables": [],
+   "upstream": "HOST_ONLY",
+   "repo_ai": "UNSUPPORTED",
+   "basis": "docs",
+   "note": "IDE host without a documented headless execution surface.",
+   "account": "",
+   "local_model": false,
+   "acp": false,
+   "docs": [
+    "https://cognition.com/blog/devin-for-terminal",
+    "https://www.usecarly.com/blog/windsurf-is-now-devin-desktop"
+   ]
+  }
+ ]
+}

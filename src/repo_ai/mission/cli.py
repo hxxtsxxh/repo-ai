@@ -282,6 +282,23 @@ def cmd_agents(args) -> int:
         return 0
     if args.action == 'setup':
         return _agents_setup(args)
+    if args.action == 'catalog':
+        from ..providers import catalog
+        rows = catalog.detect(root)
+        if args.json:
+            print(json.dumps({'schema': 'repo-ai.provider-catalog-view/1', 'providers': rows}, indent=2))
+            return 0
+        for state in catalog.REPO_AI_STATES:
+            group = [r for r in rows if r['repo_ai'] == state]
+            if group:
+                print(f'{state}:')
+                for r in group:
+                    mark = {'INSTALLED': 'installed', 'INSTALLED_NO_ADAPTER': 'installed, no repo-ai adapter',
+                            'UNTRUSTED_EXECUTABLE': 'repository-owned executable refused', 'NOT_FOUND': ''}[r['presence']]
+                    print(f"  {r['id']:<20} {r['name']}" + (f'  [{mark}]' if mark else '')
+                          + ('' if r['basis'] == 'observed' else '  (from vendor docs)'))
+        print('PLANNED means no adapter yet: nothing here claims it works. Detection is a PATH lookup; nothing was run.')
+        return 0
     if args.action == 'route':
         decision = registry.route(root, max_cost_usd=args.max_cost_usd, run_authorized=args.allow_live_provider)
         if args.json:
@@ -558,7 +575,7 @@ def register(sub, common) -> None:
     p.add_argument('--resume', metavar='ID', help='inspect/recover an interrupted checkpoint; no automatic model retry')
     p.set_defaults(func=cmd_do)
     p = sub.add_parser('agents', parents=[common], help='local provider availability; doctor runs sandboxed help/version only')
-    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke', 'setup'])
+    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke', 'setup', 'catalog'])
     p.add_argument('provider', nargs='?', help='provider name for authorize/revoke/setup')
     p.add_argument('--prefer', action='store_true', help='with authorize: also prefer this provider in routing')
     p.add_argument('--allow-live-provider', action='store_true', help='route: evaluate as if this run were authorized')
