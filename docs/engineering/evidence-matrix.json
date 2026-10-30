@@ -22,14 +22,14 @@
       "note": "published is true on the site only while verified_read is present and matches pyproject.toml. Write it with `python scripts/site_facts.py --record-pypi` (network) after a real read; never by hand-editing published.",
       "verified_read": {
         "distribution": "repo-ai-cli",
-        "version": "0.10.0",
-        "url": "https://pypi.org/project/repo-ai-cli/0.10.0/",
-        "verified_at": "2026-10-30T09:03:03Z",
-        "method": "GET https://pypi.org/pypi/repo-ai-cli/0.10.0/json; downloaded the wheel and recomputed its sha256, which matched PyPI's digest",
-        "wheel": "repo_ai_cli-0.10.0-py3-none-any.whl",
-        "wheel_sha256": "aa8278061511a26ea0d947b80af825711d073462ea6d74fcb6d63ff963eb51cf",
-        "sdist": "repo_ai_cli-0.10.0.tar.gz",
-        "sdist_sha256": "4cdcb886067eb59bbdeb54434af46b454a510297aa57f6d35dde6365a3c6bec3"
+        "version": "0.11.0",
+        "url": "https://pypi.org/project/repo-ai-cli/0.11.0/",
+        "verified_at": "2026-10-30T16:57:23Z",
+        "method": "GET https://pypi.org/pypi/repo-ai-cli/0.11.0/json; downloaded the wheel and recomputed its sha256, which matched PyPI's digest",
+        "wheel": "repo_ai_cli-0.11.0-py3-none-any.whl",
+        "wheel_sha256": "5a28fd1787a18b7098635cefd86c079ef83e49f538d3961b0c8b8e293657874e",
+        "sdist": "repo_ai_cli-0.11.0.tar.gz",
+        "sdist_sha256": "95316697ad2e160260c2367d55a67ae55b230fb2198c8f551cca5718d56adaa9"
       }
     }
   },
@@ -355,6 +355,19 @@
       "limits": "Blocked by the tested account's authentication, not by a repo-ai verdict; not tried with an API key.",
       "source": "docs/engineering/INTEGRATIONS.md",
       "featured": false
+    },
+    {
+      "id": "real-suite-scoped-mission",
+      "title": "A fix verified on a real repository with unrelated failures",
+      "status": "EXPERIMENTAL",
+      "stat": "PASS_WITH_PRE_EXISTING_FAILURES",
+      "result": "On un33k/python-slugify (a deliberate regression committed as a bad commit), a live Codex candidate was verified through a scoped mission (--expect-fix with the three tests the regression broke): the declared tests went from failing to passing, nothing that passed at the base failed, 20 unrelated failures were listed; the candidate is byte-identical to the upstream line. The same candidate could not be verified by an unscoped mission.",
+      "date": "2026-10-30",
+      "sample_size": "1 real repository, 1 live run",
+      "method": "repo-ai do --agent codex --expect-fix … on a development build of the init-then-do fix (0.11.0 itself refused the run because of that first-run bug).",
+      "limits": "One repository, one task, regression injected by the author; the claim stays ASSURANCE_PARTIAL; a first-run bug in 0.11.0 is fixed after the release.",
+      "source": "docs/engineering/evidence/REAL-PROJECT-2026-10-30.md",
+      "featured": true
     }
   ]
 }

@@ -315,7 +315,8 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke"
+    "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke",
+    "0.11.0: Trusted Publishing, assets identical across PyPI/GitHub, SHA256SUMS and attestation verified, clean install smoke PASS"
    ],
    "limits": [],
    "next_action": "next release"
@@ -323,16 +324,19 @@
   {
    "id": "C21",
    "title": "Real adopter proof",
-   "status": "EXPERIMENTAL",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "python-slugify: verify --run caught a regression; Claude's fix verified by verify; mission abstained on skips/unrelated failures (part 1 of the fix shipped in 0.10.0)"
+    "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
+    "first-run bug (init then do) found on the published 0.11.0 and fixed (PR #11)"
    ],
-   "limits": [],
-   "next_action": "re-run the mission journey on 0.10.0 (identical skips accepted); second real project"
+   "limits": [
+    "one real repository; regression injected by the author; second real project not yet done"
+   ],
+   "next_action": "second real project; owner re-login for the Claude provider"
   },
   {
    "id": "C22",
