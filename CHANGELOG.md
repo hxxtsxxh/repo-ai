@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Changed: `repo-ai skills recommend` / `explain` count a local skill (`discover --from-path`) as relevant when its
+  description names one of this repository's own Python packages (common names such as `app` or `data` excluded).
+  Before, a skill written for the repository's own conventions was advised against ("matches no evidence-backed
+  capability gap"); found in the C10 skill-value pilot (`docs/engineering/evidence/SKILL-VALUE-PILOT-2026-10-30.md`).
+  This is advice only: a network skill that names the package gets no credit, and `skills autopilot` never
+  auto-installs a skill on this ground; it does so only for a skill that fills a gap or that you name.
+
 ## 0.11.1 — `init` then `do` works on the first try
 
 - Fixed (found on a real repository): `repo-ai init` followed by `repo-ai do` failed either way. Uncommitted

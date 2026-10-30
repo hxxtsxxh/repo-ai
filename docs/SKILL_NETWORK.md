@@ -123,13 +123,24 @@ Two separate questions:
   relevance can never override.
 - **Worth it?** A transparent score:
   - the evidence-backed gaps the skill addresses, weighted by strength;
+  - for a local skill (`discover --from-path`) only: whether its
+    description names one of this repository's own Python packages
+    (`ledger_core`, `ledger-core` and `ledger core` all count; common names
+    such as `app`, `data` or `models` never do). Such a skill states project
+    knowledge that no gap detector can see. A network skill that names the
+    package gets no credit for it, because naming a package is easy to fake.
+    "Local" means only that you gave the path, not that the skill was written
+    here, so this is advice: autopilot never auto-installs a skill on this
+    ground, only when you name it;
   - minus redundancy with existing skills;
   - documentation quality;
   - provenance (stars count only weakly);
   - minus context-token cost;
   - plus or minus measured trial evidence.
 
-At most one skill is recommended per gap.
+At most one skill is recommended per gap. A skill written for this
+repository is judged on its own, even when a stronger candidate takes a gap
+it also matched.
 
 ## 5. Portfolio (`.repo-ai/skills.lock.json`)
 
@@ -414,7 +425,9 @@ repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-ru
   - it declares no permissions, hooks, URLs, network commands, accounts or hidden characters;
   - the firewall found nothing that matters.
   
-  It installs into the Claude Code project skills directory only.
+  It installs into the Claude Code project skills directory only, and only a
+  skill that fills an evidence-backed gap or that you name: a recommendation
+  that rests on naming this repository's package is never acted on alone.
 - **At every level:** scripts, hooks, MCP servers, plugins, binaries, provider adapters, static tools,
   external accounts, permission changes and network execution need your approval.
 - **`eligible` is not inert:** a firewall verdict of `eligible` never qualifies a skill on its own.
