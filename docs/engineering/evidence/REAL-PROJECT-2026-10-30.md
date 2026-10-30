@@ -25,3 +25,15 @@ dependencies were **not** installed, as a first-time user might run it. Its code
    skip set identical at base and candidate and failures outside the task's tests, without opening a false PASS.
 4. `verify` reports new and pre-existing failures but does not name tests a change **fixed**; queued.
 5. The quickstart reports the `repo-ai` on PATH (here the user's global install), not the one being run.
+
+## Addendum: the same candidate through a scoped mission (development build of `--expect-fix`, PR #9)
+
+Claude's recorded candidate from step 6 (it restores the removed `strip()`) was replayed as a simulated proposal
+(`--agent replay`, $0) against the same bad commit, on a development build of PR #9:
+
+| Mission | Result |
+|---|---|
+| unscoped | `INCONCLUSIVE — FAIL`: "candidate did not pass every test" (20 unrelated failures in this environment) |
+| `--expect-fix` with the three `tests/test_release.py` tests the regression broke | **`PASS_WITH_PRE_EXISTING_FAILURES`**: the declared tests went from failing to passing, nothing that passed at the base fails; the 20 pre-existing failures (all `tests/test_legacy.py`, missing optional backends) are listed; claim `ASSURANCE_PARTIAL` |
+
+The skipped tests were identical at base and candidate, which 0.10.0 already accepts.
