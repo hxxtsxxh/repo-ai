@@ -55,6 +55,25 @@ Used: 22 of 25 counted calls with inference (26 invocations including one auth f
   17 cases kept outside the repository; then `coverage`, `apply`, `undo`. Predeclared pass: mission verdict PASS
   `LIVE_CANDIDATE_VERIFIED`, hidden oracle 17/17, undo restores bytes. A hidden-oracle miss is reported as a failure.
 - abc-v5 confirmatory study (from 0.9.0): needs blinded task authors; unchanged.
+- **C10 skill-value pilot (predeclared 2026-10-30, before any live call).** Second budget (owner: 15 calls, $3
+  notional). Fixture `invoicekit` (3 source files, 4 visible tests, written for this pilot) and skill
+  `invoicekit-conventions` (6 rules). Rules 1–3 (integer cents, `ROUND_HALF_EVEN`, `InvoiceError`) are visible in the
+  existing code; rules 4–6 (percent range 0–100, tax rounded per line, leftover split cents to the earliest shares)
+  are not. Three tasks, each one sentence naming a new function and asking for a test; the prompts never mention a
+  rule. Hidden oracle kept outside the project: 8 + 7 + 7 cases (0/22 on the base, 22/22 on a reference solution).
+  - Arms: skill installed through `repo-ai skills discover --from-path` + `skills install --approve <hash> --host
+    claude-code`; control identical (same `repo-ai init`) without the install. Claude Code 2.1.314 host mode,
+    dedicated login, `haiku`, `--setting-sources project --tools Read,Write,Edit,Glob,Grep,Skill --strict-mcp-config
+    --permission-mode acceptEdits --max-budget-usd 0.30`; a $0 init probe showed the skill listed, no MCP server,
+    file tools only. (`--restricted` drops project skills, so it is not used.) Arm order per task drawn at random and
+    recorded; run directories carry random ids and are graded by script before unblinding. 6 calls.
+  - Primary outcome per task: hidden-oracle cases passed, skill arm vs control. **Pilot supports value** iff the skill
+    arm is higher on ≥ 2 tasks and lower on none; **negative** iff the control is higher on ≥ 2; otherwise
+    **inconclusive**. Secondary: whether the model invokes the skill unprompted, cost per arm, visible tests.
+  - A run that errors, exceeds its cap or touches a path outside its project is reported as a failed run and not
+    re-run. Scope: author-designed knowledge gap, one model, n = 3 pairs. A positive result shows that a
+    repo-ai-installed skill can carry project knowledge into graded outcomes; it does not show that skills found on
+    the network improve real repositories.
 
 ## Performance data point (C16), 2026-10-30
 
