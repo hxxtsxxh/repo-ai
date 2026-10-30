@@ -45,7 +45,7 @@ described in the status matrix.
 | [`conventions`](#repo-ai-conventions) | print CONVENTIONS.md |
 | [`hotspots`](#repo-ai-hotspots) | print HOTSPOTS.md |
 | [`learn`](#repo-ai-learn) | (experimental) evidence-backed rules and outcome learning: status \| review \| explain \| approve \| reject \| rollback \| history \| shadow \| friction \| forget \| export |
-| [`skills`](#repo-ai-skills) | skill lifecycle (experimental, except the read-only inventory and vet): list \| discover \| propose \| test \| diff \| promote \| disable \| rollback \| canary \| draft \| doctor \| inventory \| vet |
+| [`skills`](#repo-ai-skills) | skill lifecycle (experimental, except the read-only inventory and vet): list \| discover \| propose \| test \| diff \| promote \| disable \| rollback \| canary \| draft \| doctor \| inventory \| vet \| policy \| autopilot |
 | [`workflow`](#repo-ai-workflow) | compiled playbooks from verified workflows (read-only previews) |
 | [`registry`](#repo-ai-registry) | opt-in cross-repo registry with isolated zones |
 | [`pack`](#repo-ai-pack) | Stack Packs: evidence-backed bundles from repositories in this repo's zone |
@@ -665,14 +665,14 @@ print HOTSPOTS.md
 
 ## `repo-ai skills`
 
-skill lifecycle (experimental, except the read-only inventory and vet): list \| discover \| propose \| test \| diff \| promote \| disable \| rollback \| canary \| draft \| doctor \| inventory \| vet
+skill lifecycle (experimental, except the read-only inventory and vet): list \| discover \| propose \| test \| diff \| promote \| disable \| rollback \| canary \| draft \| doctor \| inventory \| vet \| policy \| autopilot
 
 | Argument | Description |
 |---|---|
 | `-C`, `--path` `DIR` | repository directory (default: cwd) |
 | `-v`, `--verbose` | more detail; on an error, print the traceback |
 | `-q`, `--quiet` | less output |
-| `action` | one of `list`, `discover`, `candidates`, `propose`, `test`, `diff`, `promote`, `generate`, `disable`, `rollback`, `canary`, `draft`, `doctor`, `audit`, `recommend`, `explain`, `install`, `portfolio`, `updates`, `compare`, `benchmark`, `health`, `enable`, `tournament`, `inventory`, `vet` |
+| `action` | one of `list`, `discover`, `candidates`, `propose`, `test`, `diff`, `promote`, `generate`, `disable`, `rollback`, `canary`, `draft`, `doctor`, `audit`, `recommend`, `explain`, `install`, `portfolio`, `updates`, `compare`, `benchmark`, `health`, `enable`, `tournament`, `inventory`, `vet`, `policy`, `autopilot` |
 | `names` |  |
 | `--online` | allow network access: discover (Skill Radar), install of a remote skill, updates; off by default |
 | `--providers` `PROVIDERS` | discover --online: providers to query |
@@ -686,6 +686,7 @@ skill lifecycle (experimental, except the read-only inventory and vet): list \| 
 | `--approve` `HASH` | install: the content hash you reviewed |
 | `--accept-review` | install: accept high-severity findings you have read |
 | `--allow-scripts` | install: the skill ships scripts |
+| `--host` `HOSTS` | install: comma-separated hosts (default claude-code; codex, gemini-cli, antigravity and ibm-bob are export-only) |
 | `--check` | updates: check upstream (network); inventory: exit 1 on a high-severity issue |
 | `--max-cost-per-run` `MAX_COST_PER_RUN` | benchmark: cap per run |
 | `--trial-tasks` `REGEX` | benchmark: task ids to use |
@@ -696,7 +697,7 @@ skill lifecycle (experimental, except the read-only inventory and vet): list \| 
 | `--previous` | rollback: pin the previous version |
 | `--apply` | canary: act on the decision |
 | `--draft` | promote: activate the reviewed Tier-2 draft |
-| `--dry-run` | draft: print exactly what would be sent; send nothing |
+| `--dry-run` | draft: print exactly what would be sent; send nothing; install: show the diff and conflicts; autopilot: decide only |
 | `--max-cost-usd` `MAX_COST_USD` | draft / benchmark: hard cap in USD (required for live use; billable) |
 | `--json` | machine-readable JSON output |
 

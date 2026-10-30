@@ -2193,7 +2193,9 @@ def cmd_skills(args: argparse.Namespace) -> int:
     root, cfg, layout = open_workspace(args, extra={"quiet": True} if args.json else None)
     skills_dir = root / ".claude" / "skills"
     network_actions = {"recommend", "explain", "install", "portfolio", "updates", "compare",
-                       "benchmark", "tournament", "health", "enable", "vet"}
+                       "benchmark", "tournament", "health", "enable", "vet", "autopilot"}
+    if args.action == "policy":
+        return _skills_policy(args, root)
     if args.action == "inventory":
         from . import inventory
         inv = inventory.build(root, firewall=not args.no_firewall)
@@ -2357,9 +2359,19 @@ def _skills_network(args, root, cfg, layout) -> int:
     from .fsutil import atomic_write
     from .registry import policy_for
 
+    from . import autonomy
     action = args.action
     state = _load_radar(layout)
     existing = {n: t for n, t in _skill_texts(root).items()}
+    level = autonomy.level(root)
+    if not autonomy.network_allowed(level) and (
+            (action == "discover" and args.online) or action == "updates"
+            or (action == "vet" and args.names and str(args.names[0]).startswith(("https://", "http://")))):
+        raise SystemExit(f"error: the skill policy is {level}: `skills {action}` needs the network "
+                         "(repo-ai skills policy show)")
+    if action in {"benchmark", "tournament"} and not (args.dry_run or args.trial_fake):
+        if autonomy.trial_problem(level):
+            raise SystemExit(f"error: {autonomy.trial_problem(level)}")
 
     def save_state(data: dict) -> None:
         atomic_write(_radar_state_path(layout), json.dumps(data, indent=1) + "\n")
@@ -2450,6 +2462,9 @@ def _skills_network(args, root, cfg, layout) -> int:
     if action == "vet":
         return _skills_vet(args, root, state, existing, save_state, emit)
 
+    if action == "autopilot":
+        return _skills_autopilot(args, root, state, existing, emit)
+
     candidates = state.get("candidates", [])
     reports = state.get("reports", {})
     profile = state.get("profile", {})
@@ -2509,10 +2524,19 @@ def _skills_network(args, root, cfg, layout) -> int:
     if action == "install":
         if not args.names:
             raise SystemExit("error: repo-ai skills install <name|candidate-id> --approve <hash>")
+        from . import capbundle
         cand = find(args.names[0])
         old = reports.get(cand["id"])
         if not old:
             raise SystemExit("error: this candidate was not audited; re-run discovery with a higher --audit-limit")
+        policy_problem = autonomy.install_problem(level, remote=cand["provider"] != "local",
+                                                  approve=args.approve or "")
+        if policy_problem:
+            raise SystemExit(f"error: {policy_problem}")
+        try:
+            hosts = capbundle.parse_hosts(args.host) if args.host else None
+        except capbundle.BundleError as exc:
+            raise SystemExit(f"error: {exc}") from exc
         if cand.get("source_problems"):
             from .textsafe import display
             raise SystemExit("error: refusing to install: vetting its source did not complete: "
@@ -2539,13 +2563,22 @@ def _skills_network(args, root, cfg, layout) -> int:
         try:
             entry = portfolio.install(root, cand["name"], dest, fresh, cand, args.approve or "",
                                       accept_review=args.accept_review, allow_scripts=args.allow_scripts,
-                                      dry_run=args.dry_run)
+                                      dry_run=args.dry_run, hosts=hosts, pinned_hash=old["content_hash"])
         except portfolio.PortfolioError as exc:
             raise SystemExit(f"error: {exc}") from exc
+        if args.dry_run:
+            plan = entry["plan"]
+            preview = "\n".join([f"dry run: {cand['name']} → " + ", ".join(
+                f"{h['host']} ({h['skills_dir']}, {h['support']})" for h in plan["hosts"]),
+                *[f"  CONFLICT {c}" for c in entry["conflicts"]], plan["diff"].rstrip("\n") or "  (no changes)"])
+            emit(entry, preview)
+            return 1 if entry["conflicts"] else 0
+        export_only = [h for h in entry.get("hosts", []) if capbundle.HOSTS[h].support == capbundle.EXPORT_ONLY]
         return emit(entry, f"installed {cand['name']} (pinned {fresh.content_hash[:16]}, commit "
                     f"{cand.get('commit', '')[:12] or 'local'}); approved for limited use — its benefit "
                     "is unproven until a trial runs. Undo: repo-ai skills disable --third-party "
-                    f"{cand['name']}" if not args.dry_run else json.dumps(entry))
+                    f"{cand['name']}" + (f"\n  exported for {', '.join(export_only)}: export only, loading by "
+                                         "those hosts is not verified" if export_only else ""))
 
     if action == "portfolio":
         lock = portfolio.load_lock(root)
@@ -2648,6 +2681,164 @@ def _skills_network(args, root, cfg, layout) -> int:
         return emit(rows, "\n".join(f"  {r['verdict']:8s} {r['id']} {r['counts']}" for r in rows)
                     or "nothing quarantined to audit")
     return 2
+
+
+POLICY_REFUSED = 5  # exit status: raising the skill policy needs a human in a terminal
+
+
+def _skills_policy(args, root: Path) -> int:
+    """`skills policy [show | set LEVEL | revoke]`: the autonomy level for this checkout."""
+    from . import autonomy, capbundle, portfolio
+    verb = args.names[0] if args.names else "show"
+    try:
+        if verb == "show" and len(args.names) <= 1:
+            data = autonomy.load(root)
+        elif verb == "set" and len(args.names) == 2:
+            data = autonomy.set_level(root, args.names[1], interactive=sys.stdin.isatty())
+        elif verb == "revoke" and len(args.names) == 1:
+            data = autonomy.revoke(root)
+            auto = sorted(n for n, e in portfolio.load_lock(root)["skills"].items()
+                          if str(e.get("approved_by", "")).startswith("policy:") and e.get("status") == "active")
+            data["disabled"] = portfolio.disable(root, auto) if auto else []
+        else:
+            raise autonomy.PolicyError("usage: repo-ai skills policy [show | set LEVEL | revoke]; levels: "
+                                       + ", ".join(autonomy.LEVELS))
+    except autonomy.PolicyError as exc:
+        if args.json:
+            print(json.dumps({"error": str(exc)}, indent=2))
+        else:
+            print(f"error: {exc}", file=sys.stderr)
+        return exc.code
+    lock = portfolio.load_lock(root)
+    data["auto_installed"] = sorted(n for n, e in lock["skills"].items()
+                                    if str(e.get("approved_by", "")).startswith("policy:"))
+    data["levels"] = dict(autonomy.DESCRIPTIONS)
+    data["kinds"] = dict(capbundle.KIND_RULES)
+    data["hosts"] = [t.to_json() for t in capbundle.HOSTS.values()]
+    data["always_needs_approval"] = ["scripts", "hooks", "MCP servers", "plugins", "binaries", "provider adapters",
+                                     "static tools", "external accounts", "permission changes",
+                                     "network execution"]
+    lines = [f"skill policy: {data['level']}{' (default)' if data.get('default') else ''} — {data['description']}",
+             f"  stored outside the repository: {data['path']}"]
+    if data.get("note"):
+        lines.append(f"  note: {data['note']}")
+    if verb == "revoke":
+        lines.append("  revoked: back to " + autonomy.DEFAULT
+                     + (f"; disabled auto-installed: {', '.join(data['disabled'])}" if data.get("disabled") else ""))
+    if data["auto_installed"]:
+        lines.append(f"  installed by the policy (not by a per-hash approval): {', '.join(data['auto_installed'])}")
+    lines.append("  every level still needs your approval for: " + ", ".join(data["always_needs_approval"]))
+    lines.append("  levels: " + ", ".join(autonomy.LEVELS) + "   (repo-ai skills policy set LEVEL | revoke)")
+    print(json.dumps(data, indent=2) if args.json else "\n".join(lines))
+    return 0
+
+
+AUTOPILOT_INTEGRITY = 4  # exit status: a candidate's content changed between vetting and install
+
+
+def _skills_autopilot(args, root: Path, state: dict, existing: dict, emit) -> int:
+    """Apply the skill policy to the vetted candidates of the last discovery.
+
+    Under SAFE_AUTO an inert, pinned, SKILL.md-only skill that fills a gap (or that
+    you name) is re-fetched, re-hashed against the vetted pin, re-assessed and
+    installed into Claude Code project scope. Everything else is only proposed."""
+    from . import autonomy, capbundle, firewall, portfolio, recommend
+    from .textsafe import shell_word
+    level = autonomy.level(root)
+    candidates = state.get("candidates", [])
+    reports = state.get("reports", {})
+    profile = state.get("profile", {})
+    named = set(args.names)
+    known = {c["name"] for c in candidates} | {c["id"] for c in candidates}
+    if named - known:
+        raise SystemExit(f"error: no discovered candidate {sorted(named - known)[0]!r} "
+                         "(repo-ai skills discover --from-path DIR | --online)")
+    lock = portfolio.load_lock(root)
+    qroot = firewall.quarantine_root().resolve()
+    rows: list[dict] = []
+    integrity = 0
+    for cand in candidates:
+        rep = reports.get(cand["id"])
+        nominated = cand["name"] in named or cand["id"] in named
+        if not rep or (named and not nominated):
+            continue
+        row = {"id": cand["id"], "name": cand["name"], "content_hash": rep["content_hash"]}
+        installed = lock["skills"].get(cand["name"])
+        if installed and installed.get("content_hash") == rep["content_hash"] and installed.get("status") == "active":
+            rows.append({**row, "action": "none", "reasons": ["already installed at this content hash"]})
+            continue
+        report = firewall.Report(rep["candidate_id"], rep["content_hash"], rep["files"],
+                                 [firewall.Finding(**f) for f in rep["findings"]], rep["license"], rep["verdict"],
+                                 rep["complete"])
+        q = Path(cand.get("quarantine") or "")
+        if cand.get("quarantine") and q.is_dir() and q.resolve().is_relative_to(qroot):
+            try:
+                assessment = capbundle.assess(q, report)
+            except (OSError, firewall.QuarantineError) as exc:
+                assessment = {"installable": False, "inert": False, "reasons": [f"quarantined copy unreadable: {exc}"]}
+        else:
+            assessment = {"installable": False, "inert": False, "reasons": ["no quarantined copy to assess"]}
+        if cand.get("source_problems"):
+            assessment = {**assessment, "installable": False,
+                          "reasons": [*assessment.get("reasons", []), "vetting its source did not complete"]}
+        rec = recommend.score(cand, rep, profile, existing).to_json()
+        decision = autonomy.decide(level, assessment, nominated=nominated,
+                                   recommended=bool(rec.get("install_recommended")))
+        row.update(action=decision["action"], reasons=decision["reasons"], inert=bool(assessment.get("inert")),
+                   surfaces=assessment.get("surfaces", []))
+        if decision["action"] == "auto_install" and not args.dry_run:
+            row["result"] = _autopilot_install(args, root, cand, rep, existing, level)
+            if row["result"].startswith("refused: content changed"):
+                integrity += 1
+        elif decision["action"] == "propose_install":
+            row["next"] = f"repo-ai skills install {shell_word(cand['name'])} --approve {rep['content_hash'][:16]}"
+        elif decision["action"] == "propose_trial":
+            row["next"] = ("install it with an approval, then: repo-ai skills benchmark <name> "
+                           "--max-cost-usd <cap> --dry-run")
+        rows.append(row)
+    lines = [f"skill autopilot under policy {level}" + (" (dry run: nothing installed)" if args.dry_run else "")
+             + f": {len(rows)} vetted candidate(s)"]
+    for r in rows:
+        lines.append(f"  {r['action']:15s} {r['name']}" + (f" → {r['result']}" if r.get("result") else "")
+                     + (f"  ({r['reasons'][0]})" if r.get("reasons") else ""))
+        if r.get("next"):
+            lines.append(f"      next: {r['next']}")
+    if not rows:
+        lines.append("  nothing vetted: run repo-ai skills discover first")
+    emit({"policy": level, "dry_run": bool(args.dry_run), "decisions": rows}, "\n".join(lines))
+    return AUTOPILOT_INTEGRITY if integrity else 0
+
+
+def _autopilot_install(args, root: Path, cand: dict, rep: dict, existing: dict, level: str) -> str:
+    """Re-fetch, re-hash against the vetted pin, re-assess, then install without a per-hash approval."""
+    from . import capbundle, firewall, portfolio, radar
+    try:
+        if cand["provider"] == "local":
+            src = Path(cand.get("source_path") or Path(cand["quarantine"]) / "files")
+            dest, files, prior = firewall.quarantine_local(src, cand["name"] + "-recheck")
+        else:
+            if not args.online:
+                return "skipped: re-fetching from GitHub needs --online"
+            client = radar.Client(_radar_cache_dir(), max_requests=args.max_requests)
+            obj = radar.Candidate(**{k: v for k, v in cand.items() if k in radar.Candidate.__dataclass_fields__})
+            dest, files, prior = firewall.quarantine_github(client, obj)
+        radar.private_dir(firewall.quarantine_root())
+        radar.harden_tree(dest)
+    except (OSError, radar.RadarError, firewall.QuarantineError) as exc:
+        return f"refused: could not re-fetch ({exc})"
+    fresh = firewall.inspect(dest, files, cand, {k: v for k, v in existing.items() if k != cand["name"]}, prior)
+    if fresh.content_hash != rep["content_hash"]:
+        return (f"refused: content changed since it was vetted ({rep['content_hash'][:16]} → "
+                f"{fresh.content_hash[:16]})")
+    assessment = capbundle.assess(dest, fresh)
+    if not assessment["inert"]:
+        return "refused: no longer inert on re-inspection (" + ", ".join(assessment["surfaces"][:3]) + ")"
+    try:
+        portfolio.install(root, cand["name"], dest, fresh, cand, fresh.content_hash, hosts=("claude-code",),
+                          pinned_hash=rep["content_hash"], approved_by=f"policy:{level}")
+    except portfolio.PortfolioError as exc:
+        return f"refused: {exc}"
+    return f"installed (pinned {fresh.content_hash[:16]}; undo: repo-ai skills disable --third-party {cand['name']})"
 
 
 PLUGIN_PARTS = {".claude-plugin/plugin.json": "plugin manifest", ".claude-plugin/marketplace.json":
@@ -4240,12 +4431,12 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("skills", parents=[common],
                        help="skill lifecycle (experimental, except the read-only inventory and vet): list | "
                             "discover | propose | test | diff | promote | disable | rollback | canary | draft | doctor | "
-                            "inventory | vet")
+                            "inventory | vet | policy | autopilot")
     p.add_argument("action", choices=["list", "discover", "candidates", "propose", "test", "diff",
                                       "promote", "generate", "disable", "rollback", "canary",
                                       "draft", "doctor", "audit", "recommend", "explain", "install",
                                       "portfolio", "updates", "compare", "benchmark", "health",
-                                      "enable", "tournament", "inventory", "vet"])
+                                      "enable", "tournament", "inventory", "vet", "policy", "autopilot"])
     p.add_argument("names", nargs="*")
     p.add_argument("--online", action="store_true",
                    help="allow network access: discover (Skill Radar), install of a remote skill, "
@@ -4269,6 +4460,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--accept-review", action="store_true",
                    help="install: accept high-severity findings you have read")
     p.add_argument("--allow-scripts", action="store_true", help="install: the skill ships scripts")
+    p.add_argument("--host", metavar="HOSTS",
+                   help="install: comma-separated hosts (default claude-code; codex, gemini-cli, antigravity "
+                        "and ibm-bob are export-only)")
     p.add_argument("--check", action="store_true", help="updates: check upstream (network); "
                    "inventory: exit 1 on a high-severity issue")
     p.add_argument("--max-cost-per-run", type=float, help="benchmark: cap per run")
@@ -4281,7 +4475,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--apply", action="store_true", help="canary: act on the decision")
     p.add_argument("--draft", action="store_true", help="promote: activate the reviewed Tier-2 draft")
     p.add_argument("--dry-run", dest="dry_run", action="store_true",
-                   help="draft: print exactly what would be sent; send nothing")
+                   help="draft: print exactly what would be sent; send nothing; install: show the diff and "
+                        "conflicts; autopilot: decide only")
     p.add_argument("--max-cost-usd", type=float,
                    help="draft / benchmark: hard cap in USD (required for live use; billable)")
     p.add_argument("--json", action="store_true", help="machine-readable JSON output")
