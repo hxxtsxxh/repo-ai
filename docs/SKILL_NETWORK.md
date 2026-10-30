@@ -123,13 +123,19 @@ Two separate questions:
   relevance can never override.
 - **Worth it?** A transparent score:
   - the evidence-backed gaps the skill addresses, weighted by strength;
+  - for a local skill (`discover --from-path`) only: whether its name or
+    description names one of this repository's own Python packages. Such a
+    skill states project knowledge that no gap detector can see. A network
+    skill that names the package gets no credit for it, because naming a
+    package is easy to fake;
   - minus redundancy with existing skills;
   - documentation quality;
   - provenance (stars count only weakly);
   - minus context-token cost;
   - plus or minus measured trial evidence.
 
-At most one skill is recommended per gap.
+At most one skill is recommended per gap. A skill written for this
+repository fills no shared gap, so it is judged on its own.
 
 ## 5. Portfolio (`.repo-ai/skills.lock.json`)
 

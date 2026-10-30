@@ -20,12 +20,14 @@ skills are necessary" is a first-class, successful outcome.
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from . import firewall
 
 THRESHOLD = 0.35
+PROJECT_RELEVANCE = 0.6
 
 
 @dataclass(slots=True)
@@ -42,6 +44,7 @@ class Recommendation:
     context_tokens_est: int
     evidence_status: str
     permissions: list[str] = field(default_factory=list)
+    project_packages: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -58,9 +61,22 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
         g = gaps[gid]
         relevance = max(relevance, float(g["strength"]))
         reasons.append(f"addresses gap '{g['title']}' ({'; '.join(g['evidence'][:2])})")
-    if not matched:
-        reasons.append("matches no evidence-backed capability gap of this repository")
     desc = str(candidate.get("description", ""))
+    # A skill written for this repository (it names one of the repository's own packages) carries project
+    # knowledge no gap detector can see. Only a local skill the user pointed at counts: a network candidate
+    # could name the package to promote itself.
+    text = f"{candidate.get('name', '')} {desc}".lower()
+    project = sorted(p for p in profile.get("own_packages", []) if re.search(rf"\b{re.escape(p)}\b", text))
+    if project and candidate.get("provider") == "local":
+        relevance = max(relevance, PROJECT_RELEVANCE)
+        reasons.append(f"written for this repository: names its package {', '.join(project)}")
+    else:
+        if project:
+            reasons.append(f"names this repository's package {', '.join(project)}, but is not a local skill: "
+                           "naming a package is no evidence of relevance")
+        project = []
+        if not matched:
+            reasons.append("matches no evidence-backed capability gap of this repository")
     doc_quality = min(1.0, len(desc) / 200) * (1.0 if " when " in desc.lower() or "use " in desc.lower()
                                                else 0.7)
     overlaps = sorted(name for name, text in existing.items() if overlap(desc, text) >= 0.35)
@@ -97,9 +113,9 @@ def score(candidate: dict[str, Any], report: dict[str, Any] | None, profile: dic
     for f in (report or {}).get("findings", []):
         if f["rule"] in {"allowed-tools", "external-host", "external-requirements"}:
             perms.append(f"{f['rule']}: {f['evidence'][:80]}")
-    recommended = eligible and total >= THRESHOLD and bool(matched)
+    recommended = eligible and total >= THRESHOLD and bool(matched or project)
     return Recommendation(candidate.get("id", ""), candidate.get("name", ""), total, eligible, verdict,
-                          recommended, reasons, matched, overlaps, tokens, evidence_status, perms[:6])
+                          recommended, reasons, matched, overlaps, tokens, evidence_status, perms[:6], project)
 
 
 def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any]],
@@ -118,6 +134,10 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
                 if gap not in chosen:
                     chosen[gap] = r
     picked = {r.candidate_id for r in chosen.values()}
+    # project skills fill no shared gap, so each stands on its own
+    project_only = {r.candidate_id for r in recs if r.install_recommended and r.project_packages and not r.gaps}
+    project_only -= picked
+    picked |= project_only
     for r in recs:
         if r.install_recommended and r.candidate_id not in picked:
             r.install_recommended = False
@@ -125,7 +145,8 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
     summary = ("No additional skills are necessary: " + (
         "no evidence-backed capability gap was found" if not profile.get("gaps") else
         "no eligible candidate addresses a gap strongly enough")) if not picked else \
-        f"{len(picked)} skill(s) recommended for {len(chosen)} gap(s)"
+        f"{len(picked)} skill(s) recommended for {len(chosen)} gap(s)" + (
+            f" and {len(project_only)} written for this repository" if project_only else "")
     return {"summary": summary, "recommendations": [r.to_json() for r in recs],
             "gaps_without_candidates": sorted(set(g["id"] for g in profile.get("gaps", [])) -
                                               {g for r in recs for g in r.gaps})}

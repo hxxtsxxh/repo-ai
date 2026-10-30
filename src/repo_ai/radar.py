@@ -110,12 +110,13 @@ class Profile:
     databases: list[str]
     gaps: list[Gap] = field(default_factory=list)
     existing_skills: list[str] = field(default_factory=list)
+    own_packages: list[str] = field(default_factory=list)  # local only: never part of a discovery query
 
     def to_json(self) -> dict[str, Any]:
         return {"languages": self.languages, "frameworks": self.frameworks,
                 "test_frameworks": self.test_frameworks, "ci": self.ci,
                 "databases": self.databases, "existing_skills": self.existing_skills,
-                "gaps": [g.to_json() for g in self.gaps]}
+                "gaps": [g.to_json() for g in self.gaps], "own_packages": self.own_packages}
 
 
 # Built-in Claude Code commands that already cover a capability.
@@ -220,7 +221,26 @@ def build_profile(root: Path, facts: dict[str, Any], index, episodes: list[dict[
         if gap.covered_by:
             gap.strength = round(gap.strength * 0.4, 2)  # already partly covered
     gaps.sort(key=lambda g: -g.strength)
-    return Profile(langs, frameworks, tests, ci, dbs, gaps, sorted(skills))
+    return Profile(langs, frameworks, tests, ci, dbs, gaps, sorted(skills), own_packages(rows))
+
+
+# too generic to show that a skill was written for this repository
+_GENERIC_PACKAGES = {"src", "app", "apps", "lib", "core", "utils", "util", "common", "main", "test", "tests",
+                     "docs", "scripts", "examples", "tools", "config", "api", "server", "client", "cli"}
+
+
+def own_packages(paths: Iterable[str]) -> list[str]:
+    """Top-level Python packages the repository itself defines (`pkg/__init__.py`, `src/pkg/__init__.py`)."""
+    names = set()
+    for path in paths:
+        parts = path.split("/")
+        if parts[0] == "src":
+            parts = parts[1:]
+        if len(parts) == 2 and parts[1] == "__init__.py" and parts[0].isidentifier():
+            name = parts[0].lower()
+            if len(name) >= 4 and name not in _GENERIC_PACKAGES:
+                names.add(name)
+    return sorted(names)
 
 
 class PathLike:
