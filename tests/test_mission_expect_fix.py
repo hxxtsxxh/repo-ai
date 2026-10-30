@@ -69,6 +69,17 @@ def test_apply_of_a_scoped_pass_reverifies_with_the_same_scope(project, tmp_path
     applied = apply_mission(project, result['id'])  # raises if the post-apply re-verification fails
     assert 'validation' not in str(applied) or 'PASS' in str(applied)
     assert (project / 'charge.py').read_text() == 'def charge(amount, retries):\n    return amount\n'
+    # the remaining base failure is reported, never shown as "0 failed" (found on python-slugify)
+    assert applied['post_apply_failed'] == 1 and applied['post_apply_pre_existing'] == 1, applied
+
+
+def test_the_apply_summary_names_remaining_base_failures(capsys):
+    from types import SimpleNamespace
+    from repo_ai.mission.cli import _emit
+    _emit({'schema': 'repo-ai.mission-apply/1', 'mission': 'm', 'post_apply_verdict': 'PASS', 'modified_files': ['a.py'],
+            'post_apply_ran': 131, 'post_apply_failed': 20, 'post_apply_pre_existing': 20}, SimpleNamespace())
+    out = capsys.readouterr().out
+    assert "131 tests ran, 20 failed (all 20 already failing at the base and not declared)" in out, out
 
 
 def test_apply_without_the_scope_is_refused_by_the_post_apply_check(project, tmp_path, monkeypatch):

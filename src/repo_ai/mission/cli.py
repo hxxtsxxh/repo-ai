@@ -56,7 +56,9 @@ def _emit(value: dict[str, Any], args) -> None:
     if schema == 'repo-ai.mission-apply/1':
         print(f"Applied verified mission {value.get('mission')} to working tree: {value.get('post_apply_verdict')}")
         print(f"  Modified files: {', '.join(value.get('modified_files', []))}")
-        print(f"  Post-apply verification: {value.get('post_apply_ran')} tests ran, {value.get('post_apply_failed')} failed")
+        failed, kept = value.get('post_apply_failed'), value.get('post_apply_pre_existing') or 0
+        print(f"  Post-apply verification: {value.get('post_apply_ran')} tests ran, {failed} failed"
+              + (f" (all {kept} already failing at the base and not declared)" if failed and kept == failed else ""))
         return
     if schema == 'repo-ai.reality-eval/1':
         print(f"Reality Engine Evaluation ({value.get('mode')}) — lift verdict: {value.get('comparative_lift_verdict', 'NOT_YET_DEMONSTRATED')}")
