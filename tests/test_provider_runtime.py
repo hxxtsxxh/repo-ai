@@ -22,6 +22,8 @@ from repo_ai.providers import (
 )
 from test_mission_runtime import bug as bug_fixture
 
+pytestmark = pytest.mark.usefixtures('claude_fake_login')
+
 
 @pytest.fixture
 def bug(tmp_path: Path) -> Path:

@@ -17,6 +17,8 @@ from repo_ai.providers import build_invocation, parse_event_stream, run_provider
 from repo_ai.verify.testmap import TestMap
 from test_mission_runtime import bug as bug_fixture, replay
 
+pytestmark = pytest.mark.usefixtures('claude_fake_login')
+
 
 @pytest.fixture
 def bug(tmp_path: Path) -> Path:
