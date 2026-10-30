@@ -143,3 +143,26 @@ def test_project_credit_never_takes_a_gap_slot_from_the_real_gap_filler():
     assert by_name["tester"]["gap_recommended"] is True and by_name["tester"]["install_recommended"] is True
     assert by_name["invoicekit-conventions"]["install_recommended"] is True
     assert rec["summary"] == "2 skill(s) recommended: 1 for 1 gap(s), 1 written for this repository"
+
+
+def test_a_gap_tie_goes_to_the_skill_that_is_not_also_a_project_skill():
+    profile = {"gaps": [gap(0.6)], "own_packages": ["invoicekit"]}
+    desc = "Writes unit tests for invoicekit. Use when adding tests to the package."
+    project = {**cand(desc=desc), "matched_gaps": ["g1"], "name": "aaa-project"}
+    other = {**cand("github", desc=desc.replace("invoicekit", "widgetsapp")), "id": "github/x@1", "name": "zzz-tester",
+             "matched_gaps": ["g1"]}
+    rec = recommend.recommend([project, other], {project["id"]: ELIGIBLE, other["id"]: ELIGIBLE}, profile, {})
+    by_name = {r["name"]: r for r in rec["recommendations"]}
+    assert by_name["zzz-tester"]["gap_score"] == by_name["aaa-project"]["gap_score"]
+    assert by_name["zzz-tester"]["install_recommended"] and by_name["aaa-project"]["install_recommended"]
+
+
+def test_a_demoted_skill_is_not_left_marked_gap_recommended():
+    profile = {"gaps": [gap(0.9)], "own_packages": []}
+    a = {**cand("github", desc="Writes unit tests. Use when adding tests to any package, with examples."),
+         "id": "github/a@1", "name": "a-tests", "matched_gaps": ["g1"], "owner": "anthropics"}
+    b = {**cand("github", desc="Writes unit tests. Use when adding tests."), "id": "github/b@1", "name": "b-tests",
+         "matched_gaps": ["g1"]}
+    rec = recommend.recommend([a, b], {a["id"]: ELIGIBLE, b["id"]: ELIGIBLE}, profile, {})
+    loser = next(r for r in rec["recommendations"] if not r["install_recommended"])
+    assert loser["gap_recommended"] is False

@@ -151,7 +151,8 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
     recs.sort(key=lambda r: (not r.install_recommended, -r.score, r.name))
     # portfolio optimisation: one recommendation per gap (smallest high-performing set), on gap evidence alone
     chosen: dict[str, Recommendation] = {}
-    for r in sorted(recs, key=lambda r: (not r.gap_recommended, -r.gap_score, r.name)):
+    # on a tie the slot goes to a skill that is not also kept as a project skill, so both stay recommended
+    for r in sorted(recs, key=lambda r: (not r.gap_recommended, -r.gap_score, bool(r.project_packages), r.name)):
         if r.gap_recommended:
             for gap in r.gaps:
                 if gap not in chosen:
@@ -162,7 +163,7 @@ def recommend(candidates: list[dict[str, Any]], reports: dict[str, dict[str, Any
     picked |= project_only
     for r in recs:
         if r.install_recommended and r.candidate_id not in picked:
-            r.install_recommended = False
+            r.install_recommended = r.gap_recommended = False
             r.reasons.append("a stronger candidate already covers the same gap")
     summary = ("No additional skills are necessary: " + (
         "no evidence-backed capability gap was found" if not profile.get("gaps") else
