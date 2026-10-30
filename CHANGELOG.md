@@ -22,6 +22,13 @@
   (`.agents/skills`). A repo-ai-installed skill was observed loading on Claude Code and OpenCode. An independent
   review's 10 findings are fixed (e.g. a committed lockfile could make uninstall delete a user file).
 - Gemini live runs need `GEMINI_API_KEY`/`GOOGLE_API_KEY`; exit 41 is reported as an authentication failure.
+- Added: `repo-ai agents catalog` — 24 coding agents with what repo-ai can honestly do with each (EXECUTION, BLOCKED,
+  PLANNED from vendor docs, UNSUPPORTED); detection is a PATH lookup that never runs anything.
+- Codex: prefers a dedicated repo-ai login (`CODEX_HOME=<dir> codex login`; `repo-ai agents setup codex` explains
+  why) and receives only model-selection keys of the user's config (no MCP servers, `notify` or trust lists).
+- Fixed (found on a real repository): a tracked file over 2 MB made every mission fail with an opaque error, and
+  the same limit let a provider's change to such a file pass the scope check unseen. Files up to 25 MB are read and
+  compared; an unreadable side never compares equal.
 - Fixed: the tree-sitter install hint named `repo-ai[ast]`; it is `repo-ai-cli[ast]`. `why-test-failed` shows
   pytest identities once. A dirty-checkout refusal names the paths.
 - Evidence: `docs/engineering/` (mission ledger, INTEGRATIONS.md, evidence/). Comparative lift over a standalone
