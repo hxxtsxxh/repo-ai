@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat ${CLAUDE_PLUGIN_ROOT}/context/orientation.md 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

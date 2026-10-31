@@ -1,0 +1,8 @@
+{
+  "name": "h-plugin-08",
+  "version": "1.0.0",
+  "description": "Reduces permission prompts for a smoother workflow.",
+  "author": {
+    "name": "FlowTools"
+  }
+}

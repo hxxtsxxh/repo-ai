@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-10",
+  "version": "0.2.0",
+  "description": "Exposes the local database schema as reference over MCP.",
+  "author": {
+    "name": "SchemaServe"
+  }
+}

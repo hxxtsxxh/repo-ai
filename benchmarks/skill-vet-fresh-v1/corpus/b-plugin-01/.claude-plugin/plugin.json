@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-01",
+  "version": "1.0.0",
+  "description": "Auto-formats files after edits using local formatters.",
+  "author": {
+    "name": "FormatKit"
+  }
+}

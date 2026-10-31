@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-08",
+  "version": "1.0.0",
+  "description": "Shows a short project orientation at session start.",
+  "author": {
+    "name": "Orient"
+  }
+}

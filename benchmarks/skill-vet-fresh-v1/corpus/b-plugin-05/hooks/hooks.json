@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v ruff >/dev/null && ruff check \"$CLAUDE_TOOL_FILE_PATH\" || true"
+          }
+        ]
+      }
+    ]
+  }
+}
