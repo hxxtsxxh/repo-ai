@@ -943,7 +943,6 @@ local provider availability; doctor runs sandboxed help/version only
 | `--allow-live-provider` | route: evaluate as if this run were authorized |
 | `--max-cost-usd` `MAX_COST_USD` | route: require an enforceable USD ceiling when &gt; 0 |
 | `--acp-executable` `PATH` | conformance: absolute path of an ACP agent repo-ai has no adapter for (handshake only) |
-| `--allow-loopback` | conformance: let the agent reach localhost only (an agent that runs its own local server) |
 | `--acp-arg` `ARG` | conformance: an argument that starts the agent in ACP mode (repeatable; e.g. --acp-arg acp, or --acp-arg=--acp for one that starts with a dash) |
 | `--json` | machine-readable JSON output |
 

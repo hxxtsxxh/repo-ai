@@ -106,13 +106,14 @@ def _probe_env(scratch: Path) -> dict[str, str]:
 def _sandbox_prefix(scratch: Path) -> list[str] | None:
     """No supported network-denying boundary means no executable probe."""
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
-        profile = ("(version 1)(allow default)(deny network*)(deny file-write*)"
+        # `open` (LaunchServices) and Apple events would start a program outside this sandbox, with the network
+        profile = ("(version 1)(allow default)(deny lsopen)(deny appleevent-send)(deny network*)(deny file-write*)"
                    f"(allow file-write* (subpath {json.dumps(str(scratch.resolve()))}))")
         return ["/usr/bin/sandbox-exec", "-p", profile]
     if sys.platform.startswith("linux"):
         bwrap = shutil.which("bwrap", path=os.defpath)
         if bwrap:
-            return [bwrap, "--unshare-net", "--die-with-parent", "--new-session", "--ro-bind", "/", "/",
+            return [bwrap, "--unshare-net", "--unshare-pid", "--die-with-parent", "--new-session", "--ro-bind", "/", "/",
                     "--bind", str(scratch), str(scratch), "--proc", "/proc", "--dev", "/dev", "--"]
     return None
 

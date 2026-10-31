@@ -5,6 +5,7 @@ can execute through repo-ai."""
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -88,3 +89,60 @@ def test_the_cli_reports_the_verdict_and_exits_by_it(tmp_path, repo):
     assert bad.returncode == 1 and "NO_HANDSHAKE" in bad.stdout and "PLANNED" in bad.stdout
     usage = run_cli(repo, "agents", "conformance")
     assert usage.returncode == 2
+
+
+# Independent review of the kit (PR #45).
+def test_the_probe_sandbox_denies_launchservices_and_isolates_processes(tmp_path):
+    prefix = discovery._sandbox_prefix(tmp_path)
+    if prefix is None:
+        pytest.skip("no sandbox on this host")
+    if prefix[0] == "/usr/bin/sandbox-exec":  # `open` would start a program outside the sandbox, with the network
+        assert "(deny lsopen)" in prefix[2] and "(deny appleevent-send)" in prefix[2]
+    else:
+        assert "--unshare-pid" in prefix and "--unshare-net" in prefix
+
+
+class _FakeClient:
+    seen: dict = {}
+
+    def __init__(self, argv, workspace, *, allowed_writes, env=None):
+        _FakeClient.seen = {"argv": argv, "env": dict(env or {})}
+        self.result = type("R", (), {"stderr": b"\x1b]0;title\x07boom"})()
+
+    def probe(self, timeout_s=20.0):
+        return {"acp": True, "protocol_version": 1, "agent": {"name": "\x1b[2Jfake\x1b[31m" + "x" * 500},
+                "capabilities": {"\x1b[31mload": True}, "auth_methods": ["a\x07b"]}
+
+
+def test_agent_supplied_text_is_stripped_of_terminal_escapes_and_bounded(tmp_path, repo, monkeypatch):
+    exe = fake_agent(tmp_path / "bins", expect=[])
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["env"])
+    monkeypatch.setattr(adapters, "AcpClient", _FakeClient)
+    res = adapters.acp_conformance(str(exe), [], repo)
+    printed = json.dumps(res, ensure_ascii=False)
+    assert "\x1b" not in printed and "\x07" not in printed
+    assert len(res["agent"]["name"]) <= 120 and res["verdict"] == "HANDSHAKE_CONFORMANT"
+
+
+def test_a_non_mapping_agent_info_does_not_break_the_report(tmp_path, repo, monkeypatch):
+    class Odd(_FakeClient):
+        def probe(self, timeout_s=20.0):
+            return {"acp": True, "protocol_version": 1, "agent": ["not", "a", "dict"], "capabilities": "nope"}
+    exe = fake_agent(tmp_path / "bins", expect=[])
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["env"])
+    monkeypatch.setattr(adapters, "AcpClient", Odd)
+    res = adapters.acp_conformance(str(exe), [], repo)
+    assert res["agent"] == {} and res["capabilities"] == [] and not res["checks"]["names_itself"]
+
+
+def test_a_repository_owned_node_is_never_put_on_the_agents_path(tmp_path, repo, monkeypatch):
+    (repo / "bin").mkdir()
+    node = repo / "bin" / "node"
+    node.write_text("#!/bin/sh\nexit 0\n")
+    node.chmod(0o755)
+    exe = fake_agent(tmp_path / "bins", expect=[])
+    monkeypatch.setenv("PATH", f"{repo / 'bin'}{os.pathsep}{os.environ.get('PATH', '')}")
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["env"])
+    monkeypatch.setattr(adapters, "AcpClient", _FakeClient)
+    adapters.acp_conformance(str(exe), [], repo)
+    assert str(repo / "bin") not in _FakeClient.seen["env"]["PATH"]

@@ -90,7 +90,7 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "schema-versioned provider catalog + validation tying EXECUTION to adapters; per-provider setup checks; conformance via isolation probe (Claude)",
-    "2026-10-31 ACP conformance kit (`agents conformance`): handshake-only check of any ACP agent by absolute path, network denied (loopback on request), repository-owned executables refused, tested with a fake agent; Gemini CLI 0.65.0 and OpenCode 2.2.1 HANDSHAKE_CONFORMANT, no model call"
+    "2026-10-31 ACP conformance kit (`agents conformance`): handshake-only check of any ACP agent by absolute path, network denied, LaunchServices denied, descendants swept, repository-owned executables refused, agent text sanitised; tested with a fake agent; Gemini CLI 0.65.0 HANDSHAKE_CONFORMANT, OpenCode 2.2.1 NO_HANDSHAKE (needs network for its local server); no model call"
    ],
    "limits": [
     "no execution path for agents without an adapter (stays PLANNED); no out-of-process adapter SDK for execution yet"
@@ -294,10 +294,11 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "two independent adversarial reviews of provider isolation: 1 high + 3 medium + others, then 3 + 4 more; all fixed or disclosed (Codex token exposure, reads outside HOME)",
-    "credential copying removed (Claude files, whole ~/.gemini)"
+    "credential copying removed (Claude files, whole ~/.gemini)",
+    "2026-10-31 independent review of the ACP conformance kit found: the probe sandbox (agents doctor) lacked (deny lsopen)(deny appleevent-send) on macOS (escape with network via `open`), fixed; seatbelt's 'localhost' network filter also matches local interface addresses, so the OpenCode live adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (open item)"
    ],
    "limits": [],
-   "next_action": "review of the final release diff"
+   "next_action": "restrict the OpenCode adapter's loopback rule to 127.0.0.1/::1 (or deny wildcard binds) and add HOME-read checks to its tests; then review of the final release diff"
   },
   {
    "id": "C19",
