@@ -1,0 +1,36 @@
+# speed-v1 (benchmarks/speed-v1/PREREGISTRATION.md): verify --run on real upstream commits against each project's
+# native suite. Third-party projects are cloned and run only on this disposable runner. Never runs on pull requests.
+name: speed
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["bench/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  speed-v1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: Install bubblewrap and allow unprivileged user namespaces
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          python -m repo_ai sandbox status
+      - name: speed-v1
+        env:
+          REPO_AI_SPEED_BENCH: "1"
+        run: python benchmarks/speed-v1/run.py --work "$RUNNER_TEMP/speed" --out speed-v1.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: speed-v1
+          path: speed-v1.json

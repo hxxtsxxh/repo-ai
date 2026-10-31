@@ -1,0 +1,62 @@
+# speed-v1: how long `verify --run` takes on real upstream commits, against the native suite (preregistered)
+
+Acceptance gate C16 (performance) and the site's "not shown" speed item. This protocol, the harness (`run.py`)
+and the workflow (`.github/workflows/speed.yml`) are committed before any measurement. Spend: $0 (GitHub-hosted
+runners on a public repository). Third-party code runs only on those disposable runners.
+
+## Question
+
+When a developer changes a real project the way its maintainers did, how long does `repo-ai verify --run` take,
+compared with running the project's own full test suite? The earlier measurement (held-out-7, before 0.9) found
+verify slower on 3 of 5 projects (1.44–2.31×) and faster only on the larger ones.
+
+## Projects (pinned before any run)
+
+| project | ref | install |
+|---|---|---|
+| jpadilla/pyjwt | 2.10.1 | `.[crypto]` pytest |
+| python-humanize/humanize | 4.12.3 | `.` pytest freezegun |
+| more-itertools/more-itertools | v10.7.0 | `.` pytest |
+| pallets/itsdangerous | 2.2.0 | `.` pytest freezegun |
+| marshmallow-code/marshmallow | 4.0.0 | `.` pytest simplejson |
+
+A project whose suite does not pass at its pinned ref on the runner (native exit code not 0) is reported as
+`INVALID_BASELINE` and excluded, with the reason. Nothing else is excluded.
+
+## Changes (selected by `run.py`, mechanically)
+
+Walking back from the pinned ref (`git log --no-merges --first-parent`), the first **6** commits that change at
+least one `.py` file outside test directories, change no dependency or configuration file (`pyproject.toml`,
+`setup.py`, `setup.cfg`, `requirements*`, `tox.ini`, `noxfile.py`, `conftest.py`), and change at most 300 lines.
+Each change is replayed as the maintainers made it: the parent is checked out and the commit's diff is applied to
+the working tree.
+
+## Measurements, per change (one fresh clone per project, `--workers 4`, the runner's bwrap sandbox)
+
+- **native:** the project's full suite, `python -m pytest -q -p no:cacheprovider`, in the changed tree,
+  unsandboxed (the runner is disposable), median of 3 wall-clock runs, with its exit code.
+- **verify (cold):** `repo-ai verify --run --json`, the first verification of that state.
+- **verify (reuse):** the same command again (evidence may be reused).
+- **verify (rerun):** `repo-ai verify --run --rerun --json` (fresh run, warm caches).
+- recorded: wall-clock seconds, verify's verdict and selected test files, exit codes, runner CPU count and model.
+
+repo-ai is installed from the commit under test into its own virtual environment; each project gets its own
+`.venv` inside its clone, which verify uses as the project interpreter. repo-ai's state directory is excluded
+through `.git/info/exclude`, so the working tree holds only the replayed change.
+
+## Analysis (decided now)
+
+- Per change: ratio = verify (cold) / native median. Also reuse and rerun ratios.
+- Reported: per-project median ratio, the geometric mean over all valid changes, the number of changes where
+  verify (cold) is slower than the native suite, and verify's verdict next to the native exit code.
+- **Reading rule.** "verify is faster than the native suite on these projects" may be stated only if the
+  geometric mean of the cold ratio is below 1.0 **and** verify is slower on fewer than half the valid changes.
+  Otherwise the result is stated as measured (for example "slower on 9 of 28 changes"), with the overhead.
+- Either way the claim is limited to these five pure-Python projects, this runner type and selective runs; it is
+  not a general speed claim.
+
+## Rules
+
+One run of the workflow on the commit that adds this file. A harness crash is fixed and the run repeated; the
+selection, projects and analysis are not changed after a run. Results: the run's artifact, then `RESULTS.md`
+with the run URL.
