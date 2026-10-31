@@ -1,13 +1,13 @@
 # Work queue (living; top = next)
 
-Updated 2026-10-31 for the 0.11.3 release (#21–#36).
+Updated 2026-10-31: 0.11.3 published (#21–#36).
 
 | # | Item | Gate | State |
 |---|---|---|---|
 | 1 | Release 0.11.2 (#16, #17, #18) | C20, C21 | done: published 2026-10-30, verified (PyPI = GitHub, attestation, smoke) |
 | 1a | Re-run the scoped missions on the published 0.11.2 | C21 | done: python-humanize live PASS (#36); python-slugify replay PASS_WITH_PRE_EXISTING_FAILURES, fresh first run |
 | 1b | Mission workspaces dropped `export-ignore` files and rewrote `export-subst` | C21 | done (#22, four review rounds) |
-| 1d | Release 0.11.3 (#21–#36: apply count, export attributes, state paths, scoped setup errors, show-fixed, clones, ACP client, opencode-acp, tournament families, `.repo-ai` file, ACP stderr, Codex broker) | C20 | in progress: owner approved 2026-10-31 |
+| 1d | Release 0.11.3 (#21–#36: apply count, export attributes, state paths, scoped setup errors, show-fixed, clones, ACP client, opencode-acp, tournament families, `.repo-ai` file, ACP stderr, Codex broker) | C20 | done: owner approved 2026-10-31; tag v0.11.3 at 7750279 (tree = qualified 2c5eeba; macOS full suite 2,762 passed, 0 failed at 14c953d, docs-only delta after); published 2026-10-31, verified: PyPI = GitHub release = local clean build (wheel `b11ff58f…`, sdist `644248fa…`), SLSA attestation from release.yml at the tag, smoke from PyPI PASS |
 | 1e | Nothing reaches a state path by any route (macOS case collisions; `.claude -> conf` links) | C18 | done (#24) |
 | 1f | A repository that tracks a FILE named `.repo-ai` breaks the sandboxed run directory `.repo-ai/run` (every verify/mission run) | C21 | done (#34): `init`, missions and the run directory name the file instead of ENOTDIR. `out_dir` moves the index and context only: sandboxed runs stay unavailable in such a repository (the run directory is fixed) |
 | 1g | A custom `out_dir` with `init --agent none` wrote no ignore entries: the index, lock and evidence counted as part of the change and the first `verify --run` always failed ("the working tree changed while the run was being prepared") | C21 | done (#34) |
