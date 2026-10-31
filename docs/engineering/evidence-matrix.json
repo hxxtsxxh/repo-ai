@@ -213,6 +213,19 @@
       "featured": true
     },
     {
+      "id": "verify-speed-upstream-commits",
+      "title": "verify is faster than the native suite on real upstream changes",
+      "status": "NEGATIVE_RESULT",
+      "stat": "1.84×",
+      "result": "Preregistered speed-v1: on 30 real upstream commits in 5 pure-Python projects, verify --run took 1.84× the native suite (geometric mean) and was slower on 24 of 30; the other 6 were runs that failed early, not faster ones. Median overhead +0.63 s; re-verifying an unchanged state 0.20 s. No false assurance, with little power: only 5 of 30 native suites failed.",
+      "date": "2026-10-31",
+      "sample_size": "30 changes (5 projects × 6 commits)",
+      "method": "benchmarks/speed-v1: protocol, harness and workflow committed before the run; GitHub ubuntu runner, bwrap sandbox; native suite median of 3.",
+      "limits": "Small, fast pure-Python suites on one runner type. verify failed natively passing tests in 14 changes (one project's network-dependent tests, two unexplained, one name-matched exclusion). Two humanize measurements were contaminated by a harness defect (without them: 1.78×, slower on 22 of 28).",
+      "source": "benchmarks/speed-v1/RESULTS.md",
+      "featured": true
+    },
+    {
       "id": "capability-discovery-corpus-c",
       "title": "Capability recommendation meets its recall gate",
       "status": "NEGATIVE_RESULT",

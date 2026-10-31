@@ -1,0 +1,2943 @@
+{
+ "protocol": "speed-v1",
+ "commit": "47d950cfb9598508e95e23258ac58890b4cef6ea",
+ "python": "3.12.15",
+ "os": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+ "cpus": 4,
+ "cpu_model": "AMD EPYC 9V45 96-Core Processor",
+ "run_at": "2026-10-31T20:55:56Z",
+ "summary": {
+  "valid_changes": 30,
+  "geometric_mean_cold_ratio": 1.839,
+  "slower_than_native": 24,
+  "per_project_median_cold_ratio": {
+   "jpadilla/pyjwt": 1.0855000000000001,
+   "python-humanize/humanize": 8.9575,
+   "more-itertools/more-itertools": 0.4275,
+   "pallets/itsdangerous": 1.84,
+   "marshmallow-code/marshmallow": 3.388
+  },
+  "reading_rule_faster": false
+ },
+ "projects": [
+  {
+   "project": "jpadilla/pyjwt",
+   "ref": "2.10.1",
+   "changes": [
+    {
+     "commit": "37748dc1e328f120aa04ec98b2a71a0af6301a24",
+     "parent": "33022c25525c1020869c71ce2a4109e44ae4ced1",
+     "native": {
+      "seconds": [
+       5.078,
+       4.961,
+       4.931
+      ],
+      "median": 4.961,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 98%]\n...                                                                      [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 4.79s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.655,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.186,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.387,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 1.14,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "33022c25525c1020869c71ce2a4109e44ae4ced1",
+     "parent": "783f324e5d2155462515ced45718fc164dd04db2",
+     "native": {
+      "seconds": [
+       4.973,
+       5.021,
+       4.902
+      ],
+      "median": 4.973,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 98%]\n...                                                                      [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 4.75s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.439,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.23,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.327,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 1.094,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "b032353bd93fee330cb79a351cc4d03affee19f5",
+     "parent": "a759c455cde3e9ff99afe25e9fc56278af666ff3",
+     "native": {
+      "seconds": [
+       5.025,
+       4.935,
+       4.931
+      ],
+      "median": 4.935,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 4.78s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.315,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.18,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 8,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.28,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 1.077,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "a759c455cde3e9ff99afe25e9fc56278af666ff3",
+     "parent": "b6b8bce07717b0b4bb7816b99c33ab9e6907059a",
+     "native": {
+      "seconds": [
+       5.006,
+       4.924,
+       4.913
+      ],
+      "median": 4.924,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 4.77s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.282,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.175,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 8,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.217,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 1.073,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f2df5b6594ca9da7dd06f0f264eacdf32e387bd0",
+     "parent": "4ceee5afa9da8c61c91fc3e44cbebdd50fcf4354",
+     "native": {
+      "seconds": [
+       4.983,
+       4.878,
+       5.052
+      ],
+      "median": 4.983,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 4.91s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.315,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.205,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 7,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.339,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 1.067,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "6dc23b3c9beeb33a45b7e34b39b086b063de48bf",
+     "parent": "310962b535d53f1ccc8cf9f484fe8beb89234af8",
+     "native": {
+      "seconds": [
+       4.941,
+       4.875,
+       4.906
+      ],
+      "median": 4.906,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 4.76s\n"
+     },
+     "verify_cold": {
+      "seconds": 10.784,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "failed": 1,
+        "passed": 285,
+        "skipped": 4
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.217,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "failed": 1,
+        "passed": 285,
+        "skipped": 4
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 10.705,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "failed": 1,
+        "passed": 285,
+        "skipped": 4
+       }
+      }
+     },
+     "ratio_cold": 2.198,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     5.392,
+     4.942,
+     4.898
+    ],
+    "median": 4.942,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 98%]\n...                                                                      [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 4.75s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "python-humanize/humanize",
+   "ref": "4.12.3",
+   "changes": [
+    {
+     "commit": "f772e59bf67b14e8f5565d9f489966db1df45381",
+     "parent": "7c341b9d49f3b8687526d8e50cae5f5a5d31582d",
+     "native": {
+      "seconds": [
+       0.781,
+       0.75,
+       0.774
+      ],
+      "median": 0.774,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 80%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 91%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                    [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m605 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[32m in 0.63s\u001b[0m\u001b[0m\n"
+     },
+     "verify_cold": {
+      "seconds": 1.464,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 8,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_i18n.py",
+        "tests/test_time.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.184,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 8,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_i18n.py",
+        "tests/test_time.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.408,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 8,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_i18n.py",
+        "tests/test_time.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 1.891,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "9528daf55fd7178c025f7294b8e349f8b3524175",
+     "parent": "87666f2a55f0a0d31a5c75c1ed0f2ad2cc6c5b17",
+     "native": {
+      "seconds": [
+       0.125,
+       0.125,
+       0.113
+      ],
+      "median": 0.125,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1397, in pytest_cmdline_parse\n    self.parse(args)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1758, in parse\n    self._capture_plugin_import_warnings()\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1342, in _capture_plugin_import_warnings\n    with self._catch_configured_warnings(record=True) as records:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1337, in _catch_configured_warnings\n    apply_warning_filters(config_filters, cmdline_filters)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 1.644,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 12,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_filesize.py",
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.191,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 12,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_filesize.py",
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.624,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 12,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_filesize.py",
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 13.152,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "fb61d5aae902e4526cd733a90d7a96ecded11b0e",
+     "parent": "fd230cf1c51ae28a2c74ac3c62be2183d26b4c6a",
+     "native": {
+      "seconds": [
+       0.116,
+       0.119,
+       0.118
+      ],
+      "median": 0.118,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1397, in pytest_cmdline_parse\n    self.parse(args)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1758, in parse\n    self._capture_plugin_import_warnings()\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1342, in _capture_plugin_import_warnings\n    with self._catch_configured_warnings(record=True) as records:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1337, in _catch_configured_warnings\n    apply_warning_filters(config_filters, cmdline_filters)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 1.869,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_filesize.py",
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.212,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_filesize.py",
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.906,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_filesize.py",
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_lists.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 15.839,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "d7f5dc5d60a4eb8f43b1ff6ddb842030062e9910",
+     "parent": "19b43d3b8d80959d75097d8e145690be811465bd",
+     "native": {
+      "seconds": [
+       0.115,
+       0.113,
+       0.113
+      ],
+      "median": 0.113,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1397, in pytest_cmdline_parse\n    self.parse(args)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1758, in parse\n    self._capture_plugin_import_warnings()\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1342, in _capture_plugin_import_warnings\n    with self._catch_configured_warnings(record=True) as records:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1337, in _catch_configured_warnings\n    apply_warning_filters(config_filters, cmdline_filters)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 1.622,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_filesize.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.188,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_filesize.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.642,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_filesize.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 14.354,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f8c144eb5d8abd7ba0d067d5724babde852ddccb",
+     "parent": "2635e6e4c15a9182f2a7273500f7f02b14fde343",
+     "native": {
+      "seconds": [
+       0.823,
+       0.801,
+       0.827
+      ],
+      "median": 0.823,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "est_lists.py\u001b[0m:23: AttributeError\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m tests/test_lists.py::\u001b[1mtest_natural_list[test_args0-1, 2 and 3]\u001b[0m - AttributeError: module 'humanize' has no attribute 'natural_list'. Did you mean: 'naturalsize'?\n\u001b[31mFAILED\u001b[0m tests/test_lists.py::\u001b[1mtest_natural_list[test_args1-one, two and three]\u001b[0m - AttributeError: module 'humanize' has no attribute 'natural_list'. Did you mean: 'naturalsize'?\n\u001b[31mFAILED\u001b[0m tests/test_lists.py::\u001b[1mtest_natural_list[test_args2-one and two]\u001b[0m - AttributeError: module 'humanize' has no attribute 'natural_list'. Did you mean: 'naturalsize'?\n\u001b[31mFAILED\u001b[0m tests/test_lists.py::\u001b[1mtest_natural_list[test_args3-one]\u001b[0m - AttributeError: module 'humanize' has no attribute 'natural_list'. Did you mean: 'naturalsize'?\n\u001b[31mFAILED\u001b[0m tests/test_lists.py::\u001b[1mtest_natural_list[test_args4-]\u001b[0m - AttributeError: module 'humanize' has no attribute 'natural_list'. Did you mean: 'naturalsize'?\n\u001b[31mFAILED\u001b[0m tests/test_lists.py::\u001b[1mtest_natural_list[test_args5-1, 2 and 3]\u001b[0m - AttributeError: module 'humanize' has no attribute 'natural_list'. Did you mean: 'naturalsize'?\n\u001b[31mFAILED\u001b[0m tests/test_lists.py::\u001b[1mtest_natural_list[test_args6-1 and two]\u001b[0m - AttributeError: module 'humanize' has no attribute 'natural_list'. Did you mean: 'naturalsize'?\n\u001b[31m\u001b[31m\u001b[1m7 failed\u001b[0m, \u001b[32m504 passed\u001b[0m, \u001b[33m23 skipped\u001b[0m\u001b[31m in 0.68s\u001b[0m\u001b[0m\n"
+     },
+     "verify_cold": {
+      "seconds": 1.471,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [
+          "tests/test_lists.py::test_natural_list[test_args0-1, 2 and 3]",
+          "tests/test_lists.py::test_natural_list[test_args1-one, two and three]",
+          "tests/test_lists.py::test_natural_list[test_args2-one and two]",
+          "tests/test_lists.py::test_natural_list[test_args3-one]",
+          "tests/test_lists.py::test_natural_list[test_args4-]",
+          "tests/test_lists.py::test_natural_list[test_args5-1, 2 and 3]",
+          "tests/test_lists.py::test_natural_list[test_args6-1 and two]"
+         ],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.199,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [
+          "tests/test_lists.py::test_natural_list[test_args0-1, 2 and 3]",
+          "tests/test_lists.py::test_natural_list[test_args1-one, two and three]",
+          "tests/test_lists.py::test_natural_list[test_args2-one and two]",
+          "tests/test_lists.py::test_natural_list[test_args3-one]",
+          "tests/test_lists.py::test_natural_list[test_args4-]",
+          "tests/test_lists.py::test_natural_list[test_args5-1, 2 and 3]",
+          "tests/test_lists.py::test_natural_list[test_args6-1 and two]"
+         ],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.439,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [
+          "tests/test_lists.py::test_natural_list[test_args0-1, 2 and 3]",
+          "tests/test_lists.py::test_natural_list[test_args1-one, two and three]",
+          "tests/test_lists.py::test_natural_list[test_args2-one and two]",
+          "tests/test_lists.py::test_natural_list[test_args3-one]",
+          "tests/test_lists.py::test_natural_list[test_args4-]",
+          "tests/test_lists.py::test_natural_list[test_args5-1, 2 and 3]",
+          "tests/test_lists.py::test_natural_list[test_args6-1 and two]"
+         ],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 1.787,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "1bf3f4c741979c7b5be62ef302ecbb858bbff83b",
+     "parent": "a09068a5d05b967dce1d8ee32b2af39b072d7048",
+     "native": {
+      "seconds": [
+       0.186,
+       0.186,
+       0.191
+      ],
+      "median": 0.186,
+      "exit": [
+       2,
+       2,
+       2
+      ],
+      "tail": "\n==================================== ERRORS ====================================\n_____________________ ERROR collecting tests/test_lists.py _____________________\nImportError while importing test module '/home/runner/work/_temp/speed/python-humanize__humanize/tests/test_lists.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/importlib/__init__.py:90: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/__init__.py:1: in <module>\n    from .time import *\ntests/time.py:6: in <module>\n    from mock import patch\nE   ModuleNotFoundError: No module named 'mock'\n=========================== short test summary info ============================\nERROR tests/test_lists.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.06s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.886,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 2,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [
+          "tests/test_lists.py"
+         ],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.197,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 2,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [
+          "tests/test_lists.py"
+         ],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 0.908,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 2,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [
+          "tests/test_lists.py"
+         ],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 4.763,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     0.908,
+     0.783,
+     0.773
+    ],
+    "median": 0.783,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 79%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 91%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                  [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m607 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[32m in 0.62s\u001b[0m\u001b[0m\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "more-itertools/more-itertools",
+   "ref": "v10.7.0",
+   "changes": [
+    {
+     "commit": "e733192454b73bbea8645e4dcbee95b13eba714c",
+     "parent": "b2b3bf6ddc5cb652201545ba191d07400c4e89cf",
+     "native": {
+      "seconds": [
+       2.094,
+       1.967,
+       1.986
+      ],
+      "median": 1.986,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": ".......... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n............................................................................... [ 56%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n.................................................................................................................................s...........                                   [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1740: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n664 passed, 1 skipped, 8 warnings, 2325 subtests passed in 1.83s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.167,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.734,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.086,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 0.588,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4f4217c164eb99df5c09a3882b8c7222d7c74d6c",
+     "parent": "390a3db74c62c206fdb2edcf49373fea25d50adc",
+     "native": {
+      "seconds": [
+       1.782,
+       1.664,
+       1.672
+      ],
+      "median": 1.672,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "......................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n....................................................................................................................................... [ 64%]\n........................................................................................ [ 77%]\n.................................................................................................................... [ 95%]\n..................s...........                              [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1742: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n662 passed, 1 skipped, 8 warnings, 2332 subtests passed in 1.52s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.756,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.371,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 0.634,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 0.452,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "dab9518f9c1a17024fe0dd3d0f7f52398167e8da",
+     "parent": "8256ce36ea313bc063347f6021e3f4cc2ae2f47a",
+     "native": {
+      "seconds": [
+       1.713,
+       1.687,
+       1.711
+      ],
+      "median": 1.711,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "......................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n....................................................................................................................................... [ 64%]\n........................................................................................ [ 77%]\n.................................................................................................................... [ 95%]\n..................s...........                              [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1742: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n662 passed, 1 skipped, 8 warnings, 2332 subtests passed in 1.55s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.455,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.18,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 0.423,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 0.266,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "fc5773f42805fa315e7f7500623f8765a847ccb8",
+     "parent": "612a009deeaebb36e34cfe5ace1b7f67c4f3af41",
+     "native": {
+      "seconds": [
+       1.778,
+       1.683,
+       1.693
+      ],
+      "median": 1.693,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "..................................................................................... [ 12%]\n......................................................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n........................................................................ [ 55%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n...................................................................................................................................s...........                                 [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1744: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n659 passed, 1 skipped, 5 warnings, 2332 subtests passed in 1.53s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.551,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.233,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 0.463,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 0.325,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "612a009deeaebb36e34cfe5ace1b7f67c4f3af41",
+     "parent": "8927b5ccc52a16dfaca74af899acad43fd1679de",
+     "native": {
+      "seconds": [
+       1.715,
+       1.7,
+       1.725
+      ],
+      "median": 1.715,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "..................................................................................... [ 12%]\n......................................................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n........................................................................ [ 55%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n...................................................................................................................................s...........                                 [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1744: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n659 passed, 1 skipped, 5 warnings, 2332 subtests passed in 1.55s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.692,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.396,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 0.662,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 0.403,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4bd0bd876273a8ff2171352c937b91a8c053d00b",
+     "parent": "17fd95a0c34763c34853f3a89048d60733815dc4",
+     "native": {
+      "seconds": [
+       1.854,
+       1.743,
+       1.707
+      ],
+      "median": 1.743,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "..................................................................................... [ 13%]\n......................................................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 45%]\n......................................................................... [ 56%]\n............................................................... [ 65%]\n...................... [ 69%]\n.................................................................. [ 79%]\n...........................................................................................................................s...........                                         [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1744: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n652 passed, 1 skipped, 5 warnings, 2331 subtests passed in 1.54s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.285,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.877,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.154,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 0.737,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     8.671,
+     8.597,
+     8.611
+    ],
+    "median": 8.611,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "................................................................... [ 32%]\n................................................................................ [ 44%]\n............................................................................... [ 55%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n............................................................................................................... [ 94%]\n.................s.. [ 97%]\n..............                                     [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1770: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n670 passed, 1 skipped, 8 warnings, 12037 subtests passed in 8.40s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "pallets/itsdangerous",
+   "ref": "2.2.0",
+   "changes": [
+    {
+     "commit": "7f4dcf83a07bb3d53f4e0e65ef1b43327b4cca90",
+     "parent": "93ae366874bbd4f69d90495c45b2cd336387496c",
+     "native": {
+      "seconds": [
+       0.542,
+       0.541,
+       0.538
+      ],
+      "median": 0.541,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n........................................................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.38s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.164,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.196,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.145,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "ratio_cold": 2.152,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4712ab6f5b7ca291544ce5e2dad2beffb05291a7",
+     "parent": "f0daa0833c72a47baed68466a55f7e465096d26e",
+     "native": {
+      "seconds": [
+       0.539,
+       0.542,
+       0.51
+      ],
+      "median": 0.539,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n........................................................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.37s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.076,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.184,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.121,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 297
+       }
+      }
+     },
+     "ratio_cold": 1.996,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "d21128d16131e77de453570f19958945724ee3be",
+     "parent": "0f372436f47a85a23023abb510e7cc6bc563c392",
+     "native": {
+      "seconds": [
+       0.729,
+       0.691,
+       0.728
+      ],
+      "median": 0.728,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.58s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.291,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.187,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.285,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "ratio_cold": 1.773,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "0f372436f47a85a23023abb510e7cc6bc563c392",
+     "parent": "d101100c395958d67368b8c37d95a9c404598c2e",
+     "native": {
+      "seconds": [
+       0.705,
+       0.726,
+       0.719
+      ],
+      "median": 0.719,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.57s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.306,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.178,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.25,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "ratio_cold": 1.816,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "195e5f77308d5464c085ba77d247c5589afab47f",
+     "parent": "05e5f04851f0e618a5ccee8296f039d3c471e7d2",
+     "native": {
+      "seconds": [
+       0.728,
+       0.692,
+       0.684
+      ],
+      "median": 0.692,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.55s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.275,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.189,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.335,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "ratio_cold": 1.842,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "c23001855d36962ee19e19f9c7286c1b2ec534b8",
+     "parent": "4bda48f53fac93ddd0b0fcf8b920a55a3f4f8f28",
+     "native": {
+      "seconds": [
+       0.734,
+       0.863,
+       0.766
+      ],
+      "median": 0.766,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.60s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.408,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.197,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.359,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       }
+      }
+     },
+     "ratio_cold": 1.838,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     0.588,
+     0.557,
+     0.558
+    ],
+    "median": 0.558,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "........................................................................ [ 24%]\n........................................................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.40s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "marshmallow-code/marshmallow",
+   "ref": "4.0.0",
+   "changes": [
+    {
+     "commit": "5c136b11f90f130d321ee2985bb7aaa764258fb9",
+     "parent": "df1daf03fa79aae61f8aaa85de2a16f1ff63a0de",
+     "native": {
+      "seconds": [
+       0.746,
+       0.723,
+       0.704
+      ],
+      "median": 0.723,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 0.52s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.43,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_schema.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.351,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_schema.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.6,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_schema.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       }
+      }
+     },
+     "ratio_cold": 3.361,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "2fc8207da9cf0cf1d9b9b4ab76d4d0478b588325",
+     "parent": "b7026f3b2622cffc981588b647526fa9525f063d",
+     "native": {
+      "seconds": [
+       0.704,
+       0.72,
+       0.697
+      ],
+      "median": 0.704,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 0.50s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.529,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.509,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": null
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.7,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_schema.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       }
+      }
+     },
+     "ratio_cold": 3.592,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f0c6afb430a6d032300658c898752d6c7732b188",
+     "parent": "ef06fbe2e51ab6f1626c758098d4fc6ecdd8368a",
+     "native": {
+      "seconds": [
+       0.968,
+       0.78,
+       0.75
+      ],
+      "median": 0.78,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n....................................                                     [100%]\n1116 passed in 0.53s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.514,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_schema.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.249,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_schema.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.472,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_schema.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       }
+      }
+     },
+     "ratio_cold": 3.223,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "9cddff67b733987fedc0ae37c1a4ed2eb61e89cb",
+     "parent": "bc5cde04330ae53f7a23e6990f9a0ce9d9891a4a",
+     "native": {
+      "seconds": [
+       0.743,
+       0.724,
+       0.776
+      ],
+      "median": 0.743,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n....................................                                     [100%]\n1116 passed in 0.52s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.841,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.529,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.882,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       }
+      }
+     },
+     "ratio_cold": 3.824,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "6c7b3fe007d179abd00843a0aa507624bcd76c25",
+     "parent": "8b1d061825bbf2b7125a5b178155497e2cac4c91",
+     "native": {
+      "seconds": [
+       1.144,
+       0.775,
+       0.756
+      ],
+      "median": 0.775,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 13%]\n........................................................................ [ 19%]\n........................................................................ [ 26%]\n........................................................................ [ 32%]\n........................................................................ [ 39%]\n........................................................................ [ 45%]\n........................................................................ [ 52%]\n........................................................................ [ 58%]\n........................................................................ [ 65%]\n........................................................................ [ 71%]\n........................................................................ [ 78%]\n........................................................................ [ 85%]\n........................................................................ [ 91%]\n........................................................................ [ 98%]\n.....................                                                    [100%]\n1101 passed in 0.55s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.522,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.268,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.524,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       }
+      }
+     },
+     "ratio_cold": 3.254,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "01fab376b36b094484752f9825c2fffc2ba9252c",
+     "parent": "d62c57113b9f932b0b665c1c719ec5470de3482f",
+     "native": {
+      "seconds": [
+       1.744,
+       0.791,
+       0.797
+      ],
+      "median": 0.797,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 13%]\n........................................................................ [ 19%]\n........................................................................ [ 26%]\n........................................................................ [ 32%]\n........................................................................ [ 39%]\n........................................................................ [ 45%]\n........................................................................ [ 52%]\n........................................................................ [ 58%]\n........................................................................ [ 65%]\n........................................................................ [ 71%]\n........................................................................ [ 78%]\n........................................................................ [ 85%]\n........................................................................ [ 91%]\n........................................................................ [ 98%]\n.....................                                                    [100%]\n1101 passed in 0.57s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.722,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       }
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.308,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       }
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.603,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       }
+      }
+     },
+     "ratio_cold": 3.415,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     1.652,
+     0.75,
+     0.723
+    ],
+    "median": 0.75,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 0.51s\n"
+   },
+   "status": "MEASURED"
+  }
+ ]
+}
