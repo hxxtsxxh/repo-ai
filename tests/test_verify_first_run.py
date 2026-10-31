@@ -169,11 +169,10 @@ def test_show_fixed_names_the_tests_a_change_fixed(tmp_path: Path):
     (root / "calc" / "core.py").write_text("def add(a, b):\n    return a + b\n")  # the fix, uncommitted
     out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
     assert "PASSED" in out, out
-    assert "fixed by this change (failed in the base full suite, pass now):" in out, out
+    assert "fixed by this change (fail alone at the base, pass alone now):" in out, out
     assert "tests/test_m0.py::" in out and "tests/test_m1.py::" in out, out
-    # one cached base failure is not trusted on its own (BaselineCache's flake rule): a plain run claims nothing
     plain = run_cli(root, "verify", "--run", "--rerun", "--test-command", CMD).stdout
-    assert "fixed by this change" not in plain, plain
+    assert "fixed by this change" not in plain, plain  # never claimed without --show-fixed
 
 
 @needs_sandbox
@@ -181,4 +180,50 @@ def test_show_fixed_never_claims_a_fix_the_base_did_not_show(tmp_path: Path):
     root = _project(tmp_path)
     (root / "calc" / "core.py").write_text("def add(a, b):\n    return b + a\n")  # a harmless edit
     out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
-    assert "fixed by this change: none of the selected files failed in the base full suite" in out, out
+    assert "fixed by this change: none (no selected test fails alone at the base and passes alone now)" in out, out
+
+
+def _m9(root: Path, body: str) -> None:
+    (root / "tests" / "test_m9.py").write_text("import unittest\nfrom calc.core import add\n\n\nclass T(unittest.TestCase):\n"
+                                              + body)
+
+
+BAD = "    def test_bad(self):\n        self.assertEqual(add(2, 2), 5)\n"
+OK = "    def test_ok(self):\n        self.assertEqual(add(1, 1), 2)\n"
+
+
+@needs_sandbox
+def test_show_fixed_does_not_call_a_deleted_test_fixed(tmp_path: Path):
+    """Review of #26: the change deletes the failing test; nothing was fixed."""
+    root = _project(tmp_path, {"tests/test_m9.py": ""})
+    _m9(root, BAD + OK)
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "a failing test")
+    _m9(root, OK)
+    out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
+    assert "test_bad" not in out.split("fixed by this change")[-1], out
+
+
+@needs_sandbox
+def test_show_fixed_does_not_call_a_skipped_test_fixed(tmp_path: Path):
+    root = _project(tmp_path, {"tests/test_m9.py": ""})
+    _m9(root, BAD + OK)
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "a failing test")
+    _m9(root, "    @unittest.skip('later')\n" + BAD + OK)
+    out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
+    assert "test_bad" not in out.split("fixed by this change")[-1], out
+
+
+@needs_sandbox
+def test_show_fixed_does_not_call_an_order_dependent_test_fixed(tmp_path: Path):
+    """It fails at the base only after another test pollutes shared state; alone it passes at the base too."""
+    root = _project(tmp_path, {"calc/state.py": "VALUE = [0]\n", "calc/other.py": "X = 1\n",
+                               "tests/test_a_pollute.py": "import unittest\nfrom calc import state\n\n\n"
+                               "class P(unittest.TestCase):\n    def test_a_pollute(self):\n        state.VALUE[0] = 1\n",
+                               "tests/test_victim.py": "import unittest\nfrom calc import state, other\n\n\n"
+                               "class V(unittest.TestCase):\n    def test_victim(self):\n"
+                               "        self.assertEqual(state.VALUE[0] + other.X, 1)\n"})
+    (root / "calc" / "other.py").write_text("X = 1  # a harmless edit\n")
+    out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
+    assert "test_victim" not in out.split("fixed by this change")[-1], out

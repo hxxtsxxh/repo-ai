@@ -2,11 +2,12 @@
 
 ## Unreleased
 
-- Added: `repo-ai verify --run --show-fixed` names the tests a change fixed: selected files that pass now and whose
-  tests failed in the base revision's full suite. It runs that base suite once and caches it like the existing base
-  comparison. Without the flag, fixed tests are named only from a base failure seen at least twice (the cache's flake
-  rule). It never infers a fix: a file with no base outcome is reported as not known. On python-humanize it names
-  `tests/test_number.py::test_intword_rounding_rollover`, the upstream regression test.
+- Added: `repo-ai verify --run --show-fixed` names the tests a change fixed. A fix is a claim about one test, so
+  each candidate is confirmed in isolation: it must fail alone at the base and pass alone at the change, existing,
+  running and not skipped there. Candidates are the base full suite's failures in selected files that pass now; that
+  suite runs once and is cached. A deleted, newly skipped or order-dependent test is never named, nor is any test when
+  the change edits dependency files. Up to 20 candidates are checked, at two processes each. On python-humanize it
+  names `tests/test_number.py::test_intword_rounding_rollover`, the upstream regression test.
 - Security: a hostile repository could put a file at a repo-ai state path in a mission workspace on a case-insensitive
   filesystem (macOS). A tracked link `A -> .claude` and a file `a/settings.local.json` wrote
   `.claude/settings.local.json`, because the archive filter compared names as text. It stayed inside the workspace.

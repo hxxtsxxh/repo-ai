@@ -871,8 +871,8 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     rec["results"] = rows
     attribution_started = time.monotonic()
     _compare_with_base(ctx, rows)
+    _check_skips(ctx, rows)  # before naming fixes: a file whose tests are all skipped now is unverified
     rec["fixed"] = {**_name_fixed(ctx, rows), "requested": ctx.show_fixed}
-    _check_skips(ctx, rows)
     rec["timing"] = {"total_s": round(time.monotonic() - started, 2),
                      "base_comparison_s": round(time.monotonic() - attribution_started, 2)}
     redundant = sum(n - 1 for n in ctx.file_runs.values() if n > 1)
@@ -1154,43 +1154,78 @@ def _compare_with_base(ctx: _Ctx, rows: list[dict[str, Any]]) -> None:
                                    "ran with the dependencies installed now: not comparable")
 
 
+MAX_FIXED_CHECKS = 20  # candidate tests confirmed one by one (two processes each)
+
+
 def _name_fixed(ctx: _Ctx, rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Tests the change fixed: a selected file that passes now and whose tests failed in the base revision's full
-    suite. Known whenever that run is cached for this base tree and environment (it is, after any full-suite base
-    comparison); `--show-fixed` runs it once when it is not. Never inferred: a file with no base outcome says so."""
-    passing = [r for r in rows if r["status"] == "pass"]
+    """Tests the change fixed (`--show-fixed` only). A fix is a claim about one test, so each candidate is confirmed
+    in isolation: it must fail when run alone at the base and pass when run alone at the change, existing, running
+    and not skipped there. Candidates are the base full suite's failing tests in selected files that pass now
+    (`_base_full`, cached per base tree and environment). Never inferred: a deleted, skipped or order-dependent
+    test, or one that cannot be addressed alone, is not named; a dependency-file change makes the base not
+    comparable."""
+    if not ctx.show_fixed:
+        return {"known": False, "reason": "not requested", "tests": []}
+    passing = [r for r in rows if r["status"] == "pass" and not r.get("unverified")]
     if not passing or not ctx.change.base_commit or not ctx.runner.per_file:
         return {"known": False, "reason": "no passing selected file to compare" if not passing
                 else "no base commit or no per-file runner", "tests": []}
+    deps = _dependencies_changed(ctx.change)
+    if deps:
+        return {"known": False, "reason": f"the change edits {', '.join(deps[:3])} and the base runs with the "
+                "dependencies installed now: not comparable", "tests": []}
     bc = cache.BaselineCache(ctx.layout.state_dir, ctx.env_key, cache.tree_of(ctx.root, ctx.change.base_commit))
-    # a cached base failure counts only once seen twice (BaselineCache's flake rule); a base run made now counts
-    known: dict[str, tuple[bool, set[str], str]] = {}
-    for r in passing:
-        hit = bc.get("full-file", r["test"])
-        if hit is not None:
-            known[r["test"]] = (hit[0] == "fail", set(hit[1]), bc.source("full-file", r["test"]))
-    missing = [r for r in passing if r["test"] not in known]
-    if missing and ctx.show_fixed:
+    candidates: list[tuple[str, str]] = []
+    unknown: list[str] = []
+    base = _LazyBase(ctx)
+    try:
         outcomes: dict[str, _BaseOutcome] = {}
-        base = _LazyBase(ctx)
-        try:
-            _base_full(ctx, base, bc, missing, outcomes)
-        finally:
-            base.cleanup()
-            bc.save()
-        for f, o in outcomes.items():
-            known[f] = (o.failed, set(o.ids), "run")
-    fixed: list[dict[str, Any]] = []
-    unknown = []
+        _base_full(ctx, base, bc, passing, outcomes)
+        for r in passing:
+            o = outcomes.get(r["test"])
+            if o is None:
+                unknown.append(r["test"])
+            elif o.failed:
+                candidates += [(r["test"], tid) for tid in sorted(o.ids) if tid != "<file>"]
+        checked, undecided, fixed = candidates[:MAX_FIXED_CHECKS], candidates[MAX_FIXED_CHECKS:], []
+        for f, tid in checked:
+            argv_ids = results.rerun_ids(ctx.runner, f, [tid], "")
+            if not argv_ids or len(argv_ids) != 1:
+                undecided.append((f, tid))
+                continue
+            at_base = _alone(ctx, base.get(), f, argv_ids[0])
+            at_change = _alone(ctx, ctx.executor, f, argv_ids[0]) if at_base == "fail" else ""
+            if at_base == "fail" and at_change == "pass":
+                fixed.append((f, tid))
+            elif "unknown" in (at_base, at_change):
+                undecided.append((f, tid))
+    finally:
+        base.cleanup()
+        bc.save()
+    by_file: dict[str, list[str]] = {}
+    for f, tid in fixed:
+        by_file.setdefault(f, []).append(tid)
     for r in passing:
-        if r["test"] not in known:
-            unknown.append(r["test"])
-            continue
-        failed, ids, source = known[r["test"]]
-        if failed:
-            fixed.append({"test_file": r["test"], "tests": sorted(ids)[:50], "source": source})
-            r["fixed_tests"] = sorted(ids)
-    return {"known": not unknown, "tests": fixed, "unknown_files": unknown[:20]}
+        if r["test"] in by_file:
+            r["fixed_tests"] = by_file[r["test"]]
+    return {"known": not unknown and not undecided, "tests": [{"test_file": f, "tests": t} for f, t in by_file.items()],
+            "unknown_files": unknown[:20], "undecided": [f"{f}::{t}" for f, t in undecided][:20]}
+
+
+def _alone(ctx: _Ctx, template: Executor, f: str, argv_id: str) -> str:
+    """One test of `f` alone in a fresh clone of `template`: pass | fail | skip | absent | unknown."""
+    res, att = _process(ctx, template, _id_argv(ctx.runner, [argv_id]), [f], _limit(ctx, [f]), "fixed",
+                        count_files=False)
+    fo = att.files.get(f) if att is not None else None
+    if res.timed_out or fo is None or not _usable(res, att):
+        return "unknown"
+    if fo.missing:
+        return "absent"
+    if fo.failing:
+        return "fail"
+    if fo.skipped:
+        return "skip"
+    return "pass" if fo.tests == 1 and fo.ran >= 1 else "unknown"
 
 
 DEPENDENCY_NAMES = {"pyproject.toml", "setup.py", "setup.cfg", "Pipfile", "Pipfile.lock", "poetry.lock", "uv.lock",
