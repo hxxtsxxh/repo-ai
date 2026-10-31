@@ -512,19 +512,26 @@ def _clone_tree(src: Path, label: str, keep: set[str]) -> Path | None:
                 return None
             return st.st_dev, st.st_ino
 
-        kept_files: set[tuple[int, int]] = set()
-        kept_dirs: set[tuple[int, int]] = {i for i in (ident(path),) if i}
-        for k in (*keep, WS_MARKER):
-            if (i := ident(path / k)) is not None:
-                kept_files.add(i)
-            for parent in PurePosixPath(k).parents:
-                if str(parent) not in {"", "."} and (i := ident(path / str(parent))) is not None:
-                    kept_dirs.add(i)
+        names = {*keep, WS_MARKER}
+        dir_names = {"."} | {str(p) for k in names for p in PurePosixPath(k).parents if str(p) not in {"", "."}}
+        by_ident: list[set[tuple[int, int]]] = []  # (files, dirs), built only when a name does not match
+
+        def kept(p: Path, rel: str, is_dir: bool) -> bool:
+            if rel in (dir_names if is_dir else names):
+                return True  # the common case: the name as listed
+            if not by_ident:
+                files = {i for k in names if (i := ident(path / k)) is not None}
+                dirs = {i for d in dir_names if (i := ident(path / d)) is not None}
+                by_ident.extend((files, dirs))
+            return ident(p) in by_ident[1 if is_dir else 0]
+
         for dirpath, dirnames, filenames in os.walk(path, topdown=False):
+            rel_dir = os.path.relpath(dirpath, path)
             for name in filenames + [d for d in dirnames if os.path.islink(os.path.join(dirpath, d))]:
-                if ident(Path(dirpath, name)) not in kept_files:
+                rel = name if rel_dir == "." else f"{rel_dir}/{name}"
+                if not kept(Path(dirpath, name), rel, False):
                     os.unlink(os.path.join(dirpath, name))
-            if ident(Path(dirpath)) not in kept_dirs:
+            if not kept(Path(dirpath), rel_dir, True):
                 _remove(Path(dirpath))
     except OSError:  # something the template should not hold (a read-only directory): copy file by file
         _remove(path)
