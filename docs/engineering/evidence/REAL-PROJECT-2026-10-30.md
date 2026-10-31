@@ -48,7 +48,11 @@ The skipped tests were identical at base and candidate, which 0.10.0 already acc
 | 1 | `repo-ai init --agent none`, then `do` | refused: dirty checkout (repo-ai's own uncommitted `.repo-ai/` files) — a first-run bug |
 | 2 | committed `.repo-ai/` as advised; `do --agent claude` | `INCONCLUSIVE — BLOCKED`: "OAuth token revoked" for the dedicated login (external; the owner must log in again); classified `provider_unavailable` with the setup command, no retry |
 | 3 | `do --agent codex` | refused: the committed `.repo-ai/config.toml` was compared as a provider deletion — the same first-run bug, second half |
-| 4 | development build with the fix (`fix/init-then-do`), `do --agent codex` | **`PASS [LIVE_CANDIDATE_VERIFIED]`, standing `PASS_WITH_PRE_EXISTING_FAILURES`** (20 unrelated failures listed), claim `ASSURANCE_PARTIAL`; the candidate is **byte-identical to the upstream line** (`.strip(DEFAULT_SEPARATOR)`); `apply` (post-apply 131 ran, 0 failed) then `undo` restored the file byte-exactly |
+| 4 | development build with the fix (`fix/init-then-do`), `do --agent codex` | **`PASS [LIVE_CANDIDATE_VERIFIED]`, standing `PASS_WITH_PRE_EXISTING_FAILURES`** (20 unrelated failures listed), claim `ASSURANCE_PARTIAL`; the candidate is **byte-identical to the upstream line** (`.strip(DEFAULT_SEPARATOR)`); `apply` (the CLI printed "post-apply 131 ran, 0 failed"; see below) then `undo` restored the file byte-exactly |
 
-Open question: the post-apply run in the real checkout reported 0 failures where the sandboxed observations saw the 20
-legacy failures; the two environments apparently resolve the optional backend differently. Not yet explained.
+Open question, resolved 2026-10-30: the post-apply run seemed to report 0 failures where the sandboxed observations saw
+the 20 legacy failures. It did not. The mission record (`841f651c…`) shows the same interpreter
+(`~/.pyenv/versions/3.12.14/bin/python3`) for the baseline, the candidate and the post-apply observation, which has
+`ran: 131, failed: 20`, all 20 already failing at the base and not declared. `repo-ai apply` printed a hard-coded
+`post_apply_failed: 0`, fixed in PR #21. An intermediate explanation, that missions used a different interpreter from
+the post-apply check, was wrong for this repository; that interpreter bug is real but was shown on python-humanize.

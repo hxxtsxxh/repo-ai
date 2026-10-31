@@ -82,7 +82,7 @@ magnitude up to 10^102.
    which never holds `.venv`. Fixed in PR #17, which also
    handles editable installs (found in its review). The verified runs used an earlier development build of #16
    and #17 (`86c9e19`), from before their review rounds.
-   - **Correction (2026-10-31):** an earlier version of this record, #17's description and the 0.11.2 changelog said
+   - **Correction (2026-10-30):** an earlier version of this record, #17's description and the 0.11.2 changelog said
      this bug explained the python-slugify discrepancy (20 failures in the sandbox, 0 after apply). It did not. That
      mission record (`841f651c…`) shows the same pyenv interpreter for the baseline, the candidate and the post-apply
      observation, and the post-apply observation has `failed: 20`. The "0" was a hard-coded `post_apply_failed` in
