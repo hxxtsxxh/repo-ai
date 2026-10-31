@@ -1,5 +1,5 @@
-# Diagnose queue item 7b (benchmarks/speed-v1/RESULTS.md): verify fails tests that pass natively in two replayed
-# upstream changes. Third-party code runs only on this disposable runner. Triggered only by diag/** pushes.
+# Diagnose queue items 7b/7c (benchmarks/speed-v1/RESULTS.md): replay upstream changes where verify and the
+# native suite disagreed. Third-party code runs only on this disposable runner. Triggered only by diag/** pushes.
 name: diagnose
 
 on:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  verify-7b:
+  replay:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:

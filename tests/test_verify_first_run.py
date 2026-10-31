@@ -244,3 +244,8 @@ def test_pre_existing_failures_that_look_like_the_missing_network_are_named():
     assert s["sandbox_network_suspected"] == ["tests/test_jwks_client.py"]
     text = "\n".join(report._outcome(rec, s, []))
     assert "sandbox's denied network" in text and "test_jwks_client.py" in text.split("denied network")[1]
+    # a NEW failure is never explained away, whatever it prints
+    new = {"test": "tests/test_new.py", "status": "fail", "baseline": "pass", "confirmed": True,
+           "output_tail": "E   socket.gaierror: [Errno -3] Temporary failure in name resolution"}
+    s2 = report.summarize({"verdict": "regression", "results": [new]})
+    assert s2["sandbox_network_suspected"] == [] and s2["new_failures"]
