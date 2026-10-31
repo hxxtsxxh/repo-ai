@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Added: an Agent Client Protocol (ACP 1) client (`repo_ai.providers.acp`). It applies one permission policy to every
+  ACP agent: reads only inside the workspace, writes only to allowed paths, no terminals, permission requests allowed
+  once only for read/search/edit tool calls, never allow-always. A handshake-only probe gives accurate capability
+  detection without a model call; OpenCode 2.2.1 and Gemini CLI 0.65.0 both answer ACP 1. A live $0 run of OpenCode
+  with a local model completed over ACP. Wiring ACP agents into `repo-ai do` inside the OS sandbox is next.
 - Added: `repo-ai verify --run --show-fixed` names the tests a change fixed. A fix is a claim about one test, so
   each candidate is confirmed in isolation: it must fail alone at the base and pass alone at the change, existing,
   running and not skipped there. Candidates are the base full suite's failures in selected files that pass now; that
