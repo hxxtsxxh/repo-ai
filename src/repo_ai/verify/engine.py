@@ -1188,17 +1188,27 @@ def _name_fixed(ctx: _Ctx, rows: list[dict[str, Any]]) -> dict[str, Any]:
             elif o.failed:
                 candidates += [(r["test"], tid) for tid in sorted(o.ids) if tid != "<file>"]
         checked, undecided, fixed = candidates[:MAX_FIXED_CHECKS], candidates[MAX_FIXED_CHECKS:], []
+        addressable = []
         for f, tid in checked:
             argv_ids = results.rerun_ids(ctx.runner, f, [tid], "")
-            if not argv_ids or len(argv_ids) != 1:
-                undecided.append((f, tid))
-                continue
-            at_base = _alone(ctx, base.get(), f, argv_ids[0])
-            at_change = _alone(ctx, ctx.executor, f, argv_ids[0]) if at_base == "fail" else ""
-            if at_base == "fail" and at_change == "pass":
-                fixed.append((f, tid))
-            elif "unknown" in (at_base, at_change):
-                undecided.append((f, tid))
+            if argv_ids and len(argv_ids) == 1:
+                addressable.append((f, tid, argv_ids[0]))
+            else:
+                undecided.append((f, tid))  # node, a failure outside a test: not addressable alone
+        if addressable:
+            base.get()  # create it once, before the parallel checks
+
+            def confirm(item: tuple[str, str, str]) -> tuple[str, str, str, str]:
+                f, tid, aid = item
+                at_base = _alone(ctx, base.get(), f, aid)
+                return f, tid, at_base, _alone(ctx, ctx.executor, f, aid) if at_base == "fail" else ""
+
+            for f, tid, at_base, at_change in run_parallel(confirm, addressable, ctx.workers):
+                if at_base == "fail" and at_change == "pass":
+                    fixed.append((f, tid))
+                elif "unknown" in (at_base, at_change):
+                    undecided.append((f, tid))
+        fixed.sort()
     finally:
         base.cleanup()
         bc.save()

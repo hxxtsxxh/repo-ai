@@ -292,7 +292,7 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     out.append("  " + "; ".join(counts))
     fx = rec.get("fixed") or {}
     if fx.get("tests"):
-        named = [f"{t['test_file']}::{i.split('::')[-1]}" for t in fx["tests"] for i in (t["tests"] or ["<file>"])]
+        named = [f"{t['test_file']}::{i.partition('::')[2] or i}" for t in fx["tests"] for i in (t["tests"] or ["<file>"])]
         out.append(f"  fixed by this change (fail alone at the base, pass alone now): {', '.join(named[:8])}"
                    + (f" and {len(named) - 8} more" if len(named) > 8 else ""))
     elif fx.get("requested") and fx.get("reason") != "no passing selected file to compare":
