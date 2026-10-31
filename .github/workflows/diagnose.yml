@@ -43,10 +43,14 @@ jobs:
           git checkout -q --detach "$P" && git diff "$P" "$C" | git apply --whitespace=nowarn
           .venv/bin/python -m pytest -q -p no:cacheprovider > "$OUT/native.txt" 2>&1; echo "native exit $?" >> "$OUT/native.txt"
           "$RAI" sandbox status > "$OUT/sandbox.txt" 2>&1 || true
+          set +e
           "$RAI" verify --run -v > "$OUT/verify.txt" 2>&1; echo "verify exit $?" >> "$OUT/verify.txt"
-          "$RAI" verify --run --rerun --json > "$OUT/verify.json" 2>&1 || true
-          tar -czf "$OUT/repo-ai-state.tgz" .repo-ai || true
+          "$RAI" verify --run --rerun --json > "$OUT/verify.json" 2>&1
+          "$RAI" evidence --json > "$OUT/evidence.json" 2>&1
+          { echo "PATH=$PATH"; command -v pytest; ls -la .venv/bin | head -30; } > "$OUT/env.txt" 2>&1
+          find .repo-ai -name '*.json' -newer .git/HEAD -size -2M -print -exec cp --parents {} "$OUT/" \; > "$OUT/state-files.txt" 2>&1
           tail -60 "$OUT/verify.txt"
+          true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
