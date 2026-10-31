@@ -198,5 +198,25 @@ HOME, on a scratch fixture (`clamp.py`).
 
 Conclusion: ACP is a uniform control channel (session, prompt, streamed tool calls, permission answers,
 cancellation), not a security boundary. An ACP provider must still run the agent inside repo-ai's OS sandbox and
-check the workspace afterwards (`validate_workspace_edits`), as the other providers do. Wiring ACP agents into
-`repo-ai do` that way is the next step (queue item 4).
+check the workspace afterwards (`validate_workspace_edits`), as the other providers do.
+
+### `opencode-acp`: the first ACP provider for `repo-ai do`
+
+`repo-ai do --agent opencode-acp` runs OpenCode over ACP under exactly the `opencode` isolation: the same seatbelt
+prefix (loopback-only network, HOME unreadable except the workspace, scratch dir and the binary's directory), the same
+scratch HOME and the same `opencode_cfg.environment` (deny-by-default inline config, read-only policy for advisory
+roles, loopback model only; macOS only, as `opencode`). The ACP client is the parent process, outside the sandbox; it
+starts `[*prefix, opencode, "acp"]`, sends the prompt (redacted and bounded as in argv) in `session/prompt`, serves
+`fs/*` only within the run's write paths, and the run's descendants are swept afterwards on every path. The
+`AcpResult` becomes the result other providers return: `returncode` 0 only for an `end_turn` with no protocol problem;
+any problem, client-side refusal, timeout or other stop reason is a reason, so the run is never READY on the agent's
+word; text becomes `summary`/`report`, `session/update` tool calls become `tool_calls`/`tool_errors`, rejected
+permission requests `denied_actions`. ACP reports no cost: `cost_usd` is 0.0 with `cost_basis` `loopback_model_only`
+(live) or `network_denied` (simulated), since the sandbox admits no other endpoint, and no USD ceiling can be
+promised. The edit OpenCode makes itself is then checked by `validate_workspace_edits` and the mission's tests,
+unchanged. `agents setup opencode-acp` adds the `initialize`-only handshake (no session, no model call) inside that
+same sandbox; `agents doctor` reads `opencode acp --help` only.
+
+Live, $0 (2026-10-31, OpenCode 2.2.1, Ollama `qwen3:8b`, scratch fixture `calc.py` with `a - b`): `repo-ai do --agent
+opencode-acp --run --allow-live-provider` reached PASS (`LIVE_CANDIDATE_VERIFIED`) in 60 s; tool calls `read`, `edit`;
+no `fs/write_text_file`, no permission request, no process left behind.

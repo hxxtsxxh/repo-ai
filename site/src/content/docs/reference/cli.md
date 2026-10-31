@@ -914,7 +914,7 @@ plan an outcome offline; run an isolated replay or authorized live provider cand
 | `--from-handoff` `FILE` | continue an interrupted/failed mission from a verified handoff capsule JSON file |
 | `--apply` | apply the candidate diff to the working tree after fresh PASS verification |
 | `--json` | machine-readable JSON output |
-| `--agent` `AGENT` | one of `auto`, `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode` |
+| `--agent` `AGENT` | one of `auto`, `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode`, `opencode-acp` |
 | `--replay` `FILE` | explicitly simulated bounded JSON edit proposal; never a live agent |
 | `--provider-executable` `FILE` | local non-billable provider executable for contract simulation |
 | `--candidate` `FILE` | opt-in tournament: repeat for 2–3 isolated simulated proposals |
@@ -997,7 +997,7 @@ local mission handoff; no provider disclosure
 | `id` | mission ID |
 | `--json` | machine-readable JSON output |
 | `--format` `FORMAT` | one of `text`, `json` |
-| `--to` `TO` | optional target provider for local handoff adaptation (one of `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode`) |
+| `--to` `TO` | optional target provider for local handoff adaptation (one of `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode`, `opencode-acp`) |
 | `--verify` `FILE` | verify a local handoff capsule JSON file against current repository state |
 
 ## `repo-ai replay`

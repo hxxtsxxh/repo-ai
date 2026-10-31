@@ -337,16 +337,30 @@ def cmd_agents(args) -> int:
 
 def _agents_setup(args) -> int:
     """Offline: how this provider authenticates inside repo-ai's isolation, and the one command that fixes it."""
-    if args.provider == 'opencode':
+    if args.provider in {'opencode', 'opencode-acp'}:
         from ..providers import opencode_cfg
         problems = opencode_cfg.setup_problems()
-        value: dict[str, Any] = {'schema': 'repo-ai.provider-setup/1', 'provider': 'opencode', 'mode': 'local_endpoint',
+        value: dict[str, Any] = {'schema': 'repo-ai.provider-setup/1', 'provider': args.provider, 'mode': 'local_endpoint',
                  'endpoint': opencode_cfg.base_url(), 'model': os.environ.get(opencode_cfg.MODEL_ENV) or None,
                  'problems': problems, 'ready_to_try': not problems, 'model_invoked': False, 'credential_read': False}
+        if args.provider == 'opencode-acp' and not problems:
+            # `initialize` only, in the provider's own sandbox: no session, so no model call
+            from ..providers.adapters import acp_handshake
+            shake = acp_handshake('opencode-acp', _root(args))
+            value['acp_handshake'] = shake
+            if not shake.get('acp'):
+                problems.append('ACP handshake failed: ' + str(shake.get('problem') or 'the agent does not speak ACP 1'))
+            problems.extend(shake.get('cleanup_problems') or [])
+            value['ready_to_try'] = not problems
         if args.json:
             print(json.dumps(value, indent=2, sort_keys=True))
         else:
-            print(f"opencode: local model endpoint {value['endpoint']} (loopback only; code never leaves this machine)")
+            print(f"{args.provider}: local model endpoint {value['endpoint']} (loopback only; code never leaves this machine)")
+            shake = value.get('acp_handshake') or {}
+            if shake.get('acp'):
+                agent = shake.get('agent') or {}
+                print(f"  ACP {shake.get('protocol_version')}: {agent.get('name', 'agent')} {agent.get('version', '')}".rstrip()
+                      + ' answered initialize (no session, no model call)')
             for problem in problems:
                 print(f'  - {problem}')
             print('Ready to try.' if not problems else 'Example: ollama pull qwen3:8b && export '
@@ -374,7 +388,7 @@ def _agents_setup(args) -> int:
         print('No model was invoked and no credential was read.')
         return 0 if source in {'dedicated', 'personal'} else 2
     if args.provider != 'claude':
-        raise ValueError('agents setup currently explains: claude, opencode, codex (other providers authenticate as '
+        raise ValueError('agents setup currently explains: claude, opencode, opencode-acp, codex (other providers authenticate as '
                          'documented in docs/engineering/INTEGRATIONS.md)')
     from ..providers import claude_auth
     plan = claude_auth.plan()

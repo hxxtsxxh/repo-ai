@@ -50,7 +50,7 @@ def test_provider_contracts_and_lifecycle_stages_are_complete(tmp_path: Path) ->
         "FAILED",
         "VERIFIED",
     )
-    assert set(PROVIDER_CONTRACTS) == {"codex", "claude", "gemini", "bob", "agy", "opencode"}
+    assert set(PROVIDER_CONTRACTS) == {"codex", "claude", "gemini", "bob", "agy", "opencode", "opencode-acp"}
     assert contract_for("opencode").enforces_hard_usd_budget is False
     assert contract_for("claude").enforces_hard_usd_budget is True
     assert contract_for("bob").enforces_hard_usd_budget is True

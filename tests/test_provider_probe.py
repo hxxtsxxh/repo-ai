@@ -25,7 +25,7 @@ def test_static_list_never_executes(tmp_path: Path, binary: Path, monkeypatch: p
         raise AssertionError("static discovery executed a process")
     monkeypatch.setattr(d.subprocess, "Popen", forbidden)
     result = discover(tmp_path / "repo")
-    assert [p["provider"] for p in result] == ["codex", "claude", "gemini", "bob", "agy", "opencode"]
+    assert [p["provider"] for p in result] == ["codex", "claude", "gemini", "bob", "agy", "opencode", "opencode-acp"]
     profile = result[0]
     assert profile["status"] == "PLANNING_ONLY"
     assert profile["authentication"] == "UNKNOWN"

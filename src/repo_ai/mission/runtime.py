@@ -488,7 +488,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
             resume: bool = False, provider_executable: Path | None = None,
             allow_live: bool = False, seed: dict[str, Any] | None = None) -> dict[str, Any]:
     from ..providers.adapters import contract_for, run_provider, validate_workspace_edits
-    from ..providers.discovery import _identity, _inside
+    from ..providers.discovery import _identity, _inside, executable_name
     from .verification import compare, observe, pre_existing_failures
     root = root.resolve()
     contract = decode(planned['contract'])
@@ -538,7 +538,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
     if seed is not None and not is_provider_contract:
         raise ValueError('a carried partial diff can only seed a provider candidate')
     if is_provider_contract:
-        exe_candidate = str(provider_executable) if provider_executable is not None else shutil.which(contract.provider)
+        exe_candidate = (str(provider_executable) if provider_executable is not None
+                         else shutil.which(executable_name(contract.provider)))
         if not exe_candidate:
             raise ValueError(f'{contract.provider} executable is not installed on PATH')
         raw_exe = Path(os.path.abspath(exe_candidate))
