@@ -1,6 +1,6 @@
 # Work queue (living; top = next)
 
-Updated 2026-10-31: 0.11.3 published (#21–#36).
+Updated 2026-10-31: 0.11.3 published (#21–#36); 0.11.4 in qualification (#40–#43).
 
 | # | Item | Gate | State |
 |---|---|---|---|
@@ -8,6 +8,7 @@ Updated 2026-10-31: 0.11.3 published (#21–#36).
 | 1a | Re-run the scoped missions on the published 0.11.2 | C21 | done: python-humanize live PASS (#36); python-slugify replay PASS_WITH_PRE_EXISTING_FAILURES, fresh first run |
 | 1b | Mission workspaces dropped `export-ignore` files and rewrote `export-subst` | C21 | done (#22, four review rounds) |
 | 1d | Release 0.11.3 (#21–#36: apply count, export attributes, state paths, scoped setup errors, show-fixed, clones, ACP client, opencode-acp, tournament families, `.repo-ai` file, ACP stderr, Codex broker) | C20 | done: owner approved 2026-10-31; tag v0.11.3 at 7750279 (tree = qualified 2c5eeba; macOS full suite 2,762 passed, 0 failed at 14c953d, docs-only delta after); published 2026-10-31, verified: PyPI = GitHub release = local clean build (wheel `b11ff58f…`, sdist `644248fa…`), SLSA attestation from release.yml at the tag, smoke from PyPI PASS |
+| 1h | Release 0.11.4 (#40 SAFE_AUTO hardening and CI-only security fixtures, #41 speed-v1 record, #42 verify fixes from real projects, #43 sandbox-network hint) | C20 | in progress: qualification by CI's full suite on the release commit (macOS included), not a local run on a managed workstation |
 | 1e | Nothing reaches a state path by any route (macOS case collisions; `.claude -> conf` links) | C18 | done (#24) |
 | 1f | A repository that tracks a FILE named `.repo-ai` breaks the sandboxed run directory `.repo-ai/run` (every verify/mission run) | C21 | done (#34): `init`, missions and the run directory name the file instead of ENOTDIR. `out_dir` moves the index and context only: sandboxed runs stay unavailable in such a repository (the run directory is fixed) |
 | 1g | A custom `out_dir` with `init --agent none` wrote no ignore entries: the index, lock and evidence counted as part of the change and the first `verify --run` always failed ("the working tree changed while the run was being prepared") | C21 | done (#34) |
@@ -22,7 +23,7 @@ Updated 2026-10-31: 0.11.3 published (#21–#36).
 | 7 | Verify speed profiling: host time is test execution; per-process workspace clone was the visible overhead | C16 | done for clones (#28: 0.07 s vs 0.31 s per process on 2,742 files). Background deletion was measured locally (2026-10-31) and not pursued: cleanup is 0.12 s per 2,750-file workspace, about 5 s on a 20-check `--show-fixed` run, against directories outliving the process |
 | 7a | speed-v1 (preregistered, real upstream commits, CI runner): verify 1.84× the native suite, slower on 24 of 30 | C16 | done: NEGATIVE_RESULT recorded (`benchmarks/speed-v1/RESULTS.md`) |
 | 7b | verify fails natively passing tests without saying why: more-itertools `full-suite-failed` (6 of 6), humanize f772e59b | C16, C21 | done (#42; diagnosed on a CI runner): humanize's hatch-vcs `_version.py` was missing from the copy; more-itertools' `make test` was not recognised and the lint-only `make check` ran. Both fixed and re-checked on the real changes |
-| 7c | Failures consistent with the sandbox (network-denied tests, pyjwt) are labelled only `pre-existing` | C16 | todo |
+| 7c | Failures consistent with the sandbox (network-denied tests, pyjwt) are labelled only `pre-existing` | C16 | done (#43): named as `sandbox_network_suspected`; confirmed on the real pyjwt change on a CI runner |
 | 8 | Codex: the token copied into its sandbox stays readable by its model; explore a token broker or document as permanent | C18 | done (#36): opt-in broker (`REPO_AI_CODEX_BROKER=1`, macOS) after three security-review rounds; live-verified with a ChatGPT login (calls #37 and #38 in EXPERIMENTS.md). Next: verify an API-key login; consider making it the default for Codex on macOS |
 | 9 | Claude provider live on the re-logged dedicated login | C03 | done (#33, #34 provider runs) |
 | 10 | Claude token-mode live check (needs the owner to create a `claude setup-token`) | C03 | blocked (owner) |

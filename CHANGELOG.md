@@ -1,7 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.11.4 — SAFE_AUTO hardened after a failed unseen-corpus test; verify fixes from real projects
 
+- Added: when tests fail at the base and the change alike and their output shows a network denial (name
+  resolution, unreachable network, failed connection), verify says some failures in those files look like its
+  sandbox's missing network, which the project's own run may not have (pyjwt's JWKS client tests). JSON:
+  `summary.sandbox_network_suspected`. No verdict changes.
+- Evaluation: speed-v1 (`benchmarks/speed-v1/`, preregistered, run on a CI runner): on 30 real upstream commits in 5
+  pure-Python projects, `verify --run` took 1.84× the native suite and was slower on 24 of 30. A negative result,
+  recorded as such on the site; on small, fast suites verify's value is its classification, not time.
 - Fixed (found by speed-v1 on real projects): in a project that writes its version file at build time
   (setuptools-scm `version_file`/`write_to`, hatch-vcs `version-file`), that git-ignored file was missing from
   verify's disposable copy, so every test failed with `No module named '<pkg>._version'` at base and change alike
@@ -10,7 +17,9 @@
 - Fixed (found by speed-v1): verify ran more-itertools' `make check` (black, flake8, stubtest: no tests) as the test
   suite and reported a passing suite `full-suite-failed`. `python -m unittest -v` (options only) is discovery, a
   trailing lowercase make parameter that the Makefile leaves undefined (`${tests}`) is empty as make treats it, and
-  a make target whose every step is a lint tool is never the suite.
+  a make target whose every step is a lint tool is never the suite. Also: `${v}` make variables are expanded,
+  `python -m unittest -v discover …` is opaque (unittest discovers only when `discover` comes first), a `-k` value
+  is never taken for a module or start directory, and the workspace summary lists `generated_version_files`.
 - Security (opt-in `SAFE_AUTO`): a preregistered evaluation with an unseen corpus (`benchmarks/skill-vet-fresh-v1`,
   80 defanged cases) **failed** its main gate. `SAFE_AUTO` would have installed 8 of 30 harmful skills without
   asking. All 8 were prose-only SKILL.md files: overriding the agent's instructions, hiding results from the user,
@@ -25,7 +34,9 @@
 - Security: the firewall rated 6 of 10 harmful script-bearing skills `eligible` in the same evaluation, including a
   reverse shell with no finding at all. Code (scripts and fenced blocks) is now read for a socket handed to a shell,
   credential stores named by path pieces, `rm -rf` with other flags first or a quoted `"$HOME"/*`, and, across a
-  whole program, a secret read plus a network send or a download made executable. They were never auto-installed
+  whole program, a secret read plus a network send or a download made executable; also a bind shell's accepted
+  socket. `rm … --no-preserve-root` in code is `critical` (blocked), and a code line over 2,000 characters is a
+  `high` finding (`review`) because only its first 2,000 are read for behaviour. They were never auto-installed
   (scripts already need approval); a reviewer now sees `review` or `blocked` instead of `eligible`.
 - Tests: tests that write attack-like fixtures (reverse and bind shells, recursive deletes, credential uploads) or
   make deliberately denied escape attempts are now an explicit class (`tests/conftest.py`
