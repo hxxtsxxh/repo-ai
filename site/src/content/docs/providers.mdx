@@ -70,7 +70,11 @@ no token is copied into the sandbox at all:
   - only tools that Codex runs locally are forwarded;
   - the hosted web search is removed;
   - a remote image or file URL is refused, because the upstream would fetch it;
-  - the model is pinned to the one named in Codex's first request.
+  - the model is pinned to the one named in Codex's first request;
+  - stored server-side state (a stored prompt, conversation or response, or a background run) is refused.
+
+  As a result, a Codex sub-agent on a different model, or any Codex endpoint other than `/v1/responses`, is refused
+  in brokered runs.
 - An expired ChatGPT token is refused, never refreshed: run `codex login` for that login.
 - A run whose upstream rejects the credential, or that sends nothing through the broker, is a failure.
 

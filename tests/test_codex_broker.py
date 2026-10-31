@@ -227,6 +227,12 @@ def test_hosted_search_is_removed_and_local_tools_are_kept(upstream):
     ({"input": [{"type": "message", "role": "user", "content": [{"type": "input_file", "file_id": "file-1"}]}]},
      b"remote URL"),
     ({"model": ""}, b"no model"),
+    ({"instructions": [{"type": "input_image", "image_url": "data:x"}]}, b"instructions is not text"),
+    ({"prompt": {"id": "pmpt_1"}}, b"server-side state"),
+    ({"conversation": "conv_1"}, b"server-side state"),
+    ({"previous_response_id": "resp_1"}, b"server-side state"),
+    ({"background": True, "store": True}, b"server-side state"),
+    ({"tools": [{"type": "namespace", "server_url": "https://attacker.example", "tools": []}]}, b"tool group"),
 ])
 def test_requests_that_would_make_the_upstream_reach_out_are_refused(upstream, kw, needle):
     server, handler = upstream
@@ -235,11 +241,26 @@ def test_requests_that_would_make_the_upstream_reach_out_are_refused(upstream, k
     assert status == 400 and needle in body and not handler.seen
 
 
+@pytest.mark.parametrize("body", [
+    b'{"model":"m","tools":[{"type":"mcp","server_url":"https://attacker.example"}],"tools":[]}',
+    b'{"model":"m","input":[{"type":"input_image","image_url":"https://attacker.example","image_url":"data:x"}]}',
+    b'{"model":"m","input":' + b"[" * 100_000 + b"]" * 100_000 + b"}",
+])
+def test_duplicate_keys_and_deep_nesting_are_refused(body):
+    forwarded, _, why = cb.vet_request(body, None)
+    assert forwarded == b"" and why
+
+
+def test_the_forwarded_body_is_the_vetted_object():
+    forwarded, _, why = cb.vet_request(b'{"model":"m",  "store":false, "input":[]}', None)
+    assert not why and forwarded == b'{"model":"m","store":false,"input":[]}'
+
+
 def test_a_data_url_image_is_allowed():
     image = {"type": "input_image", "image_url": "data:image/png;base64,AAAA"}
     body = _body(input=[{"type": "message", "role": "user", "content": [image]}])
     forwarded, model, why = cb.vet_request(body, None)
-    assert (forwarded, model, why) == (body, "m", "")
+    assert (json.loads(forwarded), model, why) == (json.loads(body), "m", "")
 
 
 def test_the_model_is_pinned_to_the_first_request(upstream):
@@ -303,7 +324,10 @@ print(json.dumps({{"type": "turn.completed", "usage": {{"input_tokens": 1, "outp
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="the broker needs the macOS seatbelt loopback rule")
-def test_a_brokered_run_has_no_token_inside_and_no_route_out(tmp_path, upstream, monkeypatch):
+@pytest.mark.parametrize("install", ["bin/codex", "login/packages/standalone/releases/1.0/bin/codex"])
+def test_a_brokered_run_has_no_token_inside_and_no_route_out(tmp_path, upstream, monkeypatch, install):
+    """Also with the executable inside the login directory (the standalone install lives in ~/.codex): it still
+    runs, and the login next to it stays unreadable."""
     from repo_ai.providers import adapters
     server, handler = upstream
     login = tmp_path / "login"
@@ -313,8 +337,8 @@ def test_a_brokered_run_has_no_token_inside_and_no_route_out(tmp_path, upstream,
     monkeypatch.setenv(cb.ENV_FLAG, "1")
     monkeypatch.setenv("OPENAI_API_KEY", REAL)  # even a key in the environment must not reach the sandbox
     monkeypatch.setattr(cb, "API_UPSTREAM", f"http://127.0.0.1:{server.server_address[1]}/v1/responses")
-    exe = tmp_path / "bin" / "codex"
-    exe.parent.mkdir()
+    exe = tmp_path / install
+    exe.parent.mkdir(parents=True)
     exe.write_text(FAKE_CODEX.format(python="/usr/bin/python3", real=REAL, upstream_port=server.server_address[1],
                                      login=str(login / "auth.json")))  # /usr/bin/python3: the live profile hides HOME
     exe.chmod(0o755)

@@ -612,7 +612,13 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             # file under HOME stay unreadable to a model that has a shell and the network
             read_rule = _home_read_only_rules([workspace, scratch, *_codex_install_roots(executable), *_node_roots()])
             if codex_broker_at:  # the login may live outside HOME (REPO_AI_CODEX_HOME, REPO_AI_HOME): never readable
-                read_rule += f"(deny file-read* (subpath {json.dumps(str(codex_broker_at[1].resolve()))}))"
+                login = codex_broker_at[1].resolve()
+                read_rule += f"(deny file-read* (subpath {json.dumps(str(login))}))"
+                for root_dir in _codex_install_roots(executable):  # the standalone release lives inside ~/.codex:
+                    target = root_dir.resolve()                    # its binaries stay readable (a later rule wins)
+                    if login in target.parents:
+                        kind = "literal" if target.is_file() else "subpath"
+                        read_rule += f"(allow file-read* ({kind} {json.dumps(str(target))}))"
             else:  # brokered: the port rule above already admits no other socket
                 net_rule += _unix_socket_rule(sc_str)
         elif claude_live:

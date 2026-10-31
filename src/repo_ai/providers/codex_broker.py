@@ -15,7 +15,10 @@ body is therefore vetted (`vet_request`), so that the upstream cannot be made to
 behalf:
 - only local tool types (functions run by Codex itself) are allowed, and the hosted `web_search` tool is removed;
 - no URL other than a `data:` URL may appear in the input (a remote image or file URL would be fetched upstream);
-- the model is pinned to the one the first request named, which Codex sends before any model output exists.
+- the model is pinned to the one the first request named, which Codex sends before any model output exists;
+- nothing that brings in server-side state (a stored prompt with its own tools, a stored conversation or response, a
+  background run that would outlive this one) is accepted, and duplicate JSON keys are refused, so the upstream
+  parses exactly what was vetted (the vetted object is what is forwarded, re-serialised).
 
 Not live-verified yet. The offline spike (docs/engineering/evidence/CODEX-BROKER-SPIKE-2026-10-31.md) showed Codex
 0.165 sending `POST /v1/responses` to such a provider with the dummy key. Whether the upstream accepts the forwarded
@@ -55,6 +58,7 @@ FORWARD_HEADERS = ("content-type", "accept", "openai-beta", "originator", "sessi
                    "user-agent", "version")
 LOCAL_TOOL_TYPES = frozenset({"function", "custom", "local_shell"})  # executed by Codex, inside the sandbox
 REMOVED_TOOL_TYPES = ("web_search",)  # hosted search: queries and fetches leave from the upstream (`web_search*`)
+SERVER_STATE_KEYS = ("prompt", "conversation", "previous_response_id", "background")  # Codex sends none of these
 MAX_CONCURRENT = 4
 SOCKET_TIMEOUT_S = 60.0
 
@@ -143,6 +147,8 @@ def _tools_ok(tools: Any) -> tuple[list[Any], str]:
             members, why = _tools_ok(tool.get("tools", []))
             if why:
                 return [], why
+            if _remote_url({k: v for k, v in tool.items() if k != "tools"}):
+                return [], "a remote URL on a tool group"
             kept.append({**tool, "tools": members})
         elif kind in LOCAL_TOOL_TYPES:
             kept.append(tool)
@@ -161,12 +167,19 @@ def _remote_url(value: Any) -> bool:
     return False
 
 
+def _unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    keys = [k for k, _ in pairs]
+    if len(set(keys)) != len(keys):  # parsers differ on which duplicate wins: never let one be vetted, another used
+        raise ValueError("duplicate key")
+    return dict(pairs)
+
+
 def vet_request(body: bytes, pinned_model: str | None) -> tuple[bytes, str, str]:
-    """(the body to forward, its model, a refusal reason or ""). Only `tools` is ever rewritten."""
+    """(the body to forward, re-serialised from the vetted object; its model; a refusal reason or "")."""
     try:
-        data = json.loads(body)
-    except ValueError:
-        return b"", "", "the body is not JSON"
+        data = json.loads(body, object_pairs_hook=_unique)
+    except (ValueError, RecursionError):
+        return b"", "", "the body is not JSON without duplicate keys"
     if not isinstance(data, dict):
         return b"", "", "the body is not a JSON object"
     model = data.get("model")
@@ -174,16 +187,22 @@ def vet_request(body: bytes, pinned_model: str | None) -> tuple[bytes, str, str]
         return b"", "", "no model named"
     if pinned_model is not None and model != pinned_model:
         return b"", "", f"model {model[:60]!r} is not this run's model"
-    if _remote_url({k: v for k, v in data.items() if k not in {"tools", "instructions"}}):
-        return b"", "", "a remote URL or file reference in the request (the upstream would fetch it)"
-    if "tools" in data:
-        tools, why = _tools_ok(data["tools"])
-        if why:
-            return b"", "", why
-        if tools != data["tools"]:
+    present = [k for k in SERVER_STATE_KEYS if data.get(k) not in (None, False)]
+    if present:
+        return b"", "", f"server-side state is not brokered ({', '.join(present)})"
+    if "instructions" in data and not isinstance(data["instructions"], str):
+        return b"", "", "instructions is not text"
+    try:
+        if _remote_url({k: v for k, v in data.items() if k != "tools"}):
+            return b"", "", "a remote URL or file reference in the request (the upstream would fetch it)"
+        if "tools" in data:
+            tools, why = _tools_ok(data["tools"])
+            if why:
+                return b"", "", why
             data["tools"] = tools
-            return json.dumps(data, separators=(",", ":")).encode(), model, ""
-    return body, model, ""
+    except RecursionError:
+        return b"", "", "the request is nested too deeply"
+    return json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode(), model, ""
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):

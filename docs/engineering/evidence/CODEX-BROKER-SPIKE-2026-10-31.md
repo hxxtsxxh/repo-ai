@@ -76,3 +76,18 @@ The live check (point 1 above) still needs owner approval.
    the upstream's loopback port. The model is pinned to the first request's model.
 4. **Handler bounds.** There is now a 60 s socket timeout (a stalled client is dropped; tested), at most 4 concurrent
    forwards, and `http.client.HTTPException` and `ValueError` are caught.
+
+## Security review round 2: vetting bypasses and one regression, all fixed
+
+- **Duplicate JSON keys.** The vetted value could differ from the one the upstream uses. Duplicates are now refused
+  (`object_pairs_hook`), and the vetted object is what is forwarded, re-serialised.
+- **`instructions` as a list** skipped the URL walk. It must now be text.
+- **Server-side state.** `prompt` (a stored prompt can bring hosted tools), `conversation`, `previous_response_id`
+  and `background` are refused. Codex 0.165 sends none of them (`store: false`).
+- **Keys on a `namespace` group** are checked for remote URLs. Deep nesting (`RecursionError`) is refused.
+- **Regression from round 1.** In personal-login mode the denied login directory is `~/.codex`, which also holds the
+  standalone release. The release root is now re-allowed after the deny. The end-to-end test runs a fake `codex`
+  installed inside the login directory; it fails without the re-allow (mutation-checked).
+- **Accepted limits** (documented): per-request quota is bounded only by the pinned model and 256 requests per run.
+  A sub-agent on another model, and endpoints other than `/v1/responses` (such as a compaction endpoint), are
+  refused.
