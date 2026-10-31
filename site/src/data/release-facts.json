@@ -4,7 +4,7 @@
   "note": "Generated; do not edit. Change the inputs and run `python scripts/site_facts.py`.",
   "facts_as_of": "2026-10-31",
   "package": {
-    "version": "0.11.3",
+    "version": "0.11.4",
     "distribution": "repo-ai-cli",
     "command": "repo-ai",
     "requires_python": ">=3.10"

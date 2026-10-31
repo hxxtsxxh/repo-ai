@@ -1,7 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.11.4 — SAFE_AUTO hardened after a failed unseen-corpus test; verify fixes from real projects
 
+- Added: when tests fail at the base and the change alike and their output shows a network denial (name
+  resolution, unreachable network, failed connection), verify says the failures look like its sandbox's missing
+  network, which the project's own run may not have (pyjwt's JWKS client tests). JSON:
+  `summary.sandbox_network_suspected`. No verdict changes.
 - Fixed (found by speed-v1 on real projects): in a project that writes its version file at build time
   (setuptools-scm `version_file`/`write_to`, hatch-vcs `version-file`), that git-ignored file was missing from
   verify's disposable copy, so every test failed with `No module named '<pkg>._version'` at base and change alike
