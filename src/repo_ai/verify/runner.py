@@ -50,6 +50,7 @@ class TestRunner:
     options: list[str] = field(default_factory=list)   # pytest/node options kept for per-file runs
     source: str = ""                # where the command came from (shown before anything runs)
     notes: list[str] = field(default_factory=list)     # each resolution or refinement rule applied
+    lint_only: bool = False         # the command only lints/formats/type-checks: it runs no tests
 
     def to_json(self) -> dict[str, object]:
         return asdict(self)
@@ -341,7 +342,7 @@ def _is_module(name: str) -> bool:
 # tests; skipped (and named) when a per-file runner is established
 CHECK_TOOLS = {"eslint", "biome", "standard", "prettier", "tsc", "tstyche", "tsd", "xo", "stylelint",
                "ruff", "flake8", "mypy", "pyright", "black", "isort", "pylint", "publint", "attw",
-               "markdownlint", "dtslint"}
+               "markdownlint", "dtslint", "stubtest"}
 COVERAGE_WRAPPERS = {"c8", "nyc"}
 PACKAGE_MANAGERS = {"npm", "pnpm", "yarn", "bun"}
 RUNNER_HEADS = PYTHONS | {"pytest", "py.test", "node"}
@@ -398,6 +399,8 @@ def _resolve(root: Path, command: str, depth: int = 0) -> TestRunner:
             inner = shlex.join(["python", *rest[m:]])
             notes = ["`coverage run` is not used for per-file runs"]
     elif head == "make" and len(argv) == 2 and argv[1].replace("-", "").replace("_", "").isalnum():
+        if _make_is_check(base / "Makefile", argv[1]):
+            return TestRunner("check", command, cwd=cwd)
         inner = _make_recipe(base / "Makefile", argv[1])
         notes = [f"`{command}` runs `{inner}` (Makefile)"] if inner else []
     elif head in PACKAGE_MANAGERS:
@@ -431,7 +434,8 @@ def resolve(root: Path, command: str) -> TestRunner:
     is only a lint or type check is opaque: it is not a test suite."""
     runner = _resolve(root, command)
     if runner.kind == "check":
-        return TestRunner("opaque", command, cwd=runner.cwd, notes=["a lint/type check, not a test runner"])
+        return TestRunner("opaque", command, cwd=runner.cwd, notes=["a lint/type check, not a test runner"],
+                          lint_only=True)
     return runner
 
 
@@ -486,28 +490,50 @@ def _strip_node_coverage(runner: TestRunner) -> TestRunner:
     return runner
 
 
-def _make_recipe(makefile: Path, target: str) -> str:
+_MAKE_VAR = re.compile(r"\$(?:\(([A-Za-z_][A-Za-z0-9_]*)\)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
+
+
+def _make_lines(makefile: Path, target: str) -> list[str]:
+    """The recipe lines of `target`, variables expanded (`$(v)` and `${v}`). A variable the Makefile does not define
+    is empty, as make treats it (`python3 -m unittest -v ${tests}` runs everything), but only in argument position:
+    an undefined command (`$(PYTHON) -m pytest`) leaves the line unexpanded and unusable."""
     try:
         text = makefile.read_text("utf-8", errors="replace")[:200_000]
     except OSError:
-        return ""
+        return []
     variables: dict[str, str] = {}
     for m in re.finditer(r"(?m)^([A-Za-z_][A-Za-z0-9_]*)\s*(\?|:)?=\s*(.*)$", text):
         variables.setdefault(m.group(1), m.group(3).strip())
     recipe = re.search(rf"(?m)^{re.escape(target)}\s*:[^=\n]*\n((?:\t.*\n?)+)", text)
     if not recipe:
-        return ""
-    lines = [ln.strip().lstrip("@-").strip() for ln in recipe.group(1).splitlines() if ln.strip()]
-    lines = [ln for ln in lines if not _MAKE_NOISE.match(ln)]
+        return []
+    out = []
+    for line in (ln.strip().lstrip("@-").strip() for ln in recipe.group(1).splitlines() if ln.strip()):
+        if _MAKE_NOISE.match(line):
+            continue
+        for _ in range(5):  # variables defined through other variables: `python=$(venv)/bin/python`
+            expanded = _MAKE_VAR.sub(lambda v: variables.get(v.group(1) or v.group(2), v.group(0)), line)
+            if expanded == line:
+                break
+            line = expanded
+        head, _, rest = line.partition(" ")
+        if "$" not in head:
+            line = (head + " " + _MAKE_VAR.sub("", rest)).strip() if rest else head
+        out.append(line)
+    return out
+
+
+def _make_recipe(makefile: Path, target: str) -> str:
+    lines = _make_lines(makefile, target)
     if len(lines) != 1:
         return ""  # several steps: not a single test invocation
-    line = lines[0]
-    for _ in range(5):  # variables defined through other variables: `python=$(venv)/bin/python`
-        expanded = re.sub(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)", lambda v: variables.get(v.group(1), v.group(0)), line)
-        if expanded == line:
-            break
-        line = expanded
-    return "" if "$" in line else line
+    return "" if "$" in lines[0] else lines[0]
+
+
+def _make_is_check(makefile: Path, target: str) -> bool:
+    """Every step of the target is a lint, format or type check (`check: black --check .; flake8 .; stubtest …`)."""
+    lines = _make_lines(makefile, target)
+    return bool(lines) and all(PurePosixPath(ln.split()[0]).name in CHECK_TOOLS for ln in lines if ln.split())
 
 
 def _npm_script(package_json: Path, name: str) -> str:

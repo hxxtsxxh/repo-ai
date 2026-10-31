@@ -183,3 +183,18 @@ def test_a_make_target_running_unittest_with_options_is_split_per_file(tmp_path:
                                        "test:\n\tpython -m unittest -v\n")
     assert resolve(tmp_path, "make test").per_file
     assert not resolve(tmp_path, "make check").per_file  # several steps: still the full suite only
+
+
+def test_a_lint_only_check_target_is_not_a_test_suite_and_undefined_make_variables_are_empty(tmp_path: Path):
+    """more-itertools' real Makefile: `check` is black, flake8 and stubtest (no tests at all) and `test` is
+    `python3 -m unittest -v ${tests}`, with `tests` undefined (empty, as make treats it)."""
+    (tmp_path / "Makefile").write_text(
+        ".PHONY: check\ncheck:\n\tblack --check .\n\tflake8 --exclude .venv .\n\tstubtest more_itertools.more\n\n"
+        ".PHONY: test\ntest:\n\tpython3 -m unittest -v ${tests}\n\n"
+        "envtest:\n\t$(PYTHON) -m pytest\n\nbraced:\n\t${PY} -m pytest $(ARGS)\nPY = python\n")
+    check = resolve(tmp_path, "make check")
+    assert check.lint_only and not check.per_file
+    r = resolve(tmp_path, "make test")
+    assert r.kind == "unittest" and r.per_file
+    assert not resolve(tmp_path, "make envtest").per_file  # an undefined command is never blanked
+    assert resolve(tmp_path, "make braced").kind == "pytest"  # ${PY} defined; $(ARGS) undefined, an argument
