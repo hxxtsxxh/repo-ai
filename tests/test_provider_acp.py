@@ -11,7 +11,8 @@ FAKE = Path(__file__).parent / "fake_acp_agent.py"
 def _run(tmp_path, script, allowed=("app.py",), timeout=20, version=1):
     ws = tmp_path / "ws"
     ws.mkdir(exist_ok=True)
-    (ws / "app.py").write_text("x = 1\n")
+    if not (ws / "app.py").is_symlink():
+        (ws / "app.py").write_text("x = 1\n")
     (ws / "notes.txt").write_text("line1\nline2\nline3\n")
     (tmp_path / "secret.txt").write_text("outside\n")
     log = tmp_path / "log.json"
@@ -97,3 +98,28 @@ def test_a_probe_of_something_that_is_not_an_acp_agent(tmp_path):
     ws.mkdir()
     probe = AcpClient([sys.executable, "-c", "import sys; sys.stdin.read()"], ws, allowed_writes=[]).probe(2)
     assert probe["acp"] is False and probe.get("problem")
+
+
+def test_a_link_raced_into_the_workspace_never_leads_out(tmp_path):
+    """Review of #30: the client checked a resolved path, then opened it following links; an agent swapping a file
+    for a link to an outside file read and overwrote it. Every component is now opened with O_NOFOLLOW."""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    (ws / "sub").mkdir()
+    (tmp_path / "secret.txt").write_text("outside\n")
+    (ws / "app.py").symlink_to(tmp_path / "secret.txt")             # a link where the file should be
+    (ws / "lnk").symlink_to(tmp_path)                                 # a link as a parent directory
+    ws_, result, replies = _run(tmp_path, [
+        {"method": "fs/read_text_file", "params": {"path": str(ws / "app.py")}},
+        {"method": "fs/write_text_file", "params": {"path": str(ws / "app.py"), "content": "PWNED"}},
+        {"method": "fs/read_text_file", "params": {"path": "lnk/secret.txt"}}], allowed=("app.py",))
+    assert all("error" in r["reply"] for r in replies), replies
+    assert (tmp_path / "secret.txt").read_text() == "outside\n"
+
+
+def test_a_malformed_message_is_refused_not_a_crash(tmp_path):
+    ws, result, replies = _run(tmp_path, [
+        {"method": "session/request_permission", "params": {"toolCall": "edit", "options": [{"kind": "allow_once"}]}},
+        {"method": "fs/read_text_file", "params": {"path": "a\u0000b"}}])
+    assert result.stop_reason == "end_turn"
+    assert all("error" in r["reply"] or r["reply"]["result"]["outcome"]["outcome"] == "cancelled" for r in replies), replies
