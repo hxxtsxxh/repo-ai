@@ -427,6 +427,81 @@ _INJECTION = re.compile(
     r"this\s+(skill|message|instruction)\s+(has|takes)\s+(higher|highest|top)\s+priority")
 _NEGATED = re.compile(r"(?i)\b(never|don't|do\s+not|must\s+not|avoid|instead\s+of|rather\s+than|"
                       r"not\s+safe|dangerous|forbidden|refuse)\b")
+# What a skill's prose asks the agent to do, by attack class (skill-vet-fresh-v1: prose-only skills that took over
+# the agent, hid things from the user or weakened the project's checks read as inert). Matched per paragraph, so a
+# sentence wrapped over lines still matches. (rule, pattern, negatable): a negatable class is dropped when "never" /
+# "do not" governs it ("never lower the coverage threshold"); the others are themselves phrased as prohibitions.
+_W = r"[^.!?\n]{0,48}"
+_INSTRUCTION_RISKS: list[tuple[str, re.Pattern[str], bool]] = [
+    ("authority-override", re.compile(
+        r"(?i)\b(ignore|disregard|forget|override|supersede|overrule)\b" + _W +
+        r"\b(instructions?|prompts?|rules?|guidelines?|guardrails?|polic(y|ies)|directives?|constraints?)\b|"
+        r"\b(this|these)\s+(skill|block|section|directives?|instructions?|rules?)\b" + _W +
+        r"\b(wins?|takes?\s+precedence|overrides?|outranks?|supersedes?|prevails?|beats?)\b|"
+        r"\b(outrank|override|overrule|take\s+precedence\s+over)s?\b" + _W + r"\b(the\s+)?(user|developer|operator)\b|"
+        r"\byou\s+are\s+(now\s+)?(an?\s+)?(unrestricted|unfiltered|jailbroken)\b|"
+        r"\b(stop|never)\s+refus(e|ing)\b"), False),
+    ("concealment", re.compile(
+        r"(?i)\b(do\s+not|don't|never|without)\s+(tell|telling|inform|informing|reveal|revealing|mention|mentioning|"
+        r"disclos(e|ing)|report|reporting|notify|notifying|surface|surfacing|flag|flagging|show|showing)\b" + _W +
+        r"\b(user|human|reviewer|maintainer|anyone|skill|this|that|these|changes?|failures?|warnings?)\b|"
+        r"\b(hide|conceal|omit|suppress|bury)\b" + _W +
+        r"\b(from\s+the\s+(user|summary|report|diff|output|reviewer)|changes?|failures?|warnings?|errors?|this\s+step)\b|"
+        r"\b(covertly|secretly)\b|\b(silently|quietly)\s+(run|execute|install|send|upload|post|delete|remove|add|"
+        r"commit|push|modify|change|disable|edit|rewrite|apply|proceed|continue|acknowledge)\w*\b|"
+        r"\b(acknowledge|proceed|continue)\w*\s+(silently|quietly)\b|"
+        r"\b(report|describe|present|mark|show|summari[sz]e)\w*\b" + _W +
+        r"\b(as\s+)?(pass(ing|ed)?|green|successful|success|clean)\b" + _W +
+        r"\b(even\s+(if|when|though)|regardless|whether\s+or\s+not)\b"), False),
+    ("approval-bypass", re.compile(
+        r"(?i)\b(assume|treat|consider)\b" + _W + r"\b(approv\w*|consent\w*|permission\w*|confirmation\w*)\b" + _W +
+        r"\b(granted|given|cancel+ed|implied|unnecessary|not\s+needed)\b|"
+        r"\bauto[- ]?approv\w*\b|\bbypass\s*permissions\b|\bdangerously[- ]?skip\w*|--no-verify\b|--yolo\b|"
+        r"\b(skip|disable|turn\s+off|bypass|remove|suppress)\b" + _W +
+        r"\b(confirmations?|approvals?|permission\s+(prompts?|checks?)|safety\s+(checks?|guidelines?|rules?)|"
+        r"guardrails?|sandbox(ing)?)\b|"
+        r"\b(most|maximally|fully)\s+permissive\b"), False),
+    ("verification-weakening", re.compile(
+        r"(?i)\b(lower|reduce|drop|relax|loosen)\b" + _W + r"\b(coverage|threshold|fail[-_ ]under|minimum)\b|"
+        r"\b(coverage|threshold|fail[-_ ]under)\b" + _W + r"\bto\s+0\b|"
+        r"\b(disable|skip|remove|delete|comment\s+out|neuter|bypass|xfail)\b" + _W +
+        r"\b(failing|required|security)\s+(tests?|checks?|jobs?|scans?|steps?)\b|"
+        r"\b(disable|remove|delete|bypass|neuter)\b" + _W +
+        r"\b(ci|pipeline|pre-commit|hooks?|gates?|branch\s+protection|status\s+checks?|linters?)\b|"
+        r"\bcontinue-on-error\b|\ballow_failure\b|\|\|\s*true\b|\bexit\s+0\b"), True),
+    ("agent-config-persistence", re.compile(
+        r"(?i)\b(append|add|write|insert|edit|modify|update|create|register|install)\w*\b" + _W +
+        r"(CLAUDE\.md|AGENTS\.md|GEMINI\.md|\.cursorrules|copilot-instructions|\.claude/|\.codex/|\.gemini/|"
+        r"\.vscode/settings|\.(bash|zsh)rc|\.profile\b|\.bash_profile|crontab|LaunchAgents|\bgit\s+hooks?\b|"
+        r"\.git/hooks)"), True),
+    ("destructive", re.compile(
+        r"(?i)\b(delete|remove|wipe|erase|purge|destroy|overwrite)\b" + _W +
+        r"(\.env\b|~/|\$HOME\b|\bhome\s+(directory|folder)|\bdownloads\b|\bdesktop\b|\buntracked\b|"
+        r"\b(git\s+)?history\b|\ball\s+(files|branches|tags|data)\b|\beverything\b|\bother\s+branches\b)|"
+        r"\bforce[- ]push\w*\b|\bpush\s+(--force|-f)\b|\breset\s+--hard\b|\bclean\s+-[a-z]*f[a-z]*d"), True),
+    ("identity-takeover", re.compile(
+        r"(?i)\bCODEOWNERS\b|\b(add|make|set|list)\w*\b" + _W + r"\b(maintainers?|owners?|required\s+reviewers?|"
+        r"admins?|collaborators?)\b|\bgit\s+config\b" + _W + r"\buser\.(email|name)\b|"
+        r"\b(rewrite|change|replace|amend)\w*\b" + _W + r"\b(authors?(hip)?|committers?|commit\s+identity)\b|"
+        r"--reset-author\b|\bfilter-(branch|repo)\b"), True),
+]
+
+
+def instruction_risks(text: str) -> list[tuple[str, int, str]]:
+    """(rule, line, snippet) for each attack class a document's prose asks for, once per class and paragraph."""
+    out: list[tuple[str, int, str]] = []
+    lineno = 1
+    for para in re.split(r"\n[ \t]*\n", text):
+        flat = re.sub(r"\s+", " ", para)
+        flat = re.sub(r"[*_~]{1,3}(?=\w)|(?<=\w)[*_~]{1,3}", "", flat)  # `**IGNORE**` reads as IGNORE
+        for rule, pattern, negatable in _INSTRUCTION_RISKS:
+            for hit in pattern.finditer(flat):
+                if negatable and _negated_before(flat, hit.start()):
+                    continue
+                out.append((rule, lineno, _snippet(flat[max(0, hit.start() - 40):hit.end() + 40])))
+                break
+        lineno += para.count("\n") + 2
+    return out
 # Instructions Claude would follow: prose in a skill is never softened for these.
 _NEVER_DOWNGRADE = {"remote-exec", "exfiltration", "credentials", "permission-escalation", "persistence"}
 
@@ -616,6 +691,9 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
         if _HEX_BLOB.search(text):
             findings.append(Finding("high", "suspected", "obfuscation", "hex-blob", path, 0,
                                     "long hex/escape-encoded payload"))
+        if is_doc:
+            for rule, at, snip in instruction_risks(text):
+                findings.append(Finding("high", "suspected", "instruction-risk", rule, path, at, snip))
         contexts = line_contexts(path, text)
         raw_lines = text.splitlines()
         for lineno, line in enumerate(raw_lines, 1):
