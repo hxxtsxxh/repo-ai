@@ -138,6 +138,7 @@ def project(slug: str, ref: str, deps: list[str], work: Path, rai: Path) -> dict
         change["status"] = "MEASURED"
         row["changes"].append(change)
         git(repo, "checkout", "-q", "--", ".")
+        git(repo, "clean", "-fdq")  # files the commit added (Amendment 2); ignored .venv and .repo-ai/ stay
     row["status"] = "MEASURED"
     return row
 

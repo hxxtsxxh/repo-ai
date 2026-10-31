@@ -70,7 +70,7 @@ counted.
 measurement, GitHub Actions 41240668799). 5 pinned pure-Python projects × 6 mechanically selected upstream commits,
 on a GitHub ubuntu runner with bwrap. **verify --run took 1.84× the native suite (geometric mean), slower on 24 of
 30**; the other 6 were early failures, not speed. Overhead median +0.63 s; reuse 0.20 s. No false assurance; verify
-failed natively passing tests in 13 changes (pyjwt network-denied tests; more-itertools and one humanize change
+failed natively passing tests in 14 changes (pyjwt network-denied tests; more-itertools and one humanize change
 unexplained; marshmallow name-matched files without `--record`). Third-party code ran only on the CI runner.
 
 ## Open experiment protocols (not run)

@@ -71,3 +71,11 @@ tests older than the installed package). The fix installs every project editable
 sides import the working tree, and records verify's failing-test detail and a longer native tail, so that a
 disagreement between verify and the native suite can be explained. Projects, selection, measurements and the
 reading rule are unchanged. Run 2 is the measurement.
+
+## Amendment 2 (2026-10-31, after run 2; disclosed, run 2 stands)
+
+An independent review found that the harness reset tracked files between changes (`git checkout -- .`) without
+removing untracked ones, so files a commit adds leaked into the older changes replayed after it (humanize: 2 of
+30 measurements). Run 2 stands as recorded, with the two measurements disclosed in RESULTS.md. The harness now also
+runs `git clean -fdq` (which keeps ignored paths: the project's `.venv` and repo-ai's state) before each change, for
+any future run.

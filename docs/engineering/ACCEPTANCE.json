@@ -258,7 +258,7 @@
    "environment": "GitHub ubuntu-latest (4 vCPU), bwrap; earlier: macOS",
    "observations": [
     "verify 1.44–2.31x slower than native in 3/5 held-out cases (historical)",
-    "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance in 30 changes; verify failed natively passing tests in 13 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)"
+    "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance in 30 changes; verify failed natively passing tests in 14 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)"
    ],
    "limits": [
     "small, fast pure-Python suites on one runner type; not a general claim",
