@@ -850,7 +850,9 @@ def acp_events(provider: str, run: AcpResult, *, cost_basis: str) -> dict[str, A
         "errors": errors[:10],
         "summary": redact_text(text)[:240],
         "report": redact_text(text)[:6000],
-        "output_sha256": hashlib.sha256(json.dumps(run.to_json(), sort_keys=True).encode()).hexdigest(),
+        # the protocol transcript only, as for every provider (stdout): stderr diagnostics are not output
+        "output_sha256": hashlib.sha256(json.dumps({k: v for k, v in run.to_json().items()
+                                                    if not k.startswith("stderr_")}, sort_keys=True).encode()).hexdigest(),
     }
 
 

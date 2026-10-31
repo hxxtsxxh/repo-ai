@@ -170,3 +170,15 @@ def test_a_flood_of_stderr_neither_blocks_the_agent_nor_grows_memory(tmp_path):
 def test_stderr_written_just_before_the_agent_dies_is_kept(tmp_path):
     ws, result, _ = _run(tmp_path, [{"stderr": "panic: config invalid\n"}, {"exit": 3}])
     assert result.problems and result.stderr == b"panic: config invalid\n"
+
+
+def test_a_client_started_again_still_drains_stderr(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    env = {"FAKE_ACP_SCRIPT": json.dumps([{"stderr": "y" * 1023 + "\n", "times": 200}, {"say": "done"}]),
+           "PATH": "/usr/bin:/bin"}
+    client = AcpClient([sys.executable, str(FAKE)], ws, allowed_writes=[], env=env)
+    assert client.probe(timeout_s=10)["acp"] is True
+    result = client.run("go", timeout_s=20)  # 200 KiB of stderr: past a pipe buffer, so an undrained pipe would hang
+    assert result.stop_reason == "end_turn" and not result.timed_out, result.problems
+    assert result.stderr_bytes == 200 * 1024

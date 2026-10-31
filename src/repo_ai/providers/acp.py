@@ -360,30 +360,31 @@ class AcpClient:
                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
         assert self.proc.stdin is not None
         os.set_blocking(self.proc.stdin.fileno(), False)
-        self._err_reader = threading.Thread(target=self._read_stderr, daemon=True)
+        self._err_stop = threading.Event()  # per process: a client started again drains its new agent's stderr too
+        self._err_reader = threading.Thread(target=self._read_stderr, args=(self._err_stop,), daemon=True)
         self._err_reader.start()
 
-    def _read_stderr(self) -> None:
+    def _read_stderr(self, stop: threading.Event) -> None:
         """Diagnostics, never protocol: the first MAX_STDERR bytes are kept and every byte is counted and hashed, so a
         verbose agent can neither block on a full pipe nor grow memory. Polled, so a descendant holding the pipe
-        open cannot leave this thread blocked after the run."""
+        open cannot leave this thread blocked after the run. The three fields are set together, at the end."""
         assert self.proc is not None and self.proc.stderr is not None
-        pipe, digest, kept = self.proc.stderr, hashlib.sha256(), bytearray()
+        pipe, digest, kept, total = self.proc.stderr, hashlib.sha256(), bytearray(), 0
         try:
-            while not self._err_stop.is_set():
+            while not stop.is_set():
                 if not select.select([pipe], [], [], .05)[0]:
                     continue
                 chunk = os.read(pipe.fileno(), 65536)
                 if not chunk:
                     break
                 digest.update(chunk)
-                self.result.stderr_bytes += len(chunk)
+                total += len(chunk)
                 kept.extend(chunk[:max(0, MAX_STDERR - len(kept))])
         except (OSError, ValueError):
             pass
         finally:
-            self.result.stderr = bytes(kept)
-            self.result.stderr_sha256 = digest.hexdigest()
+            self.result.stderr, self.result.stderr_bytes, self.result.stderr_sha256 = \
+                bytes(kept), total, digest.hexdigest()
 
     def run(self, prompt: str, timeout_s: float) -> AcpResult:
         deadline = self._deadline = time.monotonic() + timeout_s

@@ -270,6 +270,12 @@ def test_stderr_is_summarised_redacted_and_a_rate_limit_there_is_a_reason():
     assert res["stage"] == "FAILED" and any("rate/usage limit" in r for r in res["reasons"])
 
 
+def test_the_output_hash_is_the_transcript_not_the_diagnostics():
+    a = _result(stop_reason="end_turn", messages=["done"], stderr=b"pid 1\n", stderr_bytes=6, stderr_sha256="a" * 64)
+    b = _result(stop_reason="end_turn", messages=["done"], stderr=b"pid 2\n", stderr_bytes=6, stderr_sha256="b" * 64)
+    assert a["events"]["output_sha256"] == b["events"]["output_sha256"]
+
+
 def test_quiet_stderr_is_not_a_reason():
     res = _result(stop_reason="end_turn", stderr=b"INFO starting server\n", stderr_bytes=21)
     assert res["stage"] == "SIMULATED" and res["reasons"] == [] and res["diagnostic_summary"] == "INFO starting server\n"
