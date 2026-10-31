@@ -258,7 +258,7 @@ def worktree_files(root: Path) -> tuple[list[str], list[str]]:
     return keep, withheld
 
 
-_VERSION_FILE = re.compile(r"_{0,2}version_?\.py|_version_info\.py")
+_VERSION_FILE = re.compile(r"_{0,2}version_{0,2}\.py|_version_info\.py")
 MAX_VERSION_FILE = 65_536
 
 
@@ -286,9 +286,10 @@ def generated_version_files(root: Path) -> list[str]:
         if not isinstance(raw, str) or not raw:
             continue
         rel = PurePosixPath(raw.replace("\\", "/"))
+        folded = str(rel).casefold()  # case-insensitive filesystems: `.REPO-AI/` is `.repo-ai/`
         if rel.is_absolute() or ".." in rel.parts or not _VERSION_FILE.fullmatch(rel.name) \
-                or str(rel).startswith(STATE_PREFIXES) or rel.parts[0] == ".git" \
-                or path_is_secretlike(str(rel), DEFAULT_SECRET_PATH_GLOBS):
+                or folded.startswith(tuple(p.casefold() for p in STATE_PREFIXES)) \
+                or rel.parts[0].casefold() == ".git" or path_is_secretlike(str(rel), DEFAULT_SECRET_PATH_GLOBS):
             continue
         src = root / rel
         try:
@@ -303,13 +304,32 @@ def generated_version_files(root: Path) -> list[str]:
 
 
 def _copy_generated(ws: Workspace, root: Path, present: set[str]) -> None:
-    """Copy the declared version files that the copy does not already hold."""
+    """Copy the declared version files that the copy does not already hold. Only into real directories of the copy
+    (never through a link the copy holds), never over anything, and a failure leaves the file out instead of
+    failing the run. A base copy gets the checkout's file: the version string is the working tree's."""
     for rel in generated_version_files(root):
         dst = ws.path / rel
         if rel in present or dst.exists() or dst.is_symlink():
             continue
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / rel, dst, follow_symlinks=False)
+        parent, blocked = ws.path, False
+        for part in PurePosixPath(rel).parts[:-1]:
+            parent = parent / part
+            if parent.is_symlink() or (parent.exists() and not parent.is_dir()):
+                blocked = True
+                break
+        if blocked:
+            continue
+        try:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            fd = os.open(root / rel, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            with os.fdopen(fd, "rb") as fh:
+                data = fh.read(MAX_VERSION_FILE + 1)
+            if len(data) > MAX_VERSION_FILE:
+                continue
+            with open(dst, "xb") as out:
+                out.write(data)
+        except OSError:
+            continue
         ws.files.append(rel)
         ws.generated.append(rel)
 
@@ -674,6 +694,7 @@ def materialize(root: Path, *, label: str = "ws", dependencies: bool = True,
         _copy_generated(ws, root, set(ws.files))
         _drop_state_paths(path)  # a tracked link `.claude -> conf` and `conf/settings.local.json` reach one too
         ws.files = [f for f in ws.files if (path / f).is_symlink() or (path / f).exists()]
+        ws.generated = [f for f in ws.generated if (path / f).exists()]
         if dependencies:
             _place_links(ws, root, files)
     except BaseException:
@@ -860,8 +881,9 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
         ws.bytes = sum(m.size for m in members if m.isfile())
         restored = _restore_export_attributes(root, commit, path, set(ws.files))
         ws.bytes += sum(restored.values())
-        _copy_generated(ws, root, set(ws.files) | set(restored))  # the checkout's: the base's would be the same kind
+        _copy_generated(ws, root, set(ws.files) | set(restored))  # the checkout's version file (see the docstring)
         _drop_state_paths(path)
+        ws.generated = [f for f in ws.generated if (path / f).exists()]
         # links removed by the restore and anything written into a state path are gone: list only what is there
         ws.files = sorted(f for f in set(ws.files) | set(restored) if (path / f).is_symlink() or (path / f).exists())
         if dependencies:

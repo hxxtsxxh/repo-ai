@@ -85,3 +85,28 @@ def test_a_linked_or_oversized_version_file_is_refused(tmp_path):
 def test_a_malformed_pyproject_copies_nothing(tmp_path):
     root = _repo(tmp_path, "[tool.setuptools_scm\nversion_file = ", FILES)
     assert isolate.generated_version_files(root) == []
+
+
+def test_case_folded_state_paths_and_dunder_names(tmp_path):
+    root = _repo(tmp_path, '[tool.setuptools_scm]\nversion_file = ".REPO-AI/_version.py"\n', FILES)
+    assert isolate.generated_version_files(root) == []
+    (tmp_path / "b").mkdir()
+    root2 = _repo(tmp_path / "b", '[tool.setuptools_scm]\nversion_file = "src/pkg/__version__.py"\n', FILES)
+    (root2 / "src/pkg/__version__.py").write_text("v = '1'\n", encoding="utf-8")
+    assert isolate.generated_version_files(root2) == ["src/pkg/__version__.py"]
+
+
+def test_a_link_or_file_in_the_way_leaves_the_version_file_out_without_failing(tmp_path):
+    files = {**FILES, ".gitignore": "build/\n"}
+    root = _repo(tmp_path, '[tool.setuptools_scm]\nversion_file = "src/gen/_version.py"\n', files)
+    (root / "build").mkdir()
+    (root / "build/_version.py").write_text("v = '1'\n", encoding="utf-8")
+    (root / "src/gen").symlink_to("../build")  # a tracked directory link inside the repository
+    subprocess.run(["git", "add", "src/gen"], cwd=root, check=True)
+    subprocess.run(["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t", "commit", "-qm", "link"],
+                   cwd=root, check=True)
+    ws = isolate.materialize(root, dependencies=False)
+    try:
+        assert ws.generated == []
+    finally:
+        isolate._remove(ws.path)

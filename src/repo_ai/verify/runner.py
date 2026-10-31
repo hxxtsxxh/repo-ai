@@ -236,8 +236,8 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
             if lead == len(args):
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   start=".", top=".", pattern="test*.py")
-            if args[lead:lead + 1] == ["discover"]:
-                opts = args[lead + 1:]
+            if args[:1] == ["discover"]:  # unittest discovers only when `discover` is the first argument
+                opts = args[1:]
                 start, top, pattern = ".", None, "test*.py"
                 positional: list[str] = []
                 i = 0
@@ -268,7 +268,13 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   start=start.rstrip("/") or ".", top=top_dir.rstrip("/") or ".",
                                   pattern=pattern)
-            mods = [a for a in args[lead:] if not a.startswith("-")]
+            mods, i = [], 0
+            while i < len(args):  # module names; option values (`-k pattern`) are not modules
+                if args[i].startswith("-"):
+                    i += 2 if args[i] in UNITTEST_VALUE_OPTIONS else 1
+                    continue
+                mods.append(args[i])
+                i += 1
             if mods and all(_is_module(m) for m in mods):
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   modules=mods)
@@ -399,10 +405,12 @@ def _resolve(root: Path, command: str, depth: int = 0) -> TestRunner:
             inner = shlex.join(["python", *rest[m:]])
             notes = ["`coverage run` is not used for per-file runs"]
     elif head == "make" and len(argv) == 2 and argv[1].replace("-", "").replace("_", "").isalnum():
-        if _make_is_check(base / "Makefile", argv[1]):
-            return TestRunner("check", command, cwd=cwd)
-        inner = _make_recipe(base / "Makefile", argv[1])
-        notes = [f"`{command}` runs `{inner}` (Makefile)"] if inner else []
+        lines, _ = _make_lines(base / "Makefile", argv[1])
+        if lines and "$" not in "".join(lines) and \
+                all(_resolve(root, prefix + ln, depth + 1).kind == "check" for ln in lines):
+            return TestRunner("check", command, cwd=cwd, lint_only=True)  # every step lints: it runs no tests
+        inner, blanked = _make_recipe(base / "Makefile", argv[1])
+        notes = [f"`{command}` runs `{inner}` (Makefile)", *blanked] if inner else []
     elif head in PACKAGE_MANAGERS:
         script = _script_name(head, argv[1:])
         if script:
@@ -435,7 +443,7 @@ def resolve(root: Path, command: str) -> TestRunner:
     runner = _resolve(root, command)
     if runner.kind == "check":
         return TestRunner("opaque", command, cwd=runner.cwd, notes=["a lint/type check, not a test runner"],
-                          lint_only=True)
+                          lint_only=runner.lint_only)  # only a make target made entirely of lint steps
     return runner
 
 
@@ -491,23 +499,29 @@ def _strip_node_coverage(runner: TestRunner) -> TestRunner:
 
 
 _MAKE_VAR = re.compile(r"\$(?:\(([A-Za-z_][A-Za-z0-9_]*)\)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
+# a Makefile can define a variable in ways a plain `NAME = value` scan does not see
+_MAKE_HIDDEN_DEFS = re.compile(r"(?m)^\s*(?:include|-include|sinclude|export|override|define|ifdef|ifndef|ifeq|ifneq)\b"
+                               r"|^[^\t#\n]*!=|^[ \t]+[A-Za-z_][A-Za-z0-9_]*\s*[:?+]?=|^[^\t#\n:=]+:\s*[A-Za-z_]\w*\s*[:?+]?=")
 
 
-def _make_lines(makefile: Path, target: str) -> list[str]:
-    """The recipe lines of `target`, variables expanded (`$(v)` and `${v}`). A variable the Makefile does not define
-    is empty, as make treats it (`python3 -m unittest -v ${tests}` runs everything), but only in argument position:
-    an undefined command (`$(PYTHON) -m pytest`) leaves the line unexpanded and unusable."""
+def _make_lines(makefile: Path, target: str) -> tuple[list[str], list[str]]:
+    """(recipe lines of `target` with variables expanded, notes). `$(v)` and `${v}` defined by a plain assignment are
+    expanded. One undefined variable is dropped, as make treats it (empty): a lowercase name that is the line's
+    last token, the convention for a command-line parameter (`python3 -m unittest -v ${tests}`), and only when the
+    Makefile has no include, export, override, define, conditional or computed assignment that could define it.
+    Anything else undefined stays and makes the line unusable (an environment variable could hold `-W error`)."""
     try:
         text = makefile.read_text("utf-8", errors="replace")[:200_000]
     except OSError:
-        return []
+        return [], []
     variables: dict[str, str] = {}
     for m in re.finditer(r"(?m)^([A-Za-z_][A-Za-z0-9_]*)\s*(\?|:)?=\s*(.*)$", text):
         variables.setdefault(m.group(1), m.group(3).strip())
     recipe = re.search(rf"(?m)^{re.escape(target)}\s*:[^=\n]*\n((?:\t.*\n?)+)", text)
     if not recipe:
-        return []
-    out = []
+        return [], []
+    may_blank = not _MAKE_HIDDEN_DEFS.search(text)
+    out, notes = [], []
     for line in (ln.strip().lstrip("@-").strip() for ln in recipe.group(1).splitlines() if ln.strip()):
         if _MAKE_NOISE.match(line):
             continue
@@ -516,24 +530,21 @@ def _make_lines(makefile: Path, target: str) -> list[str]:
             if expanded == line:
                 break
             line = expanded
-        head, _, rest = line.partition(" ")
-        if "$" not in head:
-            line = (head + " " + _MAKE_VAR.sub("", rest)).strip() if rest else head
+        tokens = line.split()
+        last = _MAKE_VAR.fullmatch(tokens[-1]) if len(tokens) > 1 else None
+        name = (last.group(1) or last.group(2)) if last else ""
+        if may_blank and name and name.islower() and "$" not in " ".join(tokens[:-1]):
+            line = " ".join(tokens[:-1])
+            notes.append(f"`{tokens[-1]}` is not defined in the Makefile: empty, as `make {target}` runs it")
         out.append(line)
-    return out
+    return out, notes
 
 
-def _make_recipe(makefile: Path, target: str) -> str:
-    lines = _make_lines(makefile, target)
-    if len(lines) != 1:
-        return ""  # several steps: not a single test invocation
-    return "" if "$" in lines[0] else lines[0]
-
-
-def _make_is_check(makefile: Path, target: str) -> bool:
-    """Every step of the target is a lint, format or type check (`check: black --check .; flake8 .; stubtest …`)."""
-    lines = _make_lines(makefile, target)
-    return bool(lines) and all(PurePosixPath(ln.split()[0]).name in CHECK_TOOLS for ln in lines if ln.split())
+def _make_recipe(makefile: Path, target: str) -> tuple[str, list[str]]:
+    lines, notes = _make_lines(makefile, target)
+    if len(lines) != 1 or "$" in lines[0]:
+        return "", []  # several steps (not a single test invocation), or a variable that cannot be resolved
+    return lines[0], notes
 
 
 def _npm_script(package_json: Path, name: str) -> str:
