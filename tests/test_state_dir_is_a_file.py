@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 
 import pytest
 from conftest import commit_all, make_repo, run_cli
@@ -73,6 +74,7 @@ def test_custom_layout_init_ignores_its_runtime_state_without_an_agent(tmp_path)
     assert not [p for p in untracked if p.startswith(".ctx/index.db") or p == ".ctx/update.lock"]
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="missions run on POSIX hosts only (conftest _MISSION_POSIX_ONLY)")
 def test_a_mission_names_the_file(tmp_path):
     from repo_ai.mission.runtime import execute, plan
     from test_mission_runtime import git, replay
