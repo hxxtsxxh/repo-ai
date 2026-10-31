@@ -132,3 +132,28 @@ def test_a_name_that_is_not_utf8_does_not_crash(tmp_path):
     _git(root, "commit", "-qm", "odd name")
     with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
         assert os.fsdecode(b"caf\xe9.txt") in ws.files
+
+
+def test_restored_links_cannot_redirect_each_other_outside(tmp_path):
+    """Review of #22: links were checked one at a time, so a later link (`c`) could make an earlier one (`a`) point
+    outside the workspace once both existed."""
+    root = _repo(tmp_path, {"keep.py": b"x = 1\n"}, "x/ export-ignore\n")
+    (root / "x" / "y" / "z").mkdir(parents=True)
+    (root / "x" / "y" / "z" / "a").symlink_to("c/../../..")
+    (root / "x" / "y" / "z" / "c").symlink_to("../..")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "chained links")
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        base = ws.path.resolve()
+        for link in (p for p in ws.path.rglob("*") if p.is_symlink()):
+            assert base in link.resolve().parents, f"{link} -> {os.readlink(link)} leaves the workspace"
+
+
+def test_a_large_export_ignored_tests_directory_is_restored_in_one_process(tmp_path):
+    import time
+    files = {f"tests/test_{i}.py": f"def test_{i}():\n    assert {i} == {i}\n".encode() for i in range(2000)}
+    root = _repo(tmp_path, {"a.py": b"x = 1\n", **files}, "tests/ export-ignore\n")
+    started = time.monotonic()
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        assert len([f for f in ws.files if f.startswith("tests/")]) == 2000
+    assert time.monotonic() - started < 30, "restore must not cost a process per file"

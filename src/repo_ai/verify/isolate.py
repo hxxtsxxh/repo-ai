@@ -586,52 +586,61 @@ def checkout_bytes(root: Path, commit: str, rel: str) -> bytes | None:
 
 def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[str]) -> dict[str, int]:
     """`git archive` honours `export-ignore` (a tracked file, often a whole `tests/`, is left out) and `export-subst`
-    (`$Format:…$` is replaced), so the archive is not the commit's tracked source. Those files are written as a
-    checkout writes them (`checkout_bytes`), with their executable bit; a left-out symbolic link is restored under
-    the same rule as the archive's (relative, resolving inside the workspace). Returns the restored paths and sizes."""
+    (`$Format:…$` is replaced), so the archive is not the commit's tracked source. Those files are checked out from
+    a temporary index (`git checkout-index`, one process: git's own conversion and modes, and it never writes through
+    a symlinked directory). Every restored link is then held to the archive's rule (it resolves inside the
+    workspace), after all of them exist, so one link cannot redirect another. Returns the restored paths and sizes."""
+    import tempfile
     listing = _git_lines(root, ["ls-tree", "-r", "-z", "--full-tree", "--end-of-options", commit])
     if listing is None:
         raise IsolationError("could not list the base revision's tracked files")
-    blobs: dict[str, tuple[str, str]] = {}
+    modes: dict[str, str] = {}
     for entry in listing.split(b"\0"):
         if not entry:
             continue
         meta, _, name = entry.partition(b"\t")
-        mode, kind, sha = meta.decode().split()
+        mode, kind, _sha = meta.decode().split()
         rel = name.decode("utf-8", "surrogateescape")
         pure = PurePosixPath(rel)
         if kind != "blob" or mode not in {"100644", "100755", "120000"} or pure.is_absolute() or ".." in pure.parts \
                 or rel.startswith(STATE_PREFIXES):
             continue
-        blobs[rel] = (mode, sha)
-    present = [p for p in blobs if p in have and blobs[p][0] != "120000"]
+        modes[rel] = mode
+    present = [p for p in modes if p in have and modes[p] != "120000"]
     subst = [p for p, a in _check_attr(root, commit, ["export-subst"], present).items()
              if a.get("export-subst") == "set"] if present else []
-    targets = sorted({p for p in blobs if p not in have} | set(subst))
-    restored: dict[str, int] = {}
+    targets = sorted({p for p in modes if p not in have} | set(subst))
+    if not targets:
+        return {}
+    with tempfile.TemporaryDirectory(prefix="repo-ai-index-") as tmp:
+        env = {**os.environ, "GIT_INDEX_FILE": str(Path(tmp) / "index")}
+        for args, stdin in ((["read-tree", commit], None),
+                            (["--work-tree", str(path), "checkout-index", "-f", "-z", "--stdin"],
+                             b"".join(t.encode("utf-8", "surrogateescape") + b"\0" for t in targets))):
+            proc = subprocess.run(["git", *args], cwd=root, env=env, input=stdin, capture_output=True, timeout=300,
+                                  check=False)
+            if proc.returncode != 0 or (args[0] != "read-tree" and proc.stderr.strip()):
+                raise IsolationError("could not restore the base revision's export-ignore/export-subst files: "
+                                     + proc.stderr.decode("utf-8", "replace")[:300])
     base = path.resolve()
+    links = [t for t in targets if modes[t] == "120000"]
+    changed = True
+    while changed:  # removing one link can change where another resolves
+        changed = False
+        for rel in list(links):
+            target = path / rel
+            if target.is_symlink() and (os.path.isabs(os.readlink(target)) or base not in target.resolve().parents):
+                target.unlink()
+                links.remove(rel)
+                changed = True
+    restored: dict[str, int] = {}
     for rel in targets:
-        mode, sha = blobs[rel]
         target = path / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if not target.parent.resolve().is_relative_to(base) or target.is_symlink():
+        if not (target.is_symlink() or target.is_file()):
+            continue  # a link removed above, as the archive skips it
+        if not target.parent.resolve().is_relative_to(base):
             raise IsolationError(f"a restored file would leave the workspace: {rel[:200]}")
-        if mode == "120000":
-            link = _git_lines(root, ["cat-file", "blob", sha])
-            if link is None:
-                raise IsolationError(f"could not read the base revision's link {rel[:200]}")
-            dest = link.decode("utf-8", "surrogateescape")
-            if os.path.isabs(dest) or base not in (target.parent / dest).resolve().parents:
-                continue  # the archive skips such a link too
-            target.symlink_to(dest)
-            restored[rel] = 0
-            continue
-        data = checkout_bytes(root, commit, rel)
-        if data is None:
-            raise IsolationError(f"could not read the base revision's file {rel[:200]}")
-        target.write_bytes(data)
-        target.chmod(0o755 if mode == "100755" else 0o644)
-        restored[rel] = len(data)
+        restored[rel] = target.lstat().st_size if not target.is_symlink() else 0
     return restored
 
 
