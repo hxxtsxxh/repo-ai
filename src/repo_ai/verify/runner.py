@@ -232,7 +232,7 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
             args = rest[2:]
             lead = 0  # options before any test name: `python -m unittest -v` is discovery, like `python -m unittest`
             while lead < len(args) and args[lead].startswith("-"):
-                lead += 2 if args[lead] in UNITTEST_VALUE_OPTIONS and lead + 1 < len(args) else 1
+                lead += 2 if _takes_value(args[lead]) and lead + 1 < len(args) else 1
             if lead == len(args):
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   start=".", top=".", pattern="test*.py")
@@ -251,6 +251,8 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
                         i += 2
                     elif tok in {"-p", "--pattern"} and i + 1 < len(opts):
                         pattern = opts[i + 1]
+                        i += 2
+                    elif _takes_value(tok) and i + 1 < len(opts):  # `-k pattern`: a value, not a start dir
                         i += 2
                     elif tok.startswith("-"):
                         i += 1
@@ -271,10 +273,12 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
             mods, i = [], 0
             while i < len(args):  # module names; option values (`-k pattern`) are not modules
                 if args[i].startswith("-"):
-                    i += 2 if args[i] in UNITTEST_VALUE_OPTIONS else 1
+                    i += 2 if _takes_value(args[i]) else 1
                     continue
                 mods.append(args[i])
                 i += 1
+            if "discover" in mods:  # `-v discover …`: unittest discovers only when `discover` comes first
+                return TestRunner("opaque", command)
             if mods and all(_is_module(m) for m in mods):
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   modules=mods)
@@ -294,6 +298,12 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
 
 # options whose value is the next token (`--import tsx`): not test paths
 UNITTEST_VALUE_OPTIONS = {"-k", "--durations"}  # options of `python -m unittest` that take a value
+
+
+def _takes_value(tok: str) -> bool:
+    """`-k`, `--durations`, or a short-flag cluster ending in one (`-vk`)."""
+    return tok in UNITTEST_VALUE_OPTIONS or (tok.startswith("-") and not tok.startswith("--") and len(tok) > 2
+                                             and tok[-1] == "k")
 NODE_VALUE_OPTIONS = {"--import", "--require", "-r", "--loader", "--experimental-loader", "--conditions", "-C",
                       "--test-reporter", "--test-reporter-destination", "--test-name-pattern",
                       "--test-skip-pattern", "--test-concurrency", "--test-timeout", "--env-file", "--input-type"}
@@ -501,6 +511,7 @@ def _strip_node_coverage(runner: TestRunner) -> TestRunner:
 _MAKE_VAR = re.compile(r"\$(?:\(([A-Za-z_][A-Za-z0-9_]*)\)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
 # a Makefile can define a variable in ways a plain `NAME = value` scan does not see
 _MAKE_HIDDEN_DEFS = re.compile(r"(?m)^\s*(?:include|-include|sinclude|export|override|define|ifdef|ifndef|ifeq|ifneq)\b"
+                               r"|\$\(eval\b"
                                r"|^[^\t#\n]*!=|^[ \t]+[A-Za-z_][A-Za-z0-9_]*\s*[:?+]?=|^[^\t#\n:=]+:\s*[A-Za-z_]\w*\s*[:?+]?=")
 
 
@@ -533,7 +544,9 @@ def _make_lines(makefile: Path, target: str) -> tuple[list[str], list[str]]:
         tokens = line.split()
         last = _MAKE_VAR.fullmatch(tokens[-1]) if len(tokens) > 1 else None
         name = (last.group(1) or last.group(2)) if last else ""
-        if may_blank and name and name.islower() and "$" not in " ".join(tokens[:-1]):
+        # any other mention of the name (`tests ::= …`, `tests += …`, `$(eval tests := …)`) may define it
+        mentions = len(re.findall(rf"(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])", text)) if name else 0
+        if may_blank and name and name.islower() and mentions == 1 and "$" not in " ".join(tokens[:-1]):
             line = " ".join(tokens[:-1])
             notes.append(f"`{tokens[-1]}` is not defined in the Makefile: empty, as `make {target}` runs it")
         out.append(line)
