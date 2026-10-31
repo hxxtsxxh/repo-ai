@@ -274,22 +274,27 @@ def dependency_dirs(root: Path, files: list[str]) -> list[str]:
 _clonefile: Any = None
 
 
+def _clonefile_fn() -> Any:
+    """macOS `clonefile(2)`, or False where it cannot be loaded."""
+    global _clonefile
+    if _clonefile is None:
+        import ctypes
+        try:
+            libc = ctypes.CDLL("/usr/lib/libSystem.B.dylib", use_errno=True)
+            fn = libc.clonefile
+            fn.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32]
+            fn.restype = ctypes.c_int
+            _clonefile = fn
+        except (OSError, AttributeError):
+            _clonefile = False
+    return _clonefile
+
+
 def _clone(src: Path, dst: Path) -> bool:
     """Copy-on-write clone of one regular file; False when unsupported."""
-    global _clonefile
     system = platform.system()
     if system == "Darwin":
-        if _clonefile is None:
-            import ctypes
-            try:
-                libc = ctypes.CDLL("/usr/lib/libSystem.B.dylib", use_errno=True)
-                fn = libc.clonefile
-                fn.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint32]
-                fn.restype = ctypes.c_int
-                _clonefile = fn
-            except (OSError, AttributeError):
-                _clonefile = False
-        if not _clonefile:
+        if not _clonefile_fn():
             return False
         # CLONE_NOFOLLOW | CLONE_NOOWNERCOPY
         return _clonefile(os.fsencode(src), os.fsencode(dst), 0x0001 | 0x0002) == 0
@@ -359,6 +364,13 @@ class Workspace:
         so tests that use fixed files (a SQLite database in the working
         directory) cannot collide, just as when the suite runs one at a time."""
         started = time.monotonic()
+        tree = _clone_tree(self.path, label)
+        if tree is not None:  # one copy-on-write clone of the whole tree (APFS): ~15x faster than file by file
+            twin = Workspace(tree, self.source, list(self.files), withheld=list(self.withheld),
+                             skipped_links=list(self.skipped_links), readonly=dict(self.readonly),
+                             origin=f"{self.origin} (parallel copy)", method="clone")
+            twin.bytes, twin.seconds = self.bytes, time.monotonic() - started
+            return twin
         path = _new_dir(label)
         twin = Workspace(path, self.source, [], withheld=list(self.withheld),
                          skipped_links=list(self.skipped_links), readonly=dict(self.readonly),
@@ -470,6 +482,25 @@ def _alive(pid: int) -> bool:
     except OSError:
         return False
     return True
+
+
+def _clone_tree(src: Path, label: str) -> Path | None:
+    """A new workspace directory cloned from `src` in one `clonefile(2)` call (macOS; a directory is cloned
+    recursively, links as links), with its own ownership marker; None where unsupported, and the caller copies
+    file by file. `src` is a workspace nothing has run in yet (`Workspace.clone`)."""
+    global _swept
+    fn: Any = _clonefile_fn() if platform.system() == "Darwin" else None
+    if not fn:
+        return None
+    if not _swept:
+        _swept = True
+        sweep()
+    path = workspaces_root() / f"{label}-{uuid.uuid4().hex[:12]}"
+    if fn(os.fsencode(src), os.fsencode(path), 0x0001 | 0x0002) != 0:  # e.g. not APFS: copy file by file
+        _remove(path)
+        return None
+    (path / WS_MARKER).write_text(json.dumps({"pid": os.getpid(), "created": time.time()}), "utf-8")
+    return path
 
 
 def _new_dir(label: str) -> Path:
