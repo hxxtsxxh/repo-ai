@@ -44,6 +44,24 @@ backend skip with a reason; CI runs each backend.
 Release qualification (maintainers) uses three disjoint shards from a clean
 clone: `python scripts/finalization_validate.py --help`.
 
+### Security-fixture tests
+
+Some tests write attack-like fixtures to disk for the skill and plugin vetting checks to read (reverse and bind
+shells, recursive deletes, credential or environment uploads, `curl … | sh`), or make real escape attempts that
+the sandbox must deny (network connections, reads of credential paths). **Nothing in the suite executes a
+fixture**, but endpoint protection on a managed machine cannot tell a fixture from a payload.
+
+- These modules are listed in `tests/conftest.py` (`SECURITY_FIXTURE_MODULES`) and **skipped locally by
+  default**. CI sets `REPO_AI_SECURITY_FIXTURES=1` for every job, so every pull request still runs them;
+  `tests/test_security_fixture_policy.py` fails if the workflow stops doing so.
+- To run them yourself, use a machine or VM where that is allowed: `REPO_AI_SECURITY_FIXTURES=1 python -m pytest`.
+- The vetting benchmark (`benchmarks/skill-vet-fresh-v1/`) reads an 80-case defanged corpus and refuses to run
+  without the same variable. Its corpus is plain data: no file is executable, every host is under `.invalid` or
+  `example.com`.
+- Put new attack-like fixtures in a listed module (or add the module), write them as data the test only reads,
+  and never as a command line (`python -c "<payload>"`). Never weaken a check to avoid a detection, and never
+  disguise a fixture to get past one.
+
 ## Pull requests
 
 - One coherent change per PR, with the commands you ran and their results.

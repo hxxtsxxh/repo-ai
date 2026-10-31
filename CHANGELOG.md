@@ -18,6 +18,11 @@
   credential stores named by path pieces, `rm -rf` with other flags first or a quoted `"$HOME"/*`, and, across a
   whole program, a secret read plus a network send or a download made executable. They were never auto-installed
   (scripts already need approval); a reviewer now sees `review` or `blocked` instead of `eligible`.
+- Tests: tests that write attack-like fixtures (reverse and bind shells, recursive deletes, credential uploads) or
+  make deliberately denied escape attempts are now an explicit class (`tests/conftest.py`
+  `SECURITY_FIXTURE_MODULES`). Every CI job runs them; on a developer machine they are skipped unless
+  `REPO_AI_SECURITY_FIXTURES=1`, because endpoint protection cannot tell a fixture from a payload. Nothing in the
+  suite executes a fixture. See CONTRIBUTING.md.
 - Plugins in the same evaluation: harmful 6 `blocked` and 4 `review` (never `eligible`); benign 10 `review` and 0
   `blocked` (the earlier fresh validation blocked 12 of 42 benign cases).
 

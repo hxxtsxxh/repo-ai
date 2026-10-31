@@ -103,6 +103,11 @@ def summarize(rows: list[dict]) -> dict:
 
 
 def main() -> int:
+    if os.environ.get("REPO_AI_SECURITY_FIXTURES") != "1":
+        print("this benchmark reads a corpus of defanged attack-like fixtures; run it in CI or on a machine where "
+              "that is allowed, with REPO_AI_SECURITY_FIXTURES=1 (CONTRIBUTING.md, Security-fixture tests)",
+              file=sys.stderr)
+        return 2
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(HERE / "results" / "run-1.json"))
     args = ap.parse_args()

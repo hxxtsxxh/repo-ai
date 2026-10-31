@@ -435,7 +435,7 @@ _CODE_RULES: list[tuple[str, str, str, str, re.Pattern[str]]] = [
                 r"\bexec\s+\d+<>\s*/dev/(tcp|udp)/|\b(nc|ncat|netcat)\b[^\n|&;]{0,80}\s-[a-z]*e\s+\S*sh\b|"
                 r"\bsocat\b[^\n]{0,120}\bexec:[^\n]{0,40}sh\b")),
     ("critical", "confirmed", "destructive", "no-preserve-root",
-     re.compile(r"(?i)(?:^|[;&|(]\s*|\$\s*|\bsudo\s+|\s)rm\s+[^\n;&|]{0,80}--no-preserve-root\b")),
+     re.compile(r"(?i)(?:^|[;&|(]\s*|\$\s*|\bsudo\s+|\s)(?:/[\w/]*/)?rm\s+[^\n;&|]{0,80}--no-preserve-root\b")),
     ("high", "suspected", "credentials", "credential-store-path",  # a path alone is not theft: review, not blocked
      re.compile(r"(?i)[\"']\.(ssh|aws|gnupg|netrc|docker)[\"'/]|Library/Keychains|\blogins\.json\b|Login Data\b|"
                 r"\bkey4\.db\b|\bCookies\.binarycookies\b")),
@@ -453,7 +453,8 @@ _FETCHED_EXEC = re.compile(r"(?i)\b(curl|wget)\b[^\n]*(\s-[a-zA-Z]*[oO]\s|--outp
 _MAKE_EXEC = re.compile(r"(?i)\bchmod\s+(\+x|u\+x|[0-7]*[1357][0-7]{0,2}\b)")
 
 
-_SOCKET_VAR = re.compile(r"\b(\w+)\s*=\s*socket\.(?:socket|create_connection)\b|\b(\w+)\.connect\s*\(\s*\(")
+_SOCKET_VAR = re.compile(r"\b(\w+)\s*=\s*socket\.(?:socket|create_connection)\b|\b(\w+)\.connect\s*\(\s*\(|"
+                         r"\b(\w+)\s*,\s*\w+\s*=\s*\w+\.accept\s*\(")  # outbound, or a bind shell's accepted peer
 _SHELL = re.compile(r"(?i)/bin/(ba|z|k)?sh\b|\bpty\.spawn\s*\(|\bsubprocess\.\w+\(\s*\[?\s*[\"'](ba|z)?sh\b")
 MAX_SCAN_LINE = 2_000  # longer lines are cut for these patterns (a SKILL.md line over 2,000 is already a surface)
 
@@ -462,7 +463,7 @@ def code_risks(code: str) -> list[tuple[str, str, str]]:
     """(category, rule, evidence) for whole-program behaviour that no single line shows. Evidence is redacted."""
     out = []
     code = "\n".join(line.strip()[:MAX_SCAN_LINE] for line in code.splitlines())
-    sockets = {m.group(1) or m.group(2) for m in _SOCKET_VAR.finditer(code)}
+    sockets = {m.group(1) or m.group(2) or m.group(3) for m in _SOCKET_VAR.finditer(code)}
     if _SHELL.search(code) and any(re.search(r"\bdup2\s*\(\s*" + re.escape(v) + r"\.fileno\(\)", code)
                                    for v in sockets):
         out.append(("remote-exec", "reverse-shell", "a socket is connected, duplicated onto stdio and given a shell"))
@@ -543,11 +544,12 @@ _PARA_BREAK = re.compile(r"\n[ \t]*\n")
 
 def _plain_token(word: str) -> str:
     """One whitespace-separated token as a reader sees it: entities decoded, compatibility forms folded (NFKC),
-    `*` and `~` emphasis removed anywhere (`dis*re*gard`), `_` and backticks only at the edges (`allow_failure`)."""
+    `*` emphasis and `~~` strike-through removed anywhere (`dis*re*gard`; a lone `~` stays, as in `~/`), `_` and
+    backticks only at the edges (`allow_failure`)."""
     import html
     import unicodedata
     word = unicodedata.normalize("NFKC", html.unescape(word))
-    word = word.replace("*", "").replace("~", "")
+    word = word.replace("*", "").replace("~~", "")
     return re.sub(r"^[_`]+|[_`]+$", "", word)
 
 
@@ -579,10 +581,11 @@ def instruction_risks(text: str) -> list[tuple[str, int, str]]:
                 continue
             first = max(i for i, o in enumerate(starts) if o <= hit.start())
             last = max(i for i, o in enumerate(starts) if o < hit.end())
-            def red(part: list[tuple[int, str]]) -> str:  # whole tokens are redacted, so a cut never splits a secret
-                return " ".join(redact_text(word) for _, word in part)
-            snippet = " ".join(x for x in (red(tokens[max(0, first - 6):first])[-30:], red(tokens[first:last + 1])[:80],
-                                           red(tokens[last + 1:last + 7])[:30]) if x)
+            # redacted as one text before any cut (a cut can drop a secret's prefix; one token alone loses `key:`)
+            core = " ".join(word for _, word in tokens[first:last + 1])
+            window = redact_text(" ".join(word for _, word in tokens[max(0, first - 8):last + 9]))
+            at_core = window.find(core)
+            snippet = window[max(0, at_core - 30):at_core + min(len(core), 80) + 30] if at_core >= 0 else window[:140]
             out.append((rule, line_at + para.count("\n", 0, tokens[first][0]), snippet))
         line_at += para.count("\n")
     return out
@@ -761,6 +764,7 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
     for path, text in texts.items():
         # licence and notice files are installed with an inert skill, so their text is read as documentation
         is_doc = path.endswith((".md", ".txt")) or PurePosixPath(path).name.upper() in {"LICENSE", "COPYING", "NOTICE"}
+        ext = PurePosixPath(path).suffix.lower()
         # one leading byte-order mark is an encoding signature, not hidden text
         # (editors and Anthropic's own docx skill write it); any other is flagged
         if _HIDDEN_CHARS.search(text[1:] if text.startswith("\ufeff") else text):
@@ -804,7 +808,7 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                     severity = {"critical": "high", "high": "medium", "medium": "low"}.get(severity, "info")
                     kind = "suspected"
                 findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
-            if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE:
+            if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE and ext not in ASSET_EXT and ext != ".json":
                 findings.append(Finding("high", "suspected", "obfuscation", "overlong-code-line", path, lineno,
                                         f"{len(logical.strip())} characters on one line (only the first "
                                         f"{MAX_SCAN_LINE} are read for behaviour)"))

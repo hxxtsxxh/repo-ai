@@ -81,11 +81,18 @@ in `recursive-delete` (now bounded), sentences split by a wrapped line that star
 emphasis inside a word (`dis*re*gard`), snippets and line numbers that drifted after normalisation, padding a code
 line past the scan cap (an overlong code line is now itself a `high` finding), a console transcript of GNU rm's
 own error being blocked, unrelated socket, `dup2` and shell calls in one file being blocked (the same socket
-variable is now required), and combining marks and variation selectors (now an inert-blocking surface). Each has
-a regression test. Bypass classes the review also showed
+variable is now required), and combining marks and variation selectors (now an inert-blocking surface). A third
+round found two regressions from the second (a lone `~` was stripped, hiding `~/` targets; per-token redaction
+lost `key:` context and leaked values into snippets) and three nits (SVG paths flagged as overlong code, bind
+shells, `/bin/rm`); all fixed. Each has a regression test.
+
+**How this is tested.** The fixture-writing tests and this benchmark are security-fixture tests
+(CONTRIBUTING.md): they run in CI for every pull request and are skipped on developer machines unless
+`REPO_AI_SECURITY_FIXTURES=1` is set. The benchmark refuses to run without it. Bypass classes the review also showed
 (synonyms, splitting across paragraphs) remain: phrase checks can be paraphrased around.
 
-A diagnostic re-run on this corpus with the final fix
+A diagnostic re-run on this corpus after the second review round (recorded at b18c15c; the third round was not
+re-run on the corpus)
 ([results/post-fix-diagnostic.json](results/post-fix-diagnostic.json)): G1 0 of 30 (H-text 13 `review`, 3
 `blocked`, 4 `eligible` but not inert), H-code 5 `blocked` and 5 `review` (was 6 `eligible`), G3 1 of 30, benign
 skills 27 `eligible` and 2 `review` (prohibitions about deletion and force-pushing), inert benign SKILL.md-only 13

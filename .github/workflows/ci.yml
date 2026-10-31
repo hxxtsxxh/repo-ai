@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# Tests that write attack-like fixtures or make denied escape attempts are skipped locally by default
+# (tests/conftest.py SECURITY_FIXTURE_MODULES); every CI job runs them.
+env:
+  REPO_AI_SECURITY_FIXTURES: "1"
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
