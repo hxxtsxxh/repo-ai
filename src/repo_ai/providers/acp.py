@@ -4,7 +4,8 @@ ACP is JSON-RPC 2.0 over the agent's stdio, one JSON object per line (protocol v
 other agents implement it). The client starts a session in a workspace, sends one prompt, and answers the agent's
 requests while it works:
 
-* ``fs/read_text_file``: served only for a regular file inside the workspace (no link is followed out of it);
+* ``fs/read_text_file``: served only for a regular file inside the workspace, opened with no link followed and
+  refused when hard-linked (it may also be named outside);
 * ``fs/write_text_file``: served only for a path the run may write (``allowed_writes``), inside the workspace;
 * ``session/request_permission``: answered by policy: an option that allows once is chosen only for a tool call of
   kind ``read``, ``search`` or ``edit`` (``think`` too); anything else (``execute``, ``fetch``, ``delete``, ``move``,
@@ -65,7 +66,7 @@ def _relative(workspace: Path, rel_or_abs: object) -> str | None:
         return None
     raw = rel_or_abs if os.path.isabs(rel_or_abs) else os.path.join(str(workspace), rel_or_abs)
     rel = os.path.relpath(os.path.normpath(raw), str(workspace))
-    if rel == "." or rel.startswith("..") or os.path.isabs(rel):
+    if rel in {".", ".."} or rel.startswith("../") or os.path.isabs(rel):
         return None
     return PurePosixPath(rel).as_posix()
 
@@ -246,7 +247,8 @@ class AcpClient:
         except OSError:
             return None
         try:
-            if not stat.S_ISREG(os.fstat(fd).st_mode):
+            st = os.fstat(fd)
+            if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1:  # a hard link may name a file outside
                 return None
             chunks, size = [], 0
             while size < MAX_READ:
@@ -265,7 +267,8 @@ class AcpClient:
         except OSError:
             return False
         try:
-            if not stat.S_ISREG(os.fstat(fd).st_mode):
+            st = os.fstat(fd)
+            if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1:  # a hard link may name a file outside
                 return False
             os.ftruncate(fd, 0)
             view = memoryview(data)

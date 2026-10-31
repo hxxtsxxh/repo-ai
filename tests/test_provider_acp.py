@@ -11,7 +11,7 @@ FAKE = Path(__file__).parent / "fake_acp_agent.py"
 def _run(tmp_path, script, allowed=("app.py",), timeout=20, version=1):
     ws = tmp_path / "ws"
     ws.mkdir(exist_ok=True)
-    if not (ws / "app.py").is_symlink():
+    if not (ws / "app.py").is_symlink() and not (ws / "app.py").exists():
         (ws / "app.py").write_text("x = 1\n")
     (ws / "notes.txt").write_text("line1\nline2\nline3\n")
     (tmp_path / "secret.txt").write_text("outside\n")
@@ -123,3 +123,24 @@ def test_a_malformed_message_is_refused_not_a_crash(tmp_path):
         {"method": "fs/read_text_file", "params": {"path": "a\u0000b"}}])
     assert result.stop_reason == "end_turn"
     assert all("error" in r["reply"] or r["reply"]["result"]["outcome"]["outcome"] == "cancelled" for r in replies), replies
+
+
+def test_a_hard_link_to_an_outside_file_is_refused(tmp_path):
+    """Review round 2 of #30: a hard link is a regular file that O_NOFOLLOW does not stop."""
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    (tmp_path / "secret.txt").write_text("outside\n")
+    import os
+    os.link(tmp_path / "secret.txt", ws / "app.py")
+    ws_, result, replies = _run(tmp_path, [
+        {"method": "fs/read_text_file", "params": {"path": "app.py"}},
+        {"method": "fs/write_text_file", "params": {"path": "app.py", "content": "PWNED"}}])
+    assert all("error" in r["reply"] for r in replies), replies
+    assert (tmp_path / "secret.txt").read_text() == "outside\n"
+
+
+def test_a_name_that_starts_with_two_dots_is_inside():
+    from pathlib import Path
+
+    from repo_ai.providers.acp import _relative
+    assert _relative(Path("/w"), "..foo") == "..foo" and _relative(Path("/w"), "../x") is None
