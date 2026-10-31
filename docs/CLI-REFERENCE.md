@@ -227,6 +227,7 @@ what a change can break, which tests show it, and (with --run) what running them
 | `--base` `BASE` | compare the working tree with this revision (default HEAD) |
 | `--run` | run the selected tests in the sandbox (executes repository code) |
 | `--full` | with --run: run the full suite (it includes the selection) |
+| `--show-fixed` | with --run: run the base revision's full suite once (cached) to name tests the change fixed |
 | `--paths` `PATH[,PATH]` | plan only for these changed files (read-only; a per-edit preview: never with --run or --record, never evidence for the whole change) |
 | `--rerun` | with --run: run again even when evidence for this exact change and environment exists |
 | `--record` | run every test file once under a tracer (sandboxed) to record which code each one executes (executes repository code) |

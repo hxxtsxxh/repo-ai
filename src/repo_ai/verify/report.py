@@ -169,6 +169,9 @@ def summarize(rec: dict[str, Any]) -> dict[str, Any]:
         "not_compared": [r["test"] for r in other],
         "passed": sum(1 for r in rows if r["status"] == "pass"),  # selected test FILES that passed
         "full_suite_counts": (rec.get("full_suite") or {}).get("counts"),
+        "fixed": (rec.get("fixed") or {}).get("tests") or [],
+        "fixed_known": bool((rec.get("fixed") or {}).get("known")),
+        "fixed_reason": (rec.get("fixed") or {}).get("reason", ""),
         "no_tests": [r["test"] for r in rows if r["status"] == "no-tests"],
         "not_run": [x["test"] for x in rec.get("not_run") or []],
         "strategy": (rec.get("strategy") or {}).get("kind"),
@@ -287,6 +290,15 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     if s["not_run"]:
         counts.append(f"{len(s['not_run'])} skipped as duplicates ({', '.join(s['not_run'][:2])})")
     out.append("  " + "; ".join(counts))
+    fx = rec.get("fixed") or {}
+    if fx.get("tests"):
+        named = [f"{t['test_file']}::{i.partition('::')[2] or i}" for t in fx["tests"] for i in (t["tests"] or ["<file>"])]
+        out.append(f"  fixed by this change (fail alone at the base, pass alone now): {', '.join(named[:8])}"
+                   + (f" and {len(named) - 8} more" if len(named) > 8 else ""))
+    elif fx.get("requested") and fx.get("reason") != "no passing selected file to compare":
+        out.append("  fixed by this change: none (no selected test fails alone at the base and passes alone now)"
+                   if fx.get("known") else
+                   f"  fixed by this change: not known ({fx.get('reason') or 'some tests could not be confirmed alone'})")
     tree = rec.get("source_tree") or {}
     if tree:
         out.append("  source tree unchanged" if tree.get("unchanged") else "  SOURCE TREE CHANGED: evidence invalid")

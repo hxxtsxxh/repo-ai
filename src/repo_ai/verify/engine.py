@@ -403,7 +403,8 @@ def _integrity(root: Path, before: isolate.Snapshot) -> dict[str, Any]:
 
 def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor, *, full: bool = False,
              workers: int = 4, timeout_s: float = 600.0, timeout_explicit: bool = False, reuse: bool = True,
-             deadline_s: float | None = None, log: Callable[[str], None] = lambda _: None) -> dict[str, Any]:
+             deadline_s: float | None = None, log: Callable[[str], None] = lambda _: None,
+             show_fixed: bool = False) -> dict[str, Any]:
     """Execute the plan in the sandbox. Runs repository code: the caller must
     hold the user's explicit authorization (`verify --run`).
 
@@ -419,7 +420,7 @@ def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor,
     links = {rel: str((root / rel).resolve()) for rel in isolate.dependency_dirs(root, listing[0])}
     env_key = cache.environment_key(executor, p.runner, links=links)
     key = _reuse_key(p, change, env_key, full, timeout_s if timeout_explicit else None, deadline_s)
-    if reuse:
+    if reuse and not show_fixed:  # an older record may not name fixed tests
         old = evidence.find_reusable(layout.state_dir, key)
         if old is not None:
             evidence.set_latest(layout.state_dir, old)
@@ -431,7 +432,7 @@ def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor,
     try:
         rec = _run_isolated(root, layout, p, change, executor.in_workspace(ws), full=full, workers=workers,
                             timeout_s=timeout_s, timeout_explicit=timeout_explicit, env_key=env_key, log=log,
-                            deadline_s=deadline_s)
+                            deadline_s=deadline_s, show_fixed=show_fixed)
     finally:
         ws.cleanup()
     rec["environment_static"] = static
@@ -486,6 +487,7 @@ class _Ctx:
     watch_s: dict[str, float | None] = field(default_factory=dict)  # what watchdog budgets are based on
     deadline: float | None = None  # monotonic time by which every process of the run must have ended
     deadline_hit: bool = False     # a process was cut by it, or not started for lack of time
+    show_fixed: bool = False       # run the base full suite (once per base) to name tests the change fixed
 
     def count(self, phase: str, files: list[str] | None = None) -> None:
         with self.lock:
@@ -808,7 +810,8 @@ def _learn_from_batch(ctx: _Ctx, files: list[str], res, att: results.Attribution
 
 def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Executor, *, full: bool,
                   workers: int, timeout_s: float, timeout_explicit: bool, env_key: str,
-                  log: Callable[[str], None], deadline_s: float | None = None) -> dict[str, Any]:
+                  log: Callable[[str], None], deadline_s: float | None = None,
+                  show_fixed: bool = False) -> dict[str, Any]:
     runner = p.runner
     started = time.monotonic()
     rec = evidence.new_record(p.to_json(), executor.backend.name,
@@ -824,6 +827,7 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     durations = {f: timings.file_s(f) or p.durations.get(f) for f in (p.universe_files or [s.test for s in p.selected])}
     ctx = _Ctx(root, layout, p, change, runner, toolchain, executor, workers, timeout_s, timeout_explicit, durations,
                timings, env_key, log)
+    ctx.show_fixed = show_fixed
     if deadline_s is not None:
         ctx.deadline = started + deadline_s
         rec["deadline_s"] = deadline_s
@@ -867,7 +871,8 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     rec["results"] = rows
     attribution_started = time.monotonic()
     _compare_with_base(ctx, rows)
-    _check_skips(ctx, rows)
+    _check_skips(ctx, rows)  # before naming fixes: a file whose tests are all skipped now is unverified
+    rec["fixed"] = {**_name_fixed(ctx, rows), "requested": ctx.show_fixed}
     rec["timing"] = {"total_s": round(time.monotonic() - started, 2),
                      "base_comparison_s": round(time.monotonic() - attribution_started, 2)}
     redundant = sum(n - 1 for n in ctx.file_runs.values() if n > 1)
@@ -1147,6 +1152,90 @@ def _compare_with_base(ctx: _Ctx, rows: list[dict[str, Any]]) -> None:
             r["baseline"] = "not-comparable"
             r["classification"] = (f"fails at the base too, but the change edits {', '.join(deps[:3])} and the base "
                                    "ran with the dependencies installed now: not comparable")
+
+
+MAX_FIXED_CHECKS = 20  # candidate tests confirmed one by one (two processes each)
+
+
+def _name_fixed(ctx: _Ctx, rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Tests the change fixed (`--show-fixed` only). A fix is a claim about one test, so each candidate is confirmed
+    in isolation: it must fail when run alone at the base and pass when run alone at the change, existing, running
+    and not skipped there. Candidates are the base full suite's failing tests in selected files that pass now
+    (`_base_full`, cached per base tree and environment). Never inferred: a deleted, skipped or order-dependent
+    test, or one that cannot be addressed alone, is not named; a dependency-file change makes the base not
+    comparable."""
+    if not ctx.show_fixed:
+        return {"known": False, "reason": "not requested", "tests": []}
+    passing = [r for r in rows if r["status"] == "pass" and not r.get("unverified")]
+    if not passing or not ctx.change.base_commit or not ctx.runner.per_file:
+        return {"known": False, "reason": "no passing selected file to compare" if not passing
+                else "no base commit or no per-file runner", "tests": []}
+    deps = _dependencies_changed(ctx.change)
+    if deps:
+        return {"known": False, "reason": f"the change edits {', '.join(deps[:3])} and the base runs with the "
+                "dependencies installed now: not comparable", "tests": []}
+    bc = cache.BaselineCache(ctx.layout.state_dir, ctx.env_key, cache.tree_of(ctx.root, ctx.change.base_commit))
+    candidates: list[tuple[str, str]] = []
+    unknown: list[str] = []
+    base = _LazyBase(ctx)
+    try:
+        outcomes: dict[str, _BaseOutcome] = {}
+        _base_full(ctx, base, bc, passing, outcomes)
+        for r in passing:
+            o = outcomes.get(r["test"])
+            if o is None:
+                unknown.append(r["test"])
+            elif o.failed:
+                candidates += [(r["test"], tid) for tid in sorted(o.ids) if tid != "<file>"]
+        checked, undecided, fixed = candidates[:MAX_FIXED_CHECKS], candidates[MAX_FIXED_CHECKS:], []
+        addressable = []
+        for f, tid in checked:
+            argv_ids = results.rerun_ids(ctx.runner, f, [tid], "")
+            if argv_ids and len(argv_ids) == 1:
+                addressable.append((f, tid, argv_ids[0]))
+            else:
+                undecided.append((f, tid))  # node, a failure outside a test: not addressable alone
+        if addressable:
+            base.get()  # create it once, before the parallel checks
+
+            def confirm(item: tuple[str, str, str]) -> tuple[str, str, str, str]:
+                f, tid, aid = item
+                at_base = _alone(ctx, base.get(), f, aid)
+                return f, tid, at_base, _alone(ctx, ctx.executor, f, aid) if at_base == "fail" else ""
+
+            for f, tid, at_base, at_change in run_parallel(confirm, addressable, ctx.workers):
+                if at_base == "fail" and at_change == "pass":
+                    fixed.append((f, tid))
+                elif "unknown" in (at_base, at_change):
+                    undecided.append((f, tid))
+        fixed.sort()
+    finally:
+        base.cleanup()
+        bc.save()
+    by_file: dict[str, list[str]] = {}
+    for f, tid in fixed:
+        by_file.setdefault(f, []).append(tid)
+    for r in passing:
+        if r["test"] in by_file:
+            r["fixed_tests"] = by_file[r["test"]]
+    return {"known": not unknown and not undecided, "tests": [{"test_file": f, "tests": t} for f, t in by_file.items()],
+            "unknown_files": unknown[:20], "undecided": [f"{f}::{t}" for f, t in undecided][:20]}
+
+
+def _alone(ctx: _Ctx, template: Executor, f: str, argv_id: str) -> str:
+    """One test of `f` alone in a fresh clone of `template`: pass | fail | skip | absent | unknown."""
+    res, att = _process(ctx, template, _id_argv(ctx.runner, [argv_id]), [f], _limit(ctx, [f]), "fixed",
+                        count_files=False)
+    fo = att.files.get(f) if att is not None else None
+    if res.timed_out or fo is None or not _usable(res, att):
+        return "unknown"
+    if fo.missing:
+        return "absent"
+    if fo.failing:
+        return "fail"
+    if fo.skipped:
+        return "skip"
+    return "pass" if fo.tests == 1 and fo.ran >= 1 else "unknown"
 
 
 DEPENDENCY_NAMES = {"pyproject.toml", "setup.py", "setup.cfg", "Pipfile", "Pipfile.lock", "poetry.lock", "uv.lock",
