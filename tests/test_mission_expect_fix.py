@@ -121,6 +121,13 @@ def test_a_setup_error_already_at_the_base_may_stand_in_a_scoped_mission(errorin
     assert result['scoped']['standing'] == 'PASS_WITH_PRE_EXISTING_FAILURES'
     remaining = result['scoped']['pre_existing_failures']
     assert any('test_speed' in t for t in remaining) and any('test_old_backend' in t for t in remaining)
+    assert result['scoped']['pre_existing_errors'] == 1
+    assert any('1 error at setup, so their bodies never ran' in n for n in result['claims']['notes'])
+
+
+def test_a_setup_error_at_the_base_that_now_passes_is_not_called_fixed():
+    from repo_ai.mission.diagnosis import CLASSIFICATIONS
+    assert CLASSIFICATIONS[('error', 'pass')] == 'NOT_COMPARABLE'
 
 
 def test_a_new_setup_error_on_the_candidate_is_a_regression(project, tmp_path):

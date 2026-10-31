@@ -101,7 +101,9 @@ def _emit(value: dict[str, Any], args) -> None:
             count = scoped.get('pre_existing_count', len(remaining))
             print(f"  Standing: PASS_WITH_PRE_EXISTING_FAILURES — the declared test(s) went from failing to passing and "
                   f"nothing that passed at the base fails; {count} test(s) already failed at the base and still "
-                  "do (not declared): " + ', '.join(remaining[:5]) + (' …' if len(remaining) > 5 else ''))
+                  "do (not declared"
+                  + (f"; {scoped['pre_existing_errors']} error at setup and never ran" if scoped.get('pre_existing_errors') else "")
+                  + "): " + ', '.join(remaining[:5]) + (' …' if len(remaining) > 5 else ''))
         claim = value.get('claims') or {}
         if claim.get('headline') and claim['headline'] != 'OBSERVED_TESTS_PASS' and value.get('effective_verdict') == 'PASS':
             print(f"  Claim: {claim['headline']} — tests passed; task correctness is not established")

@@ -308,7 +308,9 @@ def pre_existing_failures(baseline: dict, candidate: dict, expect_fix: list[str]
     remaining = sorted(t for t, o in candidate.get("outcomes", {}).items()
                        if o in {"fail", "error"} and baseline.get("outcomes", {}).get(t) in {"fail", "error"}
                        and t not in expect_fix)
+    errored = [t for t in remaining if "error" in (baseline.get("outcomes", {}).get(t), candidate["outcomes"].get(t))]
     return {"expect_fix": list(expect_fix), "pre_existing_failures": remaining[:200], "pre_existing_count": len(remaining),
+            "pre_existing_errors": len(errored),
             "standing": "PASS_WITH_PRE_EXISTING_FAILURES" if remaining else "PASS"}
 
 
