@@ -58,3 +58,21 @@ way to send it.
   in the config, and 1.1.1.1 unreachable; the request reached the upstream with the real credential.
 
 The live check (point 1 above) still needs owner approval.
+
+## Security review round 1 (independent reviewer): four confirmed issues, all fixed
+
+1. **A login outside HOME was readable inside the sandbox.** The seatbelt profile denies reads only under HOME. The
+   login directory is now denied explicitly, and the end-to-end test reads a login under tmp_path (outside HOME) and
+   is denied.
+2. **The upstream as a way out.** The model has the dummy key and a shell, so it could send its own request with a
+   remote `image_url`, an `mcp` tool or `web_search`, and the upstream would contact any host it names. Bodies are
+   now vetted:
+   - only local tool types (`function`, `custom`, `local_shell`, and `namespace` groups of them) are forwarded;
+   - `web_search*` is removed (Codex 0.165 sends `{"type":"web_search","external_web_access":false}` by default,
+     observed offline);
+   - any non-`data:` URL or `file_id` in the request is refused.
+3. **Every loopback port was reachable** (a local model server, a debugger port), and the model was unpinned. The
+   network rule now admits only `localhost:<broker port>`, and the end-to-end test is denied a direct connection to
+   the upstream's loopback port. The model is pinned to the first request's model.
+4. **Handler bounds.** There is now a 60 s socket timeout (a stalled client is dropped; tested), at most 4 concurrent
+   forwards, and `http.client.HTTPException` and `ValueError` are caught.

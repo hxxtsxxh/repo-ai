@@ -573,9 +573,11 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                               provider: str | None = None, live: bool = False,
                               executable: Path | None = None,
                               claude_plan: claude_auth.ClaudeAuthPlan | None = None,
-                              run_marker: str | None = None, codex_brokered: bool = False) -> list[str] | None:
+                              run_marker: str | None = None,
+                              codex_broker_at: tuple[int, Path] | None = None) -> list[str] | None:
     """Restrict writes strictly to the disposable candidate workspace and scratch dir (plus, for a live Claude
-    run with a dedicated login, that login's own state; see ``claude_auth``)."""
+    run with a dedicated login, that login's own state; see ``claude_auth``). `codex_broker_at` (the credential
+    broker's port, the login directory): Codex may reach that one loopback port and can never read the login."""
     claude_live = provider == "claude" and live
     if claude_live:
         claude_plan = claude_plan or claude_auth.plan()
@@ -585,8 +587,13 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
     sc_str = str(scratch.resolve())
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
         net_rule = "" if allow_network else "(deny network*)"
-        if (provider in OPENCODE_PROVIDERS or (provider == "codex" and codex_brokered)) and live:
-            # loopback only: OpenCode's local model, or the Codex credential broker; no other host is reachable
+        if provider == "codex" and live and codex_broker_at:
+            # the credential broker's port only: no other host, and no other local service (an unauthenticated model
+            # server, a debugger port, a container engine) that could reach out on the model's behalf
+            net_rule = (f'(deny network*)(allow network-outbound (remote ip "localhost:{int(codex_broker_at[0])}"))'
+                        f"(allow network-outbound (remote unix-socket (subpath {json.dumps(str(scratch.resolve()))})))")
+        elif provider in OPENCODE_PROVIDERS and live:
+            # a local model only: the provider may reach loopback (its own server and the model endpoint), nothing else
             # (`(allow network* (local ip "localhost:*"))` would also admit outbound connections to any host: observed)
             net_rule = ('(deny network*)(allow network-outbound (remote ip "localhost:*"))'
                         '(allow network-inbound (local ip "localhost:*"))(allow network-bind (local ip "localhost:*"))'
@@ -604,7 +611,9 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             # Codex's token is copied into scratch (CODEX_HOME); ~/.codex itself, other agents' state and every other
             # file under HOME stay unreadable to a model that has a shell and the network
             read_rule = _home_read_only_rules([workspace, scratch, *_codex_install_roots(executable), *_node_roots()])
-            if not codex_brokered:  # brokered: the loopback rule above already admits no other socket
+            if codex_broker_at:  # the login may live outside HOME (REPO_AI_CODEX_HOME, REPO_AI_HOME): never readable
+                read_rule += f"(deny file-read* (subpath {json.dumps(str(codex_broker_at[1].resolve()))}))"
+            else:  # brokered: the port rule above already admits no other socket
                 net_rule += _unix_socket_rule(sc_str)
         elif claude_live:
             assert claude_plan is not None
@@ -1033,7 +1042,7 @@ def run_provider(
                 "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
                 "reasons": [f"{provider} not configured for isolated execution: {p}" for p in problems],
             }
-    brokered: tuple[codex_broker.Upstream, str] | None = None  # the login's upstream, and its plain model keys
+    brokered: tuple[codex_broker.Upstream, str, Path] | None = None  # upstream, plain model keys, login directory
     if provider == "codex" and live_run and codex_broker.enabled():
         problem = ""
         if sys.platform != "darwin" or not Path("/usr/bin/sandbox-exec").is_file():
@@ -1044,7 +1053,7 @@ def run_provider(
             login_dir = codex_home() if source == "dedicated" else Path.home() / ".codex"
             try:
                 brokered = (codex_broker.upstream_from_login(login_dir / "auth.json"),
-                            _codex_config_subset(login_dir / "config.toml"))
+                            _codex_config_subset(login_dir / "config.toml"), login_dir)
             except codex_broker.BrokerError as exc:
                 problem = str(exc)
         if problem:
@@ -1089,7 +1098,7 @@ def run_provider(
         run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex if sys.platform == "darwin" else None
         prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run,
                                            executable=resolved, claude_plan=claude_plan, run_marker=run_marker,
-                                           codex_brokered=broker is not None)
+                                           codex_broker_at=(broker.port, brokered[2]) if broker and brokered else None)
         if prefix is None:
             return {
                 "provider": provider,

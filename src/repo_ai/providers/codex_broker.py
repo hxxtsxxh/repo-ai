@@ -10,6 +10,13 @@ The proxy accepts only `POST /v1/responses` carrying this run's dummy key, a bou
 requests, and only while the run lasts. Upstream redirects are never followed, since following one would send the
 credential to another host. Tokens are never refreshed here: an expired ChatGPT token is refused with a message.
 
+The model inside has a shell and can read the dummy key, so it can send its own requests through the proxy. Each
+body is therefore vetted (`vet_request`), so that the upstream cannot be made to contact another host on the model's
+behalf:
+- only local tool types (functions run by Codex itself) are allowed, and the hosted `web_search` tool is removed;
+- no URL other than a `data:` URL may appear in the input (a remote image or file URL would be fetched upstream);
+- the model is pinned to the one the first request named, which Codex sends before any model output exists.
+
 Not live-verified yet. The offline spike (docs/engineering/evidence/CODEX-BROKER-SPIKE-2026-10-31.md) showed Codex
 0.165 sending `POST /v1/responses` to such a provider with the dummy key. Whether the upstream accepts the forwarded
 body needs one live run.
@@ -18,6 +25,7 @@ from __future__ import annotations
 
 import base64
 import hmac
+import http.client
 import http.server
 import json
 import os
@@ -45,6 +53,10 @@ EXPIRY_MARGIN_S = 120
 # request headers Codex sends that the upstream may use; Authorization is always replaced, never forwarded
 FORWARD_HEADERS = ("content-type", "accept", "openai-beta", "originator", "session_id", "conversation_id",
                    "user-agent", "version")
+LOCAL_TOOL_TYPES = frozenset({"function", "custom", "local_shell"})  # executed by Codex, inside the sandbox
+REMOVED_TOOL_TYPES = ("web_search",)  # hosted search: queries and fetches leave from the upstream (`web_search*`)
+MAX_CONCURRENT = 4
+SOCKET_TIMEOUT_S = 60.0
 
 
 class BrokerError(ValueError):
@@ -116,6 +128,64 @@ def upstream_from_login(auth_path: Path, *, now: float | None = None) -> Upstrea
     return Upstream(CHATGPT_UPSTREAM, "chatgpt", headers)
 
 
+def _tools_ok(tools: Any) -> tuple[list[Any], str]:
+    """(the tools to forward, a refusal reason or "")."""
+    if not isinstance(tools, list):
+        return [], "tools is not a list"
+    kept: list[Any] = []
+    for tool in tools:
+        kind = tool.get("type") if isinstance(tool, dict) else None
+        if not isinstance(kind, str):
+            return [], "a tool without a type"
+        if kind.startswith(REMOVED_TOOL_TYPES):
+            continue
+        if kind == "namespace":  # a group of tools (Codex's sub-agents): every member must be local too
+            members, why = _tools_ok(tool.get("tools", []))
+            if why:
+                return [], why
+            kept.append({**tool, "tools": members})
+        elif kind in LOCAL_TOOL_TYPES:
+            kept.append(tool)
+        else:
+            return [], f"tool type {kind[:40]!r} would run at the upstream"
+    return kept, ""
+
+
+def _remote_url(value: Any) -> bool:
+    """Anything in the input that names a remote resource for the upstream to fetch."""
+    if isinstance(value, dict):
+        return any((("url" in str(k).lower() or k == "file_id") and isinstance(v, str) and not v.startswith("data:"))
+                   or _remote_url(v) for k, v in value.items())
+    if isinstance(value, list):
+        return any(_remote_url(v) for v in value)
+    return False
+
+
+def vet_request(body: bytes, pinned_model: str | None) -> tuple[bytes, str, str]:
+    """(the body to forward, its model, a refusal reason or ""). Only `tools` is ever rewritten."""
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return b"", "", "the body is not JSON"
+    if not isinstance(data, dict):
+        return b"", "", "the body is not a JSON object"
+    model = data.get("model")
+    if not isinstance(model, str) or not model:
+        return b"", "", "no model named"
+    if pinned_model is not None and model != pinned_model:
+        return b"", "", f"model {model[:60]!r} is not this run's model"
+    if _remote_url({k: v for k, v in data.items() if k not in {"tools", "instructions"}}):
+        return b"", "", "a remote URL or file reference in the request (the upstream would fetch it)"
+    if "tools" in data:
+        tools, why = _tools_ok(data["tools"])
+        if why:
+            return b"", "", why
+        if tools != data["tools"]:
+            data["tools"] = tools
+            return json.dumps(data, separators=(",", ":")).encode(), model, ""
+    return body, model, ""
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args: Any, **kwargs: Any) -> None:
         return None  # a 3xx is returned as an HTTPError, so the credential never reaches the redirect's host
@@ -123,6 +193,7 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 
 class _Handler(http.server.BaseHTTPRequestHandler):
     server: _Server
+    timeout = SOCKET_TIMEOUT_S  # a client that stalls mid-request cannot hold a thread forever
 
     def log_message(self, *args: Any) -> None:  # nothing about requests reaches a log
         pass
@@ -139,7 +210,12 @@ class _Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         self._refuse(405, "only POST /v1/responses is brokered")
 
-    do_PUT = do_DELETE = do_PATCH = do_HEAD = do_GET
+    do_PUT = do_DELETE = do_PATCH = do_GET
+
+    def do_HEAD(self) -> None:
+        self.server.broker._record(refused="405 HEAD")
+        self.send_response(405)
+        self.end_headers()
 
     def do_POST(self) -> None:
         broker = self.server.broker
@@ -160,7 +236,28 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         if not 0 <= length <= MAX_BODY:
             self._refuse(413, "request body missing or too large")
             return
-        body = self.rfile.read(length)
+        if not broker._slots.acquire(timeout=SOCKET_TIMEOUT_S):
+            self._refuse(503, "too many concurrent requests")
+            return
+        try:
+            self._forward(broker, length)
+        finally:
+            broker._slots.release()
+
+    def _forward(self, broker: Broker, length: int) -> None:
+        try:
+            body = self.rfile.read(length)
+        except OSError:  # stalled or gone (the socket timeout)
+            return
+        if len(body) != length:
+            return
+        body, model, why = vet_request(body, broker._model())
+        if why:
+            self._refuse(400, why)
+            return
+        if not broker._pin(model):  # two concurrent first requests: the pin is taken once
+            self._refuse(400, f"model {model[:60]!r} is not this run's model")
+            return
         headers = {name: value for name in FORWARD_HEADERS if (value := self.headers.get(name))}
         headers.update(broker.upstream.headers)
         request = urllib.request.Request(broker.upstream.url, data=body, headers=headers, method="POST")
@@ -168,7 +265,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             response: Any = broker._open(request)
         except urllib.error.HTTPError as exc:  # the upstream's own error answer (4xx/5xx, or a refused redirect)
             response = exc
-        except (urllib.error.URLError, OSError, TimeoutError):
+        except (urllib.error.URLError, http.client.HTTPException, OSError, TimeoutError, ValueError):
             self._refuse(502, "upstream unreachable")
             return
         status = getattr(response, "status", None) or response.getcode()
@@ -180,8 +277,8 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             while chunk := response.read(65536):
                 self.wfile.write(chunk)
                 self.wfile.flush()
-        except OSError:
-            pass  # Codex went away mid-stream (the run ended or timed out)
+        except (OSError, http.client.HTTPException, ValueError):
+            pass  # Codex went away mid-stream (the run ended or timed out), or the upstream broke off
         finally:
             response.close()
 
@@ -202,7 +299,9 @@ class Broker:
         self.requests = 0
         self.statuses: list[int] = []
         self.refused: list[str] = []
+        self.model: str | None = None
         self._lock = threading.Lock()
+        self._slots = threading.BoundedSemaphore(MAX_CONCURRENT)
         self._opener = urllib.request.build_opener(_NoRedirect)
         self._server: _Server | None = None
         self._thread: threading.Thread | None = None
@@ -222,9 +321,13 @@ class Broker:
             self._thread.join(timeout=2)
 
     @property
-    def base_url(self) -> str:
+    def port(self) -> int:
         assert self._server is not None
-        return f"http://127.0.0.1:{self._server.server_address[1]}/v1"
+        return int(self._server.server_address[1])
+
+    @property
+    def base_url(self) -> str:
+        return f"http://127.0.0.1:{self.port}/v1"
 
     def config_toml(self, model_keys: str = "") -> str:
         """Codex's config.toml for the run: the user's plain model keys, but always this broker as the provider."""
@@ -236,8 +339,18 @@ class Broker:
 
     def summary(self) -> dict[str, Any]:
         with self._lock:
-            return {"mode": self.upstream.mode, "requests": self.requests, "statuses": self.statuses[:MAX_RECORDED],
-                    "refused": self.refused[:MAX_RECORDED]}
+            return {"mode": self.upstream.mode, "model": self.model, "requests": self.requests,
+                    "statuses": self.statuses[:MAX_RECORDED], "refused": self.refused[:MAX_RECORDED]}
+
+    def _model(self) -> str | None:
+        with self._lock:
+            return self.model
+
+    def _pin(self, model: str) -> bool:
+        with self._lock:
+            if self.model is None:
+                self.model = model
+            return self.model == model
 
     def _take_request(self) -> bool:
         with self._lock:

@@ -64,8 +64,13 @@ no token is copied into the sandbox at all:
 - Codex gets a per-run dummy key and a model provider pointing at a loopback proxy inside repo-ai.
 - The proxy accepts only `POST /v1/responses` with that dummy key, swaps in the login's credential, and forwards the
   request upstream without following redirects.
-- Codex's sandbox admits loopback connections only, so a prompt-injected repository has no token to read and no host
-  to send one to.
+- Codex's sandbox can reach that one loopback port and nothing else, and it cannot read the login's directory, even
+  one outside your `HOME`. A prompt-injected repository has no token to read and no host to send one to.
+- The model can read the dummy key and send its own requests, so each request is vetted:
+  - only tools that Codex runs locally are forwarded;
+  - the hosted web search is removed;
+  - a remote image or file URL is refused, because the upstream would fetch it;
+  - the model is pinned to the one named in Codex's first request.
 - An expired ChatGPT token is refused, never refreshed: run `codex login` for that login.
 - A run whose upstream rejects the credential, or that sends nothing through the broker, is a failure.
 

