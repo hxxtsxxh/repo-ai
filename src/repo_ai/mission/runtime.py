@@ -23,7 +23,7 @@ from typing import Any
 from ..config import load_config
 from ..locks import file_lock
 from ..providers.discovery import PROVIDERS
-from ..paths import resolve_layout
+from ..paths import make_dir, resolve_layout
 from ..security import redact_text, sanitize_provider_text, source_contains_secret
 from ..verify import engine, evidence, isolate, results
 from ..verify.execute import get_executor, release
@@ -585,7 +585,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                              'contract': contract.to_json(), 'plan': planned, 'source': current, 'kernel': planned['kernel'],
                              'provider': provider_meta,
                              'proposal_sha256': digest(proposal_payload), 'seconds_used': 0, 'applied_to_source': False}
-    store.folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+    make_dir(store.root, store.folder, mode=0o700)
     with file_lock(store.folder / (mission_id + '.lock'), timeout=0) as locked:
         if not locked:
             raise ValueError('mission is already running; status/cancel are available')

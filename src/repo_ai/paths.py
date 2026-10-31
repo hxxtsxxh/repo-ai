@@ -169,6 +169,27 @@ def _no_symlinks(root: Path, *dirs: Path) -> None:
                         "state; refusing to use it (delete it, then re-run)")
 
 
+def make_dir(root: Path, path: Path, mode: int = 0o777) -> Path:
+    """Create one of repo-ai's own directories. A FILE where one of its components goes (a repository that tracks
+    a file named `.repo-ai`) is refused by name, not with ENOTDIR; reading a layout never needs the directory."""
+    try:
+        path.mkdir(parents=True, exist_ok=True, mode=mode)
+    except (FileExistsError, NotADirectoryError) as exc:
+        try:
+            parts = path.relative_to(root).parts
+        except ValueError:  # outside the repository (a configured state_dir elsewhere): an ordinary OS error
+            raise exc from None
+        current = root
+        for part in parts:
+            current = current / part
+            if os.path.lexists(current) and not current.is_dir():
+                raise LayoutError(f"{current.relative_to(root).as_posix()} is a file in this repository; repo-ai keeps "
+                                  "its state in a directory of that name (out_dir in repo-ai.toml moves the index and "
+                                  "context, but sandboxed runs and missions still need it)") from exc
+        raise
+    return path
+
+
 def resolve_layout(root: Path, cfg: Config, prefer: str = "standard") -> Layout:
     layout = _resolve_layout(root, cfg, prefer)
     _no_symlinks(root, layout.context_dir, layout.state_dir, layout.learning_dir)
