@@ -89,12 +89,13 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "schema-versioned provider catalog + validation tying EXECUTION to adapters; per-provider setup checks; conformance via isolation probe (Claude)"
+    "schema-versioned provider catalog + validation tying EXECUTION to adapters; per-provider setup checks; conformance via isolation probe (Claude)",
+    "2026-10-31 ACP conformance kit (`agents conformance`): handshake-only check of any ACP agent by absolute path, network denied (loopback on request), repository-owned executables refused, tested with a fake agent; Gemini CLI 0.65.0 and OpenCode 2.2.1 HANDSHAKE_CONFORMANT, no model call"
    ],
    "limits": [
-    "no out-of-process adapter SDK or conformance kit for third parties yet"
+    "no execution path for agents without an adapter (stays PLANNED); no out-of-process adapter SDK for execution yet"
    ],
-   "next_action": "adapter SDK + conformance harness"
+   "next_action": "a manifest-declared ACP execution adapter under the opencode-style sandbox, if a second local-model ACP agent becomes available"
   },
   {
    "id": "C06",
