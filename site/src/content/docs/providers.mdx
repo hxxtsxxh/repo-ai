@@ -59,6 +59,28 @@ a prompt-injected repository could try to send it out, which is why a separate, 
 is not, the run is refused. The outer sandbox is then the only write boundary. Codex has no hard USD flag, so a
 positive `--max-cost-usd` is refused and cost is recorded as `UNKNOWN`, never `0`. Bound runs with `--max-seconds`.
 
+**Experimental: credential broker** (`REPO_AI_CODEX_BROKER=1`, macOS only; live-verified with a ChatGPT login on Codex 0.165, not yet with an API-key login). With the broker,
+no token is copied into the sandbox at all:
+- Codex gets a per-run dummy key and a model provider pointing at a loopback proxy inside repo-ai.
+- The proxy accepts only `POST /v1/responses` with that dummy key, swaps in the login's credential, and forwards the
+  request upstream without following redirects.
+- Codex's sandbox can reach that one loopback port and nothing else, and it cannot read the login's directory, even
+  one outside your `HOME`. A prompt-injected repository has no token to read and no host to send one to.
+- The model can read the dummy key and send its own requests, so each request is vetted:
+  - only tools that Codex runs locally are forwarded;
+  - the hosted web search is removed;
+  - a remote image or file URL is refused, because the upstream would fetch it;
+  - the model is pinned to the one named in Codex's first request;
+  - stored server-side state (a stored prompt, conversation or response, or a background run) is refused.
+
+  As a result, a Codex sub-agent on a different model, or any Codex endpoint other than `/v1/responses`, is refused
+  in brokered runs.
+- An expired ChatGPT token is refused, never refreshed: run `codex login` for that login.
+- A run whose upstream rejects the credential, or that sends nothing through the broker, is a failure.
+
+Offline tests cover all of this. Two live runs on 2026-10-31 confirmed that the ChatGPT backend accepts the forwarded
+requests; a run's `codex_broker` record shows the mode, model, request count and statuses, never a credential.
+
 ### Antigravity (`agy`, macOS only)
 
 agy has no scratch-HOME login, so it runs with the real `HOME`, but the seatbelt profile denies reads under `HOME`

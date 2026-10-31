@@ -49,6 +49,8 @@ Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call b
 | 34 | 2026-10-30T20:16Z | claude (dedicated login) | same, dev build `86c9e19` (#16 + #17) | PASS [LIVE_CANDIDATE_VERIFIED]; equal to upstream on 3,000+ values × 6 formats; apply/undo exact | $0.070512 | same |
 | 35 | 2026-10-30T20:17Z | codex 0.165.0 | same | PASS [LIVE_CANDIDATE_VERIFIED]; differs from upstream only just below a googol | UNKNOWN (subscription) | same |
 | 36 | 2026-10-30T23:46Z | claude (dedicated login) | same, **published 0.11.2**, fresh first run (uncommitted `init`) | PASS [LIVE_CANDIDATE_VERIFIED], claim ASSURANCE_PARTIAL; project venv; apply 739/0; undo exact | $0.066148 | same |
+| 37 | 2026-10-31T10:56Z | codex 0.165.0 **via the credential broker** (personal login, ChatGPT mode) | scratch `clamp` bug, #36 branch | PASS [LIVE_CANDIDATE_VERIFIED]; correct fix `min(hi, max(lo, x))`; 19 s (the broker summary was not yet recorded in the mission state) | UNKNOWN (subscription) | owner 2026-10-31: 2 broker calls, personal login |
+| 38 | 2026-10-31T10:58Z | same, with the broker summary recorded | scratch `sign` bug in the same repository | broker: `chatgpt`, 3 requests, all HTTP 200, none refused, no token-like string in the record; correct fix; verdict FAIL only because #37's clamp candidate was never applied (`why-test-failed`: PRE_EXISTING_FAILURE test_clamp_high, test_sign fixed) | UNKNOWN (subscription) | same |
 
 **Budget note:** counting the authentication failure (#24, no inference) as an invocation, call #26 exceeded the
 25-call authorization by one. No further live calls are made without new approval.
@@ -57,7 +59,7 @@ Local-model runs (OpenCode + Ollama qwen3:8b, $0, not counted against the call b
 Used: 22 of 25 counted calls with inference (26 invocations including one auth failure and two pre-authorization-style probes); Claude $0.923 notional (cap $5), Codex/agy/Gemini UNKNOWN; OpenCode $0. Live calls paused pending new approval.
 
 **Second authorization (owner, 2026-10-30):** 15 more live calls, $3 notional cap, same rules; the owner re-logged
-the dedicated Claude login at about 18:55Z. Used: 10 of 15 (#27–#36), $0.2386 notional (Claude) plus one Codex run
+the dedicated Claude login at about 18:55Z. Used: 12 of 15 (#27–#38), $0.2386 notional (Claude) plus three Codex runs
 (UNKNOWN). #27–#32: `evidence/SKILL-VALUE-PILOT-2026-10-30.md` (INCONCLUSIVE under the predeclared rule). #33–#36:
 `evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md`. A refused 0.11.1 run (dirty `.gitignore`) invoked no model and is not
 counted.

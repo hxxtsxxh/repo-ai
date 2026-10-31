@@ -800,6 +800,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                             cost_status=run_res.get('cost_status', 'UNKNOWN'),
                             rate_limited=run_res.get('rate_limited', False),
                         )
+                        if 'codex_broker' in run_res:  # evidence that the credential stayed outside: mode, counts only
+                            state['provider']['codex_broker'] = run_res['codex_broker']
                         if run_res.get('rate_limited') and is_live_provider:
                             from ..providers.registry import note_rate_limited
                             note_rate_limited(root, contract.provider)
