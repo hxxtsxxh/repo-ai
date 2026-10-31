@@ -18,7 +18,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact), with the 0.10.0 sandbox that hides the rest of HOME. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Disclosed: the login token copied into its sandbox is readable by a model with shell access; use a separate repo-ai login (repo-ai agents setup codex). Opt-in from 0.11.3 (REPO_AI_CODEX_BROKER=1, macOS): a credential broker keeps the token outside the sandbox and limits Codex to one loopback port. It was live-verified on 2026-10-31 with a ChatGPT login (two runs; an API-key login is not yet verified).",
+        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact), with the 0.10.0 sandbox that hides the rest of HOME. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Disclosed: the login token copied into its sandbox is readable by a model with shell access; use a separate repo-ai login (repo-ai agents setup codex). Opt-in from 0.11.3 (REPO_AI_CODEX_BROKER=1, macOS): a credential broker keeps the token outside the sandbox and limits Codex to one loopback port. It was live-verified on 2026-10-31 with a ChatGPT login on a development build (two runs; an API-key login is not yet verified).",
         "verified_on": "2026-10-30",
         "version": "0.165.0",
         "sample": "n = 1 per journey",

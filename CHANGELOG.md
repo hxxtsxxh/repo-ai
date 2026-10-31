@@ -7,18 +7,20 @@
   (disclosed). With it, nothing secret is copied in:
   - Codex gets a per-run dummy key and a model provider whose `base_url` is a loopback proxy in repo-ai. The proxy
     checks the key, swaps in the login's credential and forwards `POST /v1/responses` upstream.
-  - Codex's sandbox can reach only that port and cannot read the login's directory.
+  - Codex's sandbox can reach only that port (and unix sockets in the run's scratch directory) and cannot read the
+    login's directory.
   - Each request is vetted, so that the upstream cannot be made to reach another host for the model: only local tool
-    types, hosted web search removed, no remote image or file URLs, no stored server-side state, no duplicate keys,
+    types, hosted web search removed, no remote image or file URLs, no stored prompt, conversation or response and no
+    background run, no duplicate keys,
     and the model pinned to the first request's.
-  - It went through three independent security-review rounds. Two live runs with a ChatGPT login (Codex 0.165)
-    passed through it: 3 requests, all HTTP 200, and no credential in the record. An API-key login is not yet
+  - It went through three independent security-review rounds. Two live runs with a ChatGPT login (Codex 0.165, on a
+    development build) went through it; the second recorded 3 requests, all HTTP 200, none refused, and no
+    credential in the record (the first predates the recorded broker summary). An API-key login is not yet
     live-verified.
-- Added: `repo-ai do --agent opencode-acp` keeps the ACP agent's stderr for diagnostics. The first 64 KiB are kept,
-  every byte is counted and hashed, and a flood can neither block the agent nor grow memory. The result carries
+- Added: `repo-ai do --agent opencode-acp` (below) keeps the ACP agent's stderr for diagnostics. The first 64 KiB are
+  kept, every byte is counted and hashed, and a flood can neither block the agent nor grow memory. The result carries
   `stderr_bytes`, `stderr_sha256` and a redacted `diagnostic_summary`, like every other provider. A rate-limit
-  message there is a failure reason, and a failed handshake says what the agent printed. Before, stderr was
-  discarded.
+  message there is a failure reason, and a failed handshake says what the agent printed.
 - Fixed: a repository that tracks a FILE named `.repo-ai` failed `init`, missions and sandboxed runs with a bare
   `[Errno 20] Not a directory`. repo-ai now names the file. `out_dir` in `repo-ai.toml` moves the index and context,
   but sandboxed runs and missions still need a `.repo-ai/` directory and stay unavailable in such a repository.
@@ -36,7 +38,7 @@
   `qwen3:8b` reached PASS on a scratch fixture.
 - Added: an Agent Client Protocol (ACP 1) client (`repo_ai.providers.acp`). It applies one permission policy to every
   ACP agent: reads only inside the workspace, writes only to allowed paths, no terminals, permission requests allowed
-  once only for read/search/edit tool calls, never allow-always. A handshake-only probe gives accurate capability
+  once only for read/search/edit/think tool calls, never allow-always. A handshake-only probe gives accurate capability
   detection without a model call; OpenCode 2.2.1 and Gemini CLI 0.65.0 both answer ACP 1. A live $0 run of OpenCode
   with a local model completed over ACP. `opencode-acp` (above) is the first ACP provider for `repo-ai do`.
 - Added: `repo-ai verify --run --show-fixed` names the tests a change fixed. A fix is a claim about one test, so
