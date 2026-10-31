@@ -1,0 +1,54 @@
+# Diagnose queue item 7b (benchmarks/speed-v1/RESULTS.md): verify fails tests that pass natively in two replayed
+# upstream changes. Third-party code runs only on this disposable runner. Triggered only by diag/** pushes.
+name: diagnose
+
+on:
+  push:
+    branches: ["diag/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-7b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {slug: more-itertools/more-itertools, ref: v10.7.0, commit: e7331924, deps: "-e . pytest"}
+          - {slug: python-humanize/humanize, ref: 4.12.3, commit: f772e59b, deps: "-e . pytest freezegun"}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: bubblewrap
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: replay the change and verify with full output
+        run: |
+          set -x
+          RAI="$(dirname "$(python -c 'import sys; print(sys.executable)')")/repo-ai"
+          OUT="$RUNNER_TEMP/out"; mkdir -p "$OUT"
+          git clone -q "https://github.com/${{ matrix.slug }}.git" "$RUNNER_TEMP/p" && cd "$RUNNER_TEMP/p"
+          git checkout -q --detach "${{ matrix.ref }}"
+          python -m venv .venv && .venv/bin/python -m pip install -q ${{ matrix.deps }}
+          "$RAI" init --agent none -q; git checkout -q -- .
+          printf '\n.repo-ai/\n.venv/\n' >> .git/info/exclude
+          C=$(git rev-parse "${{ matrix.commit }}"); P=$(git rev-parse "$C^")
+          git checkout -q --detach "$P" && git diff "$P" "$C" | git apply --whitespace=nowarn
+          .venv/bin/python -m pytest -q -p no:cacheprovider > "$OUT/native.txt" 2>&1; echo "native exit $?" >> "$OUT/native.txt"
+          "$RAI" sandbox status > "$OUT/sandbox.txt" 2>&1 || true
+          "$RAI" verify --run -v > "$OUT/verify.txt" 2>&1; echo "verify exit $?" >> "$OUT/verify.txt"
+          "$RAI" verify --run --rerun --json > "$OUT/verify.json" 2>&1 || true
+          tar -czf "$OUT/repo-ai-state.tgz" .repo-ai || true
+          tail -60 "$OUT/verify.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diag-${{ matrix.commit }}
+          path: ${{ runner.temp }}/out
