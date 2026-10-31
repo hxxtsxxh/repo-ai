@@ -1,20 +1,21 @@
 # Work queue (living; top = next)
 
-Updated 2026-10-31 after #26 and #28 (unreleased).
+Updated 2026-10-31 after #30 and #31 (unreleased).
 
 | # | Item | Gate | State |
 |---|---|---|---|
 | 1 | Release 0.11.2 (#16, #17, #18) | C20, C21 | done: published 2026-10-30, verified (PyPI = GitHub, attestation, smoke) |
 | 1a | Re-run the scoped missions on the published 0.11.2 | C21 | done: python-humanize live PASS (#36); python-slugify replay PASS_WITH_PRE_EXISTING_FAILURES, fresh first run |
 | 1b | Mission workspaces dropped `export-ignore` files and rewrote `export-subst` | C21 | done (#22, four review rounds) |
-| 1d | Release 0.11.3 (#21 apply count, #22 export attributes, #24 state paths, #25 scoped setup errors, #26 verify --show-fixed, #28 faster workspace clones) | C20 | blocked (owner approval) |
+| 1d | Release 0.11.3 (#21, #22, #24, #25, #26, #28, #30 ACP client, #31 opencode-acp provider) | C20 | blocked (owner approval) |
 | 1e | Nothing reaches a state path by any route (macOS case collisions; `.claude -> conf` links) | C18 | done (#24) |
 | 1f | A repository that tracks a FILE named `.repo-ai` breaks the sandboxed run directory `.repo-ai/run` (every verify/mission run) | C21 | todo (low: no real repository known) |
 | 1c | `--expect-fix`: a setup error already at the base may stand (teardown/body errors still refused) | C21 | done (#25, three review rounds) |
 | 2 | Skill value: pilot run 2026-10-30, INCONCLUSIVE (`evidence/SKILL-VALUE-PILOT-2026-10-30.md`); next a confirmatory trial with independently written tasks and oracles (5 calls left in the second budget) | C10 | todo |
 | 2a | Skill radar recommended against project-convention skills | C07 | done (#14) |
 | 3 | python-slugify post-apply 0 vs sandbox 20 failures | C21 | explained: `apply` printed a hard-coded "0 failed"; the post-apply observation had 20 (same interpreter); fixed in #21. An earlier note blamed the interpreter bug: wrong |
-| 4 | ACP client adapter to reach PLANNED agents with one permission policy | C04, C05 | todo |
+| 4 | ACP: client with one permission policy (#30) and `opencode-acp` provider under the opencode sandbox (#31, live $0 PASS) | C04, C05 | in progress: next a Gemini ACP provider (needs the owner's Gemini login) and other ACP agents as they are installed |
+| 4a | Tournaments count `opencode` and `opencode-acp` as distinct providers although they share a binary and model | C12 | todo |
 | 5 | Linux live provider run (podman + bwrap) | C17 | todo |
 | 6 | `verify --show-fixed` names tests a change fixed, each confirmed alone at base and change | C11 | done (#26, redesigned after review found four false claims) |
 | 7 | Verify speed profiling: host time is test execution; per-process workspace clone was the visible overhead | C16 | done for clones (#28: 0.07 s vs 0.31 s per process on 2,742 files); background deletion needs its own design |
