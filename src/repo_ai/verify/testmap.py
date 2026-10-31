@@ -168,8 +168,7 @@ def hash_files(root: Path, files: list[str] | None = None) -> dict[str, str]:
 
 
 def _prepare(ws: Path) -> Path:
-    run = ws / RUN_DIR
-    run.mkdir(parents=True, exist_ok=True)
+    run = isolate.run_dir(ws, RUN_DIR)
     shutil.copy2(TRACER, run / "rai_trace.py")
     return run
 

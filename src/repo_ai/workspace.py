@@ -24,7 +24,7 @@ from .fsutil import Originals, Plan, managed_state, read_text, stamp_managed
 from .index import open_index
 from .logging_setup import get_logger
 from .models import RepoFacts
-from .paths import Layout
+from .paths import Layout, make_dir
 
 log = get_logger()
 
@@ -184,7 +184,7 @@ def generate(
             shutil.copy2(layout.index_path, tmp_dir / "index.db")
     else:
         state_dir = layout.state_dir
-        state_dir.mkdir(parents=True, exist_ok=True)
+        make_dir(layout.root, state_dir)
 
     prune = tuple(sorted({layout.rel(d) for d in layout.owned_dirs() if layout.root in d.parents}))
     try:
@@ -258,7 +258,8 @@ def generate(
         if cfg.local_only:
             for name in ordered(agents):
                 ignore += ADAPTERS[name].local_only_ignores(ctx)
-        if agents or layout.kind == "standard" or cfg.local_only or not cfg.commit_context:
+        # a custom layout too: its index, lock and evidence would otherwise count as part of the change being verified
+        if agents or layout.kind in {"standard", "custom"} or cfg.local_only or not cfg.commit_context:
             plan_gitignore(plan, root, ignore)
         if write_config or layout.config_path.is_file():
             ctx.notes += plan_config(plan, layout, cfg, agents)

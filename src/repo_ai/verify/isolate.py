@@ -404,6 +404,21 @@ class Workspace:
         self.cleanup()
 
 
+def run_dir(ws: Path, rel: str) -> Path:
+    """Create `rel` (repo-ai's run directory, under `.repo-ai/`) inside a workspace. A repository that tracks a FILE
+    named `.repo-ai` (ordinary source, kept in the workspace) leaves no room for it: say so, not ENOTDIR mid-run."""
+    path = ws / rel
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except (FileExistsError, NotADirectoryError) as exc:
+        home = ws / rel.split("/", 1)[0]
+        if os.path.lexists(home) and not home.is_dir():
+            raise IsolationError(f"the repository tracks a file named {home.name}; sandboxed runs need a directory of "
+                                 "that name in their workspace, so repo-ai cannot run tests in this repository") from exc
+        raise
+    return path
+
+
 def _remove(path: Path) -> None:
     def onerror(func, p, _exc):  # read-only files a test left behind
         try:
