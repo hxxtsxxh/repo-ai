@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+- Security (opt-in `SAFE_AUTO`): a preregistered evaluation with an unseen corpus (`benchmarks/skill-vet-fresh-v1`,
+  80 defanged cases) **failed** its main gate. `SAFE_AUTO` would have installed 8 of 30 harmful skills without
+  asking. All 8 were prose-only SKILL.md files: overriding the agent's instructions, hiding results from the user,
+  bypassing approvals, weakening tests or CI, writing into agent configuration, destructive requests and taking
+  over commit identity. The firewall now reads each prose paragraph for these seven classes. A match is a `high`
+  finding (`instruction-risk/…`), so the verdict is `review` and the skill is no longer inert: `SAFE_AUTO` asks.
+  No negation clears a match, so a prohibition about these subjects asks too: an independent review showed "never
+  mind the old notes, delete everything …" passing otherwise. Text is normalised (full-width letters, HTML
+  entities), licence and notice files are read too, and any non-ASCII letter keeps a skill from being inert
+  (homoglyphs). Not yet confirmed: the confirming corpus (v2) could not be produced here, so this is a hardening,
+  not a validated detector; phrase checks can be paraphrased around.
+- Security: the firewall rated 6 of 10 harmful script-bearing skills `eligible` in the same evaluation, including a
+  reverse shell with no finding at all. Code (scripts and fenced blocks) is now read for a socket handed to a shell,
+  credential stores named by path pieces, `rm -rf` with other flags first or a quoted `"$HOME"/*`, and, across a
+  whole program, a secret read plus a network send or a download made executable. They were never auto-installed
+  (scripts already need approval); a reviewer now sees `review` or `blocked` instead of `eligible`.
+- Tests: tests that write attack-like fixtures (reverse and bind shells, recursive deletes, credential uploads) or
+  make deliberately denied escape attempts are now an explicit class (`tests/conftest.py`
+  `SECURITY_FIXTURE_MODULES`). Every CI job runs them; on a developer machine they are skipped unless
+  `REPO_AI_SECURITY_FIXTURES=1`, because endpoint protection cannot tell a fixture from a payload. Nothing in the
+  suite executes a fixture. See CONTRIBUTING.md.
+- Plugins in the same evaluation: harmful 6 `blocked` and 4 `review` (never `eligible`); benign 10 `review` and 0
+  `blocked` (the earlier fresh validation blocked 12 of 42 benign cases).
+
 ## 0.11.3 — a Codex credential broker, ACP agents, honest mission evidence
 
 - Security (opt-in, macOS): a credential broker for Codex (`REPO_AI_CODEX_BROKER=1`). Without it, the Codex login's

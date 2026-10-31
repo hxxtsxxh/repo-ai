@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# Tests that write attack-like fixtures or make denied escape attempts are skipped locally by default
+# (tests/conftest.py SECURITY_FIXTURE_MODULES); every CI job runs them.
+env:
+  REPO_AI_SECURITY_FIXTURES: "1"
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -89,7 +94,22 @@ jobs:
           "$BIN/repo-ai" context "fix the login validation bug" --format paths | head -3
           "$BIN/repo-ai" doctor --agent claude
 
-  # macOS minutes cost 10x on private repositories: run on main and tags only.
+  # The security-fixture modules on macOS for every pull request: their seatbelt escape tests run nowhere else
+  # before merge (developer machines skip them; tests/conftest.py SECURITY_FIXTURE_MODULES).
+  test-macos-security:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -e ".[dev]"
+      - name: security-fixture modules (seatbelt)
+        run: |
+          MODULES=$(python -c "import sys; sys.path.insert(0, 'tests'); from conftest import SECURITY_FIXTURE_MODULES as m; print(' '.join(f'tests/{x}.py' for x in sorted(m)))")
+          python -m pytest -q $MODULES
+
+  # The full macOS suite: main and tags.
   test-macos:
     if: github.event_name != 'pull_request'
     runs-on: macos-latest

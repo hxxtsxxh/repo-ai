@@ -423,6 +423,8 @@ repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-ru
   - its directory holds a SKILL.md and plain licence files, and nothing else;
   - it is pinned to the hash that was vetted and re-checked at install;
   - it declares no permissions, hooks, URLs, network commands, accounts or hidden characters;
+  - its text has no non-ASCII letters (look-alike letters defeat text checks) and no instruction-risk prose
+    (below), whether phrased as a request or as a prohibition;
   - the firewall found nothing that matters.
   
   It installs into the Claude Code project skills directory only, and only a
@@ -431,6 +433,12 @@ repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-ru
 - **At every level:** scripts, hooks, MCP servers, plugins, binaries, provider adapters, static tools,
   external accounts, permission changes and network execution need your approval.
 - **`eligible` is not inert:** a firewall verdict of `eligible` never qualifies a skill on its own.
+- **Measured, and failed:** an unseen 80-case corpus (`benchmarks/skill-vet-fresh-v1`) found that `SAFE_AUTO`
+  would have installed 8 of 30 harmful skills. All were prose-only: instructions that take over the agent, hide
+  results, bypass approvals, weaken checks, write into agent configuration, delete data or take over commit
+  identity. Such prose is now a `high` firewall finding (`instruction-risk`), so `SAFE_AUTO` asks. The fix is not
+  yet confirmed on a second unseen corpus. Phrase-based checks can be paraphrased around, so keep `SAFE_AUTO`
+  for skills whose source you trust.
 
 **Installs:**
 - Every install carries a repo-ai ownership marker and never adds permissions.

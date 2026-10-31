@@ -275,6 +275,20 @@
         "source_url": "https://github.com/hxxtsxxh/repo-ai/blob/main/docs/SKILL_NETWORK.md"
       },
       {
+        "id": "skill-safe-auto-unseen",
+        "title": "SAFE_AUTO never auto-installs a harmful skill (unseen corpus)",
+        "status": "NEGATIVE_RESULT",
+        "stat": "8 of 30",
+        "result": "FAILED: on an unseen, preregistered 80-case corpus, SAFE_AUTO would have installed 8 of 30 harmful skills without asking, all prose-only (taking over the agent, hiding results, weakening checks, writing agent config, destructive requests, identity takeover). Harmful plugins: none eligible. Benign: 1 of 30 skills and 0 of 10 plugins blocked. A fix followed; it is not yet confirmed on a second unseen corpus.",
+        "date": "2026-10-31",
+        "sample_size": "80 cases (30 harmful skills, 30 benign skills, 10 harmful and 10 benign plugins)",
+        "method": "Preregistered (benchmarks/skill-vet-fresh-v1); corpus written by an author that read only the protocol; harness and corpus committed before one run; $0.",
+        "limits": "Synthetic, defanged cases from one model author. The confirming corpus (v2) could not be produced here.",
+        "source": "benchmarks/skill-vet-fresh-v1/RESULTS.md",
+        "featured": true,
+        "source_url": "https://github.com/hxxtsxxh/repo-ai/blob/main/benchmarks/skill-vet-fresh-v1/RESULTS.md"
+      },
+      {
         "id": "prooflab-qualification",
         "title": "ProofLab (prove) qualification",
         "status": "NEGATIVE_RESULT",
