@@ -23,6 +23,8 @@ Updated 2026-10-31 for the 0.11.3 release (#21–#36).
 | 8 | Codex: the token copied into its sandbox stays readable by its model; explore a token broker or document as permanent | C18 | done (#36): opt-in broker (`REPO_AI_CODEX_BROKER=1`, macOS) after three security-review rounds; live-verified with a ChatGPT login (calls #37 and #38 in EXPERIMENTS.md). Next: verify an API-key login; consider making it the default for Codex on macOS |
 | 9 | Claude provider live on the re-logged dedicated login | C03 | done (#33, #34 provider runs) |
 | 10 | Claude token-mode live check (needs the owner to create a `claude setup-token`) | C03 | blocked (owner) |
+| 11 | Linux Claude runs: bwrap mounts `/proc` and, in dedicated-config mode, the config dir read-write; check whether Claude Code's file tools (Read/Glob/Grep under `--restricted --safe-mode`) can read `/proc/self/environ` or the credentials file, and deny both if so. On macOS the file-only model cannot read its environment | C03, C18 | todo (needs a Linux host) |
+| 12 | Credentials inside a run were mis-stated in 0.10.0 (Codex `auth.json`, Bob settings, env keys) | C18 | done (#39): corrected changelog; disclosed on the security and providers pages. Next: consider a broker or file-only mode for Bob and env keys |
 
 Decided 2026-10-31:
 - **ACP cost label.** An ACP run keeps `cost_status: OBSERVED` at $0, with `cost_basis` naming the confinement. Any

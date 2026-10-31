@@ -1,6 +1,6 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.11.3, and the pre-releases and release candidate that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.11.3, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
@@ -28,8 +28,8 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
   file. Sandboxed runs and missions still need a `.repo-ai/` directory and stay unavailable in such a repository.
 - **Security** whatever exists at a repo-ai state path after a mission workspace is built is removed, however it got
   there (a case-insensitive filesystem let a tracked link reach `.claude/`; it stayed inside the workspace).
-- **Faster** on APFS, a parallel test process's workspace is one copy-on-write clone (about 0.07 s against 0.31 s per process on
-  repo-ai's own 2,742-file tree).
+- **Faster** on APFS, a parallel test process's workspace is one copy-on-write clone (about 0.07 s against 0.31 s per
+  process on repo-ai's own 2,742-file tree).
 
 ## 0.11.2
 
@@ -52,9 +52,9 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
   must fail at the base and pass on the candidate, and nothing that passed may fail. The result is
   `PASS_WITH_PRE_EXISTING_FAILURES` (`ASSURANCE_PARTIAL`), never a plain PASS. See [Missions](/repo-ai/docs/missions/).
 - **Added** requirement erasure: a candidate that deletes documentation stating a requirement ("raise", "must",
-  "never") is named, and a clean PASS drops to `ASSURANCE_PARTIAL`; it never changes a verdict. Motivated by a live
-  0.10.0 run where a local model removed "Raise ValueError if lo > hi" with the behaviour and the visible tests passed.
-  Python lines are placed with the parser; JS/TS use a diff heuristic.
+  "never") is named, and a clean PASS drops to `ASSURANCE_PARTIAL`; it never changes a verdict. Observed live on
+  0.10.0: a local model removed "Raise ValueError if lo > hi" with the behaviour, and the visible tests passed. Python
+  lines are placed with the parser; JS/TS use a diff heuristic.
 
 ## 0.10.0
 
