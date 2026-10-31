@@ -91,7 +91,8 @@ untouched until `repo-ai apply`. The residual risks, stated plainly:
   (`CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` (not with the broker), `GEMINI_API_KEY`,
   `GOOGLE_API_KEY`, `BOB_API_KEY`). A model that can run shell commands can read them, and network is allowed. Claude
   Code's model gets file tools only, so on macOS it cannot read its environment; whether its file tools can reach
-  `/proc` under the Linux sandbox is not yet checked. Use a separate, revocable login or key for repo-ai.
+  `/proc` or its config directory's credentials file under the Linux sandbox is not yet checked. Use a separate,
+  revocable login or key for repo-ai.
 - **Cost is not enforced for subscription CLIs.** Codex and agy cost is recorded as `UNKNOWN`, never `0`.
 - **A passing test is not a proof of correctness**, and handoff capsules are integrity-checked, not authenticated.
 
