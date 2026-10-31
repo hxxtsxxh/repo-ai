@@ -202,7 +202,8 @@ def vet_request(body: bytes, pinned_model: str | None) -> tuple[bytes, str, str]
             data["tools"] = tools
     except RecursionError:
         return b"", "", "the request is nested too deeply"
-    return json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode(), model, ""
+    # ASCII escapes: valid JSON for any string the parser accepted (a lone surrogate cannot be UTF-8 encoded)
+    return json.dumps(data, separators=(",", ":")).encode(), model, ""
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):

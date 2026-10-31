@@ -256,6 +256,11 @@ def test_the_forwarded_body_is_the_vetted_object():
     assert not why and forwarded == b'{"model":"m","store":false,"input":[]}'
 
 
+def test_any_string_the_parser_accepts_is_forwarded_intact():
+    forwarded, _, why = cb.vet_request(b'{"model":"m","input":"\\ud800 caf\xc3\xa9"}', None)
+    assert not why and json.loads(forwarded)["input"] == "\ud800 caf\u00e9"
+
+
 def test_a_data_url_image_is_allowed():
     image = {"type": "input_image", "image_url": "data:image/png;base64,AAAA"}
     body = _body(input=[{"type": "message", "role": "user", "content": [image]}])
