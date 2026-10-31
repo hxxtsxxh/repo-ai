@@ -1,6 +1,6 @@
 {
   "schema": "repo-ai.evidence-matrix/1",
-  "updated": "2026-10-30",
+  "updated": "2026-10-31",
   "about": "Machine-readable evidence ledger behind the website's Evidence Lab. Condensed from docs/launch/ACCEPTANCE.json, docs/STATUS.md, docs/launch/EVALUATION.md and the study results they cite; when an entry and its source disagree, the source is the record. scripts/site_facts.py validates this file and copies it into site/src/data/release-facts.json. Dates given as YYYY-MM are not recorded more precisely in the public tree; date_note says what is known.",
   "statuses": {
     "DEMONSTRATED": "Measured on fresh or held-out data under a frozen protocol; the claim holds within the stated scope.",
@@ -210,6 +210,19 @@
       "method": "Wall-clock comparison inside the held-out-7 evaluation (podman containers).",
       "limits": "Earlier, held-out-5 showed slower runs on 4 of 7 short suites (1.22–2.52×). On small suites the value is the classification, not time.",
       "source": "docs/release/0.8.0rc1.md",
+      "featured": true
+    },
+    {
+      "id": "verify-speed-upstream-commits",
+      "title": "verify is faster than the native suite on real upstream changes",
+      "status": "NEGATIVE_RESULT",
+      "stat": "1.84×",
+      "result": "Preregistered speed-v1: on 30 real upstream commits in 5 pure-Python projects, verify --run took 1.84× the native suite (geometric mean) and was slower on 24 of 30; the other 6 were runs that failed early, not faster ones. Median overhead +0.63 s; re-verifying an unchanged state 0.20 s. No false assurance in the 30 changes.",
+      "date": "2026-10-31",
+      "sample_size": "30 changes (5 projects × 6 commits)",
+      "method": "benchmarks/speed-v1: protocol, harness and workflow committed before the run; GitHub ubuntu runner, bwrap sandbox; native suite median of 3.",
+      "limits": "Small, fast pure-Python suites on one runner type. verify failed natively passing tests in 13 changes (one project's network-dependent tests, two unexplained, one name-matched exclusion).",
+      "source": "benchmarks/speed-v1/RESULTS.md",
       "featured": true
     },
     {

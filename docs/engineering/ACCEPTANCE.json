@@ -215,7 +215,7 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "codex\u2192agy live handoff PASS, hidden oracle 714/714 (0.9.0)"
+    "codex→agy live handoff PASS, hidden oracle 714/714 (0.9.0)"
    ],
    "limits": [],
    "next_action": "Claude as a handoff target"
@@ -251,16 +251,20 @@
   {
    "id": "C16",
    "title": "Performance",
-   "status": "NOT_YET_DEMONSTRATED",
+   "status": "NEGATIVE_RESULT",
    "owner": "principal",
    "code_sha": null,
-   "test_run": null,
-   "environment": "macOS Darwin 25.5 arm64",
+   "test_run": "https://github.com/hxxtsxxh/repo-ai/actions/runs/41240668799",
+   "environment": "GitHub ubuntu-latest (4 vCPU), bwrap; earlier: macOS",
    "observations": [
-    "verify 1.44\u20132.31x slower than native in 3/5 held-out cases (historical)"
+    "verify 1.44–2.31x slower than native in 3/5 held-out cases (historical)",
+    "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance in 30 changes; verify failed natively passing tests in 13 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)"
    ],
-   "limits": [],
-   "next_action": "profile"
+   "limits": [
+    "small, fast pure-Python suites on one runner type; not a general claim",
+    "more-itertools and humanize failures under verify unexplained"
+   ],
+   "next_action": "explain/fix verify failing natively passing suites (more-itertools, humanize); say when failures match the sandbox; profile the fixed overhead"
   },
   {
    "id": "C17",
