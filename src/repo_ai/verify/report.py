@@ -152,8 +152,8 @@ _HEADLINE = {
 # tests failed at the base and the change alike, and the output said only "pre-existing")
 _NETWORK_DENIED = re.compile(r"Temporary failure in name resolution|Name or service not known|nodename nor servname|"
                              r"Network is unreachable|getaddrinfo failed|Failed to establish a new connection|"
-                             r"\[Errno (?:-2|-3|-5|101|65|51)\]|Could not resolve host|No address associated with "
-                             r"hostname|socket\.gaierror|ENOTFOUND|EAI_AGAIN")
+                             r"\[Errno (?:-2|-3|-5|101|113|65|51)\]|Could not resolve host|No address associated with "
+                             r"hostname|socket\.gaierror|\b(?:ENOTFOUND|EAI_AGAIN|ENETUNREACH)\b")
 
 
 def summarize(rec: dict[str, Any]) -> dict[str, Any]:
@@ -290,8 +290,8 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
                    + ", ".join(s["pre_existing"][:6]) + (" …" if len(s["pre_existing"]) > 6 else ""))
     net = s.get("sandbox_network_suspected") or []
     if net:
-        out.append("  these failures look like the sandbox's denied network (verify runs tests without network; "
-                   "the project's own run may pass): " + ", ".join(net[:6]) + (" …" if len(net) > 6 else ""))
+        out.append("  some failures in these files look like the sandbox's denied network (verify runs tests "
+                   "without network; the project's own run may pass): " + ", ".join(net[:6]) + (" …" if len(net) > 6 else ""))
     full = rec.get("full_suite")
     if full and full.get("status") not in {None, "not-run"} and str(rec.get("verdict")) == "full-suite-failed":
         out += [f"  | {line[:150]}" for line in (full.get("output_tail") or "").strip().splitlines()[-6:]]

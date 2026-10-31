@@ -172,7 +172,8 @@ A consumer must not parse the text after the prefix.
 - `summary`:
   - `verdict`;
   - `new_failures[]` (`test_file`, `tests[]`, `status`);
-  - `pre_existing[]`, `failing_differently[]`, `unverified[]`;
+  - `pre_existing[]` (and `sandbox_network_suspected[]`: those whose output looks like the sandbox's missing
+    network), `failing_differently[]`, `unverified[]`;
   - `unconfirmed[]`, `not_compared[]`;
   - `passed`, `seconds`, `processes`, `reused`;
   - `source_tree_unchanged`.
