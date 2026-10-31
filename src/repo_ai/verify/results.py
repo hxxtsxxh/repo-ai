@@ -25,6 +25,7 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
+from .isolate import run_dir
 from .runner import TestRunner
 
 RESULT_SHIM = Path(__file__).with_name("rai_result.py")
@@ -93,8 +94,7 @@ def instrument(runner: TestRunner, argv: list[str], ws: Path, inside_root: str, 
     Unless `native` (the project's own full-suite command, run as is), a
     pytest run of several files continues past a file that fails to collect,
     as each file would when run alone."""
-    run = ws / RUN_DIR
-    run.mkdir(parents=True, exist_ok=True)
+    run = run_dir(ws, RUN_DIR)
     out_rel = f"{RUN_DIR}/{name}.jsonl"
     inside = f"{inside_root}/{out_rel}"
     if runner.kind == "node":

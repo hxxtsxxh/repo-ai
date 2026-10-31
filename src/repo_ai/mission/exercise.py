@@ -128,8 +128,7 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
             return record
         with isolate.materialize(workspace, label="mission-exercise", listing=listing) as ws:
             bound = executor.in_workspace(ws)
-            run_dir = ws.path / RUN_DIR
-            run_dir.mkdir(parents=True, exist_ok=True)
+            run_dir = isolate.run_dir(ws.path, RUN_DIR)
             inside = bound.inside_root
             env = dict(runner.env)
             if runner.kind == "node":

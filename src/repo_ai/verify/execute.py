@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .. import sandbox
-from .isolate import (IsolationError, VenvLayout, Workspace, editable_redirects, site_dirs, static_venv,
+from .isolate import (IsolationError, VenvLayout, Workspace, editable_redirects, run_dir, site_dirs, static_venv,
                       workspaces_root)
 
 HOST_BACKENDS = ("bwrap", "seatbelt")
@@ -107,8 +107,7 @@ class Executor:
             return self.backend.run(cmd, self.root, limits=limits, toolchain=toolchain,  # type: ignore[call-arg]
                                     env=self._env(env), ro_mounts=mounts)
         # HOME and TMPDIR inside the disposable workspace
-        home = self.root / RUN_HOME
-        home.mkdir(parents=True, exist_ok=True)
+        run_dir(self.root, RUN_HOME)
         inside_home = f"{self.inside_root}/{RUN_HOME}"
         res = self.backend.run(cmd, self.root, limits=limits, toolchain=toolchain,  # type: ignore[call-arg]
                                env={"HOME": inside_home, "TMPDIR": inside_home, **self._env(env)},
