@@ -503,19 +503,28 @@ def _clone_tree(src: Path, label: str, keep: set[str]) -> Path | None:
         return None
     try:
         (path / WS_MARKER).write_text(json.dumps({"pid": os.getpid(), "created": time.time()}), "utf-8")
-        kept_dirs = {str(PurePosixPath(k).parent) for k in keep} | {"."}
-        for k in keep:  # every ancestor of a kept path
-            parent = PurePosixPath(k).parent
-            while str(parent) not in {"", "."}:
-                kept_dirs.add(str(parent))
-                parent = parent.parent
+        # decided by filesystem identity, not by name: on a case-insensitive disk `Docs/a.py` and `docs/b.py`
+        # share one directory, and a lookup through the filesystem finds both where a string match would not
+        def ident(p: Path) -> tuple[int, int] | None:
+            try:
+                st = os.lstat(p)
+            except OSError:
+                return None
+            return st.st_dev, st.st_ino
+
+        kept_files: set[tuple[int, int]] = set()
+        kept_dirs: set[tuple[int, int]] = {i for i in (ident(path),) if i}
+        for k in (*keep, WS_MARKER):
+            if (i := ident(path / k)) is not None:
+                kept_files.add(i)
+            for parent in PurePosixPath(k).parents:
+                if str(parent) not in {"", "."} and (i := ident(path / str(parent))) is not None:
+                    kept_dirs.add(i)
         for dirpath, dirnames, filenames in os.walk(path, topdown=False):
-            rel_dir = os.path.relpath(dirpath, path)
             for name in filenames + [d for d in dirnames if os.path.islink(os.path.join(dirpath, d))]:
-                rel = name if rel_dir == "." else f"{rel_dir}/{name}"
-                if rel != WS_MARKER and rel not in keep:
+                if ident(Path(dirpath, name)) not in kept_files:
                     os.unlink(os.path.join(dirpath, name))
-            if rel_dir not in kept_dirs:
+            if ident(Path(dirpath)) not in kept_dirs:
                 _remove(Path(dirpath))
     except OSError:  # something the template should not hold (a read-only directory): copy file by file
         _remove(path)

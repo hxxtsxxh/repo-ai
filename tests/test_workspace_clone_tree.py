@@ -95,3 +95,26 @@ def test_a_copy_holds_only_listed_files_not_what_a_dropped_file_left(tmp_path):
             assert (twin.path / "pkg" / "a.py").is_file() and (twin.path / "link").is_symlink()
         finally:
             twin.cleanup()
+
+
+def test_paths_differing_only_in_directory_case_both_survive(tmp_path):
+    """Review of #28: on a case-insensitive disk `Docs/a.py` and `docs/b.py` share a directory; a name match pruned
+    `b.py`. The prune decides by filesystem identity."""
+    root = tmp_path / "r"
+    root.mkdir()
+    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
+           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.invalid"}
+    git = lambda *a, stdin=None: subprocess.run(["git", *a], cwd=root, check=True, env=env, capture_output=True,  # noqa: E731
+                                                input=stdin).stdout
+    git("init", "-q")
+    for rel, data in (("Docs/a.py", b"a = 1\n"), ("docs/b.py", b"b = 2\n")):
+        sha = git("hash-object", "-w", "--stdin", stdin=data).decode().strip()
+        git("update-index", "--add", "--cacheinfo", f"100644,{sha},{rel}")
+    commit = git("commit-tree", git("write-tree").decode().strip(), "-m", "case pair").decode().strip()
+    with isolate.materialize_commit(root, commit, dependencies=False) as ws:
+        twin = ws.clone("t")
+        try:
+            for rel in ws.files:
+                assert (twin.path / rel).is_file(), (rel, sorted(os.listdir(twin.path)))
+        finally:
+            twin.cleanup()

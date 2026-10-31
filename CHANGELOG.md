@@ -4,7 +4,7 @@
 
 - Faster: on macOS (APFS), a parallel test process's disposable workspace is one copy-on-write clone of the whole
   tree, pruned to exactly the listed files, instead of one clone per file. On repo-ai's own 2,742-file tree that is
-  0.075 s against 0.310 s per process. Content, links, modes and the ownership marker are unchanged, nothing unlisted
+  about 0.09 s against 0.310 s per process. Content, links, modes and the ownership marker are unchanged, nothing unlisted
   is carried over (not even an empty directory), and other filesystems still copy file by file.
 - Security: a hostile repository could put a file at a repo-ai state path in a mission workspace on a case-insensitive
   filesystem (macOS). A tracked link `A -> .claude` and a file `a/settings.local.json` wrote
