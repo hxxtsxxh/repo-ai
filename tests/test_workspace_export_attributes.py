@@ -2,7 +2,8 @@
 the review of #16): `export-ignore` used to drop files (often a whole `tests/`), `export-subst` rewrote `$Format$`."""
 import os
 import subprocess
-from pathlib import Path
+
+import pytest
 
 from repo_ai.verify import isolate
 
@@ -77,3 +78,57 @@ def test_a_provider_mission_on_a_repository_that_export_ignores_gitignore(tmp_pa
     planned = runtime.plan(root, "Fix duplicate charge", agent="codex", write_paths=["charge.py"], execute_local=True)
     result = runtime.execute(root, planned, None, provider_executable=cli)
     assert result["effective_verdict"] == "PASS", result["passport"]["negative"]
+
+
+COMBOS = {
+    "ident.txt": (b"$Id$\nline\n", "ident.txt export-ignore ident\n"),
+    "eolcrlf.txt": (b"one\ntwo\n", "eolcrlf.txt export-ignore text eol=crlf\n"),
+    "nul.txt": (b"a\x00b\nc\n", "nul.txt export-ignore text eol=crlf\n"),
+    "already.txt": (b"one\r\ntwo\r\n", "already.txt export-ignore text=auto\n"),
+    "lonecr.txt": (b"one\rtwo\n", "lonecr.txt export-ignore text=auto\n"),
+    "plain.txt": (b"one\ntwo\n", "plain.txt export-ignore text\n"),
+}
+
+
+@pytest.mark.parametrize("config", [[], ["core.autocrlf", "true"], ["core.eol", "crlf"]])
+def test_restored_bytes_equal_what_a_checkout_writes(tmp_path, config):
+    files = {name: data for name, (data, _) in COMBOS.items()}
+    root = _repo(tmp_path, files, "".join(attr for _, attr in COMBOS.values()))
+    if config:
+        _git(root, "config", *config)
+    clone = tmp_path / "clone"
+    _git(tmp_path, "clone", "-q", *(["-c", f"{config[0]}={config[1]}"] if config else []), str(root), str(clone))
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        for name in COMBOS:
+            assert (ws.path / name).read_bytes() == (clone / name).read_bytes(), (name, config)
+
+
+def test_an_export_ignored_symlink_is_restored_under_the_archive_rules(tmp_path):
+    root = _repo(tmp_path, {"data/d.txt": b"x\n"}, "tests/ export-ignore\n")
+    (root / "tests").mkdir()
+    (root / "tests" / "fx").symlink_to("../data/d.txt")
+    (root / "tests" / "out").symlink_to("/etc/hosts")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "links")
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        assert (ws.path / "tests" / "fx").is_symlink() and (ws.path / "tests" / "fx").read_bytes() == b"x\n"
+        assert not (ws.path / "tests" / "out").exists() and not (ws.path / "tests" / "out").is_symlink()
+
+
+def test_a_missing_object_is_an_isolation_error_not_a_crash(tmp_path):
+    root = _repo(tmp_path, {"a.py": b"x = 1\n", "tests/t.py": b"y = 2\n"}, "tests/ export-ignore\n")
+    sha = _git(root, "rev-parse", "HEAD:tests/t.py").decode().strip()
+    (root / ".git" / "objects" / sha[:2] / sha[2:]).unlink()
+    with pytest.raises(isolate.IsolationError):
+        with isolate.materialize_commit(root, "HEAD", dependencies=False):
+            pass
+
+
+@pytest.mark.skipif(os.uname().sysname == "Darwin", reason="APFS refuses names that are not UTF-8")
+def test_a_name_that_is_not_utf8_does_not_crash(tmp_path):
+    root = _repo(tmp_path, {"a.py": b"x = 1\n"}, "*.py text\n")
+    (root / os.fsdecode(b"caf\xe9.txt")).write_bytes(b"latin-1 name\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "odd name")
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        assert os.fsdecode(b"caf\xe9.txt") in ws.files

@@ -536,7 +536,8 @@ def materialize(root: Path, *, label: str = "ws", dependencies: bool = True,
 
 def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
     """The bytes `materialize_commit` writes for tracked file `rel`: `git archive` applies the checkout's
-    line-ending settings (core.autocrlf), so this can differ from the raw blob."""
+    line-ending settings (core.autocrlf), so this can differ from the raw blob; a file the archive leaves out
+    (export-ignore) is restored with `checkout_bytes`."""
     import io
     import tarfile
     archive = subprocess.run(["git", "archive", "--format=tar", "--end-of-options", commit, rel],
@@ -551,7 +552,9 @@ def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
                 return None
             fh = tar.extractfile(member)
             return fh.read() if fh is not None else None
-    except (KeyError, tarfile.TarError):
+    except KeyError:  # left out of the archive (export-ignore): the workspace holds the checkout bytes
+        return checkout_bytes(root, commit, rel)
+    except tarfile.TarError:
         return None
 
 
@@ -562,7 +565,7 @@ def _git_lines(root: Path, args: list[str], stdin: bytes | None = None) -> bytes
 
 def _check_attr(root: Path, commit: str, names: list[str], paths: list[str]) -> dict[str, dict[str, str]]:
     """Attributes of `paths` as `commit` defines them (`--source`, git >= 2.40; else the working tree's)."""
-    data = b"".join(p.encode() + b"\0" for p in paths)
+    data = b"".join(p.encode("utf-8", "surrogateescape") + b"\0" for p in paths)
     out = _git_lines(root, ["check-attr", "--source", commit, "-z", "--stdin", *names], data)
     if out is None:
         out = _git_lines(root, ["check-attr", "-z", "--stdin", *names], data) or b""
@@ -573,11 +576,19 @@ def _check_attr(root: Path, commit: str, names: list[str], paths: list[str]) -> 
     return attrs
 
 
+def checkout_bytes(root: Path, commit: str, rel: str) -> bytes | None:
+    """The bytes a checkout writes for tracked file `rel` of `commit`: git's own conversion (line endings, `ident`,
+    `core.eol`, the same as `git archive`), never a re-implementation of it."""
+    proc = subprocess.run(["git", "cat-file", "--filters", "--end-of-options", f"{commit}:{rel}"], cwd=root,
+                          capture_output=True, timeout=120, check=False, stdin=subprocess.DEVNULL)
+    return proc.stdout if proc.returncode == 0 else None
+
+
 def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[str]) -> dict[str, int]:
     """`git archive` honours `export-ignore` (a tracked file, often a whole `tests/`, is left out) and `export-subst`
-    (`$Format:…$` is replaced), so the archive is not the commit's tracked source. Those files are written from their
-    committed blobs, with the line endings a checkout would give them (`eol=crlf`, `core.autocrlf=true` for text) and
-    their executable bit. Returns the restored paths and sizes."""
+    (`$Format:…$` is replaced), so the archive is not the commit's tracked source. Those files are written as a
+    checkout writes them (`checkout_bytes`), with their executable bit; a left-out symbolic link is restored under
+    the same rule as the archive's (relative, resolving inside the workspace). Returns the restored paths and sizes."""
     listing = _git_lines(root, ["ls-tree", "-r", "-z", "--full-tree", "--end-of-options", commit])
     if listing is None:
         raise IsolationError("could not list the base revision's tracked files")
@@ -589,39 +600,37 @@ def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[st
         mode, kind, sha = meta.decode().split()
         rel = name.decode("utf-8", "surrogateescape")
         pure = PurePosixPath(rel)
-        if kind != "blob" or mode not in {"100644", "100755"} or pure.is_absolute() or ".." in pure.parts \
+        if kind != "blob" or mode not in {"100644", "100755", "120000"} or pure.is_absolute() or ".." in pure.parts \
                 or rel.startswith(STATE_PREFIXES):
             continue
         blobs[rel] = (mode, sha)
-    present = [p for p in blobs if p in have]
+    present = [p for p in blobs if p in have and blobs[p][0] != "120000"]
     subst = [p for p, a in _check_attr(root, commit, ["export-subst"], present).items()
              if a.get("export-subst") == "set"] if present else []
     targets = sorted({p for p in blobs if p not in have} | set(subst))
-    if not targets:
-        return {}
-    attrs = _check_attr(root, commit, ["text", "eol"], targets)
-    autocrlf = (_git_lines(root, ["config", "--get", "core.autocrlf"]) or b"").strip() == b"true"
-    batch = _git_lines(root, ["cat-file", "--batch"], b"".join(blobs[p][1].encode() + b"\n" for p in targets))
-    if batch is None:
-        raise IsolationError("could not read the base revision's files")
     restored: dict[str, int] = {}
-    pos = 0
     base = path.resolve()
     for rel in targets:
-        header_end = batch.index(b"\n", pos)
-        size = int(batch[pos:header_end].split()[2])
-        data = batch[header_end + 1:header_end + 1 + size]
-        pos = header_end + 1 + size + 1
-        a = attrs.get(rel, {})
-        text = a.get("text") != "unset" and b"\0" not in data
-        if text and (a.get("eol") == "crlf" or (autocrlf and a.get("eol") != "lf")):
-            data = data.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+        mode, sha = blobs[rel]
         target = path / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         if not target.parent.resolve().is_relative_to(base) or target.is_symlink():
             raise IsolationError(f"a restored file would leave the workspace: {rel[:200]}")
+        if mode == "120000":
+            link = _git_lines(root, ["cat-file", "blob", sha])
+            if link is None:
+                raise IsolationError(f"could not read the base revision's link {rel[:200]}")
+            dest = link.decode("utf-8", "surrogateescape")
+            if os.path.isabs(dest) or base not in (target.parent / dest).resolve().parents:
+                continue  # the archive skips such a link too
+            target.symlink_to(dest)
+            restored[rel] = 0
+            continue
+        data = checkout_bytes(root, commit, rel)
+        if data is None:
+            raise IsolationError(f"could not read the base revision's file {rel[:200]}")
         target.write_bytes(data)
-        target.chmod(0o755 if blobs[rel][0] == "100755" else 0o644)
+        target.chmod(0o755 if mode == "100755" else 0o644)
         restored[rel] = len(data)
     return restored
 
