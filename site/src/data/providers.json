@@ -1,6 +1,6 @@
 {
   "schema": "repo-ai.providers/1",
-  "as_of": "2026-10-30",
+  "as_of": "2026-10-31",
   "about": "Provider compatibility matrix rendered on the landing page and /docs/providers/. Edit by hand when a provider's state changes, then run `python scripts/site_facts.py` (it validates this file) and rebuild the site. `label` is the row's overall state; `execution.status` is the isolated `repo-ai do` path only. label EXECUTION requires execution.status EXECUTION with a dated, versioned observation.",
   "labels": {
     "EXECUTION": "repo-ai runs it as an isolated mission provider (repo-ai do), and a live, independently re-verified change has been observed.",
@@ -18,7 +18,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact), with the 0.10.0 sandbox that hides the rest of HOME. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Disclosed: the login token copied into its sandbox is readable by a model with shell access; use a separate repo-ai login (repo-ai agents setup codex).",
+        "observed": "Live, independently re-verified change through repo-ai do on the published 0.10.0 wheel (2026-10-30, hidden oracle 17/17, undo byte-exact), with the 0.10.0 sandbox that hides the rest of HOME. Runs inside repo-ai's outer sandbox with Codex's own sandbox bypassed, only once the outer one is confirmed. Disclosed: the login token copied into its sandbox is readable by a model with shell access; use a separate repo-ai login (repo-ai agents setup codex). Opt-in from 0.11.3 (REPO_AI_CODEX_BROKER=1, macOS): a credential broker keeps the token outside the sandbox and limits Codex to one loopback port. It was live-verified on 2026-10-31 with a ChatGPT login (two runs; an API-key login is not yet verified).",
         "verified_on": "2026-10-30",
         "version": "0.165.0",
         "sample": "n = 1 per journey",
@@ -95,6 +95,23 @@
       },
       "host": "Reads repo-ai-installed skills from .agents/skills (observed 2026-10-30).",
       "cost": "$0 (local model); cloud-routed models are refused"
+    },
+    {
+      "id": "opencode-acp",
+      "name": "OpenCode over ACP (local model)",
+      "agent": "opencode-acp",
+      "label": "EXECUTION",
+      "execution": {
+        "status": "EXECUTION",
+        "observed": "OpenCode driven over the Agent Client Protocol (`opencode acp`) under exactly the opencode isolation: seatbelt, scratch HOME, deny-by-default inline config, loopback-only network. The ACP client stays outside the sandbox and serves file reads and writes only within the run's paths. Any protocol problem, refusal, timeout or stop reason other than end_turn fails the run, and OpenCode's own edit is still checked. Live $0 on a development build (2026-10-31, qwen3:8b): PASS on a scratch fixture in 60 s.",
+        "verified_on": "2026-10-31",
+        "version": "2.2.1 with qwen3:8b via Ollama",
+        "sample": "n = 1",
+        "platforms": "macOS only (as opencode)",
+        "source": "docs/engineering/INTEGRATIONS.md"
+      },
+      "host": "Same binary as opencode; a live tournament refuses the pair (not independent).",
+      "cost": "$0 (local model, loopback only); a positive --max-cost-usd is refused"
     },
     {
       "id": "gemini",

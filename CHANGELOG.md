@@ -1,7 +1,32 @@
 # Changelog
 
-## Unreleased
+## 0.11.3 — a Codex credential broker, ACP agents, honest mission evidence
 
+- Security (opt-in, macOS): a credential broker for Codex (`REPO_AI_CODEX_BROKER=1`). Without it, the Codex login's
+  token is copied into the run's scratch `CODEX_HOME`, where the model (which has a shell and the network) can read it
+  (disclosed). With it, nothing secret is copied in:
+  - Codex gets a per-run dummy key and a model provider whose `base_url` is a loopback proxy in repo-ai. The proxy
+    checks the key, swaps in the login's credential and forwards `POST /v1/responses` upstream.
+  - Codex's sandbox can reach only that port and cannot read the login's directory.
+  - Each request is vetted, so that the upstream cannot be made to reach another host for the model: only local tool
+    types, hosted web search removed, no remote image or file URLs, no stored server-side state, no duplicate keys,
+    and the model pinned to the first request's.
+  - It went through three independent security-review rounds. Two live runs with a ChatGPT login (Codex 0.165)
+    passed through it: 3 requests, all HTTP 200, and no credential in the record. An API-key login is not yet
+    live-verified.
+- Added: `repo-ai do --agent opencode-acp` keeps the ACP agent's stderr for diagnostics. The first 64 KiB are kept,
+  every byte is counted and hashed, and a flood can neither block the agent nor grow memory. The result carries
+  `stderr_bytes`, `stderr_sha256` and a redacted `diagnostic_summary`, like every other provider. A rate-limit
+  message there is a failure reason, and a failed handshake says what the agent printed. Before, stderr was
+  discarded.
+- Fixed: a repository that tracks a FILE named `.repo-ai` failed `init`, missions and sandboxed runs with a bare
+  `[Errno 20] Not a directory`. repo-ai now names the file. `out_dir` in `repo-ai.toml` moves the index and context,
+  but sandboxed runs and missions still need a `.repo-ai/` directory and stay unavailable in such a repository.
+- Fixed: with a custom `out_dir` and `init --agent none`, no ignore entries were written. repo-ai's own index, lock
+  and evidence counted as part of the change, and the first `verify --run` always failed with "the working tree
+  changed while the run was being prepared".
+- Changed: a live tournament refuses two providers that run the same executable (`opencode` and `opencode-acp` both
+  run OpenCode with its one configured model). They are not independent candidates.
 - Added: `repo-ai do --agent opencode-acp` runs OpenCode over the Agent Client Protocol (`opencode acp`) instead of
   `opencode run`, under exactly the `opencode` isolation: same OS sandbox with loopback-only network, scratch HOME,
   deny-by-default inline config and local model. The ACP client stays outside the sandbox; any protocol problem,
@@ -13,7 +38,7 @@
   ACP agent: reads only inside the workspace, writes only to allowed paths, no terminals, permission requests allowed
   once only for read/search/edit tool calls, never allow-always. A handshake-only probe gives accurate capability
   detection without a model call; OpenCode 2.2.1 and Gemini CLI 0.65.0 both answer ACP 1. A live $0 run of OpenCode
-  with a local model completed over ACP. Wiring ACP agents into `repo-ai do` inside the OS sandbox is next.
+  with a local model completed over ACP. `opencode-acp` (above) is the first ACP provider for `repo-ai do`.
 - Added: `repo-ai verify --run --show-fixed` names the tests a change fixed. A fix is a claim about one test, so
   each candidate is confirmed in isolation: it must fail alone at the base and pass alone at the change, existing,
   running and not skipped there. Candidates are the base full suite's failures in selected files that pass now; that
