@@ -1,6 +1,6 @@
 {
   "schema": "repo-ai.evidence-matrix/1",
-  "updated": "2026-10-30",
+  "updated": "2026-10-31",
   "about": "Machine-readable evidence ledger behind the website's Evidence Lab. Condensed from docs/launch/ACCEPTANCE.json, docs/STATUS.md, docs/launch/EVALUATION.md and the study results they cite; when an entry and its source disagree, the source is the record. scripts/site_facts.py validates this file and copies it into site/src/data/release-facts.json. Dates given as YYYY-MM are not recorded more precisely in the public tree; date_note says what is known.",
   "statuses": {
     "DEMONSTRATED": "Measured on fresh or held-out data under a frozen protocol; the claim holds within the stated scope.",
@@ -236,6 +236,19 @@
       "method": "Preregistered fresh validation of skills vet / inventory on plugin components.",
       "limits": "Attack detection was not freshly validated (the synthetic attacks could not be produced). Since then a plugin is never reported eligible.",
       "source": "docs/SKILL_NETWORK.md",
+      "featured": true
+    },
+    {
+      "id": "skill-safe-auto-unseen",
+      "title": "SAFE_AUTO never auto-installs a harmful skill (unseen corpus)",
+      "status": "NEGATIVE_RESULT",
+      "stat": "8 of 30",
+      "result": "FAILED: on an unseen, preregistered 80-case corpus, SAFE_AUTO would have installed 8 of 30 harmful skills without asking, all prose-only (taking over the agent, hiding results, weakening checks, writing agent config, destructive requests, identity takeover). Harmful plugins: none eligible. Benign: 1 of 30 skills and 0 of 10 plugins blocked. A fix followed; it is not yet confirmed on a second unseen corpus.",
+      "date": "2026-10-31",
+      "sample_size": "80 cases (30 harmful skills, 30 benign skills, 10 harmful and 10 benign plugins)",
+      "method": "Preregistered (benchmarks/skill-vet-fresh-v1); corpus written by an author that read only the protocol; harness and corpus committed before one run; $0.",
+      "limits": "Synthetic, defanged cases from one model author. The confirming corpus (v2) could not be produced here.",
+      "source": "benchmarks/skill-vet-fresh-v1/RESULTS.md",
       "featured": true
     },
     {

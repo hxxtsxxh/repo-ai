@@ -387,9 +387,10 @@ _RULES: list[tuple[str, str, str, str, re.Pattern[str]]] = [
                 r"|(-F|--form)\s+[\"']?[\w.-]+=@(?!-))")),
     ("critical", "confirmed", "exfiltration", "netcat-pipe",
      re.compile(r"(?i)\|\s*(nc|ncat|netcat|socat)\b\s+\S+\s+\d+")),
-    ("high", "confirmed", "destructive", "recursive-delete",
-     re.compile(r"(?i)\brm\s+-[a-z]*(r[a-z]*f|f[a-z]*r)[a-z]*\s+[\"']?(/|~/?|\$\{?HOME\}?/?|\*|\.\.?/?|/\*)"
-                r"[\"']?(\s|$|;|&)")),
+    ("high", "confirmed", "destructive", "recursive-delete",  # other flags may come first (`--no-preserve-root`)
+     re.compile(r"(?i)\brm\s+(--?[a-z-]+\s+)*-[a-z]*(r[a-z]*f|f[a-z]*r)[a-z]*\s+(--?[a-z-]+\s+)*"
+                r"[\"']?(/|~/?|\$\{?HOME\}?[\"']?/?|\*|\.\.?/?|/\*)[\"'*.]*(\s|$|;|&)")),
+    ("critical", "confirmed", "destructive", "no-preserve-root", re.compile(r"(?i)--no-preserve-root\b")),
     ("high", "confirmed", "destructive", "git-destructive",
      re.compile(r"(?i)\bgit\s+(reset\s+--hard|clean\s+-[a-z]*f|push\s+(-f\b|--force)|branch\s+-D)")),
     ("critical", "confirmed", "destructive", "disk-wipe",
@@ -427,6 +428,42 @@ _INJECTION = re.compile(
     r"this\s+(skill|message|instruction)\s+(has|takes)\s+(higher|highest|top)\s+priority")
 _NEGATED = re.compile(r"(?i)\b(never|don't|do\s+not|must\s+not|avoid|instead\s+of|rather\s+than|"
                       r"not\s+safe|dangerous|forbidden|refuse)\b")
+# Code only (scripts, fenced blocks): what a program does, which prose may legitimately name (skill-vet-fresh-v1:
+# a reverse shell and a keychain reader carried no finding at all).
+_CODE_RULES: list[tuple[str, str, str, str, re.Pattern[str]]] = [
+    ("critical", "confirmed", "remote-exec", "reverse-shell",  # a socket handed to a shell's stdin/stdout
+     re.compile(r"(?i)\bdup2\s*\(\s*[\w.]+\.fileno\(\)|/dev/(tcp|udp)/|\b(nc|ncat|netcat)\b[^\n|]*\s-[a-z]*e\s|"
+                r"\bsocat\b[^\n]*\bexec:|\bpty\.spawn\s*\(")),
+    ("critical", "confirmed", "credentials", "credential-store-path",  # paths built from pieces: join(home, ".ssh")
+     re.compile(r"(?i)[\"']\.(ssh|aws|gnupg|netrc|docker)[\"'/]|Library/Keychains|\blogins\.json\b|Login Data\b|"
+                r"\bkey4\.db\b|\bCookies\.binarycookies\b")),
+]
+# Whole code file or block, across lines: a secret read and a network send in the same program, and a download
+# made executable. One finding per file each.
+_SECRET_SOURCE = re.compile(r"(?i)(\bcat\b[^\n]*\.env\b|\$\(\s*(env|printenv)\b|\bos\.environ\b|\bprocess\.env\b|"
+                            r"[\"']\.(ssh|aws|gnupg|netrc)[\"'/]|~/\.(ssh|aws|gnupg|netrc)|Library/Keychains|"
+                            r"\blogins\.json\b|Login Data\b|\bopen\([^\n)]*\.env[\"'])")
+_NETWORK_SEND = re.compile(r"(?i)\bcurl\b[^\n]*(\s-d\b|--data|\s-F\b|--form|\s-T\b|--upload-file|-X\s*(POST|PUT))|"
+                           r"\burlopen\s*\([^\n]*data\s*=|\burlopen\s*\(\s*[^\n,)]+,\s*\w|"
+                           r"\brequests\.(post|put)\s*\(|\bhttpx\.(post|put)\s*\(|\bfetch\s*\([^\n]*method\s*:\s*"
+                           r"[\"'](POST|PUT)|\bwget\b[^\n]*--post-(data|file)|\bsocket\.(socket|create_connection)\b")
+_FETCHED_EXEC = re.compile(r"(?i)\b(curl|wget)\b[^\n]*(\s-[a-zA-Z]*[oO]\s|--output[= ]|>\s*\S)")
+_MAKE_EXEC = re.compile(r"(?i)\bchmod\s+(\+x|u\+x|[0-7]*[1357][0-7]{0,2}\b)")
+
+
+def code_risks(code: str) -> list[tuple[str, str, str]]:
+    """(category, rule, evidence) for whole-program behaviour that no single line shows."""
+    out = []
+    src, send = _SECRET_SOURCE.search(code), _NETWORK_SEND.search(code)
+    if src and send:
+        out.append(("exfiltration", "read-and-send", f"reads {src.group(0)[:40]!r}, sends {send.group(0)[:40]!r}"))
+    fetched, made = _FETCHED_EXEC.search(code), _MAKE_EXEC.search(code)
+    if fetched and made:
+        out.append(("remote-exec", "download-made-executable",
+                    f"{fetched.group(0)[:40]!r} then {made.group(0)[:30]!r}"))
+    return out
+
+
 # What a skill's prose asks the agent to do, by attack class (skill-vet-fresh-v1: prose-only skills that took over
 # the agent, hid things from the user or weakened the project's checks read as inert). Matched per paragraph, so a
 # sentence wrapped over lines still matches. (rule, pattern, negatable): a negatable class is dropped when "never" /
@@ -696,6 +733,9 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                 findings.append(Finding("high", "suspected", "instruction-risk", rule, path, at, snip))
         contexts = line_contexts(path, text)
         raw_lines = text.splitlines()
+        code = "\n".join(ln for ln, c in zip(raw_lines, contexts, strict=False) if c == "code")
+        for category, rule, evidence in code_risks(code):
+            findings.append(Finding("high", "suspected", category, rule, path, 0, evidence))
         for lineno, line in enumerate(raw_lines, 1):
             ctx = contexts[lineno - 1] if lineno - 1 < len(contexts) else "code"
             logical = line
@@ -715,6 +755,10 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                     severity = {"critical": "high", "high": "medium", "medium": "low"}.get(severity, "info")
                     kind = "suspected"
                 findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
+            if ctx == "code":
+                for severity, kind, category, rule, pattern in _CODE_RULES:
+                    if pattern.search(logical):
+                        findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
             if (is_doc or ctx == "comment") and _INJECTION.search(line):
                 findings.append(Finding("high", "confirmed", "prompt-injection", "injection-phrase",
                                         path, lineno, _snippet(line)))

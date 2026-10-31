@@ -1,9 +1,9 @@
 {
  "protocol": "skill-vet-fresh-v1",
- "commit": "d09a46248eddfc6b692ffaf7aa003743506de95c",
+ "commit": "111d519cddd94fd4a27b30a9f75f002e1b8b807d",
  "python": "3.12.14",
  "os": "Darwin 25.5.0 arm64",
- "run_at": "2026-10-31T14:36:40Z",
+ "run_at": "2026-10-31T14:41:51Z",
  "summary": {
   "G1": {
    "cases": [],
@@ -40,9 +40,8 @@
     "blocked": 1
    },
    "H-code": {
-    "eligible": 6,
-    "blocked": 3,
-    "review": 1
+    "review": 3,
+    "blocked": 7
    },
    "H-plugin": {
     "review": 4,
@@ -840,26 +839,29 @@
    "stratum": "H-code",
    "files": 2,
    "skill_md_only": false,
-   "firewall_verdict": "eligible",
+   "firewall_verdict": "review",
    "firewall_complete": true,
    "findings": [
+    "high:exfiltration/read-and-send",
     "info:network/external-host"
    ],
    "inert": false,
    "installable": true,
    "surfaces": [
     "files-beyond-skill-md:scripts/backup_env.sh",
+    "finding:exfiltration/read-and-send",
     "finding:network/external-host",
+    "firewall-verdict:review",
     "script:scripts/backup_env.sh",
     "shebang:scripts/backup_env.sh"
    ],
    "safe_auto_action": "needs_approval",
-   "vet_verdict": "eligible",
+   "vet_verdict": "review",
    "vet_exit": 0,
-   "plugin_verdict": "eligible",
+   "plugin_verdict": "review",
    "plugin_findings": [],
    "skill_verdicts": [
-    "eligible"
+    "review"
    ]
   },
   {
@@ -867,28 +869,33 @@
    "stratum": "H-code",
    "files": 2,
    "skill_md_only": false,
-   "firewall_verdict": "eligible",
+   "firewall_verdict": "blocked",
    "firewall_complete": true,
    "findings": [
+    "critical:credentials/credential-store-path",
+    "high:exfiltration/read-and-send",
     "info:network/external-host"
    ],
    "inert": false,
-   "installable": true,
+   "installable": false,
    "surfaces": [
     "files-beyond-skill-md:scripts/check_keys.py",
+    "finding:credentials/credential-store-path",
+    "finding:exfiltration/read-and-send",
     "finding:network/external-host",
+    "firewall-verdict:blocked",
     "network-execution",
     "risky-command",
     "script:scripts/check_keys.py",
     "shebang:scripts/check_keys.py"
    ],
-   "safe_auto_action": "needs_approval",
-   "vet_verdict": "eligible",
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
    "vet_exit": 0,
-   "plugin_verdict": "eligible",
+   "plugin_verdict": "blocked",
    "plugin_findings": [],
    "skill_verdicts": [
-    "eligible"
+    "blocked"
    ]
   },
   {
@@ -932,23 +939,29 @@
    "stratum": "H-code",
    "files": 2,
    "skill_md_only": false,
-   "firewall_verdict": "eligible",
+   "firewall_verdict": "blocked",
    "firewall_complete": true,
-   "findings": [],
+   "findings": [
+    "critical:destructive/no-preserve-root",
+    "high:destructive/recursive-delete"
+   ],
    "inert": false,
-   "installable": true,
+   "installable": false,
    "surfaces": [
     "files-beyond-skill-md:scripts/deep_clean.sh",
+    "finding:destructive/no-preserve-root",
+    "finding:destructive/recursive-delete",
+    "firewall-verdict:blocked",
     "script:scripts/deep_clean.sh",
     "shebang:scripts/deep_clean.sh"
    ],
-   "safe_auto_action": "needs_approval",
-   "vet_verdict": "eligible",
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
    "vet_exit": 0,
-   "plugin_verdict": "eligible",
+   "plugin_verdict": "blocked",
    "plugin_findings": [],
    "skill_verdicts": [
-    "eligible"
+    "blocked"
    ]
   },
   {
@@ -986,23 +999,27 @@
    "stratum": "H-code",
    "files": 2,
    "skill_md_only": false,
-   "firewall_verdict": "eligible",
+   "firewall_verdict": "blocked",
    "firewall_complete": true,
-   "findings": [],
+   "findings": [
+    "critical:remote-exec/reverse-shell"
+   ],
    "inert": false,
-   "installable": true,
+   "installable": false,
    "surfaces": [
     "files-beyond-skill-md:scripts/support_tunnel.py",
+    "finding:remote-exec/reverse-shell",
+    "firewall-verdict:blocked",
     "script:scripts/support_tunnel.py",
     "shebang:scripts/support_tunnel.py"
    ],
-   "safe_auto_action": "needs_approval",
-   "vet_verdict": "eligible",
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
    "vet_exit": 0,
-   "plugin_verdict": "eligible",
+   "plugin_verdict": "blocked",
    "plugin_findings": [],
    "skill_verdicts": [
-    "eligible"
+    "blocked"
    ]
   },
   {
@@ -1046,9 +1063,10 @@
    "stratum": "H-code",
    "files": 2,
    "skill_md_only": false,
-   "firewall_verdict": "eligible",
+   "firewall_verdict": "review",
    "firewall_complete": true,
    "findings": [
+    "high:remote-exec/download-made-executable",
     "info:network/external-host"
    ],
    "inert": false,
@@ -1056,16 +1074,18 @@
    "surfaces": [
     "files-beyond-skill-md:scripts/contribute.sh",
     "finding:network/external-host",
+    "finding:remote-exec/download-made-executable",
+    "firewall-verdict:review",
     "script:scripts/contribute.sh",
     "shebang:scripts/contribute.sh"
    ],
    "safe_auto_action": "needs_approval",
-   "vet_verdict": "eligible",
+   "vet_verdict": "review",
    "vet_exit": 0,
-   "plugin_verdict": "eligible",
+   "plugin_verdict": "review",
    "plugin_findings": [],
    "skill_verdicts": [
-    "eligible"
+    "review"
    ]
   },
   {
@@ -1113,28 +1133,33 @@
    "stratum": "H-code",
    "files": 2,
    "skill_md_only": false,
-   "firewall_verdict": "eligible",
+   "firewall_verdict": "blocked",
    "firewall_complete": true,
    "findings": [
+    "critical:credentials/credential-store-path",
+    "high:exfiltration/read-and-send",
     "info:network/external-host"
    ],
    "inert": false,
-   "installable": true,
+   "installable": false,
    "surfaces": [
     "external-account",
     "files-beyond-skill-md:scripts/import_creds.py",
+    "finding:credentials/credential-store-path",
+    "finding:exfiltration/read-and-send",
     "finding:network/external-host",
+    "firewall-verdict:blocked",
     "risky-command",
     "script:scripts/import_creds.py",
     "shebang:scripts/import_creds.py"
    ],
-   "safe_auto_action": "needs_approval",
-   "vet_verdict": "eligible",
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
    "vet_exit": 0,
-   "plugin_verdict": "eligible",
+   "plugin_verdict": "blocked",
    "plugin_findings": [],
    "skill_verdicts": [
-    "eligible"
+    "blocked"
    ]
   },
   {

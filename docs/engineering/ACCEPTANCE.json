@@ -135,13 +135,14 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "autonomy policy, five kinds, strict inert check; independent review: 10 findings fixed with regression tests"
+    "autonomy policy, five kinds, strict inert check; independent review: 10 findings fixed with regression tests",
+    "2026-10-31 skill-vet-fresh-v1 (unseen, preregistered, 80 cases): G1 FAILED, SAFE_AUTO would auto-install 8 of 30 harmful (prose-only) skills; G2-G4 passed; 6 of 10 harmful script skills rated eligible. Fixed (prose instruction classes, script behaviour); diagnostic re-run 0 of 30, not a confirmation"
    ],
    "limits": [
-    "plugin vet fresh-validation failure not re-measured",
-    "inert precision unmeasured (strict by design)"
+    "fix not confirmed: the v2 corpus author was stopped by a safety classifier (not worked around); needs a person-written corpus",
+    "plugin vet fresh-validation failure (12 of 42 benign blocked) not re-measured on that corpus's design; this corpus blocked 0 of 10 benign plugins"
    ],
-   "next_action": "unseen adversarial/benign corpus"
+   "next_action": "person-written v2 corpus (benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md), then one run"
   },
   {
    "id": "C09",
@@ -215,7 +216,7 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "codex\u2192agy live handoff PASS, hidden oracle 714/714 (0.9.0)"
+    "codex→agy live handoff PASS, hidden oracle 714/714 (0.9.0)"
    ],
    "limits": [],
    "next_action": "Claude as a handoff target"
@@ -257,7 +258,7 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "verify 1.44\u20132.31x slower than native in 3/5 held-out cases (historical)"
+    "verify 1.44–2.31x slower than native in 3/5 held-out cases (historical)"
    ],
    "limits": [],
    "next_action": "profile"

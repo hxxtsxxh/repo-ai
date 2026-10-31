@@ -72,4 +72,16 @@ patterns are phrase-based. A test phrase written afterwards ("disregard every ea
 missed at first because only plural nouns matched. The protocol requires a new corpus by a different author:
 [../skill-vet-fresh-v2/](../skill-vet-fresh-v2/).
 
-The script findings above are not addressed by this fix.
+**Scripts.** A second change reads code (scripts and fenced blocks) for what v1's eligible scripts did: a socket
+handed to a shell (`reverse-shell`), credential stores named by path pieces (`credential-store-path`), `rm -rf` with
+other flags first or a quoted `"$HOME"/*` (`recursive-delete`, `no-preserve-root`), and, across a whole program, a
+secret read plus a network send (`read-and-send`) or a download made executable (`download-made-executable`). In
+the same diagnostic run, H-code is 7 `blocked` and 3 `review` (was 6 `eligible`), with the benign results unchanged.
+The same caveat applies: written with this corpus in view.
+
+## Confirmation status
+
+The protocol's confirmation, skill-vet-fresh-v2, is **blocked**: its corpus author (a different agent) was stopped
+by a safety classifier while writing the harmful strata and wrote nothing. That was not worked around (no rewording,
+no second agent for the same content). Confirmation needs a corpus written by a person or taken from an external,
+legitimately published set. Until then the fix is a hardening that is **not confirmed**, and C08 stays EXPERIMENTAL.
