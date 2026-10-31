@@ -524,6 +524,8 @@ def materialize(root: Path, *, label: str = "ws", dependencies: bool = True,
                 ws.bytes += src.stat().st_size
             except OSError:
                 pass
+        _drop_state_paths(path)  # a tracked link `.claude -> conf` and `conf/settings.local.json` reach one too
+        ws.files = [f for f in ws.files if (path / f).is_symlink() or (path / f).exists()]
         if dependencies:
             _place_links(ws, root, files)
     except BaseException:
@@ -653,6 +655,24 @@ def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[st
     return restored
 
 
+def _drop_state_paths(path: Path) -> None:
+    """Remove whatever exists at a state path (`STATE_PREFIXES`) in a materialized workspace, however it got there.
+    The archive filter compares names as text; on a case-insensitive filesystem a tracked link `A -> .claude` and a
+    file `a/settings.local.json` write `.claude/settings.local.json` without either name matching."""
+    for prefix in STATE_PREFIXES:
+        target = path / prefix.rstrip("/")
+        if prefix.endswith("/"):  # a state DIRECTORY: a tracked regular file named `.bob` or `.repo-ai` is source
+            if target.is_symlink():
+                target.unlink()
+            elif target.is_dir():
+                _remove(target)
+        elif target.parent.is_symlink() and (target.exists() or target.is_symlink()):
+            # `.claude -> conf` leading to a settings file: remove the route, keep conf's own file
+            target.parent.unlink()
+        elif target.is_symlink() or target.is_file():
+            target.unlink()
+
+
 def materialize_commit(root: Path, commit: str, *, label: str = "base", dependencies: bool = True) -> Workspace:
     """The tracked files of `commit` (git archive: no hooks or filters run),
     with the same read-only dependency directories as the working tree."""
@@ -691,10 +711,10 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
         ws.files = sorted(m.name for m in members if m.isfile() or m.issym())
         ws.bytes = sum(m.size for m in members if m.isfile())
         restored = _restore_export_attributes(root, commit, path, set(ws.files))
-        if restored or any((path / f).is_symlink() for f in ws.files):
-            # a link that resolves outside after the restore was removed: list only what is there
-            ws.files = sorted(f for f in set(ws.files) | set(restored) if (path / f).is_symlink() or (path / f).exists())
-            ws.bytes += sum(restored.values())
+        ws.bytes += sum(restored.values())
+        _drop_state_paths(path)
+        # links removed by the restore and anything written into a state path are gone: list only what is there
+        ws.files = sorted(f for f in set(ws.files) | set(restored) if (path / f).is_symlink() or (path / f).exists())
         if dependencies:
             _place_links(ws, root, ws.files)
     except BaseException:

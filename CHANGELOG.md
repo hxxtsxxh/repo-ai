@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Security: a hostile repository could put a file at a repo-ai state path in a mission workspace on a case-insensitive
+  filesystem (macOS). A tracked link `A -> .claude` and a file `a/settings.local.json` wrote
+  `.claude/settings.local.json`, because the archive filter compared names as text. It stayed inside the workspace.
+  Whatever exists at a state path after a workspace is built is now removed, however it got there.
 - Changed: in a scoped mission (`--expect-fix`), a test that errors at **setup** (its body never runs) in the same way
   at the base and on the candidate may stand, like a failure that was already there. An error in teardown or the body
   still makes the observation incomplete, because it hides the test's own result. It is listed with them, and the standing is
