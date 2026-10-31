@@ -3,7 +3,11 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 from repo_ai.providers.acp import AcpClient, choose_permission
+
+pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="the ACP client is POSIX-only, as missions are")
 
 FAKE = Path(__file__).parent / "fake_acp_agent.py"
 

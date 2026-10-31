@@ -311,6 +311,8 @@ class AcpClient:
 
     # -- one run ---------------------------------------------------------------------------------------------------
     def _start(self) -> None:
+        if os.name != "posix":  # non-blocking pipes, select on pipes, O_NOFOLLOW openat walks, process groups
+            raise AcpError("the ACP client runs on POSIX hosts only (macOS, Linux), as repo-ai missions do")
         self.proc = subprocess.Popen(self.argv, cwd=self.cwd, env=self.env, stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True)
         assert self.proc.stdin is not None
@@ -361,7 +363,7 @@ class AcpClient:
             pass
         try:  # always: a child the agent started must not outlive the run
             os.killpg(self.proc.pid, 9)
-        except OSError:
+        except (OSError, AttributeError):
             pass
         if self.proc.poll() is None:
             self.proc.kill()
