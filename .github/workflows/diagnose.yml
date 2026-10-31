@@ -19,6 +19,7 @@ jobs:
         include:
           - {slug: more-itertools/more-itertools, ref: v10.7.0, commit: e7331924, deps: "-e . pytest"}
           - {slug: python-humanize/humanize, ref: 4.12.3, commit: f772e59b, deps: "-e . pytest freezegun"}
+          - {slug: jpadilla/pyjwt, ref: 2.10.1, commit: 37748dc1, deps: "-e .[crypto] pytest"}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
