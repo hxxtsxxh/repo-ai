@@ -223,3 +223,18 @@ def test_only_a_trailing_lowercase_parameter_is_dropped_and_only_without_hidden_
     assert not mk("include config.mk\ntest:\n\tpython -m unittest $(modules)\n").per_file
     assert not mk("test: dirs = tests/unit\ntest:\n\tpytest $(dirs)\n").per_file
     assert not mk("test:\n\tpython -m pytest $(CURDIR)/tests/unit\n").per_file
+
+
+
+def test_other_mentions_of_a_make_variable_keep_it(tmp_path: Path):
+    for define in ("tests ::= tests.check_core", "tests += tests.check_core", "$(eval tests := tests.check_core)"):
+        (tmp_path / "Makefile").write_text(f"{define}\ntest:\n\tpython3 -m unittest -v ${{tests}}\n")
+        r = resolve(tmp_path, "make test")
+        assert not (r.per_file and not r.modules), define  # never silently widened to plain discovery
+
+
+def test_unittest_option_values_and_misplaced_discover(tmp_path: Path):
+    assert not resolve(tmp_path, "python -m unittest -v discover -s tests").per_file
+    assert resolve(tmp_path, "python -m unittest -vk first").modules == []
+    r = resolve(tmp_path, "python -m unittest discover -s tests -k foo")
+    assert r.start == "tests"
