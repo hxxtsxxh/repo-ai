@@ -5,6 +5,7 @@ scripted ACP agent through the host sandbox are in test_provider_acp_runtime.py.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -259,6 +260,21 @@ def test_problems_refusals_timeouts_and_stop_reasons_are_never_a_pass(kw, needle
         assert sum("time limit" in r or "timeout" in r for r in res["reasons"]) == 1
 
 
+def test_stderr_is_summarised_redacted_and_a_rate_limit_there_is_a_reason():
+    err = b"error: rate limit exceeded for key sk-1234567890abcdefghijklmnop\n"
+    res = _result(stop_reason="end_turn", stderr=err, stderr_bytes=len(err),
+                  stderr_sha256=hashlib.sha256(err).hexdigest())
+    assert res["stderr_bytes"] == len(err) and res["stderr_sha256"] == hashlib.sha256(err).hexdigest()
+    assert res["diagnostic_summary"].startswith("error: rate limit exceeded")
+    assert "sk-1234567890abcdefghijklmnop" not in json.dumps(res)
+    assert res["stage"] == "FAILED" and any("rate/usage limit" in r for r in res["reasons"])
+
+
+def test_quiet_stderr_is_not_a_reason():
+    res = _result(stop_reason="end_turn", stderr=b"INFO starting server\n", stderr_bytes=21)
+    assert res["stage"] == "SIMULATED" and res["reasons"] == [] and res["diagnostic_summary"] == "INFO starting server\n"
+
+
 def test_a_usd_ceiling_cannot_be_satisfied_by_acp():
     run = AcpResult(session_id="s1", stop_reason="end_turn")
     res = adapters._acp_run_result("opencode-acp", run, resolved=Path("/x/opencode"), identity="0" * 64,
@@ -276,6 +292,20 @@ def test_handshake_runs_initialize_only_inside_the_live_sandbox(tmp_path):
     shake = adapters.acp_handshake("opencode-acp", tmp_path / "repo", executable=exe)
     assert shake["acp"] is True and shake["protocol_version"] == 1 and shake["agent"] == {"name": "fake"}
     assert shake["model_invoked"] is False and shake["cleanup_problems"] == []
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="live OpenCode isolation is macOS seatbelt only")
+def test_a_failed_handshake_says_what_the_agent_printed(tmp_path):
+    exe = tmp_path / "fake_bins" / "opencode"
+    exe.parent.mkdir()
+    exe.write_text("#!/usr/bin/python3 -I\nimport sys\n"
+                   "sys.stderr.write('Error: no provider configured (token sk-1234567890abcdefghijklmnop)\\n')\n"
+                   "sys.exit(1)\n", encoding="utf-8")
+    exe.chmod(0o755)
+    (tmp_path / "repo").mkdir()
+    shake = adapters.acp_handshake("opencode-acp", tmp_path / "repo", executable=exe)
+    assert shake["acp"] is False and shake["diagnostic_summary"].startswith("Error: no provider configured")
+    assert "sk-1234567890abcdefghijklmnop" not in json.dumps(shake)
 
 
 def test_handshake_refuses_a_repository_owned_executable(tmp_path):

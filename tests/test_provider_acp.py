@@ -1,11 +1,12 @@
 """The ACP client's one permission policy, against a scripted ACP agent."""
+import hashlib
 import json
 import sys
 from pathlib import Path
 
 import pytest
 
-from repo_ai.providers.acp import AcpClient, choose_permission
+from repo_ai.providers.acp import MAX_STDERR, AcpClient, choose_permission
 
 pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="the ACP client is POSIX-only, as missions are")
 
@@ -148,3 +149,24 @@ def test_a_name_that_starts_with_two_dots_is_inside():
 
     from repo_ai.providers.acp import _relative
     assert _relative(Path("/w"), "..foo") == "..foo" and _relative(Path("/w"), "../x") is None
+
+
+def test_the_agents_stderr_is_kept_for_diagnostics(tmp_path):
+    ws, result, _ = _run(tmp_path, [{"stderr": "model not found: qwen9\n"}, {"say": "done"}])
+    assert result.stop_reason == "end_turn" and not result.problems
+    assert result.stderr == b"model not found: qwen9\n" and result.stderr_bytes == len(result.stderr)
+    assert result.stderr_sha256 == hashlib.sha256(result.stderr).hexdigest()
+    assert result.to_json()["stderr_bytes"] == result.stderr_bytes and "stderr" not in result.to_json()
+
+
+def test_a_flood_of_stderr_neither_blocks_the_agent_nor_grows_memory(tmp_path):
+    line = "x" * 1023 + "\n"
+    ws, result, _ = _run(tmp_path, [{"stderr": line, "times": 2048}, {"say": "done"}])  # 2 MiB: far past a pipe buffer
+    assert result.stop_reason == "end_turn" and not result.problems, result.problems
+    assert len(result.stderr) == MAX_STDERR and result.stderr_bytes == 2048 * 1024
+    assert result.stderr_sha256 == hashlib.sha256(line.encode() * 2048).hexdigest()
+
+
+def test_stderr_written_just_before_the_agent_dies_is_kept(tmp_path):
+    ws, result, _ = _run(tmp_path, [{"stderr": "panic: config invalid\n"}, {"exit": 3}])
+    assert result.problems and result.stderr == b"panic: config invalid\n"
