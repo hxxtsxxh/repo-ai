@@ -2,6 +2,7 @@
 the review of #16): `export-ignore` used to drop files (often a whole `tests/`), `export-subst` rewrote `$Format$`."""
 import os
 import subprocess
+import sys
 
 import pytest
 
@@ -124,7 +125,7 @@ def test_a_missing_object_is_an_isolation_error_not_a_crash(tmp_path):
             pass
 
 
-@pytest.mark.skipif(os.uname().sysname == "Darwin", reason="APFS refuses names that are not UTF-8")
+@pytest.mark.skipif(sys.platform in {"darwin", "win32"}, reason="the filesystem refuses names that are not UTF-8")
 def test_a_name_that_is_not_utf8_does_not_crash(tmp_path):
     root = _repo(tmp_path, {"a.py": b"x = 1\n"}, "*.py text\n")
     (root / os.fsdecode(b"caf\xe9.txt")).write_bytes(b"latin-1 name\n")
