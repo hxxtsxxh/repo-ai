@@ -76,7 +76,13 @@ backtracking pattern in the widened `recursive-delete` rule (a crafted line coul
 false positives on common idioms (a wait-for-port loop on `/dev/tcp/localhost`, `dup2` onto `/dev/null`,
 `~/.ssh/known_hosts`, prose naming `--no-preserve-root`); the negation bypass above; extensionless `NOTICE` /
 `LICENSE` files not scanned; unredacted evidence; underscores stripped from `allow_failure`; wrong line numbers;
-and quadratic scanning of very long lines. Each has a regression test. Bypass classes the review also showed
+and quadratic scanning of very long lines. A second round found and led to fixes for: a remaining quadratic case
+in `recursive-delete` (now bounded), sentences split by a wrapped line that starts like a heading or list item,
+emphasis inside a word (`dis*re*gard`), snippets and line numbers that drifted after normalisation, padding a code
+line past the scan cap (an overlong code line is now itself a `high` finding), a console transcript of GNU rm's
+own error being blocked, unrelated socket, `dup2` and shell calls in one file being blocked (the same socket
+variable is now required), and combining marks and variation selectors (now an inert-blocking surface). Each has
+a regression test. Bypass classes the review also showed
 (synonyms, splitting across paragraphs) remain: phrase checks can be paraphrased around.
 
 A diagnostic re-run on this corpus with the final fix

@@ -388,7 +388,7 @@ _RULES: list[tuple[str, str, str, str, re.Pattern[str]]] = [
     ("critical", "confirmed", "exfiltration", "netcat-pipe",
      re.compile(r"(?i)\|\s*(nc|ncat|netcat|socat)\b\s+\S+\s+\d+")),
     ("high", "confirmed", "destructive", "recursive-delete",  # other flags may come first; one parse per flag
-     re.compile(r"(?i)\brm\s+(?:-{1,2}[a-z][a-z-]*\s+)*?-[a-z]*(r[a-z]*f|f[a-z]*r)[a-z]*\s+(?:-{1,2}[a-z][a-z-]*\s+)*?"
+     re.compile(r"(?i)\brm\s+(?:-{1,2}[a-z][a-z-]*\s+){0,8}?-[a-z]*(r[a-z]*f|f[a-z]*r)[a-z]*\s+(?:-{1,2}[a-z][a-z-]*\s+){0,8}?"
                 r"[\"']?(/|~/?|\$\{?HOME\}?[\"']?/?|\*|\.\.?/?|/\*)[\"'*.]*(\s|$|;|&)")),
     ("high", "confirmed", "destructive", "git-destructive",
      re.compile(r"(?i)\bgit\s+(reset\s+--hard|clean\s+-[a-z]*f|push\s+(-f\b|--force)|branch\s+-D)")),
@@ -435,7 +435,7 @@ _CODE_RULES: list[tuple[str, str, str, str, re.Pattern[str]]] = [
                 r"\bexec\s+\d+<>\s*/dev/(tcp|udp)/|\b(nc|ncat|netcat)\b[^\n|&;]{0,80}\s-[a-z]*e\s+\S*sh\b|"
                 r"\bsocat\b[^\n]{0,120}\bexec:[^\n]{0,40}sh\b")),
     ("critical", "confirmed", "destructive", "no-preserve-root",
-     re.compile(r"(?i)\brm\b[^\n;&|]{0,80}--no-preserve-root\b")),
+     re.compile(r"(?i)(?:^|[;&|(]\s*|\$\s*|\bsudo\s+|\s)rm\s+[^\n;&|]{0,80}--no-preserve-root\b")),
     ("high", "suspected", "credentials", "credential-store-path",  # a path alone is not theft: review, not blocked
      re.compile(r"(?i)[\"']\.(ssh|aws|gnupg|netrc|docker)[\"'/]|Library/Keychains|\blogins\.json\b|Login Data\b|"
                 r"\bkey4\.db\b|\bCookies\.binarycookies\b")),
@@ -453,17 +453,18 @@ _FETCHED_EXEC = re.compile(r"(?i)\b(curl|wget)\b[^\n]*(\s-[a-zA-Z]*[oO]\s|--outp
 _MAKE_EXEC = re.compile(r"(?i)\bchmod\s+(\+x|u\+x|[0-7]*[1357][0-7]{0,2}\b)")
 
 
-_SOCKET_TO_SHELL = (re.compile(r"(?i)\bsocket\.(socket|create_connection)\b|\.connect\s*\(\s*\("),
-                    re.compile(r"(?i)\bdup2\s*\(\s*[\w.]+\.fileno\(\)"),
-                    re.compile(r"(?i)/bin/(ba|z|k)?sh\b|\bpty\.spawn\s*\(|\bsubprocess\.\w+\(\s*\[?\s*[\"'](ba|z)?sh\b"))
+_SOCKET_VAR = re.compile(r"\b(\w+)\s*=\s*socket\.(?:socket|create_connection)\b|\b(\w+)\.connect\s*\(\s*\(")
+_SHELL = re.compile(r"(?i)/bin/(ba|z|k)?sh\b|\bpty\.spawn\s*\(|\bsubprocess\.\w+\(\s*\[?\s*[\"'](ba|z)?sh\b")
 MAX_SCAN_LINE = 2_000  # longer lines are cut for these patterns (a SKILL.md line over 2,000 is already a surface)
 
 
 def code_risks(code: str) -> list[tuple[str, str, str]]:
     """(category, rule, evidence) for whole-program behaviour that no single line shows. Evidence is redacted."""
     out = []
-    code = "\n".join(line[:MAX_SCAN_LINE] for line in code.splitlines())
-    if all(p.search(code) for p in _SOCKET_TO_SHELL):
+    code = "\n".join(line.strip()[:MAX_SCAN_LINE] for line in code.splitlines())
+    sockets = {m.group(1) or m.group(2) for m in _SOCKET_VAR.finditer(code)}
+    if _SHELL.search(code) and any(re.search(r"\bdup2\s*\(\s*" + re.escape(v) + r"\.fileno\(\)", code)
+                                   for v in sockets):
         out.append(("remote-exec", "reverse-shell", "a socket is connected, duplicated onto stdio and given a shell"))
     src, send = _SECRET_SOURCE.search(code), _NETWORK_SEND.search(code)
     if src and send:
@@ -537,38 +538,53 @@ _INSTRUCTION_RISKS: list[tuple[str, re.Pattern[str]]] = [
         r"\b(rewrite|change|replace|amend)\w*\b" + _W + r"\b(authors?(hip)?|committers?|commit\s+identity)\b|"
         r"--reset-author\b|\bfilter-(branch|repo)\b")),
 ]
-_PARA_BREAK = re.compile(r"\n[ \t]*\n|\n(?=[ \t]{0,3}(?:#|[-*+]\s|\d+[.)]\s))")  # blank line, heading, list item
+_PARA_BREAK = re.compile(r"\n[ \t]*\n")
+
+
+def _plain_token(word: str) -> str:
+    """One whitespace-separated token as a reader sees it: entities decoded, compatibility forms folded (NFKC),
+    `*` and `~` emphasis removed anywhere (`dis*re*gard`), `_` and backticks only at the edges (`allow_failure`)."""
+    import html
+    import unicodedata
+    word = unicodedata.normalize("NFKC", html.unescape(word))
+    word = word.replace("*", "").replace("~", "")
+    return re.sub(r"^[_`]+|[_`]+$", "", word)
 
 
 def instruction_risks(text: str) -> list[tuple[str, int, str]]:
     """(rule, line, snippet) for each attack class a document's prose asks for, once per class and paragraph.
 
-    Text is normalised first (NFKC folds full-width letters; HTML entities are decoded), and emphasis markers are
-    stripped only at word edges, so `**IGNORE**` reads as IGNORE and `allow_failure` keeps its underscore."""
-    import html
-    import unicodedata
+    A paragraph is text between blank lines, flattened to normalised tokens, so a sentence wrapped over lines (even
+    onto a line that starts like a heading or list item) still matches. The line is the hit's own; the snippet is
+    the surrounding tokens, redacted after it is cut."""
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     out: list[tuple[str, int, str]] = []
-    pos = 0
+    line_at, pos = 1, 0
     for para in _PARA_BREAK.split(text):
         at = text.find(para, pos)
-        pos = at + len(para) if at >= 0 else pos
-        tokens = [(m.start(), re.sub(r"^[*_~`]+|[*_~`]+$", "", m.group()))
-                  for m in re.finditer(r"\S+", para)]
-        starts, words, offset = [], [], 0
-        for start, word in tokens:
-            starts.append((offset, start))
-            words.append(word)
+        if at < 0:
+            continue
+        line_at += text.count("\n", pos, at)
+        pos = at + len(para)
+        tokens = [(m.start(), _plain_token(m.group())) for m in re.finditer(r"\S+", para)]
+        starts: list[int] = []
+        offset = 0
+        for _, word in tokens:
+            starts.append(offset)
             offset += len(word) + 1
-        flat = unicodedata.normalize("NFKC", html.unescape(" ".join(words)))
-        safe = redact_text(flat)
+        flat = " ".join(word for _, word in tokens)
         for rule, pattern in _INSTRUCTION_RISKS:
             hit = pattern.search(flat)
             if hit is None:
                 continue
-            index = max(i for i, (o, _) in enumerate(starts) if o <= hit.start()) if starts else 0
-            line = text.count("\n", 0, max(at, 0) + (starts[index][1] if starts else 0)) + 1
-            out.append((rule, line, safe[max(0, hit.start() - 40):hit.end() + 40].strip()[:140]))
+            first = max(i for i, o in enumerate(starts) if o <= hit.start())
+            last = max(i for i, o in enumerate(starts) if o < hit.end())
+            def red(part: list[tuple[int, str]]) -> str:  # whole tokens are redacted, so a cut never splits a secret
+                return " ".join(redact_text(word) for _, word in part)
+            snippet = " ".join(x for x in (red(tokens[max(0, first - 6):first])[-30:], red(tokens[first:last + 1])[:80],
+                                           red(tokens[last + 1:last + 7])[:30]) if x)
+            out.append((rule, line_at + para.count("\n", 0, tokens[first][0]), snippet))
+        line_at += para.count("\n")
     return out
 # Instructions Claude would follow: prose in a skill is never softened for these.
 _NEVER_DOWNGRADE = {"remote-exec", "exfiltration", "credentials", "permission-escalation", "persistence"}
@@ -788,9 +804,13 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                     severity = {"critical": "high", "high": "medium", "medium": "low"}.get(severity, "info")
                     kind = "suspected"
                 findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
+            if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE:
+                findings.append(Finding("high", "suspected", "obfuscation", "overlong-code-line", path, lineno,
+                                        f"{len(logical.strip())} characters on one line (only the first "
+                                        f"{MAX_SCAN_LINE} are read for behaviour)"))
             if ctx == "code":
                 for severity, kind, category, rule, pattern in _CODE_RULES:
-                    if pattern.search(logical[:MAX_SCAN_LINE]):
+                    if pattern.search(logical.strip()[:MAX_SCAN_LINE]):
                         findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
             if (is_doc or ctx == "comment") and _INJECTION.search(line):
                 findings.append(Finding("high", "confirmed", "prompt-injection", "injection-phrase",
@@ -917,7 +937,8 @@ def line_contexts(path: str, text: str) -> list[str]:
     scripts are code except comments."""
     lines = text.splitlines()
     ext = PurePosixPath(path).suffix.lower()
-    if ext in {".md", ".txt", ".markdown", ".rst"}:
+    if ext in {".md", ".txt", ".markdown", ".rst"} or PurePosixPath(path).name.upper() in {"LICENSE", "COPYING",
+                                                                                        "NOTICE"}:
         out = []
         fence = None
         for line in lines:
