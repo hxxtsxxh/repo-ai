@@ -921,15 +921,22 @@ def acp_handshake(provider: str, root: Path, executable: Path | str | None = Non
 ACP_CONFORMANCE_SCHEMA = "repo-ai.acp-conformance/1"
 
 
-def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: float = 20.0,
-                    allow_loopback: bool = False) -> dict[str, Any]:
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f-\x9f]")
+
+
+def _shown(value: object, limit: int = 120) -> str:
+    """An agent-supplied value as it may be printed: control characters (terminal escapes) removed, bounded."""
+    return _CONTROL_CHARS.sub(" ", str(value))[:limit]
+
+
+def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: float = 20.0) -> dict[str, Any]:
     """The conformance kit for an Agent Client Protocol agent repo-ai has no adapter for: whether the executable you
     name answers `initialize` with ACP 1, who it says it is and what it advertises. It runs only that handshake, in
-    the network-denied probe sandbox `agents doctor` uses (writes only to a scratch directory, scratch HOME, an empty
-    workspace), so no session is created and no model is called. Passing says the agent speaks the protocol; it does
-    not make it a repo-ai execution provider (that needs an adapter with its own isolation and conformance tests).
-    `allow_loopback`: an agent that runs its own local server (OpenCode) may reach localhost only, the rule the
-    OpenCode adapter uses; any other host stays unreachable (bubblewrap's private network has only loopback)."""
+    the network-denied probe sandbox `agents doctor` uses (no network, no LaunchServices or Apple events, writes only
+    to a scratch directory, scratch HOME, an empty workspace; every process it starts is swept afterwards), so no
+    session is created and no model is called. Passing says the agent speaks the protocol; it does not make it a
+    repo-ai execution provider (that needs an adapter with its own isolation and conformance tests). An agent that
+    needs the network to start (OpenCode's ACP mode runs its own local server) does not pass here."""
     base: dict[str, Any] = {"schema": ACP_CONFORMANCE_SCHEMA, "executable": executable, "args": list(args),
                             "model_invoked": False, "execution_support": "PLANNED",
                             "note": "handshake only: no session, no model call; repo-ai runs an agent only through "
@@ -947,43 +954,59 @@ def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: 
         return {**base, "verdict": "REFUSED", "problem": "not an executable file"}
     if _repo_owned(resolved, root.resolve()):
         return {**base, "verdict": "REFUSED", "problem": "resolves into the repository; it was not run"}
+    from .. import sandbox as _sandbox
     with tempfile.TemporaryDirectory(prefix="repo-ai-acp-conformance-") as directory:
         scratch = Path(directory).resolve()
         for name in ("home", "tmp", "work"):
             (scratch / name).mkdir()
         prefix = _sandbox_prefix(scratch)
-        if prefix is not None and prefix[:1] == ["/usr/bin/sandbox-exec"]:
-            # an agent's runtime may start a helper with its output sent to /dev/null (OpenCode's does)
-            loopback = ('(allow network-outbound (remote ip "localhost:*"))(allow network-inbound (local ip '
-                        '"localhost:*"))(allow network-bind (local ip "localhost:*"))') if allow_loopback else ""
-            prefix = [*prefix[:2], prefix[2] + '(allow file-write* (literal "/dev/null"))' + loopback, *prefix[3:]]
         if prefix is None:
             return {**base, "verdict": "NO_SANDBOX",
                     "problem": "no network-denying sandbox on this host (seatbelt or bubblewrap); nothing was run"}
+        run_marker = None
+        if prefix[:1] == ["/usr/bin/sandbox-exec"]:
+            run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex
+            # an agent's runtime may start a helper with its output sent to /dev/null (OpenCode's does); the marker
+            # tags every descendant (setsid, double fork) for the sweep below
+            prefix = [*prefix[:2], prefix[2] + '(allow file-write* (literal "/dev/null"))'
+                      '(deny user-preference-read (preference-domain-regex #"^com\\.repo-ai\\.run\\."))'
+                      f'(allow user-preference-read (preference-domain "{run_marker}"))', *prefix[3:]]
         env = _probe_env(scratch)
-        # an npm-installed agent starts through `env node`: its own directory and the host's node, nothing else
+        # an npm-installed agent starts through `env node`: its own directory and the host's node (never one inside
+        # the repository), nothing else
+        extra = [str(raw.parent)]
         node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
-        extra = [str(raw.parent)] + ([str(Path(node).resolve().parent)] if node else [])
+        if node and Path(node).is_absolute() and not _repo_owned(node, root.resolve()):
+            extra.append(str(Path(node).resolve().parent))
         env["PATH"] = os.pathsep.join([*dict.fromkeys(extra), env["PATH"]])
         client = AcpClient([*prefix, str(resolved), *args], scratch / "work", allowed_writes=[], env=env)
-        out = client.probe(timeout_s)
+        try:
+            out = client.probe(timeout_s)
+        finally:
+            cleanup = _reap_provider_run(run_marker) if run_marker else []
     try:
         identity = _identity(resolved)
     except (OSError, ValueError):
         identity = ""
-    network = "loopback only" if allow_loopback else "denied"
-    result = {**base, **out, "sandbox": f"network {network}; writes only to a scratch directory",
-              "network": network, "identity": identity}
+    raw_agent, raw_caps = out.get("agent"), out.get("capabilities")
+    agent: dict[str, Any] = raw_agent if isinstance(raw_agent, dict) else {}
+    caps: dict[str, Any] = raw_caps if isinstance(raw_caps, dict) else {}
+    result = {**base, "acp": bool(out.get("acp")), "identity": identity, "cleanup_problems": cleanup,
+              "protocol_version": out.get("protocol_version") if isinstance(out.get("protocol_version"), int) else
+              (None if out.get("protocol_version") is None else _shown(out.get("protocol_version"), 40)),
+              "agent": {k: _shown(agent[k]) for k in ("name", "version", "title") if k in agent},
+              "capabilities": sorted(_shown(k, 60) for k in list(caps)[:40]),
+              "auth_methods": [_shown(m, 60) for m in (out.get("auth_methods") or [])[:20]],
+              "sandbox": "no network, no LaunchServices, writes only to a scratch directory, swept after"}
+    if out.get("problem"):
+        result["problem"] = _shown(out["problem"], 300)
     if not out.get("acp") and client.result.stderr:
-        result["diagnostic_summary"] = redact_text(client.result.stderr.decode("utf-8", "replace"))[:240]
-    agent = out.get("agent") or {}
+        result["diagnostic_summary"] = _shown(redact_text(client.result.stderr.decode("utf-8", "replace")), 240)
     checks = {
         "answers_initialize_with_acp_1": bool(out.get("acp")),
-        "names_itself": bool(isinstance(agent, dict) and agent.get("name")),
-        "states_its_version": bool(isinstance(agent, dict) and agent.get("version")),
+        "names_itself": bool(result["agent"].get("name")),
+        "states_its_version": bool(result["agent"].get("version")),
     }
-    # what it needed to answer: no network at all, or loopback (its own local server)
-    checks["starts_with_loopback_only" if allow_loopback else "starts_without_network"] = bool(out.get("acp"))
     result["checks"] = checks
     # NOT_ACP: it answered, but not with ACP 1; NO_HANDSHAKE: it exited or stayed silent before answering
     answered = out.get("protocol_version") is not None

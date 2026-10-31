@@ -304,7 +304,7 @@ def cmd_agents(args) -> int:
             print('repo-ai agents conformance --acp-executable /absolute/path [--acp-arg ARG ...]', file=sys.stderr)
             return 2
         from ..providers import adapters as _adapters
-        res = _adapters.acp_conformance(args.acp_executable, args.acp_arg, root, allow_loopback=args.allow_loopback)
+        res = _adapters.acp_conformance(args.acp_executable, args.acp_arg, root)
         if args.json:
             print(json.dumps(res, indent=2, sort_keys=True))
         else:
@@ -658,8 +658,6 @@ def register(sub, common) -> None:
     p.add_argument('--max-cost-usd', type=float, default=0, help='route: require an enforceable USD ceiling when > 0')
     p.add_argument('--acp-executable', metavar='PATH',
                    help='conformance: absolute path of an ACP agent repo-ai has no adapter for (handshake only)')
-    p.add_argument('--allow-loopback', action='store_true',
-                   help='conformance: let the agent reach localhost only (an agent that runs its own local server)')
     p.add_argument('--acp-arg', action='append', default=[], metavar='ARG',
                    help='conformance: an argument that starts the agent in ACP mode (repeatable; e.g. --acp-arg acp, or --acp-arg=--acp for one that starts with a dash)')
     p.add_argument('--json', action='store_true', help='machine-readable JSON output')
