@@ -157,3 +157,20 @@ def test_a_large_export_ignored_tests_directory_is_restored_in_one_process(tmp_p
     with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
         assert len([f for f in ws.files if f.startswith("tests/")]) == 2000
     assert time.monotonic() - started < 30, "restore must not cost a process per file"
+
+
+def test_a_smudge_filter_that_reports_on_stderr_does_not_fail_the_restore(tmp_path):
+    """Review round 3 of #22: git-lfs prints progress on stderr; only a nonzero exit is a failure."""
+    root = _repo(tmp_path, {"a.py": b"x = 1\n", "t.txt": b"payload\n"}, "t.txt export-ignore filter=noisy\n")
+    _git(root, "config", "filter.noisy.smudge", "echo Downloading >&2; cat")
+    _git(root, "config", "filter.noisy.clean", "cat")
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        assert (ws.path / "t.txt").read_bytes() == b"payload\n"
+
+
+def test_the_restore_leaves_no_fsmonitor_daemon_behind(tmp_path):
+    root = _repo(tmp_path, {"a.py": b"x = 1\n", "tests/t.py": b"y = 2\n"}, "tests/ export-ignore\n")
+    _git(root, "config", "core.fsmonitor", "true")
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        assert "tests/t.py" in ws.files
+    assert not (root / ".git" / "fsmonitor--daemon.ipc").exists()

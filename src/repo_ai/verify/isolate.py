@@ -558,8 +558,13 @@ def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
         return None
 
 
+# no fsmonitor daemon or untracked cache for the user's repository (`check-attr --stdin` starts the daemon)
+_QUIET_GIT = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"]
+
+
 def _git_lines(root: Path, args: list[str], stdin: bytes | None = None) -> bytes | None:
-    proc = subprocess.run(["git", *args], cwd=root, input=stdin, capture_output=True, timeout=120, check=False)
+    proc = subprocess.run(["git", *_QUIET_GIT, *args], cwd=root, input=stdin, capture_output=True, timeout=120,
+                          check=False)
     return proc.stdout if proc.returncode == 0 else None
 
 
@@ -579,7 +584,7 @@ def _check_attr(root: Path, commit: str, names: list[str], paths: list[str]) -> 
 def checkout_bytes(root: Path, commit: str, rel: str) -> bytes | None:
     """The bytes a checkout writes for tracked file `rel` of `commit`: git's own conversion (line endings, `ident`,
     `core.eol`, the same as `git archive`), never a re-implementation of it."""
-    proc = subprocess.run(["git", "cat-file", "--filters", "--end-of-options", f"{commit}:{rel}"], cwd=root,
+    proc = subprocess.run(["git", *_QUIET_GIT, "cat-file", "--filters", "--end-of-options", f"{commit}:{rel}"], cwd=root,
                           capture_output=True, timeout=120, check=False, stdin=subprocess.DEVNULL)
     return proc.stdout if proc.returncode == 0 else None
 
@@ -617,13 +622,17 @@ def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[st
         for args, stdin in ((["read-tree", commit], None),
                             (["--work-tree", str(path), "checkout-index", "-f", "-z", "--stdin"],
                              b"".join(t.encode("utf-8", "surrogateescape") + b"\0" for t in targets))):
-            proc = subprocess.run(["git", *args], cwd=root, env=env, input=stdin, capture_output=True, timeout=300,
-                                  check=False)
-            if proc.returncode != 0 or (args[0] != "read-tree" and proc.stderr.strip()):
+            proc = subprocess.run(["git", *_QUIET_GIT, *args], cwd=root, env=env, input=stdin, capture_output=True,
+                                  timeout=300, check=False)
+            if proc.returncode != 0:  # stderr alone is not failure (an LFS smudge filter reports progress there)
                 raise IsolationError("could not restore the base revision's export-ignore/export-subst files: "
                                      + proc.stderr.decode("utf-8", "replace")[:300])
+    missing = [t for t in targets if modes[t] != "120000" and not (path / t).is_file()]
+    if missing:
+        raise IsolationError(f"could not restore the base revision's file {missing[0][:200]}")
     base = path.resolve()
-    links = [t for t in targets if modes[t] == "120000"]
+    # every link in the workspace, archived or restored: a restored link can redirect an archived one
+    links = sorted({t for t in targets if modes[t] == "120000"} | {h for h in have if (path / h).is_symlink()})
     changed = True
     while changed:  # removing one link can change where another resolves
         changed = False
@@ -682,8 +691,9 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
         ws.files = sorted(m.name for m in members if m.isfile() or m.issym())
         ws.bytes = sum(m.size for m in members if m.isfile())
         restored = _restore_export_attributes(root, commit, path, set(ws.files))
-        if restored:
-            ws.files = sorted(set(ws.files) | set(restored))
+        if restored or any((path / f).is_symlink() for f in ws.files):
+            # a link that resolves outside after the restore was removed: list only what is there
+            ws.files = sorted(f for f in set(ws.files) | set(restored) if (path / f).is_symlink() or (path / f).exists())
             ws.bytes += sum(restored.values())
         if dependencies:
             _place_links(ws, root, ws.files)
