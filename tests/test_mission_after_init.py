@@ -80,8 +80,7 @@ def test_a_provider_candidate_after_committed_init_is_verified(tmp_path):
 
 def test_mission_tests_run_with_the_projects_interpreter_not_the_workspaces(tmp_path, monkeypatch):
     """Found on python-humanize: a workspace never holds the project's `.venv`, so resolving the interpreter from the
-    workspace fell back to the first `python3` on PATH (missing the project's test dependencies). Post-apply
-    verification, which runs in the checkout, used the project's venv: the python-slugify 20-vs-0 discrepancy."""
+    workspace fell back to the first `python3` on PATH (missing the project's test dependencies, here freezegun)."""
     from repo_ai.verify import execute
     seen = []
     real = execute.interpreter

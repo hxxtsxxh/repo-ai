@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: `repo-ai apply` always printed "0 failed" after post-apply verification; the count was hard-coded. A scoped
+  mission (`--expect-fix`) legitimately keeps failures that were already there at the base and are not declared. It now
+  prints the real count and says when every remaining failure is one of those ("131 tests ran, 20 failed (all 20
+  already failing at the base and not declared)"). JSON: `post_apply_failed` is real; `post_apply_pre_existing` is
+  new.
+
 ## 0.11.2 — missions on real repositories: the project's interpreter, init's .gitignore, honest counts
 
 - Fixed (found on python-humanize): `repo-ai verify --run --full` printed "0 passed" when no test file was selected,

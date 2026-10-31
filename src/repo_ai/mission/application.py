@@ -268,7 +268,8 @@ def apply(root: Path, mission: str) -> dict[str, Any]:
         store.save(stored)
         return {'schema': 'repo-ai.mission-apply/1', 'mission': mission, 'applied_to_source': True,
                 'modified_files': sorted(files), 'diff_sha256': rec['diff_sha256'], 'receipt': str(path),
-                'post_apply_verdict': 'PASS', 'provider_verification_label': stored.get('provider', {}).get('verification_label'), 'post_apply_ran': obs['ran'], 'post_apply_failed': 0,
+                'post_apply_verdict': 'PASS', 'provider_verification_label': stored.get('provider', {}).get('verification_label'), 'post_apply_ran': obs['ran'], 'post_apply_failed': obs.get('failed', 0),
+                'post_apply_pre_existing': verification.pre_existing_failures(state['baseline'], obs, scoped)['pre_existing_count'],
                 'observation_sha256': digest(obs)}
 
 
