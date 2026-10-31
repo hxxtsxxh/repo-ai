@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -298,6 +299,27 @@ def cmd_agents(args) -> int:
         return 0
     if args.action == 'setup':
         return _agents_setup(args)
+    if args.action == 'conformance':
+        if not args.acp_executable:
+            print('repo-ai agents conformance --acp-executable /absolute/path [--acp-arg ARG ...]', file=sys.stderr)
+            return 2
+        from ..providers import adapters as _adapters
+        res = _adapters.acp_conformance(args.acp_executable, args.acp_arg, root, allow_loopback=args.allow_loopback)
+        if args.json:
+            print(json.dumps(res, indent=2, sort_keys=True))
+        else:
+            print(f"{res['verdict']}: {res.get('problem') or ('ACP ' + str(res.get('protocol_version')))}")
+            agent = res.get('agent') or {}
+            if agent:
+                print(f"  agent: {agent.get('name', '?')} {agent.get('version', '')}".rstrip())
+            for name, ok in (res.get('checks') or {}).items():
+                print(f"  {'ok  ' if ok else 'FAIL'} {name.replace('_', ' ')}")
+            if res.get('capabilities'):
+                print('  advertises: ' + ', '.join(sorted(map(str, res['capabilities']))))
+            if res.get('diagnostic_summary'):
+                print(f"  agent said: {res['diagnostic_summary']}")
+            print(f"  {res['note']}; execution through repo-ai: {res['execution_support']}")
+        return 0 if res['verdict'] == 'HANDSHAKE_CONFORMANT' else 1
     if args.action == 'catalog':
         from ..providers import catalog
         rows = catalog.detect(root)
@@ -629,11 +651,17 @@ def register(sub, common) -> None:
     p.add_argument('--resume', metavar='ID', help='inspect/recover an interrupted checkpoint; no automatic model retry')
     p.set_defaults(func=cmd_do)
     p = sub.add_parser('agents', parents=[common], help='local provider availability; doctor runs sandboxed help/version only')
-    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke', 'setup', 'catalog'])
+    p.add_argument('action', choices=['list', 'doctor', 'route', 'authorize', 'revoke', 'setup', 'catalog', 'conformance'])
     p.add_argument('provider', nargs='?', help='provider name for authorize/revoke/setup')
     p.add_argument('--prefer', action='store_true', help='with authorize: also prefer this provider in routing')
     p.add_argument('--allow-live-provider', action='store_true', help='route: evaluate as if this run were authorized')
     p.add_argument('--max-cost-usd', type=float, default=0, help='route: require an enforceable USD ceiling when > 0')
+    p.add_argument('--acp-executable', metavar='PATH',
+                   help='conformance: absolute path of an ACP agent repo-ai has no adapter for (handshake only)')
+    p.add_argument('--allow-loopback', action='store_true',
+                   help='conformance: let the agent reach localhost only (an agent that runs its own local server)')
+    p.add_argument('--acp-arg', action='append', default=[], metavar='ARG',
+                   help='conformance: an argument that starts the agent in ACP mode (repeatable; e.g. --acp-arg acp, or --acp-arg=--acp for one that starts with a dash)')
     p.add_argument('--json', action='store_true', help='machine-readable JSON output')
     p.set_defaults(func=cmd_agents)
     p = sub.add_parser('mission', parents=[common], help='inspect, cancel or recover local mission checkpoints')

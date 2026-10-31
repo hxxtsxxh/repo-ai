@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Added: `repo-ai agents conformance --acp-executable PATH [--acp-arg ARG] [--allow-loopback]`, a conformance kit for
+  Agent Client Protocol agents repo-ai has no adapter for. It runs only the `initialize` handshake (no session, no
+  model call) in a network-denied sandbox (loopback only on request), refuses repository-owned executables, and
+  reports the protocol version, the agent's name and version, what it advertises and, when it fails, what it printed.
+  A conformant agent is still `PLANNED` for execution. Gemini CLI 0.65.0 and OpenCode 2.2.1 conform.
+
 ## 0.11.4 — SAFE_AUTO hardened after a failed unseen-corpus test; verify fixes from real projects
 
 - Added: when tests fail at the base and the change alike and their output shows a network denial (name
