@@ -190,6 +190,8 @@ def _text_surfaces(text: str) -> list[str]:
     out: list[str] = []
     if _HIDDEN.search(text):
         out.append("hidden-unicode")
+    if any(ord(ch) > 127 and ch.isalpha() for ch in text):  # homoglyphs and full-width letters defeat text checks
+        out.append("non-ascii-letters")
     if _CONTROL.search(text):
         out.append("control-characters")
     if _HTML_COMMENT.search(text):

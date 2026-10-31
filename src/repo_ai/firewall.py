@@ -387,10 +387,9 @@ _RULES: list[tuple[str, str, str, str, re.Pattern[str]]] = [
                 r"|(-F|--form)\s+[\"']?[\w.-]+=@(?!-))")),
     ("critical", "confirmed", "exfiltration", "netcat-pipe",
      re.compile(r"(?i)\|\s*(nc|ncat|netcat|socat)\b\s+\S+\s+\d+")),
-    ("high", "confirmed", "destructive", "recursive-delete",  # other flags may come first (`--no-preserve-root`)
-     re.compile(r"(?i)\brm\s+(--?[a-z-]+\s+)*-[a-z]*(r[a-z]*f|f[a-z]*r)[a-z]*\s+(--?[a-z-]+\s+)*"
+    ("high", "confirmed", "destructive", "recursive-delete",  # other flags may come first; one parse per flag
+     re.compile(r"(?i)\brm\s+(?:-{1,2}[a-z][a-z-]*\s+)*?-[a-z]*(r[a-z]*f|f[a-z]*r)[a-z]*\s+(?:-{1,2}[a-z][a-z-]*\s+)*?"
                 r"[\"']?(/|~/?|\$\{?HOME\}?[\"']?/?|\*|\.\.?/?|/\*)[\"'*.]*(\s|$|;|&)")),
-    ("critical", "confirmed", "destructive", "no-preserve-root", re.compile(r"(?i)--no-preserve-root\b")),
     ("high", "confirmed", "destructive", "git-destructive",
      re.compile(r"(?i)\bgit\s+(reset\s+--hard|clean\s+-[a-z]*f|push\s+(-f\b|--force)|branch\s+-D)")),
     ("critical", "confirmed", "destructive", "disk-wipe",
@@ -431,10 +430,13 @@ _NEGATED = re.compile(r"(?i)\b(never|don't|do\s+not|must\s+not|avoid|instead\s+o
 # Code only (scripts, fenced blocks): what a program does, which prose may legitimately name (skill-vet-fresh-v1:
 # a reverse shell and a keychain reader carried no finding at all).
 _CODE_RULES: list[tuple[str, str, str, str, re.Pattern[str]]] = [
-    ("critical", "confirmed", "remote-exec", "reverse-shell",  # a socket handed to a shell's stdin/stdout
-     re.compile(r"(?i)\bdup2\s*\(\s*[\w.]+\.fileno\(\)|/dev/(tcp|udp)/|\b(nc|ncat|netcat)\b[^\n|]*\s-[a-z]*e\s|"
-                r"\bsocat\b[^\n]*\bexec:|\bpty\.spawn\s*\(")),
-    ("critical", "confirmed", "credentials", "credential-store-path",  # paths built from pieces: join(home, ".ssh")
+    ("critical", "confirmed", "remote-exec", "reverse-shell",  # a shell wired to a network stream (not a port probe)
+     re.compile(r"(?i)\b(ba|z|k)?sh\s+-i\b[^\n;&|]{0,40}[<>]&?\s*/dev/(tcp|udp)/|/dev/(tcp|udp)/\S+\s+0>&1|"
+                r"\bexec\s+\d+<>\s*/dev/(tcp|udp)/|\b(nc|ncat|netcat)\b[^\n|&;]{0,80}\s-[a-z]*e\s+\S*sh\b|"
+                r"\bsocat\b[^\n]{0,120}\bexec:[^\n]{0,40}sh\b")),
+    ("critical", "confirmed", "destructive", "no-preserve-root",
+     re.compile(r"(?i)\brm\b[^\n;&|]{0,80}--no-preserve-root\b")),
+    ("high", "suspected", "credentials", "credential-store-path",  # a path alone is not theft: review, not blocked
      re.compile(r"(?i)[\"']\.(ssh|aws|gnupg|netrc|docker)[\"'/]|Library/Keychains|\blogins\.json\b|Login Data\b|"
                 r"\bkey4\.db\b|\bCookies\.binarycookies\b")),
 ]
@@ -451,25 +453,35 @@ _FETCHED_EXEC = re.compile(r"(?i)\b(curl|wget)\b[^\n]*(\s-[a-zA-Z]*[oO]\s|--outp
 _MAKE_EXEC = re.compile(r"(?i)\bchmod\s+(\+x|u\+x|[0-7]*[1357][0-7]{0,2}\b)")
 
 
+_SOCKET_TO_SHELL = (re.compile(r"(?i)\bsocket\.(socket|create_connection)\b|\.connect\s*\(\s*\("),
+                    re.compile(r"(?i)\bdup2\s*\(\s*[\w.]+\.fileno\(\)"),
+                    re.compile(r"(?i)/bin/(ba|z|k)?sh\b|\bpty\.spawn\s*\(|\bsubprocess\.\w+\(\s*\[?\s*[\"'](ba|z)?sh\b"))
+MAX_SCAN_LINE = 2_000  # longer lines are cut for these patterns (a SKILL.md line over 2,000 is already a surface)
+
+
 def code_risks(code: str) -> list[tuple[str, str, str]]:
-    """(category, rule, evidence) for whole-program behaviour that no single line shows."""
+    """(category, rule, evidence) for whole-program behaviour that no single line shows. Evidence is redacted."""
     out = []
+    code = "\n".join(line[:MAX_SCAN_LINE] for line in code.splitlines())
+    if all(p.search(code) for p in _SOCKET_TO_SHELL):
+        out.append(("remote-exec", "reverse-shell", "a socket is connected, duplicated onto stdio and given a shell"))
     src, send = _SECRET_SOURCE.search(code), _NETWORK_SEND.search(code)
     if src and send:
-        out.append(("exfiltration", "read-and-send", f"reads {src.group(0)[:40]!r}, sends {send.group(0)[:40]!r}"))
+        out.append(("exfiltration", "read-and-send",
+                    redact_text(f"reads {src.group(0)[:40]!r}, sends {send.group(0)[:60]!r}")[:140]))
     fetched, made = _FETCHED_EXEC.search(code), _MAKE_EXEC.search(code)
     if fetched and made:
         out.append(("remote-exec", "download-made-executable",
-                    f"{fetched.group(0)[:40]!r} then {made.group(0)[:30]!r}"))
+                    redact_text(f"{fetched.group(0)[:60]!r} then {made.group(0)[:30]!r}")[:140]))
     return out
 
 
 # What a skill's prose asks the agent to do, by attack class (skill-vet-fresh-v1: prose-only skills that took over
 # the agent, hid things from the user or weakened the project's checks read as inert). Matched per paragraph, so a
-# sentence wrapped over lines still matches. (rule, pattern, negatable): a negatable class is dropped when "never" /
-# "do not" governs it ("never lower the coverage threshold"); the others are themselves phrased as prohibitions.
+# sentence wrapped over lines still matches. No negation clears a match: "never mind the old notes, delete …" is
+# phrased like a prohibition, and a prohibition about these subjects costs only a question under SAFE_AUTO.
 _W = r"[^.!?\n]{0,48}"
-_INSTRUCTION_RISKS: list[tuple[str, re.Pattern[str], bool]] = [
+_INSTRUCTION_RISKS: list[tuple[str, re.Pattern[str]]] = [
     ("authority-override", re.compile(
         r"(?i)\b(ignore|disregard|forget|override|supersede|overrule)\b" + _W +
         r"\b(instructions?|prompts?|rules?|guidelines?|guardrails?|polic(y|ies)|directives?|constraints?)\b|"
@@ -477,7 +489,7 @@ _INSTRUCTION_RISKS: list[tuple[str, re.Pattern[str], bool]] = [
         r"\b(wins?|takes?\s+precedence|overrides?|outranks?|supersedes?|prevails?|beats?)\b|"
         r"\b(outrank|override|overrule|take\s+precedence\s+over)s?\b" + _W + r"\b(the\s+)?(user|developer|operator)\b|"
         r"\byou\s+are\s+(now\s+)?(an?\s+)?(unrestricted|unfiltered|jailbroken)\b|"
-        r"\b(stop|never)\s+refus(e|ing)\b"), False),
+        r"\b(stop|never)\s+refus(e|ing)\b")),
     ("concealment", re.compile(
         r"(?i)\b(do\s+not|don't|never|without)\s+(tell|telling|inform|informing|reveal|revealing|mention|mentioning|"
         r"disclos(e|ing)|report|reporting|notify|notifying|surface|surfacing|flag|flagging|show|showing)\b" + _W +
@@ -489,55 +501,74 @@ _INSTRUCTION_RISKS: list[tuple[str, re.Pattern[str], bool]] = [
         r"\b(acknowledge|proceed|continue)\w*\s+(silently|quietly)\b|"
         r"\b(report|describe|present|mark|show|summari[sz]e)\w*\b" + _W +
         r"\b(as\s+)?(pass(ing|ed)?|green|successful|success|clean)\b" + _W +
-        r"\b(even\s+(if|when|though)|regardless|whether\s+or\s+not)\b"), False),
+        r"\b(even\s+(if|when|though)|regardless|whether\s+or\s+not)\b")),
     ("approval-bypass", re.compile(
         r"(?i)\b(assume|treat|consider)\b" + _W + r"\b(approv\w*|consent\w*|permission\w*|confirmation\w*)\b" + _W +
         r"\b(granted|given|cancel+ed|implied|unnecessary|not\s+needed)\b|"
         r"\bauto[- ]?approv\w*\b|\bbypass\s*permissions\b|\bdangerously[- ]?skip\w*|--no-verify\b|--yolo\b|"
-        r"\b(skip|disable|turn\s+off|bypass|remove|suppress)\b" + _W +
+        r"\b(skip|disabl|turn(s|ed|ing)?\s+off|bypass|remov|suppress)\w*\b" + _W +
         r"\b(confirmations?|approvals?|permission\s+(prompts?|checks?)|safety\s+(checks?|guidelines?|rules?)|"
         r"guardrails?|sandbox(ing)?)\b|"
-        r"\b(most|maximally|fully)\s+permissive\b"), False),
+        r"\b(most|maximally|fully)\s+permissive\b")),
     ("verification-weakening", re.compile(
         r"(?i)\b(lower|reduce|drop|relax|loosen)\b" + _W + r"\b(coverage|threshold|fail[-_ ]under|minimum)\b|"
         r"\b(coverage|threshold|fail[-_ ]under)\b" + _W + r"\bto\s+0\b|"
-        r"\b(disable|skip|remove|delete|comment\s+out|neuter|bypass|xfail)\b" + _W +
+        r"\b(disabl|skip|remov|delet|comment(s|ed|ing)?\s+out|neuter|bypass|xfail)\w*\b" + _W +
         r"\b(failing|required|security)\s+(tests?|checks?|jobs?|scans?|steps?)\b|"
-        r"\b(disable|remove|delete|bypass|neuter)\b" + _W +
+        r"\b(disabl|skip|remov|delet|neuter|bypass)\w*\b" + _W + r"\b(tests?|checks?|jobs?|scans?|steps?)\b" + _W +
+        r"\b(fail(ing|s|ed)?|security|required)\b|"
+        r"\breports?\s+(success|pass(ing|ed)?|green)\b" + _W + r"\bwithout\b|\[(skip\s+ci|ci\s+skip)\]|"
+        r"\b(disabl|remov|delet|bypass|neuter)\w*\b" + _W +
         r"\b(ci|pipeline|pre-commit|hooks?|gates?|branch\s+protection|status\s+checks?|linters?)\b|"
-        r"\bcontinue-on-error\b|\ballow_failure\b|\|\|\s*true\b|\bexit\s+0\b"), True),
+        r"\bcontinue-on-error\b|\ballow_failure\b")),
     ("agent-config-persistence", re.compile(
         r"(?i)\b(append|add|write|insert|edit|modify|update|create|register|install)\w*\b" + _W +
         r"(CLAUDE\.md|AGENTS\.md|GEMINI\.md|\.cursorrules|copilot-instructions|\.claude/|\.codex/|\.gemini/|"
         r"\.vscode/settings|\.(bash|zsh)rc|\.profile\b|\.bash_profile|crontab|LaunchAgents|\bgit\s+hooks?\b|"
-        r"\.git/hooks)"), True),
+        r"\.git/hooks)")),
     ("destructive", re.compile(
-        r"(?i)\b(delete|remove|wipe|erase|purge|destroy|overwrite)\b" + _W +
+        r"(?i)\b(delet|remov|wip|eras|purg|destroy|overwrit)\w*\b" + _W +
         r"(\.env\b|~/|\$HOME\b|\bhome\s+(directory|folder)|\bdownloads\b|\bdesktop\b|\buntracked\b|"
         r"\b(git\s+)?history\b|\ball\s+(files|branches|tags|data)\b|\beverything\b|\bother\s+branches\b)|"
-        r"\bforce[- ]push\w*\b|\bpush\s+(--force|-f)\b|\breset\s+--hard\b|\bclean\s+-[a-z]*f[a-z]*d"), True),
+        r"\bforce[- ]push\w*\b|\bpush\s+(--force|-f)\b|\breset\s+--hard\b|\bclean\s+-[a-z]*f[a-z]*d")),
     ("identity-takeover", re.compile(
         r"(?i)\bCODEOWNERS\b|\b(add|make|set|list)\w*\b" + _W + r"\b(maintainers?|owners?|required\s+reviewers?|"
         r"admins?|collaborators?)\b|\bgit\s+config\b" + _W + r"\buser\.(email|name)\b|"
         r"\b(rewrite|change|replace|amend)\w*\b" + _W + r"\b(authors?(hip)?|committers?|commit\s+identity)\b|"
-        r"--reset-author\b|\bfilter-(branch|repo)\b"), True),
+        r"--reset-author\b|\bfilter-(branch|repo)\b")),
 ]
+_PARA_BREAK = re.compile(r"\n[ \t]*\n|\n(?=[ \t]{0,3}(?:#|[-*+]\s|\d+[.)]\s))")  # blank line, heading, list item
 
 
 def instruction_risks(text: str) -> list[tuple[str, int, str]]:
-    """(rule, line, snippet) for each attack class a document's prose asks for, once per class and paragraph."""
+    """(rule, line, snippet) for each attack class a document's prose asks for, once per class and paragraph.
+
+    Text is normalised first (NFKC folds full-width letters; HTML entities are decoded), and emphasis markers are
+    stripped only at word edges, so `**IGNORE**` reads as IGNORE and `allow_failure` keeps its underscore."""
+    import html
+    import unicodedata
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
     out: list[tuple[str, int, str]] = []
-    lineno = 1
-    for para in re.split(r"\n[ \t]*\n", text):
-        flat = re.sub(r"\s+", " ", para)
-        flat = re.sub(r"[*_~]{1,3}(?=\w)|(?<=\w)[*_~]{1,3}", "", flat)  # `**IGNORE**` reads as IGNORE
-        for rule, pattern, negatable in _INSTRUCTION_RISKS:
-            for hit in pattern.finditer(flat):
-                if negatable and _negated_before(flat, hit.start()):
-                    continue
-                out.append((rule, lineno, _snippet(flat[max(0, hit.start() - 40):hit.end() + 40])))
-                break
-        lineno += para.count("\n") + 2
+    pos = 0
+    for para in _PARA_BREAK.split(text):
+        at = text.find(para, pos)
+        pos = at + len(para) if at >= 0 else pos
+        tokens = [(m.start(), re.sub(r"^[*_~`]+|[*_~`]+$", "", m.group()))
+                  for m in re.finditer(r"\S+", para)]
+        starts, words, offset = [], [], 0
+        for start, word in tokens:
+            starts.append((offset, start))
+            words.append(word)
+            offset += len(word) + 1
+        flat = unicodedata.normalize("NFKC", html.unescape(" ".join(words)))
+        safe = redact_text(flat)
+        for rule, pattern in _INSTRUCTION_RISKS:
+            hit = pattern.search(flat)
+            if hit is None:
+                continue
+            index = max(i for i, (o, _) in enumerate(starts) if o <= hit.start()) if starts else 0
+            line = text.count("\n", 0, max(at, 0) + (starts[index][1] if starts else 0)) + 1
+            out.append((rule, line, safe[max(0, hit.start() - 40):hit.end() + 40].strip()[:140]))
     return out
 # Instructions Claude would follow: prose in a skill is never softened for these.
 _NEVER_DOWNGRADE = {"remote-exec", "exfiltration", "credentials", "permission-escalation", "persistence"}
@@ -712,7 +743,8 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
     # 2./3. instructions and code, line by line
     hosts: dict[str, str] = {}
     for path, text in texts.items():
-        is_doc = path.endswith((".md", ".txt"))
+        # licence and notice files are installed with an inert skill, so their text is read as documentation
+        is_doc = path.endswith((".md", ".txt")) or PurePosixPath(path).name.upper() in {"LICENSE", "COPYING", "NOTICE"}
         # one leading byte-order mark is an encoding signature, not hidden text
         # (editors and Anthropic's own docx skill write it); any other is flagged
         if _HIDDEN_CHARS.search(text[1:] if text.startswith("\ufeff") else text):
@@ -735,7 +767,8 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
         raw_lines = text.splitlines()
         code = "\n".join(ln for ln, c in zip(raw_lines, contexts, strict=False) if c == "code")
         for category, rule, evidence in code_risks(code):
-            findings.append(Finding("high", "suspected", category, rule, path, 0, evidence))
+            sev = "critical" if rule == "reverse-shell" else "high"
+            findings.append(Finding(sev, "suspected", category, rule, path, 0, evidence))
         for lineno, line in enumerate(raw_lines, 1):
             ctx = contexts[lineno - 1] if lineno - 1 < len(contexts) else "code"
             logical = line
@@ -757,7 +790,7 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                 findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
             if ctx == "code":
                 for severity, kind, category, rule, pattern in _CODE_RULES:
-                    if pattern.search(logical):
+                    if pattern.search(logical[:MAX_SCAN_LINE]):
                         findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
             if (is_doc or ctx == "comment") and _INJECTION.search(line):
                 findings.append(Finding("high", "confirmed", "prompt-injection", "injection-phrase",

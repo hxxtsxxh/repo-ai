@@ -423,6 +423,8 @@ repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-ru
   - its directory holds a SKILL.md and plain licence files, and nothing else;
   - it is pinned to the hash that was vetted and re-checked at install;
   - it declares no permissions, hooks, URLs, network commands, accounts or hidden characters;
+  - its text has no non-ASCII letters (look-alike letters defeat text checks) and no instruction-risk prose
+    (below), whether phrased as a request or as a prohibition;
   - the firewall found nothing that matters.
   
   It installs into the Claude Code project skills directory only, and only a
