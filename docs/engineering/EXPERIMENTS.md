@@ -73,6 +73,16 @@ harmful skills (all prose-only). G2 passed (0 of 10 harmful plugins `eligible`),
 rated `eligible` (never auto-installed). A fix followed (prose instruction classes; script behaviour). A diagnostic
 re-run on the same corpus is not a confirmation. The confirming corpus (v2) is blocked: its author agent was
 stopped by a safety classifier, and this was not worked around. Unblock: a person-written corpus.
+||||||| 7f5e679
+
+## Speed on real upstream commits (C16), 2026-10-31, $0
+
+`benchmarks/speed-v1/` (preregistered at 8b8d7e5; run 1 invalid by a harness defect, Amendment 1; run 2 is the
+measurement, GitHub Actions 41240668799). 5 pinned pure-Python projects × 6 mechanically selected upstream commits,
+on a GitHub ubuntu runner with bwrap. **verify --run took 1.84× the native suite (geometric mean), slower on 24 of
+30**; the other 6 were early failures, not speed. Overhead median +0.63 s; reuse 0.20 s. No false assurance, with little power (5 failing native suites; 2 humanize measurements contaminated by a harness defect, disclosed); verify
+failed natively passing tests in 14 changes (pyjwt network-denied tests; more-itertools and one humanize change
+unexplained; marshmallow name-matched files without `--record`). Third-party code ran only on the CI runner.
 
 ## Open experiment protocols (not run)
 

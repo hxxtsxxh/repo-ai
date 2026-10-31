@@ -20,6 +20,9 @@ Updated 2026-10-31: 0.11.3 published (#21–#36).
 | 5 | Linux live provider run (podman + bwrap) | C17 | todo |
 | 6 | `verify --show-fixed` names tests a change fixed, each confirmed alone at base and change | C11 | done (#26, redesigned after review found four false claims) |
 | 7 | Verify speed profiling: host time is test execution; per-process workspace clone was the visible overhead | C16 | done for clones (#28: 0.07 s vs 0.31 s per process on 2,742 files). Background deletion was measured locally (2026-10-31) and not pursued: cleanup is 0.12 s per 2,750-file workspace, about 5 s on a 20-check `--show-fixed` run, against directories outliving the process |
+| 7a | speed-v1 (preregistered, real upstream commits, CI runner): verify 1.84× the native suite, slower on 24 of 30 | C16 | done: NEGATIVE_RESULT recorded (`benchmarks/speed-v1/RESULTS.md`) |
+| 7b | verify fails natively passing tests without saying why: more-itertools `full-suite-failed` (6 of 6), humanize f772e59b | C16, C21 | todo: reproduce in CI with full output (third-party code on runners only) |
+| 7c | Failures consistent with the sandbox (network-denied tests, pyjwt) are labelled only `pre-existing` | C16 | todo |
 | 8 | Codex: the token copied into its sandbox stays readable by its model; explore a token broker or document as permanent | C18 | done (#36): opt-in broker (`REPO_AI_CODEX_BROKER=1`, macOS) after three security-review rounds; live-verified with a ChatGPT login (calls #37 and #38 in EXPERIMENTS.md). Next: verify an API-key login; consider making it the default for Codex on macOS |
 | 9 | Claude provider live on the re-logged dedicated login | C03 | done (#33, #34 provider runs) |
 | 10 | Claude token-mode live check (needs the owner to create a `claude setup-token`) | C03 | blocked (owner) |
