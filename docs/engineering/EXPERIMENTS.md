@@ -64,6 +64,15 @@ the dedicated Claude login at about 18:55Z. Used: 12 of 15 (#27–#38), $0.2386 
 `evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md`. A refused 0.11.1 run (dirty `.gitignore`) invoked no model and is not
 counted.
 
+## Speed on real upstream commits (C16), 2026-10-31, $0
+
+`benchmarks/speed-v1/` (preregistered at 8b8d7e5; run 1 invalid by a harness defect, Amendment 1; run 2 is the
+measurement, GitHub Actions 41240668799). 5 pinned pure-Python projects × 6 mechanically selected upstream commits,
+on a GitHub ubuntu runner with bwrap. **verify --run took 1.84× the native suite (geometric mean), slower on 24 of
+30**; the other 6 were early failures, not speed. Overhead median +0.63 s; reuse 0.20 s. No false assurance, with little power (5 failing native suites; 2 humanize measurements contaminated by a harness defect, disclosed); verify
+failed natively passing tests in 14 changes (pyjwt network-denied tests; more-itertools and one humanize change
+unexplained; marshmallow name-matched files without `--record`). Third-party code ran only on the CI runner.
+
 ## Open experiment protocols (not run)
 
 - **C03 Claude end-to-end journey**: `repo-ai do --agent claude --run --allow-live-provider --allow-write durations.py
