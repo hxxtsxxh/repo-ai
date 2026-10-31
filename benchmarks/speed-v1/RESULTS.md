@@ -21,7 +21,7 @@ run 1 is kept as [results/run-1-invalid.json](results/run-1-invalid.json). Spend
 - **Geometric mean of the cold ratio: 1.84×. verify was slower on 24 of 30 changes.** By the preregistered reading
   rule, verify is **not** faster than the native suite on these projects.
 - **The 6 "faster" changes are not a speed win.** They are all more-itertools, where verify's full-suite run ended
-  `full-suite-failed` in about a second while the native suite passed 664 tests. verify finished early because its
+  `full-suite-failed` in about a second while the native suite passed (652–664 tests per change). verify finished early because its
   run failed (cause not yet known, below), not because it was quicker. Without them, verify was slower on all 24.
 - **Native "suites" that crashed are not durations either.** In 4 of the 6 humanize changes the native run stopped
   within 0.2 s (a pytest configuration error, or a collection error), which inflates those ratios (4.8–15.8×).
