@@ -364,7 +364,7 @@ class Workspace:
         so tests that use fixed files (a SQLite database in the working
         directory) cannot collide, just as when the suite runs one at a time."""
         started = time.monotonic()
-        tree = _clone_tree(self.path, label)
+        tree = _clone_tree(self.path, label, keep={*self.files, *self.readonly})
         if tree is not None:  # one copy-on-write clone of the whole tree (APFS): ~15x faster than file by file
             twin = Workspace(tree, self.source, list(self.files), withheld=list(self.withheld),
                              skipped_links=list(self.skipped_links), readonly=dict(self.readonly),
@@ -484,10 +484,12 @@ def _alive(pid: int) -> bool:
     return True
 
 
-def _clone_tree(src: Path, label: str) -> Path | None:
+def _clone_tree(src: Path, label: str, keep: set[str]) -> Path | None:
     """A new workspace directory cloned from `src` in one `clonefile(2)` call (macOS; a directory is cloned
     recursively, links as links), with its own ownership marker; None where unsupported, and the caller copies
-    file by file. `src` is a workspace nothing has run in yet (`Workspace.clone`)."""
+    file by file. Then it holds exactly what a file-by-file copy would: the `keep` paths (listed files and
+    dependency links) and the directories above them; anything else (an empty directory a dropped file left, a
+    stray file) is removed, so a test run sees the shipped tree."""
     global _swept
     fn: Any = _clonefile_fn() if platform.system() == "Darwin" else None
     if not fn:
@@ -499,7 +501,28 @@ def _clone_tree(src: Path, label: str) -> Path | None:
     if fn(os.fsencode(src), os.fsencode(path), 0x0001 | 0x0002) != 0:  # e.g. not APFS: copy file by file
         _remove(path)
         return None
-    (path / WS_MARKER).write_text(json.dumps({"pid": os.getpid(), "created": time.time()}), "utf-8")
+    try:
+        (path / WS_MARKER).write_text(json.dumps({"pid": os.getpid(), "created": time.time()}), "utf-8")
+        kept_dirs = {str(PurePosixPath(k).parent) for k in keep} | {"."}
+        for k in keep:  # every ancestor of a kept path
+            parent = PurePosixPath(k).parent
+            while str(parent) not in {"", "."}:
+                kept_dirs.add(str(parent))
+                parent = parent.parent
+        for dirpath, dirnames, filenames in os.walk(path, topdown=False):
+            rel_dir = os.path.relpath(dirpath, path)
+            for name in filenames + [d for d in dirnames if os.path.islink(os.path.join(dirpath, d))]:
+                rel = name if rel_dir == "." else f"{rel_dir}/{name}"
+                if rel != WS_MARKER and rel not in keep:
+                    os.unlink(os.path.join(dirpath, name))
+            if rel_dir not in kept_dirs:
+                _remove(Path(dirpath))
+    except OSError:  # something the template should not hold (a read-only directory): copy file by file
+        _remove(path)
+        return None
+    except BaseException:
+        _remove(path)
+        raise
     return path
 
 
