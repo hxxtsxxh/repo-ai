@@ -32,6 +32,10 @@ from typing import Any
 PROTOCOL_VERSION = 1
 MAX_LINE = 4_000_000          # one JSON-RPC message
 MAX_READ = 2_000_000          # one file served to the agent
+MAX_TEXT = 2_000_000          # the agent's text kept for a run (the rest is counted, not kept)
+MAX_TOOL_CALLS = 5_000        # tool-call events kept for a run
+MAX_FIELD = 300               # characters kept of one tool-call field
+MAX_NOTES = 50                # distinct problems or refusals kept (the rest are counted)
 ALLOWED_KINDS = {"read", "search", "edit", "think"}
 
 
@@ -120,6 +124,8 @@ class AcpClient:
         self._buf = b""
         self._next_id = 0
         self._deadline = 0.0
+        self._text_size = 0
+        self._dropped = 0
         self.result = AcpResult()
 
     # -- transport ---------------------------------------------------------------------------------------------
@@ -162,7 +168,7 @@ class AcpClient:
         try:
             msg = json.loads(line)
         except (json.JSONDecodeError, RecursionError, UnicodeDecodeError):
-            self.result.problems.append("a line on the agent's stdout is not JSON-RPC")
+            self._note(self.result.problems, "a line on the agent's stdout is not JSON-RPC")
             return {}
         return msg if isinstance(msg, dict) else {}
 
@@ -183,7 +189,7 @@ class AcpClient:
     # -- the agent's calls ---------------------------------------------------------------------------------------
     def _reply(self, rid: Any, result: Any = None, error: str | None = None, code: int = -32000) -> None:
         if error is not None:
-            self.result.refused.append(error)
+            self._note(self.result.refused, error)
             self._send({"id": rid, "error": {"code": code, "message": error}})
         else:
             self._send({"id": rid, "result": result})
@@ -195,7 +201,7 @@ class AcpClient:
         except (TimeoutError, OSError):
             raise
         except Exception as exc:  # noqa: BLE001 - whatever a hostile agent sends
-            self.result.problems.append(f"malformed message from the agent: {type(exc).__name__}")
+            self._note(self.result.problems, f"malformed message from the agent: {type(exc).__name__}")
             if msg.get("id") is not None and msg.get("method"):
                 self._reply(msg.get("id"), error="malformed request", code=-32602)
 
@@ -285,10 +291,38 @@ class AcpClient:
         if kind == "agent_message_chunk":
             content = update.get("content")
             if isinstance(content, dict) and content.get("type") == "text":
-                self.result.messages.append(str(content.get("text", "")))
+                text = str(content.get("text", ""))
+                if self._text_size + len(text) > MAX_TEXT:
+                    self._over_bound("the agent's text exceeds the output bound")
+                    return
+                self._text_size += len(text)
+                self.result.messages.append(text)
         elif kind in {"tool_call", "tool_call_update"}:
-            self.result.tool_calls.append({k: update.get(k) for k in ("toolCallId", "title", "kind", "status")
+            if len(self.result.tool_calls) >= MAX_TOOL_CALLS:
+                self._over_bound("the agent's tool-call events exceed the output bound")
+                return
+            self.result.tool_calls.append({k: str(update.get(k))[:MAX_FIELD] for k in ("toolCallId", "title", "kind",
+                                                                                     "status")
                                            if update.get(k) is not None})
+
+    def _over_bound(self, why: str) -> None:
+        """Past a bound nothing more is kept, and the run cannot pass (a reason is recorded once)."""
+        self._note(self.result.problems, why)
+
+    def _note(self, notes: list[str], text: str) -> None:
+        """Record a problem or refusal once; past MAX_NOTES distinct ones, only a count is kept."""
+        text = text[:500]
+        if text in notes:
+            return
+        if len(notes) < MAX_NOTES:
+            notes.append(text)
+        else:
+            self._dropped += 1
+            marker = f"... and {self._dropped} more not kept"
+            if notes and notes[-1].startswith("... and "):
+                notes[-1] = marker
+            else:
+                notes.append(marker)
 
     # -- capability probe (no session, no model call) ------------------------------------------------------------
     def probe(self, timeout_s: float = 20.0) -> dict[str, Any]:

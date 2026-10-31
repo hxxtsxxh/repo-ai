@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Added: `repo-ai do --agent opencode-acp` runs OpenCode over the Agent Client Protocol (`opencode acp`) instead of
+  `opencode run`, under exactly the `opencode` isolation: same OS sandbox with loopback-only network, scratch HOME,
+  deny-by-default inline config and local model. The ACP client stays outside the sandbox; any protocol problem,
+  refused request, timeout or stop reason other than `end_turn` fails the run, and the edit OpenCode makes itself is
+  still checked in the workspace and by the tests. It appears in `agents list/doctor/route/catalog` and `agents setup
+  opencode-acp`, which also runs an `initialize`-only ACP handshake (no model call). A live $0 run with a local
+  `qwen3:8b` reached PASS on a scratch fixture.
 - Added: an Agent Client Protocol (ACP 1) client (`repo_ai.providers.acp`). It applies one permission policy to every
   ACP agent: reads only inside the workspace, writes only to allowed paths, no terminals, permission requests allowed
   once only for read/search/edit tool calls, never allow-always. A handshake-only probe gives accurate capability

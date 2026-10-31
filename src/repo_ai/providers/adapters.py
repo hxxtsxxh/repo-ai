@@ -24,7 +24,9 @@ from typing import Any
 
 from ..security import redact_text, source_contains_secret
 from . import claude_auth, opencode_cfg
-from .discovery import MAX_OUTPUT, PROVIDERS, _capture, _identity, _inside, _probe_env, _repo_owned, _sandbox_prefix
+from .acp import AcpClient, AcpResult
+from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _capture, _identity, _inside, _probe_env, _repo_owned,
+                        _sandbox_prefix, executable_name)
 
 STAGES = (
     "NOT_INSTALLED",
@@ -55,6 +57,11 @@ class ProviderContract:
         data["headless_argv"] = list(self.headless_argv)
         data["sandbox_flags"] = list(self.sandbox_flags)
         return data
+
+
+ACP_EVENT_FORMAT = "acp-jsonrpc"
+# OpenCode however it is driven: same configuration, same sandbox, same loopback-only network rule
+OPENCODE_PROVIDERS = frozenset({"opencode", "opencode-acp"})
 
 
 PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
@@ -125,6 +132,20 @@ PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
         headless_argv=("run", "--standalone", "--format", "json"),
         event_format="opencode-json",
         event_flag="--format",
+        workspace_flag=None,
+        sandbox_flags=("OPENCODE_CONFIG_CONTENT permission *=deny", "OPENCODE_DISABLE_PROJECT_CONFIG=1"),
+        cost_limit_flag=None,
+        turn_limit_flag=None,
+        enforces_hard_usd_budget=False,
+    ),
+    # The same OpenCode, driven over the Agent Client Protocol (`opencode acp`, JSON-RPC on stdio; see acp.py) under
+    # exactly the `opencode` isolation: sandbox, scratch HOME, inline deny-by-default config, loopback-only network.
+    # The prompt travels in `session/prompt`, not argv. ACP reports no cost; the model is local (see acp_events).
+    "opencode-acp": ProviderContract(
+        provider="opencode-acp",
+        headless_argv=("acp",),
+        event_format=ACP_EVENT_FORMAT,
+        event_flag="acp",
         workspace_flag=None,
         sandbox_flags=("OPENCODE_CONFIG_CONTENT permission *=deny", "OPENCODE_DISABLE_PROJECT_CONFIG=1"),
         cost_limit_flag=None,
@@ -217,6 +238,10 @@ def build_invocation(
     if provider == "opencode":
         # the tool policy and model endpoint travel in the environment (opencode_cfg.environment)
         return [exe, "run", "--standalone", "--format", "json", "--model", opencode_cfg.model_ref(), "--", safe_prompt]
+    if provider == "opencode-acp":
+        # an ACP server on stdio: the prompt is sent in `session/prompt` (acp_prompt), the model comes from the inline
+        # configuration (opencode_cfg.config_content sets it)
+        return [exe, "acp"]
     if provider == "gemini":
         return [
             exe,
@@ -255,6 +280,8 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     explicit dollar cost in its structured stream, `cost_status` is `"UNKNOWN"`.
     """
     contract = contract_for(provider)
+    if contract.event_format == ACP_EVENT_FORMAT:
+        raise ValueError(f"{provider} speaks ACP: its run is mapped by acp_events, not parsed from a byte stream")
     lines = [line.strip() for line in output.decode("utf-8", "replace").splitlines() if line.strip()]
     events_count = 0
     non_json_lines = 0
@@ -557,7 +584,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
     sc_str = str(scratch.resolve())
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
         net_rule = "" if allow_network else "(deny network*)"
-        if provider == "opencode" and live:
+        if provider in OPENCODE_PROVIDERS and live:
             # a local model only: the provider may reach loopback (its own server and the model endpoint), nothing else
             # (`(allow network* (local ip "localhost:*"))` would also admit outbound connections to any host: observed)
             net_rule = ('(deny network*)(allow network-outbound (remote ip "localhost:*"))'
@@ -570,7 +597,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
         extra_write = ""
         if provider == "agy" and live:
             read_rule = _agy_live_read_rules(workspace, scratch)
-        elif provider == "opencode" and live:
+        elif provider in OPENCODE_PROVIDERS and live:
             read_rule = _home_read_only_rules([workspace, scratch, *([executable] if executable else [])])
         elif provider == "codex" and live:
             # Codex's token is copied into scratch (CODEX_HOME); ~/.codex itself, other agents' state and every other
@@ -598,7 +625,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             profile += ('(deny user-preference-read (preference-domain-regex #"^com\\.repo-ai\\.run\\."))'
                         f'(allow user-preference-read (preference-domain "{run_marker}"))')
         return ["/usr/bin/sandbox-exec", "-p", profile]
-    if provider in {"agy", "opencode"} and live:
+    if (provider == "agy" or provider in OPENCODE_PROVIDERS) and live:
         return None  # no tested read/network restriction for these outside macOS seatbelt: refuse, do not weaken
     if sys.platform.startswith("linux"):
         bwrap = shutil.which("bwrap", path=os.defpath)
@@ -754,13 +781,157 @@ def live_constraint_prompt(provider: str, prompt: str, allowed: str, workspace: 
     read-only there; a "no shell" rule makes it decline the task (observed)."""
     base = (f"{prompt}\n\nCONSTRAINTS: Edit ONLY {allowed} inside {workspace}. "
             "Do not modify test files, configuration files, or create untracked files. ")
-    if provider in {"agy", "opencode"}:
+    if provider == "agy" or provider in OPENCODE_PROVIDERS:
         return base + ("Use only your file view and edit tools. Shell commands are not available and will be denied; "
                        "do not try to run tests.")
     if provider in {"codex", "claude", "gemini"}:
         return base + ("Read files with read-only commands (cat, ls, grep) if you need to; do not run the tests "
                        "or any command that writes files other than your edit.")
     return base + "Do not run shell commands; inspect and edit the source file directly."
+
+
+def acp_prompt(prompt: str) -> str:
+    """The prompt sent in `session/prompt`: redacted and bounded exactly like a prompt passed in argv."""
+    return redact_text(prompt)[:8000]
+
+
+def acp_returncode(run: AcpResult | None) -> int:
+    """ACP has no exit status for a turn (the client stops the agent process itself): 0 means the session ended with
+    `end_turn` and no protocol problem, 1 anything else."""
+    return 0 if run is not None and run.stop_reason == "end_turn" and not run.problems and not run.timed_out else 1
+
+
+def acp_events(provider: str, run: AcpResult, *, cost_basis: str) -> dict[str, Any]:
+    """An ACP run in parse_event_stream's shape. Nothing here is trusted as a boundary: it is the agent's own account.
+
+    Cost: ACP reports none. This transport is only offered for OpenCode against a loopback model endpoint, and the
+    sandbox admits loopback traffic only (no network at all for a simulated run), so the run is $0 by construction;
+    `cost_basis` says which confinement that rests on."""
+    text = "".join(run.messages)
+    calls: dict[str, dict[str, Any]] = {}
+    for update in run.tool_calls:  # tool_call then tool_call_update(s) for the same id: keep the last state
+        key = str(update.get("toolCallId") or len(calls))
+        calls[key] = {**calls.get(key, {}), **update}
+    tool_calls = [redact_text(str(c.get("title") or c.get("kind") or "tool"))[:80] for c in calls.values()
+                  if c.get("status") != "failed"]
+    tool_errors = [redact_text(str(c.get("title") or c.get("kind") or "tool"))[:80] for c in calls.values()
+                   if c.get("status") == "failed"]
+    denied = [redact_text(str(p.get("tool") or p.get("kind") or "tool"))[:80] for p in run.permissions
+              if "allowed once" not in str(p.get("why", ""))]
+    errors = [redact_text(p)[:200] for p in run.problems]
+    non_json = sum(1 for p in run.problems if "not JSON-RPC" in p)
+    lower = " ".join([*run.problems, text[-2000:] if run.stop_reason != "end_turn" else ""]).lower()
+    events_count = len(run.messages) + len(run.tool_calls) + len(run.permissions) + (1 if run.stop_reason else 0)
+    return {
+        "provider": provider,
+        "event_format": ACP_EVENT_FORMAT,
+        "valid_jsonl": bool(run.session_id) and non_json == 0,
+        "terminal_observed": bool(run.stop_reason),
+        "protocol_valid": bool(run.session_id) and bool(run.stop_reason) and not run.problems,
+        "protocol_errors": errors[:10],
+        "events_count": events_count,
+        "non_json_lines": non_json,
+        "session_id": redact_text(run.session_id)[:80] or None,
+        "turns": 1 if run.stop_reason else 0,
+        "stop_reason": redact_text(run.stop_reason)[:40],
+        "agent": {k: redact_text(str(v))[:80] for k, v in list(run.agent.items())[:4]},
+        "tool_calls": tool_calls[:32],
+        "tool_errors": tool_errors[:32],
+        "denied_actions": denied[:32],
+        "refused": [redact_text(r)[:200] for r in run.refused[:32]],
+        "acp_writes": run.writes[:32],
+        "timed_out": run.timed_out,
+        "tokens": {"input_tokens": 0, "output_tokens": 0},
+        "cost_usd": 0.0,
+        "cost_reported": False,
+        "cost_status": "OBSERVED",
+        "cost_basis": cost_basis,
+        "rate_limited": any(k in lower for k in ("rate limit", "usage limit", "spend limit", "quota")),
+        "errors": errors[:10],
+        "summary": redact_text(text)[:240],
+        "report": redact_text(text)[:6000],
+        "output_sha256": hashlib.sha256(json.dumps(run.to_json(), sort_keys=True).encode()).hexdigest(),
+    }
+
+
+def acp_handshake(provider: str, root: Path, executable: Path | str | None = None, *,
+                  timeout_s: float = 20.0) -> dict[str, Any]:
+    """Whether the installed agent speaks ACP 1, from its answer to `initialize` alone (AcpClient.probe): no session
+    is created, so no model is called. It runs exactly as a live run would (the provider's sandbox prefix with its
+    network rule, scratch HOME, the inline configuration) but in an empty scratch workspace, and is swept after."""
+    if contract_for(provider).event_format != ACP_EVENT_FORMAT:
+        raise ValueError(f"{provider} is not an ACP provider")
+    exe = str(executable) if executable is not None else shutil.which(executable_name(provider))
+    if not exe:
+        return {"acp": False, "problem": f"{executable_name(provider)} is not installed"}
+    raw = Path(os.path.abspath(exe))
+    if _repo_owned(raw, root.resolve()):
+        return {"acp": False, "problem": "repository-owned executable or symlink alias refused; it was not run"}
+    try:
+        resolved = raw.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return {"acp": False, "problem": "executable could not be resolved"}
+    with tempfile.TemporaryDirectory(prefix=f"repo-ai-acp-handshake-{provider}-") as directory:
+        scratch = Path(directory).resolve()
+        for name in ("home", "tmp", "work"):
+            (scratch / name).mkdir()
+        from .. import sandbox as _sandbox
+        run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex if sys.platform == "darwin" else None
+        prefix = _execution_sandbox_prefix(scratch / "work", scratch, allow_network=True, provider=provider, live=True,
+                                           executable=resolved, run_marker=run_marker)
+        if prefix is None:
+            return {"acp": False, "problem": "no supported execution sandbox for this provider on this host"}
+        env = _probe_env(scratch)
+        if provider in OPENCODE_PROVIDERS:
+            env.update(opencode_cfg.environment(read_only=True))
+        argv = build_invocation(provider, resolved, "", scratch / "work", externally_sandboxed=True)
+        try:
+            out = AcpClient([*prefix, *argv], scratch / "work", allowed_writes=[], env=env).probe(timeout_s)
+        finally:
+            cleanup = _reap_provider_run(run_marker) if prefix[:1] == ["/usr/bin/sandbox-exec"] else []
+    return {**out, "model_invoked": False, "cleanup_problems": cleanup}
+
+
+def _acp_run_result(provider: str, run: AcpResult, *, resolved: Path, identity: str, simulated: bool,
+                    max_cost_usd: float, cleanup_problems: list[str]) -> dict[str, Any]:
+    """run_provider's result for an ACP run. Any problem, refusal, timeout or stop reason other than `end_turn` is a
+    reason, so the run is never READY/SIMULATED on the agent's word alone; the workspace is validated afterwards."""
+    events = acp_events(provider, run, cost_basis="network_denied" if simulated else "loopback_model_only")
+    reasons: list[str] = []
+    if run.timed_out:
+        reasons.append("provider process capture terminated early: timeout")
+    reasons.extend(f"ACP: {e}" for e in events["errors"] if not (run.timed_out and "time limit" in e))
+    reasons.extend(f"ACP client refused an agent request: {r}" for r in events["refused"])
+    if run.stop_reason and run.stop_reason != "end_turn":
+        reasons.append(f"ACP turn ended with stop reason {events['stop_reason']!r}, not end_turn")
+    if not run.stop_reason and not reasons:
+        reasons.append("ACP session ended without a stop reason")
+    if cleanup_problems and not simulated:
+        reasons.extend(cleanup_problems)
+    if events["rate_limited"]:
+        reasons.append(f"provider rate/usage limit reached ({provider})")
+    if max_cost_usd > 0 and not simulated:
+        reasons.append("provider did not report cost; unknown cost cannot satisfy hard USD budget")
+    status = "timeout" if run.timed_out else ("complete" if run.stop_reason else "protocol_incomplete")
+    stage = "SIMULATED" if not reasons and simulated else ("READY" if not reasons else "FAILED")
+    return {
+        "provider": provider,
+        "stage": stage,
+        "simulated": simulated,
+        "verification_label": "SIMULATED" if simulated else ("LIVE_READY" if not reasons else "LIVE_FAILED"),
+        "executable": resolved.name,
+        "identity_sha256": identity,
+        "returncode": acp_returncode(run),
+        "capture_status": status,
+        "stderr_sha256": hashlib.sha256(b"").hexdigest(),  # the ACP client discards the agent's stderr
+        "stderr_bytes": 0,
+        "diagnostic_summary": "",
+        "cost_usd": events["cost_usd"],
+        "cost_status": events["cost_status"],
+        "rate_limited": bool(events["rate_limited"]),
+        "events": events,
+        "reasons": reasons,
+    }
 
 
 def run_provider(
@@ -797,7 +968,7 @@ def run_provider(
     if not simulated and max_cost_usd > 0 and not contract.enforces_hard_usd_budget:
         raise ValueError(f"{provider} does not enforce a hard USD CLI budget flag; execution blocked")
 
-    exe_str = str(executable) if executable is not None else shutil.which(provider)
+    exe_str = str(executable) if executable is not None else shutil.which(executable_name(provider))
     if not exe_str:
         return {
             "provider": provider,
@@ -847,7 +1018,7 @@ def run_provider(
         }
 
     live_run = not simulated and allow_live
-    if provider in {"opencode", "gemini"} and live_run:
+    if (provider == "gemini" or provider in OPENCODE_PROVIDERS) and live_run:
         problems = setup_problems(provider)
         if problems:
             return {
@@ -911,7 +1082,7 @@ def run_provider(
             assert claude_plan.config_dir is not None
             env["HOME"] = env["USERPROFILE"] = str(Path.home())
             env["CLAUDE_CONFIG_DIR"] = str(claude_plan.config_dir)
-        if provider == "opencode":
+        if provider in OPENCODE_PROVIDERS:
             env.update(opencode_cfg.environment(read_only=not write_paths))
         env["REPO_AI_WORKSPACE"] = str(workspace)
         env["REPO_AI_WRITE_PATHS"] = ",".join(write_paths)
@@ -968,10 +1139,18 @@ def run_provider(
                 }
         # OpenCode's events embed whole tool inputs/outputs (observed 68 KB for a 28-edit local run)
         limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
+        acp_run: AcpResult | None = None
+        result: ProbeResult | None = None
         try:
-            result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
-                              separate_stderr=True,
-                              max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
+            if contract.event_format == ACP_EVENT_FORMAT:
+                # the ACP client is the parent, outside the sandbox; the agent process runs inside the same prefix.
+                # Its own file edits are not trusted: validate_workspace_edits checks the workspace afterwards.
+                acp_run = AcpClient([*prefix, *argv], workspace, allowed_writes=list(write_paths), env=env,
+                                    cwd=workspace).run(acp_prompt(effective_prompt), bounded_timeout)
+            else:
+                result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
+                                  separate_stderr=True,
+                                  max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
         finally:  # also on an exception or Ctrl-C: setsid'd descendants are not in the process group
             cleanup_problems = _reap_provider_run(run_marker) if is_seatbelt else []
         try:
@@ -979,13 +1158,14 @@ def run_provider(
         except (OSError, RuntimeError, ValueError):
             unchanged = False
 
+    returncode = result.returncode if result is not None else acp_returncode(acp_run)
     if not unchanged:
         return {
             "provider": provider,
             "stage": "FAILED",
             "simulated": simulated,
             "verification_label": "SIMULATED" if simulated else "FAILED",
-            "returncode": result.returncode,
+            "returncode": returncode,
             "capture_status": "executable_changed",
             "identity_sha256": identity_before,
             "cost_usd": 0.0,
@@ -993,6 +1173,10 @@ def run_provider(
             "events": {},
             "reasons": ["provider executable changed during execution; output discarded"],
         }
+    if acp_run is not None:
+        return _acp_run_result(provider, acp_run, resolved=resolved, identity=identity_before, simulated=simulated,
+                               max_cost_usd=max_cost_usd, cleanup_problems=cleanup_problems)
+    assert result is not None
 
     events = parse_event_stream(provider, result.output)
     # Diagnostics are never parsed as events, usage or monetary observations.
@@ -1113,7 +1297,7 @@ def setup_problems(provider: str) -> list[str]:
     """Offline: what stops repo-ai's isolation from authenticating this provider at all. Reads no secret value."""
     if provider == "claude":
         return list(claude_auth.plan().problems)
-    if provider == "opencode":
+    if provider in OPENCODE_PROVIDERS:
         return opencode_cfg.setup_problems()
     if provider == "gemini" and not any(os.environ.get(v) for v in GEMINI_KEY_VARS):
         return ["set GEMINI_API_KEY (or GOOGLE_API_KEY) in repo-ai's environment; repo-ai no longer copies ~/.gemini "

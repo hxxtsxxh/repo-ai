@@ -22,7 +22,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-PROVIDERS = ("codex", "claude", "gemini", "bob", "agy", "opencode")
+PROVIDERS = ("codex", "claude", "gemini", "bob", "agy", "opencode", "opencode-acp")
+# A provider that drives another provider's executable through a different transport (`opencode acp`: the Agent
+# Client Protocol) is named after its transport; its executable keeps the vendor's name.
+EXECUTABLES = {"opencode-acp": "opencode"}
 MAX_OUTPUT = 65_536
 MAX_EXECUTABLE = 512 * 1024 * 1024
 
@@ -35,6 +38,11 @@ class ProbeResult:
     # Populated only when `separate_stderr=True`: diagnostics are kept out of the
     # structured event channel so a CLI's stderr banner cannot corrupt (or forge) it.
     stderr: bytes = b""
+
+
+def executable_name(provider: str) -> str:
+    """The executable a provider runs (looked up on PATH): the provider's own name unless it is a transport variant."""
+    return EXECUTABLES.get(provider, provider)
 
 
 def _inside(path: Path, root: Path) -> bool:
@@ -218,7 +226,7 @@ def _version(provider: str, output: bytes) -> str | None:
         return None
     version = r"(\d+\.\d+\.\d+(?:[-+][\w.]+)?)"
     pattern = {"codex": rf"codex-cli {version}", "claude": rf"{version} \(Claude Code\)",
-               "opencode": rf"opencode v?{version}"}.get(provider, version)
+               "opencode": rf"opencode v?{version}", "opencode-acp": rf"opencode v?{version}"}.get(provider, version)
     match = re.fullmatch(pattern, line[0].strip())
     return match.group(1) if match else None
 
@@ -226,10 +234,12 @@ def _version(provider: str, output: bytes) -> str | None:
 def _observed_modes(provider: str, output: bytes) -> list[str]:
     text = output.decode("utf-8", "replace")
     expected = {"codex": "codex exec", "claude": "claude", "gemini": "gemini", "bob": "bob run", "agy": "agy",
-                "opencode": "opencode run"}[provider]
-    if provider == "opencode":  # "USAGE" heading, usage line indented below it
+                "opencode": "opencode run", "opencode-acp": "opencode acp"}[provider]
+    if provider in {"opencode", "opencode-acp"}:  # "USAGE" heading, usage line indented below it
         if not re.search(rf"(?m)^USAGE\s*\n\s+{re.escape(expected)}(?:\s|$)", text):
             return []
+        if provider == "opencode-acp":  # an ACP server on stdio: non-interactive, and its protocol is the event stream
+            return ["headless", "structured_events"]
     elif not re.search(rf"(?m)^Usage(?: of)?:? {re.escape(expected)}:?(?:\s|$)", text):
         return []
     flags = set(re.findall(r"(?m)^\s+(?:-\w, )?(--[\w-]+)(?=[\s,=]|$)", text))
@@ -248,7 +258,7 @@ def _observed_modes(provider: str, output: bytes) -> list[str]:
 
 def _one(provider: str, root: Path, probe: bool) -> dict[str, Any]:
     from .adapters import contract_for
-    executable = shutil.which(provider)
+    executable = shutil.which(executable_name(provider))
     profile: dict[str, Any] = {
         "provider": provider, "status": "NOT_INSTALLED", "stage": "NOT_INSTALLED",
         "executable": executable,
@@ -296,12 +306,13 @@ def _one(provider: str, root: Path, probe: bool) -> dict[str, Any]:
             if not _inside(runtime_path, root) and not _inside(Path(os.path.abspath(runtime)), root):
                 env["PATH"] = str(runtime_path.parent) + os.pathsep + os.defpath
         commands = [["--version"], ["exec", "--help"] if provider == "codex" else
-                    ["run", "--help"] if provider in {"bob", "opencode"} else ["--help"]]
+                    ["run", "--help"] if provider in {"bob", "opencode"} else
+                    ["acp", "--help"] if provider == "opencode-acp" else ["--help"]]
         results: list[ProbeResult] = []
         for args in commands:
             result = _capture([*prefix, str(resolved), *args], scratch / "work", env)
             results.append(result)
-            profile["provenance"].append({"kind": "help_probe", "argv": [provider, *args],
+            profile["provenance"].append({"kind": "help_probe", "argv": [executable_name(provider), *args],
                                           "status": result.status, "returncode": result.returncode,
                                           "output_bytes": len(result.output),
                                           "output_sha256": hashlib.sha256(result.output).hexdigest()})

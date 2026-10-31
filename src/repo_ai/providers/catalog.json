@@ -72,6 +72,24 @@
    ]
   },
   {
+   "id": "opencode-acp",
+   "name": "OpenCode over ACP",
+   "executables": [
+    "opencode"
+   ],
+   "upstream": "HEADLESS_CLI",
+   "repo_ai": "EXECUTION",
+   "basis": "observed",
+   "note": "The same OpenCode driven over the Agent Client Protocol (`opencode acp`) under the `opencode` isolation: sandbox, scratch HOME, deny-by-default inline config, loopback-only model endpoint; macOS. ACP is a control channel, not a boundary: edits are checked in the workspace afterwards.",
+   "account": "none (local model)",
+   "local_model": true,
+   "acp": true,
+   "docs": [
+    "https://opencode.ai/docs/acp/",
+    "https://agentclientprotocol.com/"
+   ]
+  },
+  {
    "id": "bob",
    "name": "IBM Bob",
    "executables": [
