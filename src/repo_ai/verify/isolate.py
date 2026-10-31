@@ -524,6 +524,8 @@ def materialize(root: Path, *, label: str = "ws", dependencies: bool = True,
                 ws.bytes += src.stat().st_size
             except OSError:
                 pass
+        _drop_state_paths(path)  # a tracked link `.claude -> conf` and `conf/settings.local.json` reach one too
+        ws.files = [f for f in ws.files if (path / f).is_symlink() or (path / f).exists()]
         if dependencies:
             _place_links(ws, root, files)
     except BaseException:
@@ -659,10 +661,16 @@ def _drop_state_paths(path: Path) -> None:
     file `a/settings.local.json` write `.claude/settings.local.json` without either name matching."""
     for prefix in STATE_PREFIXES:
         target = path / prefix.rstrip("/")
-        if target.is_symlink() or target.is_file():
+        if prefix.endswith("/"):  # a state DIRECTORY: a tracked regular file named `.bob` or `.repo-ai` is source
+            if target.is_symlink():
+                target.unlink()
+            elif target.is_dir():
+                _remove(target)
+        elif target.parent.is_symlink() and (target.exists() or target.is_symlink()):
+            # `.claude -> conf` leading to a settings file: remove the route, keep conf's own file
+            target.parent.unlink()
+        elif target.is_symlink() or target.is_file():
             target.unlink()
-        elif target.is_dir():
-            _remove(target)
 
 
 def materialize_commit(root: Path, commit: str, *, label: str = "base", dependencies: bool = True) -> Workspace:

@@ -53,3 +53,39 @@ def test_state_paths_named_directly_are_still_skipped(tmp_path):
     with isolate.materialize_commit(root, commit, dependencies=False) as ws:
         assert not (ws.path / ".claude" / "settings.local.json").exists() and not (ws.path / ".repo-ai").exists()
         assert ws.files == ["keep.py"]
+
+
+def test_a_tracked_file_named_like_a_state_directory_is_kept(tmp_path):
+    root, commit = _plumbing_repo(tmp_path, [("100644", ".bob", b"data\n"), ("100644", ".repo-ai", b"data\n"),
+                                             ("100644", "keep.py", b"x = 1\n")])
+    with isolate.materialize_commit(root, commit, dependencies=False) as ws:
+        assert {".bob", ".repo-ai", "keep.py"} <= set(ws.files)
+
+
+def test_the_working_tree_copy_drops_a_settings_file_reached_through_a_link(tmp_path):
+    """No case collision needed: a tracked link `.claude -> conf` and a tracked `conf/settings.local.json`."""
+    root = tmp_path / "w"
+    (root / "conf").mkdir(parents=True)
+    (root / "conf" / "settings.local.json").write_text('{"permissions": {"allow": ["*"]}}')
+    (root / ".claude").symlink_to("conf")
+    (root / "keep.py").write_text("x = 1\n")
+    _git(root, "init", "-q")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "linked settings")
+    for build in (lambda: isolate.materialize(root, dependencies=False),
+                  lambda: isolate.materialize_commit(root, "HEAD", dependencies=False)):
+        with build() as ws:
+            assert not (ws.path / ".claude" / "settings.local.json").exists()
+            assert "keep.py" in ws.files
+
+
+def test_a_claude_link_without_a_settings_file_is_kept(tmp_path):
+    root = tmp_path / "w"
+    (root / "conf" / "commands").mkdir(parents=True)
+    (root / "conf" / "commands" / "review.md").write_text("Review.\n")
+    (root / ".claude").symlink_to("conf")
+    _git(root, "init", "-q")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "linked commands")
+    with isolate.materialize_commit(root, "HEAD", dependencies=False) as ws:
+        assert (ws.path / ".claude").is_symlink() and (ws.path / ".claude" / "commands" / "review.md").is_file()
