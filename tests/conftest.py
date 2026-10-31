@@ -122,7 +122,8 @@ _MISSION_NEEDS_SANDBOX = {
     "test_mission_expect_fix", "test_mission_expect_fix_review", "test_mission_expect_fix_review_handoff",
     "test_mission_expect_fix_review_cli", "test_mission_after_init",
     "test_mission_after_init_review", "test_mission_project_interpreter",
-    "test_workspace_export_attributes", "test_workspace_state_paths", "test_provider_acp_runtime",
+    "test_workspace_export_attributes", "test_workspace_state_paths",
+    "test_provider_opencode_acp", "test_provider_acp_runtime", "test_provider_acp_live_prefix",
 }
 _MISSION_POSIX_ONLY = _MISSION_NEEDS_SANDBOX | {
     "test_eval_integrity", "test_mission_real_project_edges", "test_mission_apply_transaction",

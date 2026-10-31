@@ -32,6 +32,8 @@ from typing import Any
 PROTOCOL_VERSION = 1
 MAX_LINE = 4_000_000          # one JSON-RPC message
 MAX_READ = 2_000_000          # one file served to the agent
+MAX_TEXT = 2_000_000          # the agent's text kept for a run (the rest is counted, not kept)
+MAX_TOOL_CALLS = 5_000        # tool-call events kept for a run
 ALLOWED_KINDS = {"read", "search", "edit", "think"}
 
 
@@ -120,6 +122,7 @@ class AcpClient:
         self._buf = b""
         self._next_id = 0
         self._deadline = 0.0
+        self._text_size = 0
         self.result = AcpResult()
 
     # -- transport ---------------------------------------------------------------------------------------------
@@ -285,10 +288,23 @@ class AcpClient:
         if kind == "agent_message_chunk":
             content = update.get("content")
             if isinstance(content, dict) and content.get("type") == "text":
-                self.result.messages.append(str(content.get("text", "")))
+                text = str(content.get("text", ""))
+                if self._text_size + len(text) > MAX_TEXT:
+                    self._over_bound("the agent's text exceeds the output bound")
+                    return
+                self._text_size += len(text)
+                self.result.messages.append(text)
         elif kind in {"tool_call", "tool_call_update"}:
+            if len(self.result.tool_calls) >= MAX_TOOL_CALLS:
+                self._over_bound("the agent's tool-call events exceed the output bound")
+                return
             self.result.tool_calls.append({k: update.get(k) for k in ("toolCallId", "title", "kind", "status")
                                            if update.get(k) is not None})
+
+    def _over_bound(self, why: str) -> None:
+        """Past a bound nothing more is kept, and the run cannot pass (a reason is recorded once)."""
+        if why not in self.result.problems:
+            self.result.problems.append(why)
 
     # -- capability probe (no session, no model call) ------------------------------------------------------------
     def probe(self, timeout_s: float = 20.0) -> dict[str, Any]:
