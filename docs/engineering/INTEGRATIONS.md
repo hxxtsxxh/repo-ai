@@ -171,3 +171,32 @@ Lesson for experiments: host-mode skill trials must use a login separate from th
 The CLI checks its budget between turns: two host-mode runs capped at $0.30 ended at $0.320 and $0.383 (stopped
 before finishing). repo-ai already fails a run whose reported cost exceeds the ceiling; budgets should assume one
 turn of overshoot.
+
+## Agent Client Protocol (ACP) client, 2026-10-31
+
+`src/repo_ai/providers/acp.py` is one client for every agent that speaks ACP 1 (JSON-RPC 2.0 over stdio, one object
+per line). One permission policy covers all of them:
+- `fs/read_text_file` is served only inside the workspace, and links are not followed out of it;
+- `fs/write_text_file` is served only for the run's allowed paths;
+- terminals are not offered;
+- `session/request_permission` allows once only `read`/`search`/`edit`/`think` tool calls, rejects
+  `execute`/`fetch`/`delete`/`move`/`other`, and never chooses allow-always.
+
+Handshake probes (`AcpClient.probe`: `initialize` only, no session, no model call):
+
+| Agent | Command | Answer |
+|---|---|---|
+| OpenCode 2.2.1 | `opencode acp` | ACP 1; auth `opencode-login` |
+| Gemini CLI 0.65.0 | `gemini --experimental-acp` | ACP 1; auth `oauth-personal`, `gemini-api-key`, `vertex-ai`, `gateway` |
+
+Live run, $0: OpenCode over ACP with the local Ollama `qwen3:8b`, its deny-by-default inline config and a scratch
+HOME, on a scratch fixture (`clamp.py`).
+- `end_turn` in 44 s; the edit tool calls streamed as `session/update`.
+- The agent edited the file **itself**, not through `fs/write_text_file`, and asked no permission (its inline config
+  allows `edit`).
+- The 8B model wrote a broken edit (literal `\n` escapes); a mission's verification would refuse it.
+
+Conclusion: ACP is a uniform control channel (session, prompt, streamed tool calls, permission answers,
+cancellation), not a security boundary. An ACP provider must still run the agent inside repo-ai's OS sandbox and
+check the workspace afterwards (`validate_workspace_edits`), as the other providers do. Wiring ACP agents into
+`repo-ai do` that way is the next step (queue item 4).
