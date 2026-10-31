@@ -318,6 +318,8 @@ def cmd_agents(args) -> int:
                 print('  advertises: ' + ', '.join(sorted(map(str, res['capabilities']))))
             if res.get('diagnostic_summary'):
                 print(f"  agent said: {res['diagnostic_summary']}")
+            for problem in res.get('cleanup_problems') or []:
+                print(f"  cleanup: {problem}")
             print(f"  {res['note']}; execution through repo-ai: {res['execution_support']}")
         return 0 if res['verdict'] == 'HANDSHAKE_CONFORMANT' else 1
     if args.action == 'catalog':
