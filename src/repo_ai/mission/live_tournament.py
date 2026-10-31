@@ -22,6 +22,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ..providers.discovery import executable_name
 from .contracts import decode, digest
 from .runtime import LIVE_PROVIDERS, check_privacy, execute, identity, kernel_identity, plan, status
 from .tournament import Collector, finalize
@@ -37,6 +38,13 @@ def _validate(providers: list[str]) -> list[str]:
     unknown = [n for n in names if n not in LIVE_PROVIDERS]
     if unknown:
         raise ValueError('unknown provider(s): ' + ', '.join(unknown))
+    # Two transports of one executable (opencode, opencode-acp) are one agent with one configured model: not
+    # independent candidates, so they never count as two arms.
+    families = [executable_name(n) for n in names]
+    shared = sorted({f for f in families if families.count(f) > 1})
+    if shared:
+        raise ValueError('a live tournament needs independent providers; these share an executable: '
+                         + '; '.join(f"{f} ({', '.join(n for n in names if executable_name(n) == f)})" for f in shared))
     return names
 
 

@@ -15,7 +15,8 @@ repo-ai do "..." --tournament codex,agy --allow-write limiter.py \
 ```
 
 Each arm gets its own isolated checkout and process, from **one frozen commit**, and is checked against **identical
-frozen tests**. Then a fixed rule decides:
+frozen tests**. The arms must be independent agents: two transports of one executable (`opencode` and
+`opencode-acp` both run OpenCode with its one configured model) are refused as a pair. Then a fixed rule decides:
 
 | Outcome | Result |
 |---|---|
