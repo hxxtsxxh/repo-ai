@@ -7,9 +7,6 @@
   prints the real count and says when every remaining failure is one of those ("131 tests ran, 20 failed (all 20
   already failing at the base and not declared)"). JSON: `post_apply_failed` is real; `post_apply_pre_existing` is
   new.
-- Correction to 0.11.2: that entry says the interpreter fix "explains the python-slugify discrepancy (20 failures in
-  the sandbox, 0 after apply)". It does not. The python-slugify post-apply check used the same interpreter and also saw
-  20 failures; the "0" was the hard-coded count above. The interpreter fix itself is real (python-humanize).
 
 ## 0.11.2 — missions on real repositories: the project's interpreter, init's .gitignore, honest counts
 
