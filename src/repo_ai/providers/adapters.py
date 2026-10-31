@@ -9,6 +9,7 @@ sandbox test observations and whole-change regression verification pass.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import math
@@ -23,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from ..security import redact_text, source_contains_secret
-from . import claude_auth, opencode_cfg
+from . import claude_auth, codex_broker, opencode_cfg
 from .acp import AcpClient, AcpResult
 from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _capture, _identity, _inside, _probe_env, _repo_owned,
                         _sandbox_prefix, executable_name)
@@ -572,7 +573,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                               provider: str | None = None, live: bool = False,
                               executable: Path | None = None,
                               claude_plan: claude_auth.ClaudeAuthPlan | None = None,
-                              run_marker: str | None = None) -> list[str] | None:
+                              run_marker: str | None = None, codex_brokered: bool = False) -> list[str] | None:
     """Restrict writes strictly to the disposable candidate workspace and scratch dir (plus, for a live Claude
     run with a dedicated login, that login's own state; see ``claude_auth``)."""
     claude_live = provider == "claude" and live
@@ -584,8 +585,8 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
     sc_str = str(scratch.resolve())
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
         net_rule = "" if allow_network else "(deny network*)"
-        if provider in OPENCODE_PROVIDERS and live:
-            # a local model only: the provider may reach loopback (its own server and the model endpoint), nothing else
+        if (provider in OPENCODE_PROVIDERS or (provider == "codex" and codex_brokered)) and live:
+            # loopback only: OpenCode's local model, or the Codex credential broker; no other host is reachable
             # (`(allow network* (local ip "localhost:*"))` would also admit outbound connections to any host: observed)
             net_rule = ('(deny network*)(allow network-outbound (remote ip "localhost:*"))'
                         '(allow network-inbound (local ip "localhost:*"))(allow network-bind (local ip "localhost:*"))'
@@ -603,7 +604,8 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
             # Codex's token is copied into scratch (CODEX_HOME); ~/.codex itself, other agents' state and every other
             # file under HOME stay unreadable to a model that has a shell and the network
             read_rule = _home_read_only_rules([workspace, scratch, *_codex_install_roots(executable), *_node_roots()])
-            net_rule += _unix_socket_rule(sc_str)
+            if not codex_brokered:  # brokered: the loopback rule above already admits no other socket
+                net_rule += _unix_socket_rule(sc_str)
         elif claude_live:
             assert claude_plan is not None
             read_rule, extra_write = claude_auth.seatbelt_rules(workspace, scratch, executable, claude_plan,
@@ -727,8 +729,9 @@ def _node_roots() -> list[Path]:
     return [binary] if home in binary.parents else []
 
 
-def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
-    """Copy minimal provider auth configuration into isolated scratch HOME so real $HOME stays read-only."""
+def _seed_live_provider_auth(provider: str, scratch_home: Path, *, codex_config: str | None = None) -> None:
+    """Copy minimal provider auth configuration into isolated scratch HOME so real $HOME stays read-only.
+    `codex_config` (the credential broker's config): Codex gets that and no token at all."""
     real_home = Path.home()
     try:
         if provider == "bob":
@@ -736,6 +739,9 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path) -> None:
             dst = scratch_home / ".bob" / "settings"
             if src.is_dir():
                 shutil.copytree(src, dst, dirs_exist_ok=True)
+        elif provider == "codex" and codex_config is not None:
+            (scratch_home / ".codex").mkdir(parents=True, exist_ok=True)
+            (scratch_home / ".codex" / "config.toml").write_text(codex_config, encoding="utf-8")
         elif provider == "codex":
             # Codex needs its token file, and its shell tool can read it (disclosed). A dedicated repo-ai login
             # (`CODEX_HOME=<dir> codex login`) makes that a separate, revocable session; otherwise ~/.codex is used.
@@ -1027,6 +1033,26 @@ def run_provider(
                 "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
                 "reasons": [f"{provider} not configured for isolated execution: {p}" for p in problems],
             }
+    brokered: tuple[codex_broker.Upstream, str] | None = None  # the login's upstream, and its plain model keys
+    if provider == "codex" and live_run and codex_broker.enabled():
+        problem = ""
+        if sys.platform != "darwin" or not Path("/usr/bin/sandbox-exec").is_file():
+            problem = "needs the macOS seatbelt loopback rule; unset REPO_AI_CODEX_BROKER"
+        elif (source := codex_login_source()) in {"none", "invalid"}:
+            problem = f"no usable Codex login ({source})"
+        else:
+            login_dir = codex_home() if source == "dedicated" else Path.home() / ".codex"
+            try:
+                brokered = (codex_broker.upstream_from_login(login_dir / "auth.json"),
+                            _codex_config_subset(login_dir / "config.toml"))
+            except codex_broker.BrokerError as exc:
+                problem = str(exc)
+        if problem:
+            return {
+                "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+                "returncode": -1, "capture_status": "not_configured", "identity_sha256": identity_before,
+                "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {}, "reasons": [f"codex broker: {problem}"],
+            }
     claude_plan = claude_auth.plan() if provider == "claude" and live_run else None
     if claude_plan is not None:
         blocked = _claude_preflight(resolved, claude_plan)
@@ -1047,16 +1073,23 @@ def run_provider(
             }
 
     bounded_timeout = provider_timeout(timeout, simulated)
-    with tempfile.TemporaryDirectory(prefix=f"repo-ai-provider-run-{provider}-") as directory:
+    broker_summary: dict[str, Any] | None = None
+    with tempfile.TemporaryDirectory(prefix=f"repo-ai-provider-run-{provider}-") as directory, \
+            contextlib.ExitStack() as stack:
         scratch = Path(directory).resolve()
         for name in ("home", "tmp", "home/.codex", "home/.gemini", "home/.claude", "home/.bob"):
             (scratch / name).mkdir(exist_ok=True)
-        if not simulated and allow_live:
+        # the credential broker lives for exactly this run, in this process, outside the sandbox
+        broker = stack.enter_context(codex_broker.Broker(brokered[0], timeout_s=bounded_timeout)) if brokered else None
+        if not simulated and allow_live and broker is not None and brokered is not None:
+            _seed_live_provider_auth(provider, scratch / "home", codex_config=broker.config_toml(brokered[1]))
+        elif not simulated and allow_live:
             _seed_live_provider_auth(provider, scratch / "home")
         from .. import sandbox as _sandbox
         run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex if sys.platform == "darwin" else None
         prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run,
-                                           executable=resolved, claude_plan=claude_plan, run_marker=run_marker)
+                                           executable=resolved, claude_plan=claude_plan, run_marker=run_marker,
+                                           codex_brokered=broker is not None)
         if prefix is None:
             return {
                 "provider": provider,
@@ -1095,8 +1128,10 @@ def run_provider(
             }.get(provider, ())
             for var_name in auth_vars:
                 val = os.environ.get(var_name)
-                if val:
+                if val and not (broker is not None and var_name == "OPENAI_API_KEY"):  # brokered: no key inside
                     env[var_name] = val
+            if broker is not None:
+                env[codex_broker.KEY_ENV] = broker.key  # this run's dummy: worthless outside the run's loopback proxy
         path_parts = [str(Path(sys.executable).resolve().parent)]
         node_bin = shutil.which("node", path=os.environ.get("PATH", os.defpath))
         if node_bin:
@@ -1153,6 +1188,7 @@ def run_provider(
                                   max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
         finally:  # also on an exception or Ctrl-C: setsid'd descendants are not in the process group
             cleanup_problems = _reap_provider_run(run_marker) if is_seatbelt else []
+            broker_summary = broker.summary() if broker is not None else None
         try:
             unchanged = raw.resolve(strict=True) == resolved and _identity(resolved) == identity_before
         except (OSError, RuntimeError, ValueError):
@@ -1198,6 +1234,12 @@ def run_provider(
                         ["no init event; what the session loaded is unknown"]))
     if result.returncode != 0:
         reasons.append(f"provider process exited with code {result.returncode}")
+    if broker_summary is not None:
+        denied = sorted({s for s in broker_summary["statuses"] if s in {401, 403}})
+        if denied:
+            reasons.append(f"codex broker: the upstream refused the login's credential (HTTP {denied[0]})")
+        if not broker_summary["requests"]:
+            reasons.append("codex broker: Codex sent no request through the broker")
     if provider == "gemini" and result.returncode == 41:  # Gemini CLI's documented authentication-failure exit code
         reasons.append("gemini not authenticated for isolated execution (exit 41): check GEMINI_API_KEY / GOOGLE_API_KEY")
     if not events["valid_jsonl"]:
@@ -1230,6 +1272,7 @@ def run_provider(
         "stderr_sha256": hashlib.sha256(result.stderr).hexdigest(),
         "stderr_bytes": len(result.stderr),
         "diagnostic_summary": redact_text(diagnostic)[:240],
+        **({"codex_broker": broker_summary} if broker_summary is not None else {}),
         "cost_usd": events["cost_usd"],
         "cost_status": events.get("cost_status", "UNKNOWN"),
         "rate_limited": bool(events.get("rate_limited")),
