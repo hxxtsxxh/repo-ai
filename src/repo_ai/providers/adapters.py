@@ -850,7 +850,9 @@ def acp_events(provider: str, run: AcpResult, *, cost_basis: str) -> dict[str, A
         "errors": errors[:10],
         "summary": redact_text(text)[:240],
         "report": redact_text(text)[:6000],
-        "output_sha256": hashlib.sha256(json.dumps(run.to_json(), sort_keys=True).encode()).hexdigest(),
+        # the protocol transcript only, as for every provider (stdout): stderr diagnostics are not output
+        "output_sha256": hashlib.sha256(json.dumps({k: v for k, v in run.to_json().items()
+                                                    if not k.startswith("stderr_")}, sort_keys=True).encode()).hexdigest(),
     }
 
 
@@ -885,10 +887,13 @@ def acp_handshake(provider: str, root: Path, executable: Path | str | None = Non
         if provider in OPENCODE_PROVIDERS:
             env.update(opencode_cfg.environment(read_only=True))
         argv = build_invocation(provider, resolved, "", scratch / "work", externally_sandboxed=True)
+        client = AcpClient([*prefix, *argv], scratch / "work", allowed_writes=[], env=env)
         try:
-            out = AcpClient([*prefix, *argv], scratch / "work", allowed_writes=[], env=env).probe(timeout_s)
+            out = client.probe(timeout_s)
         finally:
             cleanup = _reap_provider_run(run_marker) if prefix[:1] == ["/usr/bin/sandbox-exec"] else []
+    if not out.get("acp") and client.result.stderr:
+        out["diagnostic_summary"] = redact_text(client.result.stderr.decode("utf-8", "replace"))[:240]
     return {**out, "model_invoked": False, "cleanup_problems": cleanup}
 
 
@@ -897,6 +902,10 @@ def _acp_run_result(provider: str, run: AcpResult, *, resolved: Path, identity: 
     """run_provider's result for an ACP run. Any problem, refusal, timeout or stop reason other than `end_turn` is a
     reason, so the run is never READY/SIMULATED on the agent's word alone; the workspace is validated afterwards."""
     events = acp_events(provider, run, cost_basis="network_denied" if simulated else "loopback_model_only")
+    # Diagnostics are never parsed as events, usage or monetary observations (as for every provider).
+    diagnostic = run.stderr.decode("utf-8", "replace")
+    if any(term in diagnostic.lower() for term in ("rate limit", "usage limit", "spend limit", "rate_limit", "usage_limit")):
+        events["rate_limited"] = True
     reasons: list[str] = []
     if run.timed_out:
         reasons.append("provider process capture terminated early: timeout")
@@ -923,9 +932,9 @@ def _acp_run_result(provider: str, run: AcpResult, *, resolved: Path, identity: 
         "identity_sha256": identity,
         "returncode": acp_returncode(run),
         "capture_status": status,
-        "stderr_sha256": hashlib.sha256(b"").hexdigest(),  # the ACP client discards the agent's stderr
-        "stderr_bytes": 0,
-        "diagnostic_summary": "",
+        "stderr_sha256": run.stderr_sha256,
+        "stderr_bytes": run.stderr_bytes,
+        "diagnostic_summary": redact_text(diagnostic)[:240],
         "cost_usd": events["cost_usd"],
         "cost_status": events["cost_status"],
         "rate_limited": bool(events["rate_limited"]),

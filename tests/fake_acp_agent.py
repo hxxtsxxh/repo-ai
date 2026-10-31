@@ -3,7 +3,7 @@ lists client calls to make during session/prompt; replies are recorded to FAKE_A
 
 Steps besides client calls: `sleep`, `say` (an agent message chunk), `tool` (a tool_call / tool_call_update
 notification), `edit` (the agent writes a file itself, relative to its working directory, as OpenCode does: no
-client call), `exit` (the process dies mid-turn), `stop` (the turn's stop reason, default end_turn). With
+client call), `exit` (the process dies mid-turn), `stderr` (text written to stderr, `times` copies), `stop` (the turn's stop reason, default end_turn). With
 FAKE_ACP_EXPECT_ARGV set, the agent refuses to start unless its arguments match (JSON list)."""
 import json
 import os
@@ -59,6 +59,10 @@ while True:
         for step in script:
             if step.get("sleep"):
                 time.sleep(step["sleep"])
+            elif step.get("stderr"):
+                for _ in range(step.get("times", 1)):
+                    sys.stderr.write(step["stderr"])
+                sys.stderr.flush()
             elif step.get("exit") is not None:
                 sys.exit(step["exit"])
             elif step.get("stop"):

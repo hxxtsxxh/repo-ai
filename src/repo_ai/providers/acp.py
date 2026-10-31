@@ -18,11 +18,13 @@ agent process inside the same OS sandbox as its other providers and checks the w
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import select
 import stat
 import subprocess
+import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -36,6 +38,7 @@ MAX_TEXT = 2_000_000          # the agent's text kept for a run (the rest is cou
 MAX_TOOL_CALLS = 5_000        # tool-call events kept for a run
 MAX_FIELD = 300               # characters kept of one tool-call field
 MAX_NOTES = 50                # distinct problems or refusals kept (the rest are counted)
+MAX_STDERR = 65_536          # bytes of the agent's stderr kept for diagnostics (all of it is counted and hashed)
 ALLOWED_KINDS = {"read", "search", "edit", "think"}
 
 
@@ -55,12 +58,16 @@ class AcpResult:
     writes: list[str] = field(default_factory=list)             # files written through fs/write_text_file
     problems: list[str] = field(default_factory=list)
     timed_out: bool = False
+    stderr: bytes = b""                                          # the first MAX_STDERR bytes: diagnostics only
+    stderr_bytes: int = 0
+    stderr_sha256: str = hashlib.sha256(b"").hexdigest()
 
     def to_json(self) -> dict[str, Any]:
         return {"stop_reason": self.stop_reason, "session_id": self.session_id, "agent": self.agent,
                 "text": "".join(self.messages)[-20_000:], "tool_calls": self.tool_calls[:200],
                 "permissions": self.permissions[:200], "refused": self.refused[:200], "writes": self.writes[:200],
-                "problems": self.problems[:50], "timed_out": self.timed_out}
+                "problems": self.problems[:50], "timed_out": self.timed_out,
+                "stderr_bytes": self.stderr_bytes, "stderr_sha256": self.stderr_sha256}
 
 
 def _relative(workspace: Path, rel_or_abs: object) -> str | None:
@@ -126,6 +133,8 @@ class AcpClient:
         self._deadline = 0.0
         self._text_size = 0
         self._dropped = 0
+        self._err_reader: threading.Thread | None = None
+        self._err_stop = threading.Event()
         self.result = AcpResult()
 
     # -- transport ---------------------------------------------------------------------------------------------
@@ -348,9 +357,34 @@ class AcpClient:
         if os.name != "posix":  # non-blocking pipes, select on pipes, O_NOFOLLOW openat walks, process groups
             raise AcpError("the ACP client runs on POSIX hosts only (macOS, Linux), as repo-ai missions do")
         self.proc = subprocess.Popen(self.argv, cwd=self.cwd, env=self.env, stdin=subprocess.PIPE,
-                                     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True)
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
         assert self.proc.stdin is not None
         os.set_blocking(self.proc.stdin.fileno(), False)
+        self._err_stop = threading.Event()  # per process: a client started again drains its new agent's stderr too
+        self._err_reader = threading.Thread(target=self._read_stderr, args=(self._err_stop,), daemon=True)
+        self._err_reader.start()
+
+    def _read_stderr(self, stop: threading.Event) -> None:
+        """Diagnostics, never protocol: the first MAX_STDERR bytes are kept and every byte is counted and hashed, so a
+        verbose agent can neither block on a full pipe nor grow memory. Polled, so a descendant holding the pipe
+        open cannot leave this thread blocked after the run. The three fields are set together, at the end."""
+        assert self.proc is not None and self.proc.stderr is not None
+        pipe, digest, kept, total = self.proc.stderr, hashlib.sha256(), bytearray(), 0
+        try:
+            while not stop.is_set():
+                if not select.select([pipe], [], [], .05)[0]:
+                    continue
+                chunk = os.read(pipe.fileno(), 65536)
+                if not chunk:
+                    break
+                digest.update(chunk)
+                total += len(chunk)
+                kept.extend(chunk[:max(0, MAX_STDERR - len(kept))])
+        except (OSError, ValueError):
+            pass
+        finally:
+            self.result.stderr, self.result.stderr_bytes, self.result.stderr_sha256 = \
+                bytes(kept), total, digest.hexdigest()
 
     def run(self, prompt: str, timeout_s: float) -> AcpResult:
         deadline = self._deadline = time.monotonic() + timeout_s
@@ -402,3 +436,9 @@ class AcpClient:
         if self.proc.poll() is None:
             self.proc.kill()
             self.proc.wait(timeout=5)
+        if self._err_reader is not None:
+            self._err_reader.join(timeout=.5)  # drain what the agent wrote before it exited
+            self._err_stop.set()
+            self._err_reader.join(timeout=.5)
+            if not self._err_reader.is_alive() and self.proc.stderr is not None:
+                self.proc.stderr.close()
