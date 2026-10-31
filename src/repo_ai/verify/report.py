@@ -3,6 +3,8 @@ stronger than the evidence."""
 
 from __future__ import annotations
 
+import re
+
 from typing import Any
 
 from .select import Plan
@@ -146,6 +148,14 @@ _HEADLINE = {
 }
 
 
+# what a test that needs the network prints inside verify's sandbox, which has none (speed-v1: pyjwt's JWKS client
+# tests failed at the base and the change alike, and the output said only "pre-existing")
+_NETWORK_DENIED = re.compile(r"Temporary failure in name resolution|Name or service not known|nodename nor servname|"
+                             r"Network is unreachable|getaddrinfo failed|Failed to establish a new connection|"
+                             r"\[Errno (?:-2|-3|-5|101|113|65|51)\]|Could not resolve host|No address associated with "
+                             r"hostname|socket\.gaierror|\b(?:ENOTFOUND|EAI_AGAIN|ENETUNREACH)\b")
+
+
 def summarize(rec: dict[str, Any]) -> dict[str, Any]:
     """The run in a few fields, for people and agents alike."""
     rows = rec.get("results") or []
@@ -163,6 +173,8 @@ def summarize(rec: dict[str, Any]) -> dict[str, Any]:
                                                            [t for t in r.get("failing_tests", []) if t != "<file>"])[:20],
                           "status": r["status"]} for r in new],
         "pre_existing": [r["test"] for r in pre],
+        # failing at base and change alike in a way that looks like the sandbox's missing network
+        "sandbox_network_suspected": [r["test"] for r in pre if _NETWORK_DENIED.search(r.get("output_tail") or "")],
         "failing_differently": [r["test"] for r in changed],
         "unverified": [r["test"] for r in rows if r.get("unverified")],
         "unconfirmed": [r["test"] for r in unconfirmed],
@@ -276,6 +288,10 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     if s["pre_existing"]:
         out.append("  already failing at the base, so not caused by this change: "
                    + ", ".join(s["pre_existing"][:6]) + (" …" if len(s["pre_existing"]) > 6 else ""))
+    net = s.get("sandbox_network_suspected") or []
+    if net:
+        out.append("  some failures in these files look like the sandbox's denied network (verify runs tests "
+                   "without network; the project's own run may pass): " + ", ".join(net[:6]) + (" …" if len(net) > 6 else ""))
     full = rec.get("full_suite")
     if full and full.get("status") not in {None, "not-run"} and str(rec.get("verdict")) == "full-suite-failed":
         out += [f"  | {line[:150]}" for line in (full.get("output_tail") or "").strip().splitlines()[-6:]]

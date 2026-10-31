@@ -120,7 +120,7 @@ evidence: none yet for this repository
   integrity result (`source tree unchanged`).
 
 `--json` returns the same as data, with a `summary` object for agents:
-- `verdict`, `new_failures` (file and tests), `pre_existing`, `unconfirmed`;
+- `verdict`, `new_failures` (file and tests), `pre_existing` (with `sandbox_network_suspected`), `unconfirmed`;
 - `passed`, `no_tests`, `strategy`, `seconds`, `processes`, `reused`;
 - `source_tree_unchanged`.
 
