@@ -282,6 +282,7 @@ class _PytestPlugin:
         self.out = out
         self.root = ""
         self.worst = {}
+        self.error_phase = {}
         self.xfails = set()  # node ids reported as expected failures (pytest.xfail, xfail marks)
 
     def pytest_configure(self, config):
@@ -322,9 +323,15 @@ class _PytestPlugin:
         if rank[outcome] > rank[prev[0]]:
             prev = (outcome, _report_msg(report), dur)
         self.worst[report.nodeid] = (prev[0], prev[1], dur)
+        if outcome == "error" and report.nodeid not in self.error_phase:
+            # setup: the test body never ran; teardown: it ran, and its own result is hidden behind the error
+            self.error_phase[report.nodeid] = when
         if when == "teardown":
             outcome, msg, dur = self.worst.pop(report.nodeid)
+            phase = self.error_phase.pop(report.nodeid, "")
             extra = {"xfail": True} if report.nodeid in self.xfails else {}
+            if outcome == "error":
+                extra["phase"] = phase
             self.xfails.discard(report.nodeid)
             self.out.emit(e="end", id=report.nodeid, mod="", path=self._path(report.nodeid.split("::")[0]),
                           o=outcome, msg=msg, dur=round(dur, 4), **extra)

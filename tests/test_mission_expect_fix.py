@@ -137,3 +137,36 @@ def test_a_new_setup_error_on_the_candidate_is_a_regression(project, tmp_path):
 def test_a_declared_test_that_errors_at_the_base_is_refused(erroring, tmp_path):
     result = _run(erroring, tmp_path, ['test_bench.py::test_speed'])
     assert result['effective_verdict'] != 'PASS'
+
+
+def test_a_teardown_error_at_the_base_cannot_hide_a_regression(project, tmp_path):
+    """Review of #25: a test whose body passed but whose teardown raised was 'error' at the base; the candidate broke
+    its assertion and it was 'error' again, so it read as pre-existing. Only a setup error (body never ran) stands."""
+    (project / 'test_guard.py').write_text('import pytest\nfrom charge import charge\n\n@pytest.fixture\ndef noisy():\n'
+                                           '    yield\n    raise RuntimeError("teardown")\n\n'
+                                           'def test_guarded(noisy):\n    assert charge(10, 0) == 10\n')
+    git(project, 'add', '.')
+    git(project, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'teardown error')
+    result = _run(project, tmp_path, ['test_charge.py::test_retry'],
+                  after='def charge(amount, retries):\n    return amount if retries else 0\n')
+    assert result['effective_verdict'] != 'PASS'
+
+
+def test_partial_progress_counts_a_new_error_as_a_regression():
+    from repo_ai.mission.runtime import partial_progress
+    import hashlib
+    diff = 'diff --git a/x b/x\n'
+    base = {'outcomes': {'t::a': 'fail', 't::b': 'pass', 't::c': 'fail'}}
+    cand = {'outcomes': {'t::a': 'pass', 't::b': 'error', 't::c': 'fail'}}
+    state = {'baseline': base, 'candidate': cand, 'diff': diff, 'diff_sha256': hashlib.sha256(diff.encode()).hexdigest()}
+    import repo_ai.mission.verification as v
+    original = v.comparability
+    v.comparability = lambda b, c: []
+    try:
+        assert partial_progress(state) is None  # t::b passed at the base and errors now
+        cand['outcomes']['t::b'] = 'pass'
+        cand['outcomes']['t::c'] = 'error'  # fail -> error is not "fixed"
+        progress = partial_progress(state)
+        assert progress is not None and progress['fixed'] == ['t::a'] and 't::c' in progress['still_failing']
+    finally:
+        v.comparability = original

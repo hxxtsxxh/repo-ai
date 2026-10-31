@@ -1161,9 +1161,11 @@ def partial_progress(state: dict[str, Any]) -> dict[str, Any] | None:
         return None
     if hashlib.sha256(diff.encode()).hexdigest() != state.get('diff_sha256') or comparability(base, cand):
         return None
-    before = {k for k, v in base['outcomes'].items() if v == 'fail'}
-    after = {k for k, v in cand['outcomes'].items() if v == 'fail'}
-    fixed, regressed = sorted(before - after), sorted(after - before)
+    failing = {'fail', 'error'}  # a setup error is failing for progress: it never shows the test passing
+    before = {k for k, v in base['outcomes'].items() if v in failing}
+    after = {k for k, v in cand['outcomes'].items() if v in failing}
+    fixed = sorted(k for k in before if cand['outcomes'].get(k) == 'pass')
+    regressed = sorted(after - before)
     if not fixed or regressed or not after:
         return None
     return {'fixed': fixed, 'still_failing': sorted(after), 'diff_sha256': state['diff_sha256']}

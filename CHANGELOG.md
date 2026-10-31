@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Changed: in a scoped mission (`--expect-fix`), a test that errors at setup or teardown in the same way at the base
-  and on the candidate may stand, like a failure that was already there. It is listed with them, and the standing is
+- Changed: in a scoped mission (`--expect-fix`), a test that errors at **setup** (its body never runs) in the same way
+  at the base and on the candidate may stand, like a failure that was already there. An error in teardown or the body
+  still makes the observation incomplete, because it hides the test's own result. It is listed with them, and the standing is
   `PASS_WITH_PRE_EXISTING_FAILURES`. Found on python-humanize, where a pytest-benchmark plugin broken under pytest 9
   errored 15 unrelated benchmark tests and the mission could not verify at all. A new error on the candidate is a
   regression; a declared test must fail at the base by an assertion, not an error; and an unscoped mission still

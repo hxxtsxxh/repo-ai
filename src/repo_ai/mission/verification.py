@@ -110,7 +110,11 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
         key = f"{file}::{tid}"
         if key in outcomes:
             reasons.append("duplicate test identity in the report")
-        outcomes[key] = outcome  # an `error` is recorded; `compare` decides whether it may stand (see ERRORED)
+        outcomes[key] = outcome
+        if outcome == "error" and event.get("phase") != "setup":
+            # only a setup error may stand (the body never ran); a teardown error hides the body's own result,
+            # and a runner that does not say (unittest addError covers the body too) is never trusted
+            reasons.append("a test errored outside setup, which hides its own result")
     if not outcomes:
         reasons.append("no actual test outcomes were reported")
     elif all(o == "skip" for o in outcomes.values()):
