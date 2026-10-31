@@ -110,9 +110,7 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
         key = f"{file}::{tid}"
         if key in outcomes:
             reasons.append("duplicate test identity in the report")
-        outcomes[key] = outcome
-        if outcome == "error":
-            reasons.append("a test errored during setup or teardown rather than demonstrating a failing assertion")
+        outcomes[key] = outcome  # an `error` is recorded; `compare` decides whether it may stand (see ERRORED)
     if not outcomes:
         reasons.append("no actual test outcomes were reported")
     elif all(o == "skip" for o in outcomes.values()):
@@ -256,12 +254,12 @@ def _problems(record: object, label: str) -> list[str]:
     outcomes, ids = record.get("outcomes"), record.get("test_ids")
     if (not isinstance(outcomes, dict) or not outcomes or not isinstance(ids, list)
             or not all(isinstance(i, str) and i for i in ids) or len(ids) != len(set(ids))
-            or set(ids) != set(outcomes) or any(o not in {"pass", "fail", "skip"} for o in outcomes.values())
+            or set(ids) != set(outcomes) or any(o not in {"pass", "fail", "skip", "error"} for o in outcomes.values())
             or all(o == "skip" for o in outcomes.values())):
         problems.append("nonempty, unique, real pass/fail test outcomes are required")
     else:
         expected = {"ran": sum(o != "skip" for o in outcomes.values()),
-                    "failed": sum(o == "fail" for o in outcomes.values()),
+                    "failed": sum(o in {"fail", "error"} for o in outcomes.values()),
                     "skipped": sum(o == "skip" for o in outcomes.values())}
         if any(type(record.get(k)) is not int or record[k] != v for k, v in expected.items()):
             problems.append("test counts do not agree with outcomes")
@@ -304,7 +302,8 @@ def comparability(baseline: dict, candidate: dict) -> list[str]:
 def pre_existing_failures(baseline: dict, candidate: dict, expect_fix: list[str]) -> dict:
     """For a scoped mission: what the declared tests did and which failures were already there and remain."""
     remaining = sorted(t for t, o in candidate.get("outcomes", {}).items()
-                       if o == "fail" and baseline.get("outcomes", {}).get(t) == "fail" and t not in expect_fix)
+                       if o in {"fail", "error"} and baseline.get("outcomes", {}).get(t) in {"fail", "error"}
+                       and t not in expect_fix)
     return {"expect_fix": list(expect_fix), "pre_existing_failures": remaining[:200], "pre_existing_count": len(remaining),
             "standing": "PASS_WITH_PRE_EXISTING_FAILURES" if remaining else "PASS"}
 
@@ -322,6 +321,9 @@ def _resolve_expected(outcomes: dict, expect_fix: list[str]) -> tuple[dict[str, 
     return resolved, missing
 
 
+ERRORED = "a test errored during setup or teardown rather than demonstrating a failing assertion"
+
+
 def compare(baseline: dict, candidate: dict, *, expect_fix: list[str] | None = None) -> tuple[str, list[str]]:
     """PASS means the identical observed suite failed then passed, not correctness.
 
@@ -331,9 +333,12 @@ def compare(baseline: dict, candidate: dict, *, expect_fix: list[str] | None = N
     reasons = comparability(baseline, candidate)
     if reasons:
         return "FAIL", reasons
-    if baseline["failed"] < 1:
+    if not any(o == "fail" for o in baseline["outcomes"].values()):
         reasons.append("baseline did not demonstrate a real failing test")
     if not expect_fix:
+        for side, record in (("baseline", baseline), ("candidate", candidate)):
+            if any(o == "error" for o in record["outcomes"].values()):
+                reasons.append(f"{side}: {ERRORED}")
         if candidate["failed"] or any(o not in {"pass", "skip"} for o in candidate["outcomes"].values()):
             reasons.append("candidate did not pass every test")
         return ("FAIL", reasons) if reasons else ("PASS", [])
@@ -348,7 +353,9 @@ def compare(baseline: dict, candidate: dict, *, expect_fix: list[str] | None = N
             reasons.append(f"declared test does not fail at the base: {test_id}")
         elif cand.get(key) != "pass":
             reasons.append(f"declared test does not pass on the candidate: {test_id}")
-    regressed = sorted(t for t, o in cand.items() if o in {"fail", "error"} and base.get(t) != "fail")
+    # an error that already happened at the base may stand like a failure there (an unrelated plugin or fixture);
+    # a new one is a regression, and a declared test must fail at the base by an assertion, never by an error
+    regressed = sorted(t for t, o in cand.items() if o in {"fail", "error"} and base.get(t) not in {"fail", "error"})
     if regressed:
         reasons.append("tests that pass at the base fail on the candidate: " + ", ".join(regressed[:5]))
     return ("FAIL", reasons) if reasons else ("PASS", [])

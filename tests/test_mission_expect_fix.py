@@ -96,3 +96,44 @@ def test_apply_without_the_scope_is_refused_by_the_post_apply_check(project, tmp
 def test_contracts_without_the_field_keep_their_digest():
     c = IntentContract('o', 'r', 'b' * 40, ['python -m pytest'], ['a.py'])
     assert 'expect_fix' not in c.to_json()
+
+
+@pytest.fixture
+def erroring(project):
+    """An unrelated test whose fixture errors at setup, identically at base and candidate (python-humanize: a
+    pytest-benchmark plugin broken under pytest 9 errored 15 benchmark tests)."""
+    (project / 'test_bench.py').write_text('import pytest\n\n@pytest.fixture\ndef benchmark():\n'
+                                           '    raise RuntimeError("plugin incompatible with this pytest")\n\n'
+                                           'def test_speed(benchmark):\n    assert True\n')
+    git(project, 'add', '.')
+    git(project, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'broken plugin')
+    return project
+
+
+def test_a_base_setup_error_blocks_an_unscoped_pass(erroring, tmp_path):
+    result = _run(erroring, tmp_path, [])
+    assert result['effective_verdict'] != 'PASS'
+
+
+def test_a_setup_error_already_at_the_base_may_stand_in_a_scoped_mission(erroring, tmp_path):
+    result = _run(erroring, tmp_path, ['test_charge.py::test_retry'])
+    assert result['effective_verdict'] == 'PASS', result.get('reasons')
+    assert result['scoped']['standing'] == 'PASS_WITH_PRE_EXISTING_FAILURES'
+    remaining = result['scoped']['pre_existing_failures']
+    assert any('test_speed' in t for t in remaining) and any('test_old_backend' in t for t in remaining)
+
+
+def test_a_new_setup_error_on_the_candidate_is_a_regression(project, tmp_path):
+    (project / 'conftest.py').write_text('import pytest, charge\n\n@pytest.fixture(autouse=True)\ndef guard():\n'
+                                         '    if charge.charge(1, 0) == 0:\n        raise RuntimeError("broken")\n')
+    git(project, 'add', '.')
+    git(project, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'guard')
+    # fixes test_retry's case, and makes every test error at setup through the guard
+    result = _run(project, tmp_path, ['test_charge.py::test_retry'],
+                  after='def charge(amount, retries):\n    return 0 if retries == 0 else amount\n')
+    assert result['effective_verdict'] != 'PASS'
+
+
+def test_a_declared_test_that_errors_at_the_base_is_refused(erroring, tmp_path):
+    result = _run(erroring, tmp_path, ['test_bench.py::test_speed'])
+    assert result['effective_verdict'] != 'PASS'

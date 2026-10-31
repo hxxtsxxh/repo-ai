@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Changed: in a scoped mission (`--expect-fix`), a test that errors at setup or teardown in the same way at the base
+  and on the candidate may stand, like a failure that was already there. It is listed with them, and the standing is
+  `PASS_WITH_PRE_EXISTING_FAILURES`. Found on python-humanize, where a pytest-benchmark plugin broken under pytest 9
+  errored 15 unrelated benchmark tests and the mission could not verify at all. A new error on the candidate is a
+  regression; a declared test must fail at the base by an assertion, not an error; and an unscoped mission still
+  refuses any setup error.
 - Fixed: mission workspaces left out tracked files marked `export-ignore` in `.gitattributes` (often a whole `tests/`)
   and rewrote `$Format:…$` in files marked `export-subst`, because they are built with `git archive`. On such a
   repository every provider mission was blocked, or verified the wrong tests. Those files are now written from their
