@@ -9,8 +9,8 @@ Updated 2026-10-31 after #30 and #31 (unreleased).
 | 1b | Mission workspaces dropped `export-ignore` files and rewrote `export-subst` | C21 | done (#22, four review rounds) |
 | 1d | Release 0.11.3 (#21, #22, #24, #25, #26, #28, #30 ACP client, #31 opencode-acp provider) | C20 | blocked (owner approval) |
 | 1e | Nothing reaches a state path by any route (macOS case collisions; `.claude -> conf` links) | C18 | done (#24) |
-| 1f | A repository that tracks a FILE named `.repo-ai` breaks the sandboxed run directory `.repo-ai/run` (every verify/mission run) | C21 | done (this PR): `init` and the run directory name the file instead of ENOTDIR; `out_dir` is the way out |
-| 1g | A custom `out_dir` with `init --agent none` wrote no ignore entries: the index, lock and evidence counted as part of the change and the first `verify --run` always failed ("the working tree changed while the run was being prepared") | C21 | done (this PR) |
+| 1f | A repository that tracks a FILE named `.repo-ai` breaks the sandboxed run directory `.repo-ai/run` (every verify/mission run) | C21 | done (#34): `init`, missions and the run directory name the file instead of ENOTDIR. `out_dir` moves the index and context only: sandboxed runs stay unavailable in such a repository (the run directory is fixed) |
+| 1g | A custom `out_dir` with `init --agent none` wrote no ignore entries: the index, lock and evidence counted as part of the change and the first `verify --run` always failed ("the working tree changed while the run was being prepared") | C21 | done (#34) |
 | 1c | `--expect-fix`: a setup error already at the base may stand (teardown/body errors still refused) | C21 | done (#25, three review rounds) |
 | 2 | Skill value: pilot run 2026-10-30, INCONCLUSIVE (`evidence/SKILL-VALUE-PILOT-2026-10-30.md`); next a confirmatory trial with independently written tasks and oracles (5 calls left in the second budget) | C10 | todo |
 | 2a | Skill radar recommended against project-convention skills | C07 | done (#14) |

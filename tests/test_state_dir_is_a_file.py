@@ -16,7 +16,7 @@ from repo_ai.verify.results import RUN_DIR
 def test_creating_state_refuses_a_file_where_its_directory_goes(tmp_path):
     (tmp_path / ".repo-ai").write_text("project data\n")
     layout = resolve_layout(tmp_path, Config())  # reading the layout still works (mission identity, planning)
-    with pytest.raises(LayoutError, match=r"\.repo-ai is a file in this repository.*out_dir"):
+    with pytest.raises(LayoutError, match=r"\.repo-ai is a file in this repository.*sandboxed runs and missions still need it"):
         make_dir(tmp_path, layout.state_dir)
     assert (tmp_path / ".repo-ai").read_text() == "project data\n"
 
@@ -71,3 +71,22 @@ def test_custom_layout_init_ignores_its_runtime_state_without_an_agent(tmp_path)
     untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"], cwd=repo, capture_output=True,
                                text=True, check=True).stdout.split()
     assert not [p for p in untracked if p.startswith(".ctx/index.db") or p == ".ctx/update.lock"]
+
+
+def test_a_mission_names_the_file(tmp_path):
+    from repo_ai.mission.runtime import execute, plan
+    from test_mission_runtime import git, replay
+    root = tmp_path / "bug"
+    root.mkdir()
+    (root / "charge.py").write_text("def charge(amount, retries):\n    return amount * (retries + 1)\n")
+    (root / "test_charge.py").write_text("from charge import charge\n\ndef test_retry():\n    assert charge(10, 2) == 10\n")
+    (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\npythonpath = ["."]\n')
+    (root / ".repo-ai").write_text("project data\n")
+    git(root, "init", "-q")
+    git(root, "add", ".")
+    git(root, "-c", "user.name=f", "-c", "user.email=f@example.invalid", "commit", "-qm", "base")
+    planned = plan(root, "Fix duplicate charge in charge.py", agent="replay", write_paths=["charge.py"],
+                   execute_local=True)
+    with pytest.raises(LayoutError, match=r"\.repo-ai is a file in this repository"):
+        execute(root, planned, replay(root, tmp_path))
+    assert (root / ".repo-ai").read_text() == "project data\n"

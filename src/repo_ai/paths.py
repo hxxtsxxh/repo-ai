@@ -183,8 +183,9 @@ def make_dir(root: Path, path: Path, mode: int = 0o777) -> Path:
         for part in parts:
             current = current / part
             if os.path.lexists(current) and not current.is_dir():
-                raise LayoutError(f"{current.relative_to(root).as_posix()} is a file in this repository; repo-ai "
-                                  "keeps its state in a directory of that name (set out_dir in repo-ai.toml)") from exc
+                raise LayoutError(f"{current.relative_to(root).as_posix()} is a file in this repository; repo-ai keeps "
+                                  "its state in a directory of that name (out_dir in repo-ai.toml moves the index and "
+                                  "context, but sandboxed runs and missions still need it)") from exc
         raise
     return path
 

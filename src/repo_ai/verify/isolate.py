@@ -414,7 +414,8 @@ def run_dir(ws: Path, rel: str) -> Path:
         home = ws / rel.split("/", 1)[0]
         if os.path.lexists(home) and not home.is_dir():
             raise IsolationError(f"the repository tracks a file named {home.name}; sandboxed runs need a directory of "
-                                 "that name in their workspace, so repo-ai cannot run tests in this repository") from exc
+                                 "that name in their workspace (out_dir does not move it), so repo-ai cannot run tests "
+                                 "in this repository") from exc
         raise
     return path
 
