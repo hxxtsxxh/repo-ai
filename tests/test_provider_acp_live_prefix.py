@@ -94,3 +94,19 @@ def test_a_flood_of_agent_text_is_bounded_and_fails_the_run(tmp_path):
                        simulated=True)
     assert any("output bound" in r for r in res["reasons"]), res["reasons"]
     assert res["stage"] not in {"READY", "PASS"}
+
+
+def test_floods_of_tool_titles_and_garbage_lines_stay_bounded(tmp_path):
+    root, ws, _ = dirs(tmp_path)
+    hook = {"prompt": ("title = 'T' * 700000\n"
+                       "for i in range(40):\n"
+                       "  send({'method': 'session/update', 'params': {'sessionId': 's1', 'update': {"
+                       "'sessionUpdate': 'tool_call', 'toolCallId': str(i), 'title': title, 'kind': 'edit'}}})\n"
+                       "for i in range(20000):\n"
+                       "  sys.stdout.write('not json %d\\n' % i)\n"
+                       "sys.stdout.flush()\n")}
+    exe = agent(tmp_path, hook)
+    res = run_provider("opencode-acp", root, ws, "x", write_paths=["charge.py"], executable=exe, timeout=60,
+                       simulated=True)
+    assert len(res["reasons"]) <= 60, len(res["reasons"])
+    assert len(json.dumps(res)) < 2_000_000
