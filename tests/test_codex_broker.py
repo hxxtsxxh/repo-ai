@@ -227,6 +227,8 @@ def test_hosted_search_is_removed_and_local_tools_are_kept(upstream):
     ({"input": [{"type": "message", "role": "user", "content": [{"type": "input_file", "file_id": "file-1"}]}]},
      b"remote URL"),
     ({"model": ""}, b"no model"),
+    ({"model": "m" * 129}, b"not a plain model name"),
+    ({"model": "gpt\n5"}, b"not a plain model name"),
     ({"instructions": [{"type": "input_image", "image_url": "data:x"}]}, b"instructions is not text"),
     ({"prompt": {"id": "pmpt_1"}}, b"server-side state"),
     ({"conversation": "conv_1"}, b"server-side state"),

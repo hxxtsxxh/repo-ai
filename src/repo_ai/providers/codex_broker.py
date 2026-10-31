@@ -32,6 +32,7 @@ import http.client
 import http.server
 import json
 import os
+import re
 import secrets
 import stat
 import threading
@@ -59,6 +60,7 @@ FORWARD_HEADERS = ("content-type", "accept", "openai-beta", "originator", "sessi
 LOCAL_TOOL_TYPES = frozenset({"function", "custom", "local_shell"})  # executed by Codex, inside the sandbox
 REMOVED_TOOL_TYPES = ("web_search",)  # hosted search: queries and fetches leave from the upstream (`web_search*`)
 SERVER_STATE_KEYS = ("prompt", "conversation", "previous_response_id", "background")  # Codex sends none of these
+MODEL_NAME = re.compile(r"[A-Za-z0-9._:/@+-]{1,128}")  # it is recorded in the run's summary: bounded and plain
 MAX_CONCURRENT = 4
 SOCKET_TIMEOUT_S = 60.0
 
@@ -183,8 +185,8 @@ def vet_request(body: bytes, pinned_model: str | None) -> tuple[bytes, str, str]
     if not isinstance(data, dict):
         return b"", "", "the body is not a JSON object"
     model = data.get("model")
-    if not isinstance(model, str) or not model:
-        return b"", "", "no model named"
+    if not isinstance(model, str) or not MODEL_NAME.fullmatch(model):
+        return b"", "", "no model named, or not a plain model name"
     if pinned_model is not None and model != pinned_model:
         return b"", "", f"model {model[:60]!r} is not this run's model"
     present = [k for k in SERVER_STATE_KEYS if data.get(k) not in (None, False)]
