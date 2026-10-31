@@ -131,6 +131,12 @@ def test_provider_list_is_validated(bug, providers):
         lt.plan_tournament(bug, TASK, providers, executables={p: Path('/bin/true') for p in providers})
 
 
+def test_transports_of_one_executable_are_not_independent_arms(bug):
+    providers = ['opencode', 'opencode-acp', 'claude']
+    with pytest.raises(ValueError, match=r'share an executable: opencode \(opencode, opencode-acp\)'):
+        lt.plan_tournament(bug, TASK, providers, executables={p: Path('/bin/true') for p in providers})
+
+
 def test_time_budget_must_cover_every_arm(bug, tmp_path):
     exes = {'claude': fake(tmp_path, 'claude'), 'codex': fake(tmp_path, 'codex')}
     with pytest.raises(ValueError, match='per arm'):
