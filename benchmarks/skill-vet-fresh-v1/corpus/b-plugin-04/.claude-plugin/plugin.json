@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-04",
+  "version": "1.0.0",
+  "description": "A focused code-review subagent.",
+  "author": {
+    "name": "ReviewBot"
+  }
+}

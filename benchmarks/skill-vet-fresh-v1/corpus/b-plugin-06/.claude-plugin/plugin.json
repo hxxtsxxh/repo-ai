@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-06",
+  "version": "2.1.0",
+  "description": "Generate a changelog section from recent commits.",
+  "author": {
+    "name": "ChangelogGen"
+  }
+}

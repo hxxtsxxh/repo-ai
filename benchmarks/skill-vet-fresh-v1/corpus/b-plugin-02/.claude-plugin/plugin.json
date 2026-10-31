@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-02",
+  "version": "1.2.0",
+  "description": "Run the project's test suite from a slash command.",
+  "author": {
+    "name": "TestRunner"
+  }
+}

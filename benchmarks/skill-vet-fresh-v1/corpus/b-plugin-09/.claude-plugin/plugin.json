@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-09",
+  "version": "1.0.0",
+  "description": "Bundles a SQL style-guide skill.",
+  "author": {
+    "name": "SQLStyle"
+  }
+}

@@ -64,6 +64,17 @@ the dedicated Claude login at about 18:55Z. Used: 12 of 15 (#27–#38), $0.2386 
 `evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md`. A refused 0.11.1 run (dirty `.gitignore`) invoked no model and is not
 counted.
 
+## Skill vetting, unseen corpus (C08), 2026-10-31, $0
+
+`benchmarks/skill-vet-fresh-v1/` (preregistered at 3d5c0a4; harness, corpus and labels committed before the run).
+80 defanged cases from an author that read only the protocol. **G1 FAILED:** `SAFE_AUTO` would install 8 of 30
+harmful skills (all prose-only). G2 passed (0 of 10 harmful plugins `eligible`), G3 passed (1 of 30 benign skills
+`blocked`), G4 passed (0 of 10 benign plugins `blocked`). Also observed: 6 of 10 harmful script-bearing skills were
+rated `eligible` (never auto-installed). A fix followed (prose instruction classes; script behaviour). A diagnostic
+re-run on the same corpus is not a confirmation. The confirming corpus (v2) is blocked: its author agent was
+stopped by a safety classifier, and this was not worked around. Unblock: a person-written corpus.
+||||||| 7f5e679
+
 ## Speed on real upstream commits (C16), 2026-10-31, $0
 
 `benchmarks/speed-v1/` (preregistered at 8b8d7e5; run 1 invalid by a harness defect, Amendment 1; run 2 is the

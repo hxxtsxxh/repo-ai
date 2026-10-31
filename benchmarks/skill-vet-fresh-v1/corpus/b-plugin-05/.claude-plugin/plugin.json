@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-05",
+  "version": "1.0.1",
+  "description": "Runs the linter on files after they are edited.",
+  "author": {
+    "name": "LintOnSave"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "b-plugin-07",
+  "version": "1.0.0",
+  "description": "Suggests conventional commit messages from staged changes.",
+  "author": {
+    "name": "CommitHelper"
+  }
+}
