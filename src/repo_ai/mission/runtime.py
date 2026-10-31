@@ -1131,8 +1131,10 @@ def _claims_for(root: Path, state: dict[str, Any]) -> dict[str, Any]:
             value['headline'] = 'ASSURANCE_PARTIAL'
         from .coverage import display_test_id
         count = scoped.get('pre_existing_count', len(remaining))
-        value['notes'].insert(1, f"{count} test(s) already failed at the base and still fail (scoped by "
-                                 "--expect-fix; not part of this result): "
+        errored = scoped.get('pre_existing_errors') or 0
+        value['notes'].insert(1, f"{count} test(s) already failed at the base and still fail"
+                                 + (f" ({errored} error at setup, so their bodies never ran)" if errored else "")
+                                 + " (scoped by --expect-fix; not part of this result): "
                                  + ', '.join(display_test_id(t) for t in remaining[:5]))
     return value
 
@@ -1161,9 +1163,12 @@ def partial_progress(state: dict[str, Any]) -> dict[str, Any] | None:
         return None
     if hashlib.sha256(diff.encode()).hexdigest() != state.get('diff_sha256') or comparability(base, cand):
         return None
-    before = {k for k, v in base['outcomes'].items() if v == 'fail'}
-    after = {k for k, v in cand['outcomes'].items() if v == 'fail'}
-    fixed, regressed = sorted(before - after), sorted(after - before)
+    failing = {'fail', 'error'}  # a setup error is failing for progress: it never shows the test passing
+    before = {k for k, v in base['outcomes'].items() if v in failing}
+    after = {k for k, v in cand['outcomes'].items() if v in failing}
+    # fixed means the base showed the test failing by running it: a setup error there never ran the body
+    fixed = sorted(k for k in before if base['outcomes'][k] == 'fail' and cand['outcomes'].get(k) == 'pass')
+    regressed = sorted(after - before)
     if not fixed or regressed or not after:
         return None
     return {'fixed': fixed, 'still_failing': sorted(after), 'diff_sha256': state['diff_sha256']}

@@ -20,7 +20,7 @@ from .verification import comparability
 MAX_TEST_ROWS = 200
 CLASSIFICATIONS = {
     ('fail', 'pass'): 'FIXED_IN_OBSERVED_SUITE',
-    ('error', 'pass'): 'FIXED_IN_OBSERVED_SUITE',
+    ('error', 'pass'): 'NOT_COMPARABLE',  # a setup error at the base: the body never ran, so no fix was shown
     ('fail', 'fail'): 'PRE_EXISTING_FAILURE',
     ('error', 'error'): 'PRE_EXISTING_FAILURE',
     ('fail', 'error'): 'PRE_EXISTING_FAILURE',
