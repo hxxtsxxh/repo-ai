@@ -1,12 +1,14 @@
 # Work queue (living; top = next)
 
-Updated 2026-10-30 after the 0.11.2 release.
+Updated 2026-10-30 after #21 and #22 (unreleased).
 
 | # | Item | Gate | State |
 |---|---|---|---|
 | 1 | Release 0.11.2 (#16, #17, #18) | C20, C21 | done: published 2026-10-30, verified (PyPI = GitHub, attestation, smoke) |
-| 1a | Re-run the scoped missions on the published 0.11.2: python-humanize done (#36 PASS); python-slugify todo | C21 | in progress |
-| 1b | Mission workspaces drop tracked files marked `export-ignore` (git archive honours it): every provider mission blocks on such repos | C21 | todo |
+| 1a | Re-run the scoped missions on the published 0.11.2 | C21 | done: python-humanize live PASS (#36); python-slugify replay PASS_WITH_PRE_EXISTING_FAILURES, fresh first run |
+| 1b | Mission workspaces dropped `export-ignore` files and rewrote `export-subst` | C21 | done (#22, four review rounds) |
+| 1d | Release 0.11.3 (#21 honest apply count, #22 export attributes) | C20 | blocked (owner approval) |
+| 1e | macOS: a case-insensitive symlink (`A -> .claude`) plus `a/settings.local.json` plants files under a state prefix in an archived workspace (path check is textual); stays inside the workspace | C18 | todo |
 | 1c | `--expect-fix`: unrelated tests that error at setup identically at base and candidate make the observation incomplete (design: trust model) | C21 | todo |
 | 2 | Skill value: pilot run 2026-10-30, INCONCLUSIVE (`evidence/SKILL-VALUE-PILOT-2026-10-30.md`); next a confirmatory trial with independently written tasks and oracles (5 calls left in the second budget) | C10 | todo |
 | 2a | Skill radar recommended against project-convention skills | C07 | done (#14) |
