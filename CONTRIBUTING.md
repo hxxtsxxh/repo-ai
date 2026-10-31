@@ -52,8 +52,11 @@ the sandbox must deny (network connections, reads of credential paths). **Nothin
 fixture**, but endpoint protection on a managed machine cannot tell a fixture from a payload.
 
 - These modules are listed in `tests/conftest.py` (`SECURITY_FIXTURE_MODULES`) and **skipped locally by
-  default**. CI sets `REPO_AI_SECURITY_FIXTURES=1` for every job, so every pull request still runs them;
-  `tests/test_security_fixture_policy.py` fails if the workflow stops doing so.
+  default**. CI sets `REPO_AI_SECURITY_FIXTURES=1` for every job: every pull request runs them on Linux and
+  Windows, and on macOS (seatbelt) in the `test-macos-security` job. `tests/test_security_fixture_policy.py`
+  fails if the workflow stops doing so. A CI run skipped with `[skip ci]` runs none of them.
+- Release qualification treats a skip as a failure, so it needs the variable set, on a machine where that is
+  allowed.
 - To run them yourself, use a machine or VM where that is allowed: `REPO_AI_SECURITY_FIXTURES=1 python -m pytest`.
 - The vetting benchmark (`benchmarks/skill-vet-fresh-v1/`) reads an 80-case defanged corpus and refuses to run
   without the same variable. Its corpus is plain data: no file is executable, every host is under `.invalid` or

@@ -141,7 +141,7 @@ SECURITY_FIXTURE_MODULES = {
     "test_skill_autopilot", "test_skill_network", "test_skill_vet", "test_skill_vet_hardening",
     "test_skills_registry", "test_plugin_vet", "test_inventory", "test_inventory_hardening", "test_security",
     "test_codex_broker", "test_provider_claude_isolation", "test_release_0_10_review",
-    "test_sandbox", "test_sandbox_descendants",
+    "test_sandbox", "test_sandbox_descendants", "test_learning_skills", "test_verification",
 }
 _SANDBOX_STATE: list[bool] = []
 

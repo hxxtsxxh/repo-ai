@@ -20,3 +20,9 @@ def test_ci_runs_the_security_fixture_tests_in_every_job():
 def test_every_listed_module_exists():
     missing = sorted(m for m in SECURITY_FIXTURE_MODULES if not (ROOT / "tests" / f"{m}.py").exists())
     assert not missing, missing
+
+
+def test_a_pull_request_job_runs_the_listed_modules_on_macos():
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    job = workflow.split("\n  test-macos-security:\n", 1)[1].split("\n  # ", 1)[0]
+    assert "macos" in job and "if:" not in job and "SECURITY_FIXTURE_MODULES" in job
