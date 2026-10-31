@@ -227,3 +227,20 @@ def test_show_fixed_does_not_call_an_order_dependent_test_fixed(tmp_path: Path):
     (root / "calc" / "other.py").write_text("X = 1  # a harmless edit\n")
     out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
     assert "test_victim" not in out.split("fixed by this change")[-1], out
+
+
+def test_pre_existing_failures_that_look_like_the_missing_network_are_named():
+    """speed-v1: pyjwt's JWKS client tests fail inside the sandbox (no network) at the base and the change alike;
+    the project's own run passes. The report now says the failures look like the sandbox's denied network."""
+    from repo_ai.verify import report
+    def row(test, tail):
+        return {"test": test, "status": "fail", "baseline": "fail", "confirmed": True, "output_tail": tail}
+    rec = {"verdict": "failing (all failures pre-existing at the base)", "results": [
+        row("tests/test_jwks_client.py",
+            "E   urllib.error.URLError: <urlopen error [Errno -3] Temporary failure in name resolution>"),
+        row("tests/test_other.py", "E   AssertionError: 1 != 2")]}
+    s = report.summarize(rec)
+    assert s["pre_existing"] == ["tests/test_jwks_client.py", "tests/test_other.py"]
+    assert s["sandbox_network_suspected"] == ["tests/test_jwks_client.py"]
+    text = "\n".join(report._outcome(rec, s, []))
+    assert "sandbox's denied network" in text and "test_jwks_client.py" in text.split("denied network")[1]
