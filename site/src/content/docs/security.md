@@ -85,6 +85,11 @@ untouched until `repo-ai apply`. The residual risks, stated plainly:
 - **Codex:** its own inner sandbox is bypassed, only after repo-ai confirms the outer one is active. A flaw in the
   outer sandbox is not backstopped.
 - **agy (macOS):** can read the encrypted login keychain database files it needs to authenticate.
+- **Credentials inside the run.** Codex's login token is copied into its scratch `CODEX_HOME` unless the opt-in
+  credential broker is on (`REPO_AI_CODEX_BROKER=1`, macOS); Bob's `~/.bob/settings` directory is copied into the
+  scratch HOME; and a provider API key set in your environment (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`,
+  `BOB_API_KEY`) is passed to the provider process. A model that can run shell commands can read them, and network is
+  allowed. Claude Code's model gets file tools only. Use a separate, revocable login or key for repo-ai.
 - **Cost is not enforced for subscription CLIs.** Codex and agy cost is recorded as `UNKNOWN`, never `0`.
 - **A passing test is not a proof of correctness**, and handoff capsules are integrity-checked, not authenticated.
 

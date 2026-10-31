@@ -47,6 +47,8 @@ reported as `BLOCKED_AUTH`) without reading credentials; it does not check quota
 Last live-verified on an earlier pre-release; not re-run on 0.9.0 or 0.10.0, and its account entitlement was not
 re-checked. Install and log in to Bob as its documentation describes. repo-ai passes your `--max-cost-usd` to Bob's own cost cap,
 so a positive ceiling is enforced by the provider. Cost figures are provider-reported, not billing records.
+repo-ai copies your `~/.bob/settings` directory into the run's scratch HOME and passes `BOB_API_KEY` if it is set;
+both are readable inside the run.
 
 ### Codex CLI
 

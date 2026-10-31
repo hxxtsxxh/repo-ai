@@ -137,6 +137,10 @@
   starts is killed before verification, including ones that call `setsid`; `open`/Apple events are denied. An
   independent adversarial review found and this release fixes: read rules that could expose all of HOME, a
   config-dir override that made HOME writable, reachable unix sockets (container engine, ssh-agent) and DNS.
+  (Corrected: as released, this entry said no provider credential is copied any more. That holds for Claude and
+  Gemini. Codex's `auth.json` was still copied into its scratch `CODEX_HOME`, readable by its model (disclosed; the
+  opt-in broker of 0.11.3 removes it), Bob's `~/.bob/settings` directory is copied, and a provider API key set in the
+  environment (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `BOB_API_KEY`) is passed into the run.)
 - **Skills — safe autopilot:** autonomy levels (`skills policy`; default PROPOSE, stored machine-locally), five
   capability kinds kept apart (only skills are installable), a strict inert check, `CapabilityBundle` installs
   with ownership markers, conflict refusal and byte-exact uninstall/rollback; OpenCode is an install target
