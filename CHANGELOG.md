@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed: mission workspaces left out tracked files marked `export-ignore` in `.gitattributes` (often a whole `tests/`)
+  and rewrote `$Format:…$` in files marked `export-subst`, because they are built with `git archive`. On such a
+  repository every provider mission was blocked, or verified the wrong tests. Those files are now written from their
+  committed blobs, with the line endings a checkout gives them and their executable bit.
 - Fixed: `repo-ai apply` always printed "0 failed" after post-apply verification; the count was hard-coded. A scoped
   mission (`--expect-fix`) legitimately keeps failures that were already there at the base and are not declared. It now
   prints the real count and says when every remaining failure is one of those ("131 tests ran, 20 failed (all 20

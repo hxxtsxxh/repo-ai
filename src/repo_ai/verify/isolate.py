@@ -555,6 +555,77 @@ def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
         return None
 
 
+def _git_lines(root: Path, args: list[str], stdin: bytes | None = None) -> bytes | None:
+    proc = subprocess.run(["git", *args], cwd=root, input=stdin, capture_output=True, timeout=120, check=False)
+    return proc.stdout if proc.returncode == 0 else None
+
+
+def _check_attr(root: Path, commit: str, names: list[str], paths: list[str]) -> dict[str, dict[str, str]]:
+    """Attributes of `paths` as `commit` defines them (`--source`, git >= 2.40; else the working tree's)."""
+    data = b"".join(p.encode() + b"\0" for p in paths)
+    out = _git_lines(root, ["check-attr", "--source", commit, "-z", "--stdin", *names], data)
+    if out is None:
+        out = _git_lines(root, ["check-attr", "-z", "--stdin", *names], data) or b""
+    fields = out.split(b"\0")
+    attrs: dict[str, dict[str, str]] = {}
+    for i in range(0, len(fields) - 2, 3):
+        attrs.setdefault(fields[i].decode("utf-8", "surrogateescape"), {})[fields[i + 1].decode()] = fields[i + 2].decode()
+    return attrs
+
+
+def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[str]) -> dict[str, int]:
+    """`git archive` honours `export-ignore` (a tracked file, often a whole `tests/`, is left out) and `export-subst`
+    (`$Format:…$` is replaced), so the archive is not the commit's tracked source. Those files are written from their
+    committed blobs, with the line endings a checkout would give them (`eol=crlf`, `core.autocrlf=true` for text) and
+    their executable bit. Returns the restored paths and sizes."""
+    listing = _git_lines(root, ["ls-tree", "-r", "-z", "--full-tree", "--end-of-options", commit])
+    if listing is None:
+        raise IsolationError("could not list the base revision's tracked files")
+    blobs: dict[str, tuple[str, str]] = {}
+    for entry in listing.split(b"\0"):
+        if not entry:
+            continue
+        meta, _, name = entry.partition(b"\t")
+        mode, kind, sha = meta.decode().split()
+        rel = name.decode("utf-8", "surrogateescape")
+        pure = PurePosixPath(rel)
+        if kind != "blob" or mode not in {"100644", "100755"} or pure.is_absolute() or ".." in pure.parts \
+                or rel.startswith(STATE_PREFIXES):
+            continue
+        blobs[rel] = (mode, sha)
+    present = [p for p in blobs if p in have]
+    subst = [p for p, a in _check_attr(root, commit, ["export-subst"], present).items()
+             if a.get("export-subst") == "set"] if present else []
+    targets = sorted({p for p in blobs if p not in have} | set(subst))
+    if not targets:
+        return {}
+    attrs = _check_attr(root, commit, ["text", "eol"], targets)
+    autocrlf = (_git_lines(root, ["config", "--get", "core.autocrlf"]) or b"").strip() == b"true"
+    batch = _git_lines(root, ["cat-file", "--batch"], b"".join(blobs[p][1].encode() + b"\n" for p in targets))
+    if batch is None:
+        raise IsolationError("could not read the base revision's files")
+    restored: dict[str, int] = {}
+    pos = 0
+    base = path.resolve()
+    for rel in targets:
+        header_end = batch.index(b"\n", pos)
+        size = int(batch[pos:header_end].split()[2])
+        data = batch[header_end + 1:header_end + 1 + size]
+        pos = header_end + 1 + size + 1
+        a = attrs.get(rel, {})
+        text = a.get("text") != "unset" and b"\0" not in data
+        if text and (a.get("eol") == "crlf" or (autocrlf and a.get("eol") != "lf")):
+            data = data.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+        target = path / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.parent.resolve().is_relative_to(base) or target.is_symlink():
+            raise IsolationError(f"a restored file would leave the workspace: {rel[:200]}")
+        target.write_bytes(data)
+        target.chmod(0o755 if blobs[rel][0] == "100755" else 0o644)
+        restored[rel] = len(data)
+    return restored
+
+
 def materialize_commit(root: Path, commit: str, *, label: str = "base", dependencies: bool = True) -> Workspace:
     """The tracked files of `commit` (git archive: no hooks or filters run),
     with the same read-only dependency directories as the working tree."""
@@ -592,6 +663,10 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
                 tar.extractall(path, members=members)  # noqa: S202 - members validated above
         ws.files = sorted(m.name for m in members if m.isfile() or m.issym())
         ws.bytes = sum(m.size for m in members if m.isfile())
+        restored = _restore_export_attributes(root, commit, path, set(ws.files))
+        if restored:
+            ws.files = sorted(set(ws.files) | set(restored))
+            ws.bytes += sum(restored.values())
         if dependencies:
             _place_links(ws, root, ws.files)
     except BaseException:
