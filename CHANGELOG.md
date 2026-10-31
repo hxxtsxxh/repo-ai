@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fixed (found by speed-v1 on real projects): in a project that writes its version file at build time
+  (setuptools-scm `version_file`/`write_to`, hatch-vcs `version-file`), that git-ignored file was missing from
+  verify's disposable copy, so every test failed with `No module named '<pkg>._version'` at base and change alike
+  (python-humanize). The declared version file is now copied in; nothing else ignored is, and the declaration
+  must name a small `.py` file called like a version file inside the repository.
+- Fixed (found by speed-v1): verify ran more-itertools' `make check` (black, flake8, stubtest: no tests) as the test
+  suite and reported a passing suite `full-suite-failed`. `python -m unittest -v` (options only) is discovery, a
+  trailing lowercase make parameter that the Makefile leaves undefined (`${tests}`) is empty as make treats it, and
+  a make target whose every step is a lint tool is never the suite.
 - Security (opt-in `SAFE_AUTO`): a preregistered evaluation with an unseen corpus (`benchmarks/skill-vet-fresh-v1`,
   80 defanged cases) **failed** its main gate. `SAFE_AUTO` would have installed 8 of 30 harmful skills without
   asking. All 8 were prose-only SKILL.md files: overriding the agent's instructions, hiding results from the user,

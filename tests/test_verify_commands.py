@@ -162,3 +162,79 @@ def test_a_tox_pytest_command_is_taken_only_when_the_tests_need_pytest(tmp_path:
     from repo_ai.verify.commands import _imports_pytest
     _write(tmp_path, {"tests/test_a.py": "import unittest\n", "tests/test_b.py": "import pytest\n"})
     assert _imports_pytest(tmp_path, ["tests/test_b.py"]) and not _imports_pytest(tmp_path, ["tests/test_a.py"])
+
+
+def test_unittest_with_only_options_is_discovery(tmp_path: Path):
+    """speed-v1, more-itertools: `make test` runs `python -m unittest -v`. It was read as an empty module list and
+    left opaque, so verify fell back to `make check` (black, flake8, mypy, then the tests) and reported a passing
+    suite as `full-suite-failed` when black was missing."""
+    for cmd in ("python -m unittest -v", "python -m unittest -q -f", "python -m unittest -k first -v",
+                "python3 -m unittest --locals"):
+        r = resolve(tmp_path, cmd)
+        assert r.kind == "unittest" and r.per_file and not r.modules and r.start == ".", cmd
+    # unittest discovers only when `discover` comes first: this command cannot work, so it is not a runner
+    assert not resolve(tmp_path, "python -m unittest -v discover -s tests -t .").per_file
+    r = resolve(tmp_path, "python -m unittest -v tests.test_more")
+    assert r.kind == "unittest" and r.modules == ["tests.test_more"]
+    r = resolve(tmp_path, "python -m unittest -k first tests.test_more")
+    assert r.modules == ["tests.test_more"], "an option's value is not a module"
+
+
+def test_a_make_target_running_unittest_with_options_is_split_per_file(tmp_path: Path):
+    (tmp_path / "Makefile").write_text("check:\n\tblack --check .\n\tpython -m unittest -v\n\n"
+                                       "test:\n\tpython -m unittest -v\n")
+    assert resolve(tmp_path, "make test").per_file
+    assert not resolve(tmp_path, "make check").per_file  # several steps: still the full suite only
+
+
+def test_a_lint_only_check_target_is_not_a_test_suite_and_undefined_make_variables_are_empty(tmp_path: Path):
+    """more-itertools' real Makefile: `check` is black, flake8 and stubtest (no tests at all) and `test` is
+    `python3 -m unittest -v ${tests}`, with `tests` undefined (empty, as make treats it)."""
+    (tmp_path / "Makefile").write_text(
+        ".PHONY: check\ncheck:\n\tblack --check .\n\tflake8 --exclude .venv .\n\tstubtest more_itertools.more\n\n"
+        ".PHONY: test\ntest:\n\tpython3 -m unittest -v ${tests}\n\n"
+        "envtest:\n\t$(PYTHON) -m pytest\n\nbraced:\n\t${PY} -m pytest $(ARGS)\nPY = python\n")
+    check = resolve(tmp_path, "make check")
+    assert check.lint_only and not check.per_file
+    r = resolve(tmp_path, "make test")
+    assert r.kind == "unittest" and r.per_file
+    assert not resolve(tmp_path, "make envtest").per_file  # an undefined command is never blanked
+    assert not resolve(tmp_path, "make braced").per_file  # $(ARGS) undefined and uppercase: may come from the env
+
+
+
+def test_lint_steps_chained_with_tests_keep_the_tests(tmp_path: Path):
+    (tmp_path / "Makefile").write_text("test:\n\tflake8 src && pytest tests\n\nunit:\n\truff check . && python -m unittest -v\n")
+    r = resolve(tmp_path, "make test")
+    assert r.kind == "pytest" and r.per_file and not r.lint_only
+    assert resolve(tmp_path, "make unit").kind == "unittest"
+
+
+def test_only_a_trailing_lowercase_parameter_is_dropped_and_only_without_hidden_definitions(tmp_path: Path):
+    def mk(text: str, target: str = "test"):
+        (tmp_path / "Makefile").write_text(text)
+        return resolve(tmp_path, f"make {target}")
+    r = mk("test:\n\tpython -m pytest tests ${args}\n")
+    assert r.kind == "pytest" and any("not defined in the Makefile" in n for n in r.notes)
+    # an environment or exported variable may hold `-W error`, a narrower path or modules: never dropped
+    assert not mk("test:\n\tpython -m pytest $(PYTEST_FLAGS) tests\n").per_file
+    assert not mk("test:\n\tpython -m pytest tests $(PYTEST_FLAGS)\n").per_file
+    assert not mk("export flags = -W error\ntest:\n\tpython -m pytest tests $(flags)\n").per_file
+    assert not mk("include config.mk\ntest:\n\tpython -m unittest $(modules)\n").per_file
+    assert not mk("test: dirs = tests/unit\ntest:\n\tpytest $(dirs)\n").per_file
+    assert not mk("test:\n\tpython -m pytest $(CURDIR)/tests/unit\n").per_file
+
+
+
+def test_other_mentions_of_a_make_variable_keep_it(tmp_path: Path):
+    for define in ("tests ::= tests.check_core", "tests += tests.check_core", "$(eval tests := tests.check_core)"):
+        (tmp_path / "Makefile").write_text(f"{define}\ntest:\n\tpython3 -m unittest -v ${{tests}}\n")
+        r = resolve(tmp_path, "make test")
+        assert not (r.per_file and not r.modules), define  # never silently widened to plain discovery
+
+
+def test_unittest_option_values_and_misplaced_discover(tmp_path: Path):
+    assert not resolve(tmp_path, "python -m unittest -v discover -s tests").per_file
+    assert resolve(tmp_path, "python -m unittest -vk first").modules == []
+    r = resolve(tmp_path, "python -m unittest discover -s tests -k foo")
+    assert r.start == "tests"

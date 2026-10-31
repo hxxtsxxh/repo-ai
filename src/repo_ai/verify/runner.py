@@ -50,6 +50,7 @@ class TestRunner:
     options: list[str] = field(default_factory=list)   # pytest/node options kept for per-file runs
     source: str = ""                # where the command came from (shown before anything runs)
     notes: list[str] = field(default_factory=list)     # each resolution or refinement rule applied
+    lint_only: bool = False         # the command only lints/formats/type-checks: it runs no tests
 
     def to_json(self) -> dict[str, object]:
         return asdict(self)
@@ -229,8 +230,14 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
     if head in PYTHONS or head.startswith("python3."):
         if rest[:2] == ["-m", "unittest"]:
             args = rest[2:]
-            if not args or args[0] == "discover":
-                opts = args[1:] if args else []
+            lead = 0  # options before any test name: `python -m unittest -v` is discovery, like `python -m unittest`
+            while lead < len(args) and args[lead].startswith("-"):
+                lead += 2 if _takes_value(args[lead]) and lead + 1 < len(args) else 1
+            if lead == len(args):
+                return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
+                                  start=".", top=".", pattern="test*.py")
+            if args[:1] == ["discover"]:  # unittest discovers only when `discover` is the first argument
+                opts = args[1:]
                 start, top, pattern = ".", None, "test*.py"
                 positional: list[str] = []
                 i = 0
@@ -244,6 +251,8 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
                         i += 2
                     elif tok in {"-p", "--pattern"} and i + 1 < len(opts):
                         pattern = opts[i + 1]
+                        i += 2
+                    elif _takes_value(tok) and i + 1 < len(opts):  # `-k pattern`: a value, not a start dir
                         i += 2
                     elif tok.startswith("-"):
                         i += 1
@@ -261,7 +270,15 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   start=start.rstrip("/") or ".", top=top_dir.rstrip("/") or ".",
                                   pattern=pattern)
-            mods = [a for a in args if not a.startswith("-")]
+            mods, i = [], 0
+            while i < len(args):  # module names; option values (`-k pattern`) are not modules
+                if args[i].startswith("-"):
+                    i += 2 if _takes_value(args[i]) else 1
+                    continue
+                mods.append(args[i])
+                i += 1
+            if "discover" in mods:  # `-v discover …`: unittest discovers only when `discover` comes first
+                return TestRunner("opaque", command)
             if mods and all(_is_module(m) for m in mods):
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   modules=mods)
@@ -280,6 +297,13 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
 
 
 # options whose value is the next token (`--import tsx`): not test paths
+UNITTEST_VALUE_OPTIONS = {"-k", "--durations"}  # options of `python -m unittest` that take a value
+
+
+def _takes_value(tok: str) -> bool:
+    """`-k`, `--durations`, or a short-flag cluster ending in one (`-vk`)."""
+    return tok in UNITTEST_VALUE_OPTIONS or (tok.startswith("-") and not tok.startswith("--") and len(tok) > 2
+                                             and tok[-1] == "k")
 NODE_VALUE_OPTIONS = {"--import", "--require", "-r", "--loader", "--experimental-loader", "--conditions", "-C",
                       "--test-reporter", "--test-reporter-destination", "--test-name-pattern",
                       "--test-skip-pattern", "--test-concurrency", "--test-timeout", "--env-file", "--input-type"}
@@ -334,7 +358,7 @@ def _is_module(name: str) -> bool:
 # tests; skipped (and named) when a per-file runner is established
 CHECK_TOOLS = {"eslint", "biome", "standard", "prettier", "tsc", "tstyche", "tsd", "xo", "stylelint",
                "ruff", "flake8", "mypy", "pyright", "black", "isort", "pylint", "publint", "attw",
-               "markdownlint", "dtslint"}
+               "markdownlint", "dtslint", "stubtest"}
 COVERAGE_WRAPPERS = {"c8", "nyc"}
 PACKAGE_MANAGERS = {"npm", "pnpm", "yarn", "bun"}
 RUNNER_HEADS = PYTHONS | {"pytest", "py.test", "node"}
@@ -391,8 +415,12 @@ def _resolve(root: Path, command: str, depth: int = 0) -> TestRunner:
             inner = shlex.join(["python", *rest[m:]])
             notes = ["`coverage run` is not used for per-file runs"]
     elif head == "make" and len(argv) == 2 and argv[1].replace("-", "").replace("_", "").isalnum():
-        inner = _make_recipe(base / "Makefile", argv[1])
-        notes = [f"`{command}` runs `{inner}` (Makefile)"] if inner else []
+        lines, _ = _make_lines(base / "Makefile", argv[1])
+        if lines and "$" not in "".join(lines) and \
+                all(_resolve(root, prefix + ln, depth + 1).kind == "check" for ln in lines):
+            return TestRunner("check", command, cwd=cwd, lint_only=True)  # every step lints: it runs no tests
+        inner, blanked = _make_recipe(base / "Makefile", argv[1])
+        notes = [f"`{command}` runs `{inner}` (Makefile)", *blanked] if inner else []
     elif head in PACKAGE_MANAGERS:
         script = _script_name(head, argv[1:])
         if script:
@@ -424,7 +452,8 @@ def resolve(root: Path, command: str) -> TestRunner:
     is only a lint or type check is opaque: it is not a test suite."""
     runner = _resolve(root, command)
     if runner.kind == "check":
-        return TestRunner("opaque", command, cwd=runner.cwd, notes=["a lint/type check, not a test runner"])
+        return TestRunner("opaque", command, cwd=runner.cwd, notes=["a lint/type check, not a test runner"],
+                          lint_only=runner.lint_only)  # only a make target made entirely of lint steps
     return runner
 
 
@@ -479,28 +508,56 @@ def _strip_node_coverage(runner: TestRunner) -> TestRunner:
     return runner
 
 
-def _make_recipe(makefile: Path, target: str) -> str:
+_MAKE_VAR = re.compile(r"\$(?:\(([A-Za-z_][A-Za-z0-9_]*)\)|\{([A-Za-z_][A-Za-z0-9_]*)\})")
+# a Makefile can define a variable in ways a plain `NAME = value` scan does not see
+_MAKE_HIDDEN_DEFS = re.compile(r"(?m)^\s*(?:include|-include|sinclude|export|override|define|ifdef|ifndef|ifeq|ifneq)\b"
+                               r"|\$\(eval\b"
+                               r"|^[^\t#\n]*!=|^[ \t]+[A-Za-z_][A-Za-z0-9_]*\s*[:?+]?=|^[^\t#\n:=]+:\s*[A-Za-z_]\w*\s*[:?+]?=")
+
+
+def _make_lines(makefile: Path, target: str) -> tuple[list[str], list[str]]:
+    """(recipe lines of `target` with variables expanded, notes). `$(v)` and `${v}` defined by a plain assignment are
+    expanded. One undefined variable is dropped, as make treats it (empty): a lowercase name that is the line's
+    last token, the convention for a command-line parameter (`python3 -m unittest -v ${tests}`), and only when the
+    Makefile has no include, export, override, define, conditional or computed assignment that could define it.
+    Anything else undefined stays and makes the line unusable (an environment variable could hold `-W error`)."""
     try:
         text = makefile.read_text("utf-8", errors="replace")[:200_000]
     except OSError:
-        return ""
+        return [], []
     variables: dict[str, str] = {}
     for m in re.finditer(r"(?m)^([A-Za-z_][A-Za-z0-9_]*)\s*(\?|:)?=\s*(.*)$", text):
         variables.setdefault(m.group(1), m.group(3).strip())
     recipe = re.search(rf"(?m)^{re.escape(target)}\s*:[^=\n]*\n((?:\t.*\n?)+)", text)
     if not recipe:
-        return ""
-    lines = [ln.strip().lstrip("@-").strip() for ln in recipe.group(1).splitlines() if ln.strip()]
-    lines = [ln for ln in lines if not _MAKE_NOISE.match(ln)]
-    if len(lines) != 1:
-        return ""  # several steps: not a single test invocation
-    line = lines[0]
-    for _ in range(5):  # variables defined through other variables: `python=$(venv)/bin/python`
-        expanded = re.sub(r"\$\(([A-Za-z_][A-Za-z0-9_]*)\)", lambda v: variables.get(v.group(1), v.group(0)), line)
-        if expanded == line:
-            break
-        line = expanded
-    return "" if "$" in line else line
+        return [], []
+    may_blank = not _MAKE_HIDDEN_DEFS.search(text)
+    out, notes = [], []
+    for line in (ln.strip().lstrip("@-").strip() for ln in recipe.group(1).splitlines() if ln.strip()):
+        if _MAKE_NOISE.match(line):
+            continue
+        for _ in range(5):  # variables defined through other variables: `python=$(venv)/bin/python`
+            expanded = _MAKE_VAR.sub(lambda v: variables.get(v.group(1) or v.group(2), v.group(0)), line)
+            if expanded == line:
+                break
+            line = expanded
+        tokens = line.split()
+        last = _MAKE_VAR.fullmatch(tokens[-1]) if len(tokens) > 1 else None
+        name = (last.group(1) or last.group(2)) if last else ""
+        # any other mention of the name (`tests ::= …`, `tests += …`, `$(eval tests := …)`) may define it
+        mentions = len(re.findall(rf"(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])", text)) if name else 0
+        if may_blank and name and name.islower() and mentions == 1 and "$" not in " ".join(tokens[:-1]):
+            line = " ".join(tokens[:-1])
+            notes.append(f"`{tokens[-1]}` is not defined in the Makefile: empty, as `make {target}` runs it")
+        out.append(line)
+    return out, notes
+
+
+def _make_recipe(makefile: Path, target: str) -> tuple[str, list[str]]:
+    lines, notes = _make_lines(makefile, target)
+    if len(lines) != 1 or "$" in lines[0]:
+        return "", []  # several steps (not a single test invocation), or a variable that cannot be resolved
+    return lines[0], notes
 
 
 def _npm_script(package_json: Path, name: str) -> str:
