@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config import load_config
-from ..paths import resolve_layout
+from ..paths import make_dir, resolve_layout
 from ..verify.isolate import read_inside
 from .contracts import canonical, digest
 
@@ -68,7 +68,7 @@ class Store:
         data = canonical({'schema': 'repo-ai.mission-state/1', 'record': record, 'sha256': digest(record)})
         if len(data.encode()) > MAX_RECORD:
             raise ValueError('mission record exceeds size limit')
-        self.folder.mkdir(parents=True, exist_ok=True, mode=0o700)
+        make_dir(self.root, self.folder, mode=0o700)
         fd, temp = tempfile.mkstemp(prefix='.checkpoint-', dir=self.folder)
         try:
             with os.fdopen(fd, 'w', encoding='utf-8') as stream:

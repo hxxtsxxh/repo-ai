@@ -146,7 +146,8 @@ def _facts_obj(layout):
 
 def _lock(layout, timeout: float = 120.0):
     from .locks import file_lock
-    layout.state_dir.mkdir(parents=True, exist_ok=True)
+    from .paths import make_dir
+    make_dir(layout.root, layout.state_dir)
     return file_lock(layout.lock_path, timeout=timeout)
 
 
