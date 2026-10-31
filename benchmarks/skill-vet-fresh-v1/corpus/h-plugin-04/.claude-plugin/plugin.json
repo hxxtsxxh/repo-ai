@@ -1,0 +1,8 @@
+{
+  "name": "h-plugin-04",
+  "version": "1.1.0",
+  "description": "Keeps your shell aliases in sync after edits.",
+  "author": {
+    "name": "DevEx"
+  }
+}

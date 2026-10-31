@@ -311,11 +311,18 @@ def test_claude_profile_denies_foreign_unix_sockets(tmp_path):
     prefix = adapters._execution_sandbox_prefix(ws, sc, allow_network=True, provider="claude", live=True,
                                                 executable=exe, claude_plan=plan)
     try:
-        probe = f"import socket;c=socket.socket(socket.AF_UNIX);c.connect({str(path)!r})"
-        assert subprocess.run([*prefix, "/usr/bin/python3", "-c", probe], capture_output=True,
-                              timeout=30).returncode != 0
+        # -I and cwd=ws: the interpreter must start inside the profile (a checkout under HOME, as on CI runners,
+        # is read-restricted), so a failure below is the connect's own, not a failed start
+        probe = (f"import socket;print('started', flush=True);c=socket.socket(socket.AF_UNIX);"
+                 f"c.connect({str(path)!r})")
+        denied = subprocess.run([*prefix, "/usr/bin/python3", "-I", "-c", probe], capture_output=True, text=True,
+                                timeout=30, cwd=ws)
+        assert denied.stdout.startswith("started") and denied.returncode != 0, denied.stderr[-400:]
+        assert "Operation not permitted" in denied.stderr or "PermissionError" in denied.stderr, denied.stderr[-400:]
         dns = "import socket;socket.getaddrinfo('localhost',443)"
-        assert subprocess.run([*prefix, "/usr/bin/python3", "-c", dns], capture_output=True, timeout=30).returncode == 0
+        allowed = subprocess.run([*prefix, "/usr/bin/python3", "-I", "-c", dns], capture_output=True, text=True,
+                                 timeout=30, cwd=ws)
+        assert allowed.returncode == 0, allowed.stderr[-400:]
     finally:
         server.close()
         import shutil

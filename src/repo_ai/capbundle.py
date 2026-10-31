@@ -190,6 +190,12 @@ def _text_surfaces(text: str) -> list[str]:
     out: list[str] = []
     if _HIDDEN.search(text):
         out.append("hidden-unicode")
+    if any(ord(ch) > 127 and ch.isalpha() for ch in text):  # homoglyphs and full-width letters defeat text checks
+        out.append("non-ascii-letters")
+    import unicodedata
+    if any(ord(ch) > 127 and (unicodedata.category(ch)[0] == "M" or unicodedata.category(ch) in {"Cf", "Co", "Cn"})
+           for ch in text):  # combining marks and variation selectors split words without being letters
+        out.append("non-ascii-marks")
     if _CONTROL.search(text):
         out.append("control-characters")
     if _HTML_COMMENT.search(text):

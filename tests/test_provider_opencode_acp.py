@@ -304,9 +304,10 @@ def test_handshake_runs_initialize_only_inside_the_live_sandbox(tmp_path):
 def test_a_failed_handshake_says_what_the_agent_printed(tmp_path):
     exe = tmp_path / "fake_bins" / "opencode"
     exe.parent.mkdir()
-    exe.write_text("#!/usr/bin/python3 -I\nimport sys\n"
-                   "sys.stderr.write('Error: no provider configured (token sk-1234567890abcdefghijklmnop)\\n')\n"
-                   "sys.exit(1)\n", encoding="utf-8")
+    # a shell script: /usr/bin/python3 can be the Command Line Tools stub, which writes an xcrun cache outside the
+    # sandbox and prints its own errors first (GitHub's macOS runners)
+    exe.write_text("#!/bin/sh\necho 'Error: no provider configured (token sk-1234567890abcdefghijklmnop)' >&2\n"
+                   "exit 1\n", encoding="utf-8")
     exe.chmod(0o755)
     (tmp_path / "repo").mkdir()
     shake = adapters.acp_handshake("opencode-acp", tmp_path / "repo", executable=exe)
