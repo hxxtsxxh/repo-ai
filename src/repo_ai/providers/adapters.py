@@ -925,8 +925,11 @@ _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f-\x9f]")
 
 
 def _shown(value: object, limit: int = 120) -> str:
-    """An agent-supplied value as it may be printed: control characters (terminal escapes) removed, bounded."""
-    return _CONTROL_CHARS.sub(" ", str(value))[:limit]
+    """An agent-supplied value as it may be printed: control characters (terminal escapes) and Unicode format
+    characters (bidi overrides, zero-width) removed, bounded."""
+    import unicodedata
+    text = _CONTROL_CHARS.sub(" ", str(value))
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Cf")[:limit]
 
 
 def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: float = 20.0) -> dict[str, Any]:
@@ -1012,6 +1015,8 @@ def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: 
     answered = out.get("protocol_version") is not None
     result["verdict"] = ("HANDSHAKE_CONFORMANT" if checks["answers_initialize_with_acp_1"]
                          else "NOT_ACP" if answered else "NO_HANDSHAKE")
+    if cleanup and result["verdict"] == "HANDSHAKE_CONFORMANT":
+        result["verdict"] = "CLEANUP_UNCONFIRMED"  # it may still be running: not a pass
     return result
 
 

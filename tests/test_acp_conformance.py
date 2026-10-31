@@ -146,3 +146,13 @@ def test_a_repository_owned_node_is_never_put_on_the_agents_path(tmp_path, repo,
     monkeypatch.setattr(adapters, "AcpClient", _FakeClient)
     adapters.acp_conformance(str(exe), [], repo)
     assert str(repo / "bin") not in _FakeClient.seen["env"]["PATH"]
+
+
+def test_format_characters_are_stripped_and_unconfirmed_cleanup_is_not_a_pass(tmp_path, repo, monkeypatch):
+    assert adapters._shown("a\u202eb\u200bc") == "abc"
+    exe = fake_agent(tmp_path / "bins", expect=[])
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["/usr/bin/sandbox-exec", "-p", "(version 1)"])
+    monkeypatch.setattr(adapters, "AcpClient", _FakeClient)
+    monkeypatch.setattr(adapters, "_reap_provider_run", lambda marker: ["provider cleanup not confirmed: x"])
+    res = adapters.acp_conformance(str(exe), [], repo)
+    assert res["verdict"] == "CLEANUP_UNCONFIRMED" and res["cleanup_problems"]
