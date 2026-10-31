@@ -169,6 +169,7 @@ def summarize(rec: dict[str, Any]) -> dict[str, Any]:
         "not_compared": [r["test"] for r in other],
         "passed": sum(1 for r in rows if r["status"] == "pass"),  # selected test FILES that passed
         "full_suite_counts": (rec.get("full_suite") or {}).get("counts"),
+        "fixed": (rec.get("fixed") or {}).get("tests") or [],
         "no_tests": [r["test"] for r in rows if r["status"] == "no-tests"],
         "not_run": [x["test"] for x in rec.get("not_run") or []],
         "strategy": (rec.get("strategy") or {}).get("kind"),
@@ -287,6 +288,15 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     if s["not_run"]:
         counts.append(f"{len(s['not_run'])} skipped as duplicates ({', '.join(s['not_run'][:2])})")
     out.append("  " + "; ".join(counts))
+    fx = rec.get("fixed") or {}
+    if fx.get("tests"):
+        named = [f"{t['test_file']}::{i.split('::')[-1]}" for t in fx["tests"] for i in (t["tests"] or ["<file>"])]
+        out.append(f"  fixed by this change (failed in the base full suite, pass now): {', '.join(named[:8])}"
+                   + (f" and {len(named) - 8} more" if len(named) > 8 else ""))
+    elif fx.get("requested"):
+        out.append("  fixed by this change: none of the selected files failed in the base full suite"
+                   if fx.get("known") else
+                   f"  fixed by this change: not known ({fx.get('reason') or 'the base full suite could not be used'})")
     tree = rec.get("source_tree") or {}
     if tree:
         out.append("  source tree unchanged" if tree.get("unchanged") else "  SOURCE TREE CHANGED: evidence invalid")

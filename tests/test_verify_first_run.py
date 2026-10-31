@@ -158,3 +158,27 @@ def test_a_summary_line_printed_by_the_tests_themselves_is_not_quoted(tmp_path: 
     (root / "calc" / "core.py").write_text(BROKEN)
     out = run_cli(root, "verify", "--run", "--full", "--test-command", "python -m pytest").stdout
     assert "REGRESSION" in out and "as pytest printed it" not in out, out
+
+
+@needs_sandbox
+def test_show_fixed_names_the_tests_a_change_fixed(tmp_path: Path):
+    root = _project(tmp_path)
+    (root / "calc" / "core.py").write_text(BROKEN)
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "a bad commit")
+    (root / "calc" / "core.py").write_text("def add(a, b):\n    return a + b\n")  # the fix, uncommitted
+    out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
+    assert "PASSED" in out, out
+    assert "fixed by this change (failed in the base full suite, pass now):" in out, out
+    assert "tests/test_m0.py::" in out and "tests/test_m1.py::" in out, out
+    # one cached base failure is not trusted on its own (BaselineCache's flake rule): a plain run claims nothing
+    plain = run_cli(root, "verify", "--run", "--rerun", "--test-command", CMD).stdout
+    assert "fixed by this change" not in plain, plain
+
+
+@needs_sandbox
+def test_show_fixed_never_claims_a_fix_the_base_did_not_show(tmp_path: Path):
+    root = _project(tmp_path)
+    (root / "calc" / "core.py").write_text("def add(a, b):\n    return b + a\n")  # a harmless edit
+    out = run_cli(root, "verify", "--run", "--show-fixed", "--test-command", CMD).stdout
+    assert "fixed by this change: none of the selected files failed in the base full suite" in out, out

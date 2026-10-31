@@ -403,7 +403,8 @@ def _integrity(root: Path, before: isolate.Snapshot) -> dict[str, Any]:
 
 def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor, *, full: bool = False,
              workers: int = 4, timeout_s: float = 600.0, timeout_explicit: bool = False, reuse: bool = True,
-             deadline_s: float | None = None, log: Callable[[str], None] = lambda _: None) -> dict[str, Any]:
+             deadline_s: float | None = None, log: Callable[[str], None] = lambda _: None,
+             show_fixed: bool = False) -> dict[str, Any]:
     """Execute the plan in the sandbox. Runs repository code: the caller must
     hold the user's explicit authorization (`verify --run`).
 
@@ -419,7 +420,7 @@ def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor,
     links = {rel: str((root / rel).resolve()) for rel in isolate.dependency_dirs(root, listing[0])}
     env_key = cache.environment_key(executor, p.runner, links=links)
     key = _reuse_key(p, change, env_key, full, timeout_s if timeout_explicit else None, deadline_s)
-    if reuse:
+    if reuse and not show_fixed:  # an older record may not name fixed tests
         old = evidence.find_reusable(layout.state_dir, key)
         if old is not None:
             evidence.set_latest(layout.state_dir, old)
@@ -431,7 +432,7 @@ def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor,
     try:
         rec = _run_isolated(root, layout, p, change, executor.in_workspace(ws), full=full, workers=workers,
                             timeout_s=timeout_s, timeout_explicit=timeout_explicit, env_key=env_key, log=log,
-                            deadline_s=deadline_s)
+                            deadline_s=deadline_s, show_fixed=show_fixed)
     finally:
         ws.cleanup()
     rec["environment_static"] = static
@@ -486,6 +487,7 @@ class _Ctx:
     watch_s: dict[str, float | None] = field(default_factory=dict)  # what watchdog budgets are based on
     deadline: float | None = None  # monotonic time by which every process of the run must have ended
     deadline_hit: bool = False     # a process was cut by it, or not started for lack of time
+    show_fixed: bool = False       # run the base full suite (once per base) to name tests the change fixed
 
     def count(self, phase: str, files: list[str] | None = None) -> None:
         with self.lock:
@@ -808,7 +810,8 @@ def _learn_from_batch(ctx: _Ctx, files: list[str], res, att: results.Attribution
 
 def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Executor, *, full: bool,
                   workers: int, timeout_s: float, timeout_explicit: bool, env_key: str,
-                  log: Callable[[str], None], deadline_s: float | None = None) -> dict[str, Any]:
+                  log: Callable[[str], None], deadline_s: float | None = None,
+                  show_fixed: bool = False) -> dict[str, Any]:
     runner = p.runner
     started = time.monotonic()
     rec = evidence.new_record(p.to_json(), executor.backend.name,
@@ -824,6 +827,7 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     durations = {f: timings.file_s(f) or p.durations.get(f) for f in (p.universe_files or [s.test for s in p.selected])}
     ctx = _Ctx(root, layout, p, change, runner, toolchain, executor, workers, timeout_s, timeout_explicit, durations,
                timings, env_key, log)
+    ctx.show_fixed = show_fixed
     if deadline_s is not None:
         ctx.deadline = started + deadline_s
         rec["deadline_s"] = deadline_s
@@ -867,6 +871,7 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     rec["results"] = rows
     attribution_started = time.monotonic()
     _compare_with_base(ctx, rows)
+    rec["fixed"] = {**_name_fixed(ctx, rows), "requested": ctx.show_fixed}
     _check_skips(ctx, rows)
     rec["timing"] = {"total_s": round(time.monotonic() - started, 2),
                      "base_comparison_s": round(time.monotonic() - attribution_started, 2)}
@@ -1147,6 +1152,45 @@ def _compare_with_base(ctx: _Ctx, rows: list[dict[str, Any]]) -> None:
             r["baseline"] = "not-comparable"
             r["classification"] = (f"fails at the base too, but the change edits {', '.join(deps[:3])} and the base "
                                    "ran with the dependencies installed now: not comparable")
+
+
+def _name_fixed(ctx: _Ctx, rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Tests the change fixed: a selected file that passes now and whose tests failed in the base revision's full
+    suite. Known whenever that run is cached for this base tree and environment (it is, after any full-suite base
+    comparison); `--show-fixed` runs it once when it is not. Never inferred: a file with no base outcome says so."""
+    passing = [r for r in rows if r["status"] == "pass"]
+    if not passing or not ctx.change.base_commit or not ctx.runner.per_file:
+        return {"known": False, "reason": "no passing selected file to compare" if not passing
+                else "no base commit or no per-file runner", "tests": []}
+    bc = cache.BaselineCache(ctx.layout.state_dir, ctx.env_key, cache.tree_of(ctx.root, ctx.change.base_commit))
+    # a cached base failure counts only once seen twice (BaselineCache's flake rule); a base run made now counts
+    known: dict[str, tuple[bool, set[str], str]] = {}
+    for r in passing:
+        hit = bc.get("full-file", r["test"])
+        if hit is not None:
+            known[r["test"]] = (hit[0] == "fail", set(hit[1]), bc.source("full-file", r["test"]))
+    missing = [r for r in passing if r["test"] not in known]
+    if missing and ctx.show_fixed:
+        outcomes: dict[str, _BaseOutcome] = {}
+        base = _LazyBase(ctx)
+        try:
+            _base_full(ctx, base, bc, missing, outcomes)
+        finally:
+            base.cleanup()
+            bc.save()
+        for f, o in outcomes.items():
+            known[f] = (o.failed, set(o.ids), "run")
+    fixed: list[dict[str, Any]] = []
+    unknown = []
+    for r in passing:
+        if r["test"] not in known:
+            unknown.append(r["test"])
+            continue
+        failed, ids, source = known[r["test"]]
+        if failed:
+            fixed.append({"test_file": r["test"], "tests": sorted(ids)[:50], "source": source})
+            r["fixed_tests"] = sorted(ids)
+    return {"known": not unknown, "tests": fixed, "unknown_files": unknown[:20]}
 
 
 DEPENDENCY_NAMES = {"pyproject.toml", "setup.py", "setup.cfg", "Pipfile", "Pipfile.lock", "poetry.lock", "uv.lock",

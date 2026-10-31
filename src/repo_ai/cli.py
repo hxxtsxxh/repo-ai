@@ -766,7 +766,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
         log(f"  command: {p.runner.command}  [{p.runner.source}]")
         rec = engine.run_plan(root, layout, p, change, executor, full=args.full, workers=args.workers,
                               timeout_s=timeout, timeout_explicit=args.timeout is not None,
-                              reuse=not args.rerun, deadline_s=args.deadline, log=log)
+                              reuse=not args.rerun, deadline_s=args.deadline, log=log,
+                              show_fixed=getattr(args, "show_fixed", False))
     except KeyboardInterrupt:
         terminate_all()
         from .sandbox import stopped_total
@@ -4105,6 +4106,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--run", action="store_true",
                    help="run the selected tests in the sandbox (executes repository code)")
     p.add_argument("--full", action="store_true", help="with --run: run the full suite (it includes the selection)")
+    p.add_argument("--show-fixed", action="store_true",
+                   help="with --run: run the base revision's full suite once (cached) to name tests the change fixed")
     p.add_argument("--paths", action="append", metavar="PATH[,PATH]",
                    help="plan only for these changed files (read-only; a per-edit preview: never with "
                         "--run or --record, never evidence for the whole change)")
