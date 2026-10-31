@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Security: a hostile repository could put a file at a repo-ai state path in a mission workspace on a case-insensitive
+  filesystem (macOS). A tracked link `A -> .claude` and a file `a/settings.local.json` wrote
+  `.claude/settings.local.json`, because the archive filter compared names as text. It stayed inside the workspace.
+  Whatever exists at a state path after a workspace is built is now removed, however it got there.
 - Fixed: mission workspaces left out tracked files marked `export-ignore` in `.gitattributes` (often a whole `tests/`)
   and rewrote `$Format:…$` in files marked `export-subst`, because they are built with `git archive`. On such a
   repository every provider mission was blocked, or verified the wrong tests. Those files are now written from their
