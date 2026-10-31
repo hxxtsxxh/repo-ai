@@ -16,7 +16,7 @@ Updated 2026-10-30 after #21, #22, #24, #25 (unreleased).
 | 3 | python-slugify post-apply 0 vs sandbox 20 failures | C21 | explained: `apply` printed a hard-coded "0 failed"; the post-apply observation had 20 (same interpreter); fixed in #21. An earlier note blamed the interpreter bug: wrong |
 | 4 | ACP client adapter to reach PLANNED agents with one permission policy | C04, C05 | todo |
 | 5 | Linux live provider run (podman + bwrap) | C17 | todo |
-| 6 | `verify` names tests a change fixed (needs a whole-file base run; design first) | C11 | todo |
+| 6 | `verify` names tests a change fixed: first attempt #26 (draft) reasoned per file; review reproduced four false claims (deleted, newly skipped, all-skipped, order-dependent). Redesign needs per-test outcomes at the change in the base's shape (exists, ran, passed, not skipped; confirmed alone at both sides) and the dependency-change guard | C11 | todo (design) |
 | 7 | Verify speed profiling | C16 | todo |
 | 8 | Codex: the token copied into its sandbox stays readable by its model; explore a token broker or document as permanent | C18 | todo |
 | 9 | Claude provider live on the re-logged dedicated login | C03 | done (#33, #34 provider runs) |
