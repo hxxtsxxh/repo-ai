@@ -229,8 +229,14 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
     if head in PYTHONS or head.startswith("python3."):
         if rest[:2] == ["-m", "unittest"]:
             args = rest[2:]
-            if not args or args[0] == "discover":
-                opts = args[1:] if args else []
+            lead = 0  # options before any test name: `python -m unittest -v` is discovery, like `python -m unittest`
+            while lead < len(args) and args[lead].startswith("-"):
+                lead += 2 if args[lead] in UNITTEST_VALUE_OPTIONS and lead + 1 < len(args) else 1
+            if lead == len(args):
+                return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
+                                  start=".", top=".", pattern="test*.py")
+            if args[lead:lead + 1] == ["discover"]:
+                opts = args[lead + 1:]
                 start, top, pattern = ".", None, "test*.py"
                 positional: list[str] = []
                 i = 0
@@ -261,7 +267,7 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   start=start.rstrip("/") or ".", top=top_dir.rstrip("/") or ".",
                                   pattern=pattern)
-            mods = [a for a in args if not a.startswith("-")]
+            mods = [a for a in args[lead:] if not a.startswith("-")]
             if mods and all(_is_module(m) for m in mods):
                 return TestRunner("unittest", command, full=["python", "-m", "unittest", *args],
                                   modules=mods)
@@ -280,6 +286,7 @@ def _parse_argv(argv: list[str], command: str) -> TestRunner:
 
 
 # options whose value is the next token (`--import tsx`): not test paths
+UNITTEST_VALUE_OPTIONS = {"-k", "--durations"}  # options of `python -m unittest` that take a value
 NODE_VALUE_OPTIONS = {"--import", "--require", "-r", "--loader", "--experimental-loader", "--conditions", "-C",
                       "--test-reporter", "--test-reporter-destination", "--test-name-pattern",
                       "--test-skip-pattern", "--test-concurrency", "--test-timeout", "--env-file", "--input-type"}

@@ -162,3 +162,24 @@ def test_a_tox_pytest_command_is_taken_only_when_the_tests_need_pytest(tmp_path:
     from repo_ai.verify.commands import _imports_pytest
     _write(tmp_path, {"tests/test_a.py": "import unittest\n", "tests/test_b.py": "import pytest\n"})
     assert _imports_pytest(tmp_path, ["tests/test_b.py"]) and not _imports_pytest(tmp_path, ["tests/test_a.py"])
+
+
+def test_unittest_with_only_options_is_discovery(tmp_path: Path):
+    """speed-v1, more-itertools: `make test` runs `python -m unittest -v`. It was read as an empty module list and
+    left opaque, so verify fell back to `make check` (black, flake8, mypy, then the tests) and reported a passing
+    suite as `full-suite-failed` when black was missing."""
+    for cmd in ("python -m unittest -v", "python -m unittest -q -f", "python -m unittest -k first -v",
+                "python3 -m unittest --locals"):
+        r = resolve(tmp_path, cmd)
+        assert r.kind == "unittest" and r.per_file and not r.modules and r.start == ".", cmd
+    r = resolve(tmp_path, "python -m unittest -v discover -s tests -t .")
+    assert r.kind == "unittest" and r.start == "tests" and r.top == "."
+    r = resolve(tmp_path, "python -m unittest -v tests.test_more")
+    assert r.kind == "unittest" and r.modules == ["tests.test_more"]
+
+
+def test_a_make_target_running_unittest_with_options_is_split_per_file(tmp_path: Path):
+    (tmp_path / "Makefile").write_text("check:\n\tblack --check .\n\tpython -m unittest -v\n\n"
+                                       "test:\n\tpython -m unittest -v\n")
+    assert resolve(tmp_path, "make test").per_file
+    assert not resolve(tmp_path, "make check").per_file  # several steps: still the full suite only

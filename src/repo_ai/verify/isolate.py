@@ -12,7 +12,10 @@ secrets beside the code. So every execution gets a fresh copy instead.
 
 **What stays out:**
 - `.git`, `.repo-ai/` and other agent state;
-- every git-ignored file;
+- every git-ignored file, except a version file the project's build backend is declared to write
+  (setuptools-scm `version_file`/`write_to`, hatch-vcs `version-file` in pyproject.toml): without it the package
+  cannot be imported (`No module named 'humanize._version'`). Only that declared path, only a small `.py` file
+  named like a version file, inside the repository, not a link and not credential-like;
 - untracked files that look like credentials (`.env`, `*.pem`, `id_rsa`, …),
   listed as *withheld*.
 
@@ -255,6 +258,62 @@ def worktree_files(root: Path) -> tuple[list[str], list[str]]:
     return keep, withheld
 
 
+_VERSION_FILE = re.compile(r"_{0,2}version_?\.py|_version_info\.py")
+MAX_VERSION_FILE = 65_536
+
+
+def generated_version_files(root: Path) -> list[str]:
+    """Version files pyproject.toml declares a build backend writes (setuptools-scm `version_file` / `write_to`,
+    hatch-vcs `version-file`), which git usually ignores. Only such declared paths that exist as small regular
+    `.py` files named like a version file, inside the repository, outside agent state, not credential-like."""
+    try:
+        text = (root / "pyproject.toml").read_text("utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    try:
+        import tomllib
+    except ModuleNotFoundError:  # Python 3.10
+        import tomli as tomllib  # type: ignore[no-redef]
+    try:
+        tool = tomllib.loads(text).get("tool") or {}
+    except (tomllib.TOMLDecodeError, AttributeError):
+        return []
+    scm = tool.get("setuptools_scm") or {}
+    hatch_vcs = (((tool.get("hatch") or {}).get("build") or {}).get("hooks") or {}).get("vcs") or {}
+    declared = [scm.get("version_file"), scm.get("write_to"), hatch_vcs.get("version-file")]
+    out: list[str] = []
+    for raw in declared:
+        if not isinstance(raw, str) or not raw:
+            continue
+        rel = PurePosixPath(raw.replace("\\", "/"))
+        if rel.is_absolute() or ".." in rel.parts or not _VERSION_FILE.fullmatch(rel.name) \
+                or str(rel).startswith(STATE_PREFIXES) or rel.parts[0] == ".git" \
+                or path_is_secretlike(str(rel), DEFAULT_SECRET_PATH_GLOBS):
+            continue
+        src = root / rel
+        try:
+            if src.is_symlink() or not src.is_file() or src.stat().st_size > MAX_VERSION_FILE \
+                    or root.resolve() not in src.resolve().parents:
+                continue
+        except OSError:
+            continue
+        if str(rel) not in out:
+            out.append(str(rel))
+    return out
+
+
+def _copy_generated(ws: Workspace, root: Path, present: set[str]) -> None:
+    """Copy the declared version files that the copy does not already hold."""
+    for rel in generated_version_files(root):
+        dst = ws.path / rel
+        if rel in present or dst.exists() or dst.is_symlink():
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / rel, dst, follow_symlinks=False)
+        ws.files.append(rel)
+        ws.generated.append(rel)
+
+
 def dependency_dirs(root: Path, files: list[str]) -> list[str]:
     """Ignored dependency directories beside a package manifest: the root's
     and each workspace package's `node_modules`."""
@@ -336,10 +395,12 @@ class Workspace:
     seconds: float = 0.0
     bytes: int = 0
     origin: str = "working tree"
+    generated: list[str] = field(default_factory=list)  # declared, git-ignored version files copied in
 
     def summary(self) -> dict[str, Any]:
         return {"origin": self.origin, "files": len(self.files), "bytes": self.bytes,
                 "method": self.method, "seconds": round(self.seconds, 3),
+                "generated_version_files": self.generated,
                 "withheld_credential_like": self.withheld[:50],
                 "read_only_dependencies": sorted(self.readonly),
                 "skipped_symlinks": self.skipped_links[:50]}
@@ -610,6 +671,7 @@ def materialize(root: Path, *, label: str = "ws", dependencies: bool = True,
                 ws.bytes += src.stat().st_size
             except OSError:
                 pass
+        _copy_generated(ws, root, set(ws.files))
         _drop_state_paths(path)  # a tracked link `.claude -> conf` and `conf/settings.local.json` reach one too
         ws.files = [f for f in ws.files if (path / f).is_symlink() or (path / f).exists()]
         if dependencies:
@@ -798,6 +860,7 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
         ws.bytes = sum(m.size for m in members if m.isfile())
         restored = _restore_export_attributes(root, commit, path, set(ws.files))
         ws.bytes += sum(restored.values())
+        _copy_generated(ws, root, set(ws.files) | set(restored))  # the checkout's: the base's would be the same kind
         _drop_state_paths(path)
         # links removed by the restore and anything written into a state path are gone: list only what is there
         ws.files = sorted(f for f in set(ws.files) | set(restored) if (path / f).is_symlink() or (path / f).exists())
