@@ -60,3 +60,14 @@ through `.git/info/exclude`, so the working tree holds only the replayed change.
 One run of the workflow on the commit that adds this file. A harness crash is fixed and the run repeated; the
 selection, projects and analysis are not changed after a run. Results: the run's artifact, then `RESULTS.md`
 with the run URL.
+
+## Amendment 1 (2026-10-31, after run 1; harness defect, analysis unchanged)
+
+Run 1 (GitHub Actions run 41239830514, commit 8b8d7e5) is **invalid** and kept only as a record. The harness
+installed each project non-editable (`pip install .`) at its pinned ref and then replayed older commits. In
+src-layout projects (itsdangerous, marshmallow) pytest imported the installed release, not the working tree, so
+the native suite tested different code from the change (for example `No module named 'itsdangerous.jws'`, from
+tests older than the installed package). The fix installs every project editable (`pip install -e`), so both
+sides import the working tree, and records verify's failing-test detail and a longer native tail, so that a
+disagreement between verify and the native suite can be explained. Projects, selection, measurements and the
+reading rule are unchanged. Run 2 is the measurement.

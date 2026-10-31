@@ -16,11 +16,11 @@ import time
 from pathlib import Path
 
 PROJECTS = [  # (slug, ref, pip install arguments) — fixed by the preregistration
-    ("jpadilla/pyjwt", "2.10.1", [".[crypto]", "pytest"]),
-    ("python-humanize/humanize", "4.12.3", [".", "pytest", "freezegun"]),
-    ("more-itertools/more-itertools", "v10.7.0", [".", "pytest"]),
-    ("pallets/itsdangerous", "2.2.0", [".", "pytest", "freezegun"]),
-    ("marshmallow-code/marshmallow", "4.0.0", [".", "pytest", "simplejson"]),
+    ("jpadilla/pyjwt", "2.10.1", ["-e", ".[crypto]", "pytest"]),
+    ("python-humanize/humanize", "4.12.3", ["-e", ".", "pytest", "freezegun"]),
+    ("more-itertools/more-itertools", "v10.7.0", ["-e", ".", "pytest"]),
+    ("pallets/itsdangerous", "2.2.0", ["-e", ".", "pytest", "freezegun"]),
+    ("marshmallow-code/marshmallow", "4.0.0", ["-e", ".", "pytest", "simplejson"]),
 ]
 CHANGES_PER_PROJECT = 6
 MAX_LINES = 300
@@ -85,7 +85,10 @@ def verify(repo: Path, rai: Path, *extra: str) -> dict:
         return data.get(name, (data.get("summary") or {}).get(name) if isinstance(data.get("summary"), dict) else None)
     return {"seconds": round(secs, 3), "exit": code, "verdict": field("verdict"), "strategy": field("strategy"),
             "reused": field("reused"), "passed_files": field("passed"), "processes": field("processes"),
-            "new_failures": len(field("new_failures") or []), "tail": "" if data else out[-600:]}
+            "new_failures": len(field("new_failures") or []), "tail": "" if data else out[-600:],
+            # what failed, so a disagreement with the native suite can be explained (run 1 could not)
+            "detail": {k: field(k) for k in ("new_failures", "pre_existing", "failing_differently", "unconfirmed",
+                                             "not_compared", "no_tests", "not_run", "full_suite_counts")}}
 
 
 def native(repo: Path) -> dict:
@@ -93,7 +96,7 @@ def native(repo: Path) -> dict:
     runs = [sh([py, "-m", "pytest", "-q", "-p", "no:cacheprovider"], repo) for _ in range(3)]
     secs = [r[2] for r in runs]
     return {"seconds": [round(s, 3) for s in secs], "median": round(statistics.median(secs), 3),
-            "exit": [r[0] for r in runs], "tail": runs[-1][1][-300:]}
+            "exit": [r[0] for r in runs], "tail": runs[-1][1][-1500:]}
 
 
 def project(slug: str, ref: str, deps: list[str], work: Path, rai: Path) -> dict:
