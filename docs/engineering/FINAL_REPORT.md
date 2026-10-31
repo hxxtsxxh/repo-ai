@@ -56,6 +56,17 @@ Live calls under the owner's 2026-10-30 authorization (25 calls / $5): see [EXPE
 Claude stream cost is notional on a Max subscription; Codex/agy/Gemini UNKNOWN; OpenCode $0. CI on the public
 repository is free.
 
+## Release 0.11.2 (verified after publication, 2026-10-30)
+
+| What | Value |
+|---|---|
+| Public `main` at the tag | `c22c9fe52deafb6a0e530a96907ad937e1f19468` = tag `v0.11.2` (annotated), merge of #20; tree identical to the qualified `2ec12f0` |
+| Contents | #16 init's `.gitignore` block, #17 the project's interpreter (incl. editable installs) and tracked-but-ignored files, #18 verify quotes pytest's counts, #14 project-skill relevance (advice). All found on python-humanize. Each PR was reviewed adversarially until no confirmed issue remained. |
+| Qualification | required CI green on #20; macOS full suite on `2ec12f0` in the real clone (22:42–23:41Z, checkout untouched throughout): 2,616 passed, 4 skipped, 11 xfailed, 0 failed |
+| Release workflow | run 41146089668: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
+| PyPI | wheel `e5ad6dd9e9cf92bd5d0568f8db4c4c02ffe10b20a407f70d4d59b52856eb2b15`, sdist `81bb0626ea2d9f0fcf3a42173525b4e27dbf12873be2663615067f0d4e324102`; identical to the GitHub assets; `SHA256SUMS` OK; attestation verified (wheel and sdist); `release_smoke.sh` SMOKE PASS |
+| Real-world check | python-humanize, fresh first run on the published wheel: live Claude `PASS [LIVE_CANDIDATE_VERIFIED]` (call #36), apply/undo exact |
+
 ## Release 0.11.1 (verified after publication, 2026-10-30)
 
 | What | Value |

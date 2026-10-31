@@ -27,9 +27,10 @@
   committed file, so the block is not read as a provider edit. Any other change to the file still blocks the mission.
 - Fixed (found on a real repository, python-humanize): mission tests ran with the first `python3` on PATH instead of
   the project's virtualenv. The interpreter was resolved from the disposable workspace, which never holds `.venv`.
-  Post-apply verification runs in the checkout and used the project's venv, which explains the python-slugify
-  discrepancy (20 failures in the sandbox, 0 after apply). Missions now resolve the interpreter from the checkout, like
-  `repo-ai verify`.
+  Missions now resolve the interpreter from the checkout, like
+  `repo-ai verify`. A project installed in editable mode imports the candidate's copy, not the checkout's.
+  (Corrected: as released, this entry also said the fix explained a python-slugify discrepancy, 20 failures in the
+  sandbox and 0 after apply. It did not: that "0" was a hard-coded count in `repo-ai apply`, fixed after 0.11.2.)
 - Fixed (same repository): a tracked file that a `.gitignore` pattern also matches (python-humanize's `_version.py`
   stub) was dropped from mission workspaces, so every test failed to import the package.
 
