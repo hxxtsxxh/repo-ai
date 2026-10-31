@@ -54,7 +54,8 @@ def establish(root: Path, layout, files: list[str], override: str | None = None,
         if runner.per_file:
             runner.source = cand.detail if cand.detail.startswith("declared") else f"declared ({cand.detail})"
             return _refine(root, runner, files, inferred=False)
-        first = first or runner
+        if not runner.lint_only:  # a lint/format/type target runs no tests: never the suite
+            first = first or runner
     tox = _tox_command(root)
     if tox:
         runner = resolve(root, tox)
