@@ -536,7 +536,8 @@ def materialize(root: Path, *, label: str = "ws", dependencies: bool = True,
 
 def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
     """The bytes `materialize_commit` writes for tracked file `rel`: `git archive` applies the checkout's
-    line-ending settings (core.autocrlf), so this can differ from the raw blob."""
+    line-ending settings (core.autocrlf), so this can differ from the raw blob; a file the archive leaves out
+    (export-ignore) is restored with `checkout_bytes`."""
     import io
     import tarfile
     archive = subprocess.run(["git", "archive", "--format=tar", "--end-of-options", commit, rel],
@@ -551,8 +552,105 @@ def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
                 return None
             fh = tar.extractfile(member)
             return fh.read() if fh is not None else None
-    except (KeyError, tarfile.TarError):
+    except KeyError:  # left out of the archive (export-ignore): the workspace holds the checkout bytes
+        return checkout_bytes(root, commit, rel)
+    except tarfile.TarError:
         return None
+
+
+# no fsmonitor daemon or untracked cache for the user's repository (`check-attr --stdin` starts the daemon)
+_QUIET_GIT = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"]
+
+
+def _git_lines(root: Path, args: list[str], stdin: bytes | None = None) -> bytes | None:
+    proc = subprocess.run(["git", *_QUIET_GIT, *args], cwd=root, input=stdin, capture_output=True, timeout=120,
+                          check=False)
+    return proc.stdout if proc.returncode == 0 else None
+
+
+def _check_attr(root: Path, commit: str, names: list[str], paths: list[str]) -> dict[str, dict[str, str]]:
+    """Attributes of `paths` as `commit` defines them (`--source`, git >= 2.40; else the working tree's)."""
+    data = b"".join(p.encode("utf-8", "surrogateescape") + b"\0" for p in paths)
+    out = _git_lines(root, ["check-attr", "--source", commit, "-z", "--stdin", *names], data)
+    if out is None:
+        out = _git_lines(root, ["check-attr", "-z", "--stdin", *names], data) or b""
+    fields = out.split(b"\0")
+    attrs: dict[str, dict[str, str]] = {}
+    for i in range(0, len(fields) - 2, 3):
+        attrs.setdefault(fields[i].decode("utf-8", "surrogateescape"), {})[fields[i + 1].decode()] = fields[i + 2].decode()
+    return attrs
+
+
+def checkout_bytes(root: Path, commit: str, rel: str) -> bytes | None:
+    """The bytes a checkout writes for tracked file `rel` of `commit`: git's own conversion (line endings, `ident`,
+    `core.eol`, the same as `git archive`), never a re-implementation of it."""
+    proc = subprocess.run(["git", *_QUIET_GIT, "cat-file", "--filters", "--end-of-options", f"{commit}:{rel}"], cwd=root,
+                          capture_output=True, timeout=120, check=False, stdin=subprocess.DEVNULL)
+    return proc.stdout if proc.returncode == 0 else None
+
+
+def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[str]) -> dict[str, int]:
+    """`git archive` honours `export-ignore` (a tracked file, often a whole `tests/`, is left out) and `export-subst`
+    (`$Format:…$` is replaced), so the archive is not the commit's tracked source. Those files are checked out from
+    a temporary index (`git checkout-index`, one process: git's own conversion and modes, and it never writes through
+    a symlinked directory). Every restored link is then held to the archive's rule (it resolves inside the
+    workspace), after all of them exist, so one link cannot redirect another. Returns the restored paths and sizes."""
+    import tempfile
+    listing = _git_lines(root, ["ls-tree", "-r", "-z", "--full-tree", "--end-of-options", commit])
+    if listing is None:
+        raise IsolationError("could not list the base revision's tracked files")
+    modes: dict[str, str] = {}
+    for entry in listing.split(b"\0"):
+        if not entry:
+            continue
+        meta, _, name = entry.partition(b"\t")
+        mode, kind, _sha = meta.decode().split()
+        rel = name.decode("utf-8", "surrogateescape")
+        pure = PurePosixPath(rel)
+        if kind != "blob" or mode not in {"100644", "100755", "120000"} or pure.is_absolute() or ".." in pure.parts \
+                or rel.startswith(STATE_PREFIXES):
+            continue
+        modes[rel] = mode
+    present = [p for p in modes if p in have and modes[p] != "120000"]
+    subst = [p for p, a in _check_attr(root, commit, ["export-subst"], present).items()
+             if a.get("export-subst") == "set"] if present else []
+    targets = sorted({p for p in modes if p not in have} | set(subst))
+    if not targets:
+        return {}
+    with tempfile.TemporaryDirectory(prefix="repo-ai-index-") as tmp:
+        env = {**os.environ, "GIT_INDEX_FILE": str(Path(tmp) / "index")}
+        for args, stdin in ((["read-tree", commit], None),
+                            (["--work-tree", str(path), "checkout-index", "-f", "-z", "--stdin"],
+                             b"".join(t.encode("utf-8", "surrogateescape") + b"\0" for t in targets))):
+            proc = subprocess.run(["git", *_QUIET_GIT, *args], cwd=root, env=env, input=stdin, capture_output=True,
+                                  timeout=300, check=False)
+            if proc.returncode != 0:  # stderr alone is not failure (an LFS smudge filter reports progress there)
+                raise IsolationError("could not restore the base revision's export-ignore/export-subst files: "
+                                     + proc.stderr.decode("utf-8", "replace")[:300])
+    missing = [t for t in targets if modes[t] != "120000" and not (path / t).is_file()]
+    if missing:
+        raise IsolationError(f"could not restore the base revision's file {missing[0][:200]}")
+    base = path.resolve()
+    # every link in the workspace, archived or restored: a restored link can redirect an archived one
+    links = sorted({t for t in targets if modes[t] == "120000"} | {h for h in have if (path / h).is_symlink()})
+    changed = True
+    while changed:  # removing one link can change where another resolves
+        changed = False
+        for rel in list(links):
+            target = path / rel
+            if target.is_symlink() and (os.path.isabs(os.readlink(target)) or base not in target.resolve().parents):
+                target.unlink()
+                links.remove(rel)
+                changed = True
+    restored: dict[str, int] = {}
+    for rel in targets:
+        target = path / rel
+        if not (target.is_symlink() or target.is_file()):
+            continue  # a link removed above, as the archive skips it
+        if not target.parent.resolve().is_relative_to(base):
+            raise IsolationError(f"a restored file would leave the workspace: {rel[:200]}")
+        restored[rel] = target.lstat().st_size if not target.is_symlink() else 0
+    return restored
 
 
 def materialize_commit(root: Path, commit: str, *, label: str = "base", dependencies: bool = True) -> Workspace:
@@ -592,6 +690,11 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
                 tar.extractall(path, members=members)  # noqa: S202 - members validated above
         ws.files = sorted(m.name for m in members if m.isfile() or m.issym())
         ws.bytes = sum(m.size for m in members if m.isfile())
+        restored = _restore_export_attributes(root, commit, path, set(ws.files))
+        if restored or any((path / f).is_symlink() for f in ws.files):
+            # a link that resolves outside after the restore was removed: list only what is there
+            ws.files = sorted(f for f in set(ws.files) | set(restored) if (path / f).is_symlink() or (path / f).exists())
+            ws.bytes += sum(restored.values())
         if dependencies:
             _place_links(ws, root, ws.files)
     except BaseException:
