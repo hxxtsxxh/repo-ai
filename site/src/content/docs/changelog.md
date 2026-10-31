@@ -1,9 +1,77 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 and the pre-releases and release candidate that led to it.
+description: Release notes for repo-ai 0.9.0 through 0.11.3, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.11.3
+
+- **Security** (opt-in, macOS) a credential broker for Codex (`REPO_AI_CODEX_BROKER=1`). Without it, the login's
+  token is copied into the run's scratch `CODEX_HOME`, where the model can read it (disclosed). With it, Codex gets a
+  per-run dummy key and talks to a loopback proxy in repo-ai, which swaps in the real credential and vets each request;
+  the sandbox reaches only that port (and unix sockets in its scratch directory) and cannot read the login's
+  directory. Three independent security-review rounds; two live runs with a ChatGPT login on a development build
+  (an API-key login is not yet verified). See [Providers](/repo-ai/docs/providers/).
+- **Added** `repo-ai do --agent opencode-acp`: OpenCode over the Agent Client Protocol under exactly the `opencode`
+  isolation, with an ACP client that applies one permission policy to every ACP agent. The first 64 KiB of its stderr
+  are kept and every byte is hashed, with a redacted diagnostic summary. Live $0 PASS with a local `qwen3:8b` on a
+  scratch fixture (n = 1).
+- **Added** `repo-ai verify --run --show-fixed` names the tests a change fixed, each confirmed alone: failing at the
+  base and passing at the change.
+- **Changed** a live tournament refuses two providers that run the same executable (`opencode` and `opencode-acp`).
+- **Changed** in a scoped mission (`--expect-fix`), a test that errors at setup the same way at the base and on the
+  candidate may stand; errors in teardown or the body still make the observation incomplete.
+- **Fixed** mission workspaces dropped `export-ignore` files and rewrote `export-subst` ones; `apply` always printed
+  "0 failed" after post-apply verification; a custom `out_dir` with `init --agent none` wrote no ignore entries.
+- **Fixed** a repository tracking a file named `.repo-ai` failed with a bare `Not a directory`; repo-ai now names the
+  file. Sandboxed runs and missions still need a `.repo-ai/` directory and stay unavailable in such a repository.
+- **Security** whatever exists at a repo-ai state path after a mission workspace is built is removed, however it got
+  there (a case-insensitive filesystem let a tracked link reach `.claude/`; it stayed inside the workspace).
+- **Faster** on APFS, a parallel test process's workspace is one copy-on-write clone (about 0.07 s against 0.31 s per
+  process on repo-ai's own 2,742-file tree).
+
+## 0.11.2
+
+- **Fixed** (found on python-humanize) mission tests ran with the first `python3` on PATH instead of the project's
+  virtualenv; a tracked file that `.gitignore` also matches was dropped from mission workspaces; `init`'s managed
+  `.gitignore` block made the next `repo-ai do` refuse a "dirty checkout".
+- **Fixed** `verify --run --full` printed "0 passed" when no test file was selected; for pytest it now quotes
+  pytest's own final line when it agrees with repo-ai's per-test report.
+- **Changed** `skills recommend` / `explain` count a local skill as relevant when it names one of the repository's own
+  packages. Advice only: autopilot never installs on this ground.
+
+## 0.11.1
+
+- **Fixed** `repo-ai init` followed by `repo-ai do` failed either way: repo-ai's own `.repo-ai/` files made the
+  checkout dirty, or, once committed, were read as a provider deleting them.
+
+## 0.11.0
+
+- **Added** `repo-ai do --expect-fix TEST` for real suites with failures the task does not touch: the declared tests
+  must fail at the base and pass on the candidate, and nothing that passed may fail. The result is
+  `PASS_WITH_PRE_EXISTING_FAILURES` (`ASSURANCE_PARTIAL`), never a plain PASS. See [Missions](/repo-ai/docs/missions/).
+- **Added** requirement erasure: a candidate that deletes documentation stating a requirement ("raise", "must",
+  "never") is named, and a clean PASS drops to `ASSURANCE_PARTIAL`; it never changes a verdict. Observed live on
+  0.10.0: a local model removed "Raise ValueError if lo > hi" with the behaviour, and the visible tests passed. Python
+  lines are placed with the parser; JS/TS use a diff heuristic.
+
+## 0.10.0
+
+- **Added** Claude Code as an isolated `repo-ai do` provider (blocked in 0.9.0), with its own supported login and
+  nothing copied; file tools only, and every live run first confirms at no cost that no other tool, MCP server,
+  plugin or skill would load.
+- **Added** OpenCode with a local model: loopback-only network, deny-by-default tools, cloud-routed models refused.
+- **Security** no Claude or Gemini credential file is copied into the sandbox any more (0.9.0 copied Claude
+  credential files and the whole `~/.gemini`). Codex's login token still is, readable by its model (disclosed; see
+  the 0.11.3 broker), and so is Bob's `~/.bob/settings`; see [Security](/repo-ai/docs/security/#live-provider-runs).
+  Every process a seatbelt run starts is killed before verification; Codex runs are HOME read-restricted. An
+  independent adversarial review's findings are fixed.
+- **Added** skills safe autopilot: autonomy levels (default PROPOSE), a strict inert check, installs with ownership
+  markers and byte-exact uninstall and rollback.
+- **Added** `repo-ai agents catalog`: 24 coding agents and what repo-ai can honestly do with each.
+- **Evidence** comparative lift over a standalone agent remains `NOT_YET_DEMONSTRATED`; skill benefit is not
+  demonstrated.
 
 ## 0.9.0
 
