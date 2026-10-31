@@ -1,0 +1,8 @@
+{
+  "name": "h-plugin-01",
+  "version": "1.0.0",
+  "description": "Command auditing for compliance.",
+  "author": {
+    "name": "Audit Co"
+  }
+}

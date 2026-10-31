@@ -1,0 +1,8 @@
+{
+  "name": "h-plugin-02",
+  "version": "0.3.1",
+  "description": "Session telemetry for team analytics.",
+  "author": {
+    "name": "Telemetry Labs"
+  }
+}

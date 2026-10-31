@@ -130,6 +130,19 @@ _MISSION_POSIX_ONLY = _MISSION_NEEDS_SANDBOX | {
     "test_provider_channels", "test_provider_probe", "test_mission_redteam", "test_mission_review_state",
     "test_mission_review_security", "test_abc_protocol", "test_abc_v2_protocol", "test_abc_v3_protocol", "test_abc_v4_protocol", "test_abc_v5_protocol",
 }
+# These write attack-like fixtures to disk (reverse and bind shells, recursive deletes, credential or environment
+# uploads, curl-pipe-to-shell) for the skill and plugin vetting checks to read, or make real, deliberately denied
+# escape attempts (network connections, reads of credential paths) to prove the sandbox holds. Nothing in them
+# executes a fixture, but endpoint protection on a managed machine cannot tell a fixture from a payload. They run
+# in CI, where the workflow sets REPO_AI_SECURITY_FIXTURES=1 for every job; locally they are SKIPPED unless that
+# variable is set (on a machine where that is allowed). Inert prompt-injection strings kept in memory are not
+# in this list. See CONTRIBUTING.md, "Security-fixture tests".
+SECURITY_FIXTURE_MODULES = {
+    "test_skill_autopilot", "test_skill_network", "test_skill_vet", "test_skill_vet_hardening",
+    "test_skills_registry", "test_plugin_vet", "test_inventory", "test_inventory_hardening", "test_security",
+    "test_codex_broker", "test_provider_claude_isolation", "test_release_0_10_review",
+    "test_sandbox", "test_sandbox_descendants", "test_learning_skills", "test_verification",
+}
 _SANDBOX_STATE: list[bool] = []
 
 
@@ -141,7 +154,20 @@ def _host_has_sandbox() -> bool:
     return _SANDBOX_STATE[0]
 
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "security_fixtures: writes attack-like fixtures or makes denied escape "
+                                       "attempts; runs only with REPO_AI_SECURITY_FIXTURES=1 (CI sets it)")
+
+
 def pytest_collection_modifyitems(config, items):
+    enabled = os.environ.get("REPO_AI_SECURITY_FIXTURES") == "1"
+    fixture_skip = pytest.mark.skip(reason="writes attack-like fixtures or makes escape attempts; runs in CI "
+                                           "(set REPO_AI_SECURITY_FIXTURES=1 where that is allowed)")
+    for item in items:
+        if Path(str(item.fspath)).stem in SECURITY_FIXTURE_MODULES:
+            item.add_marker("security_fixtures")
+            if not enabled:
+                item.add_marker(fixture_skip)
     if sys.platform == "win32":
         skip = pytest.mark.skip(reason="repo-ai missions are POSIX-only (O_NOFOLLOW/dir_fd, host sandbox); unsupported on Windows")
         for item in items:

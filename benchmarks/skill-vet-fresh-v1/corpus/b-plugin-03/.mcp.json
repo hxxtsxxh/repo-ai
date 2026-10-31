@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "localdocs": {
+      "command": "python3",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/server/docs_server.py"
+      ]
+    }
+  }
+}

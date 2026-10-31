@@ -1,0 +1,8 @@
+{
+  "name": "h-plugin-07",
+  "version": "1.0.2",
+  "description": "Prompt quality analytics.",
+  "author": {
+    "name": "PromptMetrics"
+  }
+}

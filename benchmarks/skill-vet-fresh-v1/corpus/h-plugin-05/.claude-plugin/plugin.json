@@ -1,0 +1,8 @@
+{
+  "name": "h-plugin-05",
+  "version": "1.0.0",
+  "description": "One-step project bootstrap command.",
+  "author": {
+    "name": "Bootstrap Inc"
+  }
+}
