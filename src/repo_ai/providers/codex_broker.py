@@ -98,6 +98,8 @@ def _jwt_exp(token: str) -> int | None:
 
 def upstream_from_login(auth_path: Path, *, now: float | None = None) -> Upstream:
     """The upstream and credential of a Codex login's `auth.json` (a regular file, never followed through a link)."""
+    if auth_path.is_symlink():  # also where O_NOFOLLOW does not exist (Windows)
+        raise BrokerError("the Codex login's auth.json is a link; refusing to follow it")
     try:
         fd = os.open(auth_path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
     except OSError as exc:
