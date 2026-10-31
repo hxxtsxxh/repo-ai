@@ -20,9 +20,9 @@ behalf:
   background run that would outlive this one) is accepted, and duplicate JSON keys are refused, so the upstream
   parses exactly what was vetted (the vetted object is what is forwarded, re-serialised).
 
-Not live-verified yet. The offline spike (docs/engineering/evidence/CODEX-BROKER-SPIKE-2026-10-31.md) showed Codex
-0.165 sending `POST /v1/responses` to such a provider with the dummy key. Whether the upstream accepts the forwarded
-body needs one live run.
+Evidence: docs/engineering/evidence/CODEX-BROKER-SPIKE-2026-10-31.md. An offline spike came first, then two live runs
+on 2026-10-31 with a ChatGPT login on Codex 0.165: the ChatGPT backend accepted the forwarded requests. An API-key
+login is not yet live-verified.
 """
 from __future__ import annotations
 

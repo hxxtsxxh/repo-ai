@@ -91,3 +91,21 @@ The live check (point 1 above) still needs owner approval.
 - **Accepted limits** (documented): per-request quota is bounded only by the pinned model and 256 requests per run.
   A sub-agent on another model, and endpoints other than `/v1/responses` (such as a compaction endpoint), are
   refused.
+
+## Live verification (owner-approved, 2026-10-31): ChatGPT login, two calls (#37, #38 in EXPERIMENTS.md)
+
+These ran on Codex 0.165.0 with `REPO_AI_CODEX_BROKER=1`, through the personal `~/.codex` login (ChatGPT mode; the
+owner chose it because no dedicated login existed), in a scratch repository, with `repo-ai do --agent codex --run
+--allow-live-provider`.
+
+- **#37:** PASS [LIVE_CANDIDATE_VERIFIED] in 19 s, with a correct fix. The broker summary was not yet stored in the
+  mission state, so the PASS shows only indirectly that requests went through the broker (a brokered run with no
+  broker request is a failure).
+- **#38:** the mission state records `codex_broker: {"mode": "chatgpt", "model": "gpt-6-astra", "requests": 3,
+  "statuses": [200, 200, 200], "refused": []}` and contains no token-like string. The fix was correct. The verdict
+  was FAIL only because #37's candidate was never applied: the repository still had the clamp failure, a
+  PRE_EXISTING_FAILURE according to `why-test-failed`.
+
+**Answer to question 1:** the ChatGPT-login backend accepts the bodies Codex produces in custom-provider mode,
+forwarded by the broker with the login's credential and with `web_search` removed. An API-key login is still not
+live-verified.

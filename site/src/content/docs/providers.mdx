@@ -59,7 +59,7 @@ a prompt-injected repository could try to send it out, which is why a separate, 
 is not, the run is refused. The outer sandbox is then the only write boundary. Codex has no hard USD flag, so a
 positive `--max-cost-usd` is refused and cost is recorded as `UNKNOWN`, never `0`. Bound runs with `--max-seconds`.
 
-**Experimental, not yet live-verified: credential broker** (`REPO_AI_CODEX_BROKER=1`, macOS only). With the broker,
+**Experimental: credential broker** (`REPO_AI_CODEX_BROKER=1`, macOS only; live-verified with a ChatGPT login on Codex 0.165, not yet with an API-key login). With the broker,
 no token is copied into the sandbox at all:
 - Codex gets a per-run dummy key and a model provider pointing at a loopback proxy inside repo-ai.
 - The proxy accepts only `POST /v1/responses` with that dummy key, swaps in the login's credential, and forwards the
@@ -78,7 +78,8 @@ no token is copied into the sandbox at all:
 - An expired ChatGPT token is refused, never refreshed: run `codex login` for that login.
 - A run whose upstream rejects the credential, or that sends nothing through the broker, is a failure.
 
-Offline tests cover all of this. Whether the real upstream accepts the forwarded requests is not yet confirmed.
+Offline tests cover all of this. Two live runs on 2026-10-31 confirmed that the ChatGPT backend accepts the forwarded
+requests; a run's `codex_broker` record shows the mode, model, request count and statuses, never a credential.
 
 ### Antigravity (`agy`, macOS only)
 
