@@ -182,16 +182,29 @@ result; the runs are not pooled.
 | verify passed where the native suite failed | 0 of 5 | 0 of 4 | 0 of 4 |
 
 **Question 1 (overhead): the cold ratio fell below run 3's (2.00× against 2.23×; 2.26× against 2.61× without
-more-itertools). By the reading rule verify is still not faster than the native suite** (slower on 30 of 30). Because
-run 4 ran on the same CPU model as run 2 and the native suites took about the same time (median pyjwt 4.95 s in both,
+more-itertools). By the reading rule verify is still not faster than the native suite** (slower on 30 of 30).
+
+**Decided after the run, not preregistered** (Amendment 4 says only ratios are compared, because runner CPUs may
+differ): because run 4 ran on the same CPU model as run 2 and the native suites took about the same time (median pyjwt 4.95 s in both,
 itsdangerous 0.71 → 0.68 s, marshmallow 0.76 → 0.67 s, humanize 0.16 → 0.14 s), absolute overheads can be set side by
 side with run 2 here, though not with run 3: per-project median overhead pyjwt 0.42 → 0.18 s, itsdangerous 0.58 →
 0.30 s, humanize 1.10 → 0.83 s, marshmallow 1.79 → 1.43 s; overall median +0.63 → +0.38 s. That is consistent with
 the snapshot fix (PR #69), whose cost the profiler put at most of a comment-only run's own time on a generated
-project; it is one run per configuration, and repo-ai changed in other ways between runs 2 and 4 as well.
-more-itertools ran `targeted` on 2 and `full` on 4 of its 6 changes (run 3: all `targeted`), so its ratio is not
-comparable across runs.
+project (cProfile inflates such code; without the profiler that project's comment-only run fell only about 0.11 s,
+0.34 → 0.23 s, so the ~0.25 s median drop here is larger than the profile alone predicts). Confounders: one run per
+configuration; repo-ai changed in other ways between runs 2 and 4; run 2 used the harness before Amendment 2 (no
+`git clean`), run 4 the Amendment 2 harness; the same CPU model is not the same host, and run 4's native suites were
+4–12% faster (marshmallow ×0.88, humanize ×0.90, itsdangerous ×0.96), so part of the drop may be the host.
+Strategies also moved: more-itertools ran `targeted` on 2 and `full` on 4 of its 6 changes (run 3: all `targeted`),
+so its ratio is not comparable across runs; within the other 24 changes, marshmallow 2fc8207d, itsdangerous's sixth
+change and humanize's second ran `full` where an earlier run had `targeted`, so the 24-change subset is not
+like-for-like either. In run 4 the more-itertools full suite passed in all 4 `full` cold runs and in all 6 reruns,
+which closes run 3's "seen passing once".
 
 **Question 2 (agreement): 24 of 30, not fewer than run 3's 23.** The only disagreements are pyjwt's 6
-(`failing (all failures pre-existing at the base)`, consistent with the sandbox denying the network). No false
+(`failing (all failures pre-existing at the base)`, consistent with the sandbox denying the network). The one change
+from run 3 is marshmallow 2fc8207d, and it is not a fix: its cold run chose `full` this time (exit 0, 1,117 passed)
+where runs 2 and 3 chose `targeted` (exit 1), the strategy mechanism the addendum above describes. So a verdict did
+change between runs, through the strategy choice; the C16 limit about 2fc8207d stands, though it did not reproduce
+in run 4. No false
 assurance (0 of 4 failing native suites, all humanize configuration or collection crashes: little power).
