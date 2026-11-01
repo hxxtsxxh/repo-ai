@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-PROVIDERS = ("codex", "claude", "gemini", "bob", "agy", "opencode", "opencode-acp")
+from ..provider_names import PROVIDERS  # re-exported: defined where argument parsing can import it cheaply
 # A provider that drives another provider's executable through a different transport (`opencode acp`: the Agent
 # Client Protocol) is named after its transport; its executable keeps the vendor's name.
 EXECUTABLES = {"opencode-acp": "opencode"}

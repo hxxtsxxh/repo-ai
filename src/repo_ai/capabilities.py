@@ -49,6 +49,8 @@ import time
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from . import gitbin
+
 SCHEMA_RECORD = "repo-ai.capability/1"
 SCHEMA_RECOMMENDATION = "repo-ai.capability-recommendation/1"
 SCHEMA_RESULT = "repo-ai.capability-result/1"
@@ -912,7 +914,7 @@ def _git_strict(root: Path, args: list[str]) -> subprocess.CompletedProcess[byte
     # (GIT_EXTERNAL_DIFF, GIT_DIFF_OPTS, GIT_CONFIG_*) reaches git.
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env["LC_ALL"] = "C"
-    argv = ["git", "-c", "core.quotepath=off", "-c", "color.ui=never", "-c", "diff.noprefix=false",
+    argv = [gitbin.git(), "-c", "core.quotepath=off", "-c", "color.ui=never", "-c", "diff.noprefix=false",
             "-c", "diff.mnemonicPrefix=false", "-c", "diff.relative=false", "-c", "diff.external=",
             "-c", "diff.interHunkContext=0", "--literal-pathspecs",
             "--no-optional-locks", *args]

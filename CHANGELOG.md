@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- Faster (measured on an Apple Silicon Mac, medians of 7 to 9 runs on a small pytest project; not a re-run of
+  speed-v1): every repo-ai command parsed its arguments by importing the mission runtime and every provider
+  adapter, about 80 ms before doing anything. They now load only in the commands that use them. Agent hooks
+  take about half as long (Claude `prompt`, `post-edit` and `stop` 147–150 ms → 69–81 ms; `session-start`
+  324 → 177 ms) and `repo-ai --version` 145 → 47 ms.
+- Faster on macOS: `/usr/bin/git` is Apple's launcher stub, which asks xcrun for the developer directory on every
+  call (35 ms per git command here, against 17 ms for the program it runs). repo-ai now runs the selected
+  developer directory's git directly, chosen as xcrun chooses it (`DEVELOPER_DIR`, the `xcode-select` link, the
+  Command Line Tools) without running xcrun; another git first on PATH (Homebrew's) is used as before.
+  `verify --run` on that project: comment-only change 965 → 611 ms, a behaviour change with the full suite
+  1,370 → 947 ms, re-verifying an unchanged state 544 → 316 ms. Linux and Windows run git as before.
+
 ## 0.11.5 — agents doctor sandbox fix, ACP conformance kit, real-project journeys
 
 Includes everything listed under 0.11.4 (see CHANGELOG.md), which was qualified but never published to PyPI.

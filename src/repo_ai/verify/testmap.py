@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import unquote, urlparse
 
+from .. import gitbin
 from .. import __version__
 from . import isolate
 from .execute import Executor
@@ -150,7 +151,7 @@ def hash_files(root: Path, files: list[str] | None = None) -> dict[str, str]:
     """Content hashes of the files evidence can describe. `files` lists them
     (a workspace has no git metadata); otherwise git is asked."""
     out = files if files is not None else subprocess.run(
-        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+        [gitbin.git(), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
         cwd=root, capture_output=True, timeout=60, check=False,
         stdin=subprocess.DEVNULL).stdout.decode("utf-8", "replace").split("\0")
     hashes = {}
@@ -187,7 +188,7 @@ def record(root: Path, runner: TestRunner, executor: Executor, test_files: list[
     from .execute import release
     root = root.resolve()
     template = executor.workspace.path
-    commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True,
+    commit = subprocess.run([gitbin.git(), "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True,
                             check=False, timeout=30, stdin=subprocess.DEVNULL).stdout.strip()
     # evidence describes the content the tests ran against: hash the template before anything runs
     hashes = hash_files(template, executor.workspace.files)

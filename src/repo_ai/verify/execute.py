@@ -27,6 +27,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .. import gitbin
 from .. import sandbox
 from .isolate import (IsolationError, VenvLayout, Workspace, editable_redirects, run_dir, site_dirs, static_venv,
                       workspaces_root)
@@ -224,7 +225,7 @@ def _committed(root: Path, python: Path) -> bool:
         venv = rel.parent.parent.as_posix() if rel.parent.name.lower() in {"bin", "scripts"} else rel.parent.as_posix()
         spec = ":(icase,literal)" + (venv if venv not in {"", "."} else rel.as_posix())  # macOS: `.VENV` is `.venv`
         try:
-            out = subprocess.run(["git", "ls-files", "-z", "--", spec], cwd=top, capture_output=True, timeout=60,
+            out = subprocess.run([gitbin.git(), "ls-files", "-z", "--", spec], cwd=top, capture_output=True, timeout=60,
                                  check=False, stdin=subprocess.DEVNULL)
         except (OSError, subprocess.SubprocessError):
             return True

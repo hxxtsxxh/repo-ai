@@ -265,13 +265,14 @@
    "environment": "GitHub ubuntu-latest (4 vCPU), bwrap; earlier: macOS",
    "observations": [
     "verify 1.44–2.31x slower than native in 3/5 held-out cases (historical)",
-    "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance, with little power (only 5 of 30 native suites failed, 2 of them contaminated by a harness defect); verify failed natively passing tests in 14 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)"
+    "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance, with little power (only 5 of 30 native suites failed, 2 of them contaminated by a harness defect); verify failed natively passing tests in 14 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)",
+    "2026-11-01 profile of the fixed overhead (macOS, Apple Silicon; a 40-test pytest project; not a re-run of speed-v1): a comment-only verify --run spent ~0.68 s of 0.92 s in 18 sequential git subprocesses (35 ms each through Apple's /usr/bin/git launcher stub, 17 ms direct) and ~80 ms importing the mission runtime and provider adapters to build the argument parser. Fixed: the stub is resolved statically (gitbin.git()) and those imports are lazy. verify --run 965 -> 611 ms (comment-only), 1,370 -> 947 ms (behaviour change, full suite), reuse 544 -> 316 ms; Claude hooks ~150 -> 69-81 ms. Remaining duplicate git reads are the before/after source-tree checks and are kept. Linux overhead (speed-v1) is not re-measured by this"
    ],
    "limits": [
     "small, fast pure-Python suites on one runner type; not a general claim",
-    "more-itertools and humanize failures under verify unexplained"
+    "more-itertools and humanize failures under verify: causes found and fixed in 0.11.4/0.11.5 (a lint-only make check taken for the suite, a git-ignored build-time version file missing from the copy, the unittest marker); not yet re-measured by speed-v1"
    ],
-   "next_action": "explain/fix verify failing natively passing suites (more-itertools, humanize); say when failures match the sandbox; profile the fixed overhead"
+   "next_action": "re-run speed-v1 (amendment 2 harness) on the next release: Linux overhead after the startup fix, and whether the 0.11.4/0.11.5 fixes end the natively-passing failures"
   },
   {
    "id": "C17",

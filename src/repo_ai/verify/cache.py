@@ -38,6 +38,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from .. import gitbin
 from .. import __version__
 
 BASELINE_FILE = "verify-baseline.json"
@@ -226,7 +227,7 @@ def tree_of(root: Path, commit: str) -> str:
     if not commit:
         return ""
     try:
-        out = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "--end-of-options", f"{commit}^{{tree}}"],
+        out = subprocess.run([gitbin.git(), "rev-parse", "--verify", "--quiet", "--end-of-options", f"{commit}^{{tree}}"],
                              cwd=root, capture_output=True, text=True, timeout=30, check=False,
                              stdin=subprocess.DEVNULL).stdout.strip()
     except (OSError, subprocess.SubprocessError):

@@ -12,6 +12,7 @@ import pytest
 
 from conftest import run_cli
 
+from repo_ai import gitbin
 from repo_ai.verify import changes, engine, isolate
 
 
@@ -165,7 +166,7 @@ def test_base_blobs_the_batch_did_not_answer_are_read_one_by_one(repo: Path, mon
 
     def truncated(cmd, **kw):
         res = real(cmd, **kw)
-        if cmd[:3] == ["git", "cat-file", "--batch"]:
+        if cmd[:3] == [gitbin.git(), "cat-file", "--batch"]:
             first = res.stdout.split(b"\n", 1)[0].split(b" ")
             size = int(first[2]) if len(first) == 3 and first[2].isdigit() else 0
             keep = len(first[0]) + len(first[1]) + len(first[2]) + 3 + size + 1 if size else 0

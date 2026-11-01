@@ -22,7 +22,7 @@ from pathlib import Path
 import pytest
 
 from repo_ai import capabilities as caps
-from repo_ai import cli
+from repo_ai import cli, gitbin
 
 FIX = Path(__file__).parent / "fixtures" / "capabilities"
 STACKS = json.loads((FIX / "stacks.json").read_text("utf-8"))
@@ -581,7 +581,7 @@ def test_evidence_is_fresh_only_while_it_describes_this_change(repo, home, fake_
     # reading evidence starts no process except git
     real = subprocess.run
     with monkeypatch.context() as m:
-        m.setattr(subprocess, "run", lambda argv, *a, **k: real(argv, *a, **k) if argv[0] == "git"
+        m.setattr(subprocess, "run", lambda argv, *a, **k: real(argv, *a, **k) if argv[0] == gitbin.git()
                   else pytest.fail(f"evidence ran {argv[0]}"))
         assert caps.evidence(repo, state_dir)["status"] == "fresh"
     # one byte changed in a scanned file: stale

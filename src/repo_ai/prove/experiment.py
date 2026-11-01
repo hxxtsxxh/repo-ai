@@ -21,6 +21,7 @@ import time
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
+from .. import gitbin
 from .. import __version__
 from ..verify import changes as ch
 from ..verify import engine, evidence, isolate, results
@@ -105,7 +106,7 @@ def _tree_state(root: Path, rel: str, digest: str) -> str:
 
 
 def _base_state(root: Path, commit: str, rel: str, digest: str) -> str:
-    res = subprocess.run(["git", "cat-file", "blob", f"{commit}:{rel}"], cwd=root, capture_output=True,
+    res = subprocess.run([gitbin.git(), "cat-file", "blob", f"{commit}:{rel}"], cwd=root, capture_output=True,
                          timeout=60, check=False, stdin=subprocess.DEVNULL)
     if res.returncode != 0:
         return "absent"
@@ -345,7 +346,7 @@ def preflight(root: Path, layout, record: dict[str, Any], base: str, runner: Tes
     data = cl.load_blob(layout.state_dir, scen["sha256"])
     oracle = conditions.oracle_report(root, rel, runner.kind, change.base_commit, files, tests_base, tests_cand,
                                       pinned_paths, changed, scenario_bytes=data, cwd=runner.cwd)
-    gitlinks = subprocess.run(["git", "ls-files", "-s"], cwd=root, capture_output=True, text=True, timeout=60,
+    gitlinks = subprocess.run([gitbin.git(), "ls-files", "-s"], cwd=root, capture_output=True, text=True, timeout=60,
                               check=False, stdin=subprocess.DEVNULL).stdout
     if (root / ".gitmodules").is_file() or any(line.startswith("160000 ") for line in gitlinks.splitlines()):
         problems.append({"state": "environment-unavailable", "why": (
@@ -561,7 +562,7 @@ def _drop(ws: isolate.Workspace, rel: str) -> None:
 
 
 def _base_blob(root: Path, commit: str, rel: str) -> bytes | None:
-    res = subprocess.run(["git", "cat-file", "blob", f"{commit}:{rel}"], cwd=root, capture_output=True, timeout=60,
+    res = subprocess.run([gitbin.git(), "cat-file", "blob", f"{commit}:{rel}"], cwd=root, capture_output=True, timeout=60,
                          check=False, stdin=subprocess.DEVNULL)
     return res.stdout if res.returncode == 0 else None
 
@@ -1185,7 +1186,7 @@ def run(root: Path, layout, record: dict[str, Any], *, base: str, runner: TestRu
 
 
 def _rev(root: Path, rev: str) -> str:
-    out = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "--end-of-options", rev], cwd=root,
+    out = subprocess.run([gitbin.git(), "rev-parse", "--verify", "--quiet", "--end-of-options", rev], cwd=root,
                          capture_output=True, text=True, timeout=60, check=False, stdin=subprocess.DEVNULL)
     return out.stdout.strip()
 

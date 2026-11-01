@@ -49,6 +49,7 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from .. import gitbin
 from ..config import DEFAULT_SECRET_PATH_GLOBS
 from ..security import path_is_secretlike
 
@@ -240,7 +241,7 @@ def snapshot(root: Path, files: list[str] | None = None,
 # what goes into a workspace
 # --------------------------------------------------------------------------
 def _git_list(root: Path, *args: str) -> list[str]:
-    out = subprocess.run(["git", *args], cwd=root, capture_output=True, timeout=120, check=False,
+    out = subprocess.run([gitbin.git(), *args], cwd=root, capture_output=True, timeout=120, check=False,
                          stdin=subprocess.DEVNULL)
     if out.returncode != 0:
         raise IsolationError(f"git {args[0]} failed: {out.stderr.decode('utf-8', 'replace').strip()[:200]}")
@@ -711,7 +712,7 @@ def archived_file(root: Path, commit: str, rel: str) -> bytes | None:
     (export-ignore) is restored with `checkout_bytes`."""
     import io
     import tarfile
-    archive = subprocess.run(["git", "archive", "--format=tar", "--end-of-options", commit, rel],
+    archive = subprocess.run([gitbin.git(), "archive", "--format=tar", "--end-of-options", commit, rel],
                              cwd=root.resolve(), capture_output=True, timeout=60, check=False,
                              stdin=subprocess.DEVNULL)
     if archive.returncode != 0:
@@ -734,7 +735,7 @@ _QUIET_GIT = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"]
 
 
 def _git_lines(root: Path, args: list[str], stdin: bytes | None = None) -> bytes | None:
-    proc = subprocess.run(["git", *_QUIET_GIT, *args], cwd=root, input=stdin, capture_output=True, timeout=120,
+    proc = subprocess.run([gitbin.git(), *_QUIET_GIT, *args], cwd=root, input=stdin, capture_output=True, timeout=120,
                           check=False)
     return proc.stdout if proc.returncode == 0 else None
 
@@ -755,7 +756,7 @@ def _check_attr(root: Path, commit: str, names: list[str], paths: list[str]) -> 
 def checkout_bytes(root: Path, commit: str, rel: str) -> bytes | None:
     """The bytes a checkout writes for tracked file `rel` of `commit`: git's own conversion (line endings, `ident`,
     `core.eol`, the same as `git archive`), never a re-implementation of it."""
-    proc = subprocess.run(["git", *_QUIET_GIT, "cat-file", "--filters", "--end-of-options", f"{commit}:{rel}"], cwd=root,
+    proc = subprocess.run([gitbin.git(), *_QUIET_GIT, "cat-file", "--filters", "--end-of-options", f"{commit}:{rel}"], cwd=root,
                           capture_output=True, timeout=120, check=False, stdin=subprocess.DEVNULL)
     return proc.stdout if proc.returncode == 0 else None
 
@@ -793,7 +794,7 @@ def _restore_export_attributes(root: Path, commit: str, path: Path, have: set[st
         for args, stdin in ((["read-tree", commit], None),
                             (["--work-tree", str(path), "checkout-index", "-f", "-z", "--stdin"],
                              b"".join(t.encode("utf-8", "surrogateescape") + b"\0" for t in targets))):
-            proc = subprocess.run(["git", *_QUIET_GIT, *args], cwd=root, env=env, input=stdin, capture_output=True,
+            proc = subprocess.run([gitbin.git(), *_QUIET_GIT, *args], cwd=root, env=env, input=stdin, capture_output=True,
                                   timeout=300, check=False)
             if proc.returncode != 0:  # stderr alone is not failure (an LFS smudge filter reports progress there)
                 raise IsolationError("could not restore the base revision's export-ignore/export-subst files: "
@@ -849,7 +850,7 @@ def materialize_commit(root: Path, commit: str, *, label: str = "base", dependen
     import tarfile
     started = time.monotonic()
     root = root.resolve()
-    archive = subprocess.run(["git", "archive", "--format=tar", "--end-of-options", commit], cwd=root,
+    archive = subprocess.run([gitbin.git(), "archive", "--format=tar", "--end-of-options", commit], cwd=root,
                              capture_output=True, timeout=300, check=False, stdin=subprocess.DEVNULL)
     if archive.returncode != 0:
         raise IsolationError("could not materialise the base revision")
