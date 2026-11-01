@@ -1,28 +1,46 @@
 # Changelog
 
-## Unreleased
+## 0.11.7 — faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed
 
 - A mission record now says how a live Claude run authenticated: `provider.auth_mode` (`token_env` or
   `dedicated_config`) and `provider.auth_env_vars` (the variable names found, such as `CLAUDE_CODE_OAUTH_TOKEN`;
   never a value).
 - Removed: the `gemini` provider and the `gemini-cli` skill-export host. Gemini CLI was superseded by Antigravity,
   which repo-ai supports as `agy` (its `~/.gemini` state paths stay protected). `--agent gemini` and
-  `--host gemini-cli` are no longer accepted. A skill an earlier version exported to `.gemini/skills` can still be
-  disabled or uninstalled byte-exactly; enabling or rolling it back is refused with the command that moves it
-  (`repo-ai skills install <name> --host <host>`), instead of moving it to `.claude/skills` silently.
+  `--host gemini-cli` are no longer accepted, and a saved `gemini` authorization or preference is ignored (routing
+  picks the next authorized provider, or none). A skill an earlier version exported to `.gemini/skills` can still be
+  disabled or uninstalled byte-exactly; if that was its only host, enabling, rolling back or re-installing it
+  without `--host` is refused with the command that moves it (`repo-ai skills install <name> --host <host>`) instead
+  of moving it to `.claude/skills` silently; with another host as well, it keeps that host.
 - Faster `verify --run` (measured on GitHub's ubuntu and macOS runners with `scripts/profile_verify.py`, a
   40-test project with its own virtualenv; medians of 7, one run per platform, runners not identical; Windows
   not measured): the two source-tree snapshots that check a run left the working tree alone built a `pathlib`
   path for every entry, virtualenv included (under the profiler, most of a comment-only run). The walk now carries
-  each directory's relative prefix; what is recorded and compared is unchanged. Comment-only change on the ubuntu
-  runner 0.34 → 0.23 s although that run's native suite was 32% slower (ratio 2.16× → 1.12×; macOS 2.86× →
-  1.71×); behaviour change 0.55 → 0.49 s (ratio 3.54× → 2.38×; macOS 4.17× → 3.04×). Re-verifying an unchanged
-  state did not get faster.
+  each directory's relative prefix; what is recorded and compared is unchanged. On the ubuntu runner: comment-only
+  change 0.34 → 0.23 s and behaviour change 0.55 → 0.49 s, although that run's native suite was 32% slower. The
+  ratios to the native suite (comment-only 2.16× → 1.12×, behaviour 3.54× → 2.38×; macOS 2.86× → 1.71× and
+  4.17× → 3.04×) shrank partly because the native time grew, so the absolute times are the fairer measure.
+  Re-verifying an unchanged state did not get faster. verify is still slower than the project's own suite;
+  speed-v1 has not been re-run, so its negative result stands.
   The profiling script and its workflow (`.github/workflows/profile.yml`) are included.
 - Fixed: repo-ai's mission and eval-lab git commands could let git start its background maintenance after a
   commit, which then wrote `.git/objects/maintenance.lock` in a repository or workspace repo-ai was copying (a macOS
   CI failure). They now run with `maintenance.auto=false` and `gc.auto=0` (the eval lab also with
   `core.fsmonitor=false`, whose daemon socket in `.git` would break the copy too).
+- Evaluation: c10-confirm-v1 (`benchmarks/c10-confirm-v1/`, preregistered; fixture and skill, tasks and hidden
+  oracles, and an ambiguity review written by three separate model sessions; 48 host-mode runs with Claude Code and
+  sonnet, a new empty Claude config per run): with a project-conventions skill installed by `repo-ai skills install`,
+  Claude's changes passed every convention assertion; without it, about a third (0.319). Skill arm higher on 8 of 8
+  tasks (one-sided exact sign test p = 0.0039), with no cost to the requested behaviour. Limits: one fixture project,
+  one model, one conventions skill whose value is by construction the rules the code does not show (9 of its 14),
+  and some oracle inputs reuse the skill's own worked examples, so much of the gap is built into the design; the
+  control had no conventions text, so this is not a comparison with the same text in CLAUDE.md; it says nothing about
+  third-party skills in general. C10 moves to PASS_WITH_LIMITS.
+- Evaluation: the Claude provider ran live on Linux for the first time (a disposable Ubuntu container with
+  bubblewrap, repo-ai 0.11.6 and Claude Code 2.1.316 with a `CLAUDE_CODE_OAUTH_TOKEN`): a toy journey PASS,
+  `LIVE_CANDIDATE_VERIFIED`; a probe found that a Read outside the workspace was refused (recorded), and the model
+  reported that its Read tool also refused `/proc/self/environ` (not recorded). n = 1;
+  `docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md`.
 
 ## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
