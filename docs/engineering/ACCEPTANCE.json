@@ -297,7 +297,7 @@
     "credential copying removed (Claude files, whole ~/.gemini)",
     "2026-10-31 independent review of the ACP conformance kit found: the probe sandbox (agents doctor) lacked (deny lsopen)(deny appleevent-send) on macOS (escape with network via `open`), fixed; seatbelt's 'localhost' network filter also matches local interface addresses, so the OpenCode live adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (open item)",
     "2026-10-31 measured with a deny-all control on a CI macOS runner (benchmarks/seatbelt-loopback, run 41256165553): OpenCode's loopback rule denies other LAN hosts and the internet, but admits the host's own LAN address and a wildcard listen; an outbound-only rule denies all listening; seatbelt cannot name 127.0.0.1; disclosed",
-    "2026-10-31 OpenCode under an outbound-only rule: `opencode run --standalone` fails (its standalone server cannot listen); the inbound rule stays and the disclosed residual risk stands"
+    "2026-10-31 local check: OpenCode 2.2.1 `opencode run --standalone` in repo-ai's OpenCode sandbox with the inbound/bind rules removed (outbound-only), model at the closed port 127.0.0.1:9 (no model call), failed with 'Standalone server exited before reporting readiness', consistent with its server being unable to listen; no log kept. The inbound rule stays and the disclosed residual risk stands"
    ],
    "limits": [],
    "next_action": "review of the final release diff"

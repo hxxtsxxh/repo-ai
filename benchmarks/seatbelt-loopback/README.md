@@ -24,7 +24,9 @@
   can reach services bound to the host's own addresses. Seatbelt cannot express 127.0.0.1 alone.
 - An inbound `localhost` rule permits a wildcard bind (listening on every interface); a deny followed by re-allowing
   `localhost` does not narrow it (other orderings were not tested).
-- An outbound-only rule denies all listening, but OpenCode needs to listen: under it, plain `opencode run --standalone`
-  fails with "Standalone server exited before reporting readiness" (checked 2026-10-31 against a closed model port,
-  no model call), as its ACP mode does. So OpenCode's rule keeps its inbound part, and the residual risk stands.
+- An outbound-only rule denies all listening. In a separate local check (not part of this CI matrix; 2026-10-31,
+  OpenCode 2.2.1, model pointed at the closed port 127.0.0.1:9, no model call), `opencode run --standalone` under
+  that rule failed with "Standalone server exited before reporting readiness", consistent with its server being
+  unable to listen; its ACP mode likewise fails with all network denied (#45). So OpenCode's rule keeps its inbound
+  part, and the residual risk stands.
 - Not measured: whether another machine can reach a wildcard listener (the macOS firewall may apply); IPv6.
