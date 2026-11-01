@@ -271,9 +271,9 @@
    ],
    "limits": [
     "small, fast pure-Python suites on one runner type; not a general claim",
-    "verify still exits 1 on natively passing suites whose failing tests are consistent with the denied network (pyjwt) or are matched by name without verify --record (marshmallow 2fc8207d, whose verdict also flips between a cold run and --rerun: unexplained)"
+    "verify still exits 1 on natively passing suites whose failing tests are consistent with the denied network (pyjwt) or are matched by name without verify --record (marshmallow 2fc8207d, whose verdict also flips between a cold run and --rerun: the targeted run names files pytest's norecursedirs skips, the full run does not; explained in RESULTS.md, a limit until verify --record)"
    ],
-   "next_action": "explain marshmallow 2fc8207d's cold/--rerun verdict flip; profile the Linux cold path on a runner (copy, base comparison, interpreter and pytest start); record sandbox_network_suspected and full-suite counts in the harness"
+   "next_action": "profile the Linux cold path on a runner (copy, base comparison, interpreter and pytest start); record sandbox_network_suspected and full-suite counts in the harness"
   },
   {
    "id": "C17",
