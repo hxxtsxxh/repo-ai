@@ -1,10 +1,31 @@
 # Changelog
 
-## Unreleased
+## 0.11.5 — agents doctor sandbox fix, ACP conformance kit, real-project journeys
 
-- Security (disclosed, measured): on macOS the OpenCode providers' "loopback only" network reaches no other host,
-  but seatbelt's `localhost` rule also admits the machine's own network addresses, and its inbound rule lets the
-  agent listen on every interface. Seatbelt cannot name 127.0.0.1 alone. The security and providers pages say so;
+Includes everything listed under 0.11.4 (see CHANGELOG.md), which was qualified but never published to PyPI.
+
+- Fixed (found by journey-offline-v2 on more-itertools): `from unittest import TestCase` (or
+  `IsolatedAsyncioTestCase`) now marks a unittest suite, so verify runs it by discovery. `from unittest import mock`
+  alone does not: pytest projects stay under pytest.
+- Evaluation: journey-offline-v2 (`benchmarks/journey-offline-v2/`, preregistered, CI runner): on 7 real upstream
+  fixes whose tests fail without them, verify never reported a pass for the broken state (0 of 7). It confirmed the
+  fix in 3 of 6 (selected tests passed; full suite not run). The rest: tests that also failed at the base (likely
+  network) and more-itertools, whose unittest suite repo-ai did not recognise (fixed above). Uninstall left no tracked
+  or untracked difference in 7 of 7 (ignored files and state outside the repository not checked). journey-offline-v1
+  was inconclusive and is kept, with its cause.
+- Evaluation: capability-fresh-v1 (`benchmarks/capability-fresh-v1/`, preregistered, 60 tasks by one independent model
+  author): the capability recommender **failed** again: top-3 recall 0.69 (gate 0.80) and 2 recommendations a stated
+  constraint ruled out. Together with Corpus C this makes the deterministic matcher a negative result (the Skill Radar
+  gate, C07, stays experimental: online discovery, caching and pinning are unvalidated, not shown false); `--deny`
+  remains the enforced way to rule capabilities out.
+- Tests: provider routing is checked over every provider, alone, under macOS and Linux platform names (34,944
+  decisions), including the UNKNOWN and RUNTIME_UNSUPPORTED labels and argument-over-policy preference; a 1-in-256
+  flake in a large-binary test is gone.
+- Docs: 24 links pointed at research files that are not in the public repository; they now say where the files are,
+  and a test keeps relative links in the docs resolvable.
+- Security (disclosed, measured): on macOS the OpenCode providers' "loopback only" network reaches no other host, but
+  seatbelt's `localhost` rule also admits the machine's own network addresses, and its inbound rule lets the agent
+  listen on every interface. Seatbelt cannot name 127.0.0.1 alone. The security and providers pages say so;
   `benchmarks/seatbelt-loopback/` holds the probe and results. Earlier "loopback-only" wording (0.10.0, 0.11.3) is
   qualified by this.
 - Added: `repo-ai agents conformance --acp-executable PATH [--acp-arg ARG]`, a conformance kit for Agent Client
@@ -19,6 +40,8 @@
   namespace, so nothing it starts outlives it.
 
 ## 0.11.4 — SAFE_AUTO hardened after a failed unseen-corpus test; verify fixes from real projects
+
+Not published to PyPI (no tag was pushed); these changes ship in 0.11.5.
 
 - Added: when tests fail at the base and the change alike and their output shows a network denial (name
   resolution, unreachable network, failed connection), verify says some failures in those files look like its
