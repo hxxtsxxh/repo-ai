@@ -9,6 +9,7 @@ first eligible provider in order. Decisions are made from inputs alone: starting
 from __future__ import annotations
 
 import itertools
+import shutil
 import subprocess
 import sys
 
@@ -79,7 +80,8 @@ def _expected_readiness(s: dict, consented: bool, name: str = "claude", platform
         return "NOT_INSTALLED"
     if not s["isolated"]:
         # no containment exists for this provider on this platform, versus a sandbox that exists but did not pass
-        return "RUNTIME_UNSUPPORTED" if name in NO_CONTAINMENT_OFF_MACOS and platform != "darwin" else "ISOLATION_BLOCKED"
+        unsupported = name in NO_CONTAINMENT_OFF_MACOS and platform != "darwin"
+        return "RUNTIME_UNSUPPORTED" if unsupported else "ISOLATION_BLOCKED"
     if s["setup"]:
         return "SETUP_REQUIRED"
     if s["cooldown"] == "active" or obs == "USAGE_LIMITED":
@@ -119,7 +121,8 @@ def test_every_single_provider_state_routes_as_specified(tmp_path, monkeypatch, 
             assert d["outcome"] == want, (name, s, max_cost, run_authorized, row)
             assert d["selected"] == (name if want == "SELECTED" else None)
             assert row["eligible"] == (want == "SELECTED")
-            assert row["readiness"] == _expected_readiness(s, consented, name, platform), (name, s, run_authorized, row)
+            label = _expected_readiness(s, consented, name, platform)
+            assert row["readiness"] == label, (name, s, run_authorized, row)
             assert row["status_class"] == registry.STATUS_CLASS[row["readiness"]]
             assert "authenticated" in d["not_evaluated"] and "quota_remaining" in d["not_evaluated"]
             # a provider discovery said nothing about is UNKNOWN and never eligible
@@ -131,11 +134,31 @@ def test_every_single_provider_state_routes_as_specified(tmp_path, monkeypatch, 
     assert checked == states * 4  # 2,496 decisions per provider and platform
 
 
-@pytest.mark.parametrize("name", sorted(NO_CONTAINMENT_OFF_MACOS))
+class _Which:
+    """`shutil` as seen by the adapter, where only bwrap is on PATH (the real `shutil` is untouched)."""
+
+    @staticmethod
+    def which(name, path=None):
+        return "/usr/bin/bwrap" if name == "bwrap" else None
+
+    def __getattr__(self, key):
+        return getattr(shutil, key)
+
+
+@pytest.mark.parametrize("name", PROVIDERS)
 def test_runtime_unsupported_matches_the_adapter(tmp_path, monkeypatch, name):
-    """The label's premise: off macOS the adapter refuses to build any live sandbox for these providers."""
+    """The label's premise: on Linux with bubblewrap present, the adapter builds a live sandbox for every provider
+    except these, which it refuses (a positive control for the rest, so the refusal is not just a missing bwrap)."""
+    from repo_ai.providers import claude_auth
     monkeypatch.setattr(adapters, "sys", _Platform("linux"))
-    assert adapters._execution_sandbox_prefix(tmp_path, tmp_path, allow_network=True, provider=name, live=True) is None
+    monkeypatch.setattr(adapters, "shutil", _Which())
+    plan = claude_auth.ClaudeAuthPlan("token_env", None, ("ANTHROPIC_API_KEY",), ())
+    prefix = adapters._execution_sandbox_prefix(tmp_path, tmp_path, allow_network=True, provider=name, live=True,
+                                                claude_plan=plan)
+    if name in NO_CONTAINMENT_OFF_MACOS:
+        assert prefix is None
+    else:
+        assert prefix is not None and prefix[0] == "/usr/bin/bwrap", (name, prefix)
 
 
 def test_a_failed_discovery_is_unknown_and_never_selected(tmp_path, monkeypatch):
