@@ -1,0 +1,574 @@
+{
+ "tasks": 60,
+ "R1_top3_recall": 0.6875,
+ "R1_pass": false,
+ "R2_forbidden": [
+  "t21:ext.lsp-references",
+  "t60:ext.browser-evidence"
+ ],
+ "R2_pass": false,
+ "R3_correct_abstention": "19/20",
+ "R4_top3_precision": 0.6808510638297872,
+ "rows": [
+  {
+   "id": "t01",
+   "got": [
+    "repo-ai.verify"
+   ],
+   "gold": [
+    "repo-ai.verify"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t02",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t03",
+   "got": [
+    "adapter.ruff-security"
+   ],
+   "gold": [
+    "adapter.ruff-security"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t04",
+   "got": [
+    "ext.lsp-references",
+    "repo-ai.impact"
+   ],
+   "gold": [
+    "ext.lsp-references"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t05",
+   "got": [
+    "repo-ai.verify",
+    "ext.property-testing"
+   ],
+   "gold": [
+    "ext.property-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t06",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t07",
+   "got": [
+    "adapter.ruff-security"
+   ],
+   "gold": [
+    "adapter.ruff-security",
+    "adapter.semgrep"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t08",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t09",
+   "got": [
+    "adapter.dependency-audit"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t10",
+   "got": [
+    "ext.browser-evidence"
+   ],
+   "gold": [
+    "ext.browser-evidence"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t11",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t12",
+   "got": [],
+   "gold": [
+    "adapter.ruff-security",
+    "repo-ai.review"
+   ],
+   "forbidden": [
+    "ext.differential-security-review"
+   ]
+  },
+  {
+   "id": "t13",
+   "got": [],
+   "gold": [
+    "repo-ai.context"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t14",
+   "got": [
+    "repo-ai.impact"
+   ],
+   "gold": [
+    "repo-ai.impact"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t15",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t16",
+   "got": [
+    "repo-ai.verify",
+    "ext.mutation-testing"
+   ],
+   "gold": [
+    "ext.mutation-testing"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t17",
+   "got": [
+    "repo-ai.verify"
+   ],
+   "gold": [
+    "repo-ai.review"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t18",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t19",
+   "got": [
+    "ext.browser-evidence"
+   ],
+   "gold": [
+    "ext.browser-evidence"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t20",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t21",
+   "got": [
+    "ext.lsp-references",
+    "repo-ai.skills-vet"
+   ],
+   "gold": [
+    "repo-ai.impact"
+   ],
+   "forbidden": [
+    "ext.lsp-references"
+   ]
+  },
+  {
+   "id": "t22",
+   "got": [
+    "repo-ai.impact",
+    "repo-ai.verify"
+   ],
+   "gold": [
+    "repo-ai.impact",
+    "repo-ai.verify"
+   ],
+   "forbidden": [
+    "ext.browser-evidence",
+    "ext.mutation-testing"
+   ]
+  },
+  {
+   "id": "t23",
+   "got": [
+    "adapter.dependency-audit"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t24",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t25",
+   "got": [
+    "adapter.semgrep"
+   ],
+   "gold": [
+    "adapter.semgrep",
+    "ext.differential-security-review"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t26",
+   "got": [
+    "ext.mutation-testing",
+    "ext.property-testing"
+   ],
+   "gold": [
+    "ext.property-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t27",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t28",
+   "got": [
+    "repo-ai.review",
+    "ext.differential-security-review"
+   ],
+   "gold": [
+    "ext.differential-security-review"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t29",
+   "got": [
+    "adapter.dependency-audit"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t30",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t31",
+   "got": [
+    "repo-ai.verify",
+    "repo-ai.impact"
+   ],
+   "gold": [
+    "repo-ai.impact",
+    "repo-ai.verify"
+   ],
+   "forbidden": [
+    "ext.mutation-testing"
+   ]
+  },
+  {
+   "id": "t32",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t33",
+   "got": [
+    "repo-ai.impact",
+    "repo-ai.verify"
+   ],
+   "gold": [
+    "ext.lsp-references"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t34",
+   "got": [
+    "repo-ai.review"
+   ],
+   "gold": [
+    "repo-ai.review"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit",
+    "adapter.semgrep",
+    "ext.differential-security-review"
+   ]
+  },
+  {
+   "id": "t35",
+   "got": [],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t36",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t37",
+   "got": [
+    "adapter.semgrep"
+   ],
+   "gold": [
+    "ext.property-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t38",
+   "got": [
+    "ext.mutation-testing"
+   ],
+   "gold": [
+    "ext.mutation-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t39",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t40",
+   "got": [],
+   "gold": [
+    "ext.lsp-references",
+    "repo-ai.impact"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t41",
+   "got": [],
+   "gold": [],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t42",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t43",
+   "got": [
+    "adapter.semgrep"
+   ],
+   "gold": [
+    "adapter.semgrep"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t44",
+   "got": [
+    "repo-ai.verify"
+   ],
+   "gold": [
+    "repo-ai.verify"
+   ],
+   "forbidden": [
+    "ext.mutation-testing"
+   ]
+  },
+  {
+   "id": "t45",
+   "got": [],
+   "gold": [
+    "ext.lsp-references"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t46",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t47",
+   "got": [
+    "repo-ai.verify",
+    "repo-ai.impact",
+    "repo-ai.review"
+   ],
+   "gold": [
+    "repo-ai.review"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit",
+    "adapter.semgrep",
+    "ext.mutation-testing"
+   ]
+  },
+  {
+   "id": "t48",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t49",
+   "got": [
+    "repo-ai.skills-vet"
+   ],
+   "gold": [
+    "repo-ai.skills-vet"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t50",
+   "got": [
+    "repo-ai.skills-inventory",
+    "repo-ai.budget"
+   ],
+   "gold": [
+    "repo-ai.budget",
+    "repo-ai.skills-inventory"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t51",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t52",
+   "got": [
+    "repo-ai.budget"
+   ],
+   "gold": [
+    "repo-ai.budget"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t53",
+   "got": [],
+   "gold": [
+    "repo-ai.skills-vet"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t54",
+   "got": [],
+   "gold": [
+    "repo-ai.context"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t55",
+   "got": [
+    "repo-ai.impact"
+   ],
+   "gold": [
+    "repo-ai.impact"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t56",
+   "got": [
+    "adapter.ruff-security",
+    "repo-ai.review"
+   ],
+   "gold": [
+    "adapter.ruff-security",
+    "ext.differential-security-review"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t57",
+   "got": [],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t58",
+   "got": [
+    "adapter.dependency-audit"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t59",
+   "got": [
+    "repo-ai.skills-inventory"
+   ],
+   "gold": [
+    "repo-ai.skills-inventory"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t60",
+   "got": [
+    "ext.browser-evidence"
+   ],
+   "gold": [],
+   "forbidden": [
+    "ext.browser-evidence"
+   ]
+  }
+ ]
+}
