@@ -132,5 +132,18 @@ the CPU all changed, so this is not a controlled test of those fixes.
   install; verify and native ran the same environment, so the comparison stands, but the install is incomplete.
 
 Follow-up 1: its symptoms are gone for more-itertools (exit codes; the full suite seen passing once) and humanize
-f772e59b; marshmallow 2fc8207d's verdict flip stays open. Follow-up 2 shipped in 0.11.4 (not measured here).
+f772e59b; marshmallow 2fc8207d's verdict flip is explained in the addendum below. Follow-up 2 shipped in 0.11.4 (not measured here).
 Follow-up 3 stays open: the Linux overhead could not be compared across these runs.
+
+## Addendum (2026-11-01): marshmallow 2fc8207d's two verdicts, explained from the recorded data
+
+Identical in run 2 and run 3. The cold run had no per-file durations for the selected files, so the strategy
+chooser ran the selection (`targeted`), naming `tests/mypy_test_cases/test_*.py` on pytest's command line. pytest
+collects files named explicitly even inside a `norecursedirs` directory (marshmallow's configuration excludes
+`tests/mypy_test_cases`), and two of them fail at base and change alike: `failing (all failures pre-existing at
+the base)`, exit 1. The cold run measured those files; with a full-suite time measured earlier in the same clone,
+the `--rerun` chooser found the full suite no slower and ran it (`full`): pytest skipped the directory, the three
+files were reported `no_tests`, and 1,117 tests passed, exit 0. So the verdict followed a timing-driven strategy
+choice, through the documented limit that files are matched by name until `repo-ai verify --record` has captured
+pytest's own collection (verify deliberately never removes a test file on a static reading of pytest's
+configuration). Not a new defect; a product note naming such files when the targeted run reaches them is queued.
