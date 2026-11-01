@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Faster `verify --run` on every platform (profiled on GitHub runners with `scripts/profile_verify.py`, a 40-test
+  project with its own virtualenv; medians of 7, one run per platform, runners not identical): the two
+  source-tree snapshots that check a run left the working tree alone built a `pathlib` path for every entry,
+  virtualenv included, which was most of verify's own time on Linux. The walk now carries each directory's relative
+  prefix; what is recorded and compared is unchanged. Ratio to the project's own suite on the ubuntu runner:
+  comment-only change 2.16× → 1.12×, behaviour change 3.54× → 2.38×; on macOS 2.86× → 1.71× and 4.17× → 3.04×.
+  The profiling script and its workflow (`.github/workflows/profile.yml`) are included.
+
 ## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
 - verify names the test files that the project's pytest `norecursedirs` keeps out of a full run when it matches
