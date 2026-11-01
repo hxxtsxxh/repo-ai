@@ -301,7 +301,8 @@ variability".
 
 ## What has been measured
 
-See the table in `docs/EXECUTION_LEDGER.md` (v0.7.0). Anything marked "Not
-run" there is **unverified**. A fake client (`tests/fake_claude_lab.py`)
+The measurement table is in `docs/EXECUTION_LEDGER.md` (v0.7.0), which stays in the
+private development history; anything it marks "Not run" is **unverified**. The public
+record is [STATUS.md](STATUS.md). A fake client (`tests/fake_claude_lab.py`)
 tests the pipeline end to end at zero cost, and its reports carry a FAKE
 banner. Fake results are never evidence about Claude.

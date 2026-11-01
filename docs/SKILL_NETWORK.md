@@ -319,8 +319,8 @@ Only `https://github.com/<owner>/<repo>` sources are accepted, and nothing is
 fetched for a refused URL. Network use needs `--online` and follows the zone
 policy (`discovery=deny` refuses it).
 
-**Measured precision.** See
-`docs/research/vet-eval-2026-10.md` (private development history): vetting real
+**Measured precision.** In
+`docs/research/vet-eval-2026-10.md` (private development history), vetting real
 skill repositories found real `curl … | bash` install steps. It also found
 false positives, which led to two rule fixes. A third class (negated mentions
 of credential paths, such as "don't read `.env`") stays blocking by design.
@@ -388,7 +388,7 @@ covers a 41-case adversarial corpus, 10 development repositories and 6 fresh
 held-out repositories.
 
 **Status: experimental.** A preregistered fresh validation
-(`docs/research/plugin-vet-fresh-2026-10/RESULTS.md` (private development history),
+(`docs/research/plugin-vet-fresh-2026-10/RESULTS.md`, private development history;
 44 cases, analyser frozen) **failed** on false alarms and executable coverage:
 - 12 of 42 benign cases were blocked, mostly quoted prohibitions and detection regexes;
 - executable-resolution coverage was 0.25.
