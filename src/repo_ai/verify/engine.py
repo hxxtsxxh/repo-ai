@@ -171,16 +171,20 @@ def _apply_collection(root: Path, runner: TestRunner, files: list[str], tmap) ->
     if any(PurePosixPath(f).name in COLLECTION_CONFIG for f in files):
         from .pytestcfg import skipped_by_config
         try:
-            cfg, skipped = skipped_by_config(root, runner.test_files(files), runner.cwd)
-        except (OSError, ValueError):
-            cfg, skipped = "", {}
+            cfg, other, skipped = skipped_by_config(root, runner.test_files(files), runner.cwd,
+                                                    argv=[*runner.full, *runner.options], paths=runner.paths)
+        except (OSError, ValueError, RecursionError):
+            cfg, other, skipped = "", [], {}
         if skipped:
             listed = sorted({f for fs in skipped.values() for f in fs})
             why = "; ".join(f"{reason}: {len(fs)}" for reason, fs in sorted(skipped.items()))
-            return (f"{cfg}: {len(listed)} name-matched test file(s) lie where pytest's own run does not collect them "
-                    f"({why}; e.g. {', '.join(listed[:3])}). A full run skips them; a targeted run names them and "
-                    "pytest runs them anyway, so the two can disagree on the same change. They are not removed on "
-                    "this reading; `repo-ai verify --record` learns pytest's own collection")
+            shown = ", ".join(listed[:3]) if len(listed) <= 3 else "e.g. " + ", ".join(listed[:3])
+            more = (f" Other collection settings there ({', '.join(other)}) may also differ from the name match."
+                    if other else "")
+            return (f"{cfg}: {len(listed)} name-matched test file(s) lie in directories pytest's `norecursedirs` keeps "
+                    f"its recursion out of ({why}; {shown}). A full run does not reach them; a targeted run names "
+                    "them and pytest runs them anyway, so the two can disagree on the same change. They are not "
+                    f"removed on this reading; `repo-ai verify --record` learns pytest's own collection.{more}")
         for f in files:
             if PurePosixPath(f).name in COLLECTION_CONFIG:
                 try:
