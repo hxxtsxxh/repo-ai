@@ -1,0 +1,49 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..c4dd0cc 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -65,3 +65,12 @@ class Inventory:
+             return tuple(self._movements)
+         sku = self.item(sku).sku
+         return tuple(m for m in self._movements if m.sku == sku)
++
++    def movements_between(self, start, end, sku=None):
++        """Return movements whose timestamp is within ``start`` to ``end``.
++
++        Both bounds are inclusive. Movements are returned in the order they
++        were recorded. With ``sku`` given, only that item's movements are
++        returned.
++        """
++        return tuple(m for m in self.history(sku) if start <= m.at <= end)
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..df51c61 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -1,3 +1,5 @@
++from datetime import timedelta
++
+ import pytest
+ 
+ from conftest import T0
+@@ -55,6 +57,21 @@ def test_history_order_and_sign(inv):
+     assert [m.delta for m in inv.history("blt-0001")] == [5, -2]
+ 
+ 
++def test_movements_between(inv):
++    inv.receive("BLT-0001", 5, T0)
++    inv.receive("WSH-0001", 7, T0 + timedelta(days=1))
++    inv.issue("BLT-0001", 2, T0 + timedelta(days=2))
++    inv.receive("BLT-0001", 9, T0 + timedelta(days=3))
++
++    start, end = T0 + timedelta(days=1), T0 + timedelta(days=2)
++    # Bounds are inclusive.
++    assert [m.delta for m in inv.movements_between(start, end)] == [7, -2]
++    assert [m.delta for m in inv.movements_between(start, end, "blt-0001")] == [-2]
++    assert inv.movements_between(T0 + timedelta(days=10), T0 + timedelta(days=11)) == ()
++    with pytest.raises(UnknownSkuError):
++        inv.movements_between(start, end, "ZZZ-9999")
++
++
+ def test_items_sorted_by_sku(inv):
+     inv.add_item(Item("AAA-0001", "Anchor", 100))
+     assert [i.sku for i in inv.items()] == ["AAA-0001", "BLT-0001", "NUT-0001", "WSH-0001"]

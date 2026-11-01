@@ -1,0 +1,78 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..5e23d59 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -1,10 +1,14 @@
+ """The Inventory ledger: registered items plus their movement history."""
+ 
++import logging
++
+ from stockroom.errors import DuplicateSkuError, InsufficientStockError, UnknownSkuError
+ from stockroom.models import Item, Movement
+ from stockroom.quantities import require_positive_quantity
+ from stockroom.skus import normalize_sku
+ 
++logger = logging.getLogger(__name__)
++
+ 
+ class Inventory:
+     """In-memory stock ledger for one warehouse."""
+@@ -56,6 +60,18 @@ class Inventory:
+         self._movements.append(Movement(sku, -qty, "issue", at))
+         return self._on_hand[sku]
+ 
++    def write_off(self, sku, qty, at):
++        """Write off ``qty`` damaged, lost or expired units; return the new level."""
++        sku = self.item(sku).sku
++        qty = require_positive_quantity(qty)
++        current = self._on_hand[sku]
++        if qty > current:
++            raise InsufficientStockError(sku, qty, current)
++        self._on_hand[sku] = current - qty
++        self._movements.append(Movement(sku, -qty, "write_off", at))
++        logger.warning("write_off %d x %s", qty, sku)
++        return self._on_hand[sku]
++
+     def history(self, sku=None):
+         """Return movements in the order they were recorded.
+ 
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..59c028c 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -25,6 +25,35 @@ def test_issue_more_than_on_hand(inv):
+     assert len(inv.history("NUT-0001")) == 1
+ 
+ 
++def test_write_off(inv, caplog):
++    inv.receive("BLT-0001", 10, T0)
++    with caplog.at_level("WARNING", logger="stockroom"):
++        assert inv.write_off("blt-0001", 3, T0) == 7
++    assert inv.on_hand("BLT-0001") == 7
++    last = inv.history("BLT-0001")[-1]
++    assert (last.delta, last.reason, last.at) == (-3, "write_off", T0)
++    assert [r.getMessage() for r in caplog.records] == ["write_off 3 x BLT-0001"]
++
++
++def test_write_off_more_than_on_hand(inv, caplog):
++    inv.receive("BLT-0001", 2, T0)
++    with caplog.at_level("WARNING", logger="stockroom"):
++        with pytest.raises(InsufficientStockError) as exc:
++            inv.write_off("BLT-0001", 3, T0)
++    assert str(exc.value) == "insufficient stock for BLT-0001: requested 3, on hand 2"
++    assert inv.on_hand("BLT-0001") == 2
++    assert len(inv.history("BLT-0001")) == 1
++    assert not caplog.records
++
++
++@pytest.mark.parametrize("qty", [0, -1, 1.5, True, "3"])
++def test_write_off_bad_quantities(inv, qty):
++    inv.receive("BLT-0001", 5, T0)
++    with pytest.raises(InvalidQuantityError):
++        inv.write_off("BLT-0001", qty, T0)
++    assert inv.on_hand("BLT-0001") == 5
++
++
+ def test_unknown_sku(inv):
+     with pytest.raises(UnknownSkuError) as exc:
+         inv.receive("ZZZ-9999", 1, T0)

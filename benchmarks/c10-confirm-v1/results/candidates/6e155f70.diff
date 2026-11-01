@@ -1,0 +1,58 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..c6b88c6 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -56,6 +56,17 @@ class Inventory:
+         self._movements.append(Movement(sku, -qty, "issue", at))
+         return self._on_hand[sku]
+ 
++    def write_off(self, sku, qty, at):
++        """Write off ``qty`` damaged, lost or expired units; return the new level."""
++        sku = self.item(sku).sku
++        qty = require_positive_quantity(qty)
++        current = self._on_hand[sku]
++        if qty > current:
++            raise InsufficientStockError(sku, qty, current)
++        self._on_hand[sku] = current - qty
++        self._movements.append(Movement(sku, -qty, "write_off", at))
++        return self._on_hand[sku]
++
+     def history(self, sku=None):
+         """Return movements in the order they were recorded.
+ 
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..0f4c240 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -55,6 +55,31 @@ def test_history_order_and_sign(inv):
+     assert [m.delta for m in inv.history("blt-0001")] == [5, -2]
+ 
+ 
++def test_write_off(inv):
++    inv.receive("BLT-0001", 10, T0)
++    assert inv.write_off("blt-0001", 4, T0) == 6
++    assert inv.on_hand("BLT-0001") == 6
++    last = inv.history("BLT-0001")[-1]
++    assert (last.sku, last.delta, last.reason, last.at) == ("BLT-0001", -4, "write_off", T0)
++
++
++def test_write_off_more_than_on_hand(inv):
++    inv.receive("NUT-0001", 3, T0)
++    with pytest.raises(InsufficientStockError):
++        inv.write_off("NUT-0001", 5, T0)
++    assert inv.on_hand("NUT-0001") == 3
++    assert len(inv.history("NUT-0001")) == 1
++
++
++@pytest.mark.parametrize("qty", [0, -1, 1.5, True, "3"])
++def test_write_off_bad_quantities(inv, qty):
++    inv.receive("BLT-0001", 5, T0)
++    with pytest.raises(InvalidQuantityError):
++        inv.write_off("BLT-0001", qty, T0)
++    assert inv.on_hand("BLT-0001") == 5
++    assert len(inv.history("BLT-0001")) == 1
++
++
+ def test_items_sorted_by_sku(inv):
+     inv.add_item(Item("AAA-0001", "Anchor", 100))
+     assert [i.sku for i in inv.items()] == ["AAA-0001", "BLT-0001", "NUT-0001", "WSH-0001"]

@@ -1,0 +1,126 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..8ed444c 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -1,10 +1,17 @@
+ """The Inventory ledger: registered items plus their movement history."""
+ 
++import logging
++
+ from stockroom.errors import DuplicateSkuError, InsufficientStockError, UnknownSkuError
+ from stockroom.models import Item, Movement
+-from stockroom.quantities import require_positive_quantity
++from stockroom.quantities import (
++    require_non_negative_quantity,
++    require_positive_quantity,
++)
+ from stockroom.skus import normalize_sku
+ 
++logger = logging.getLogger(__name__)
++
+ 
+ class Inventory:
+     """In-memory stock ledger for one warehouse."""
+@@ -13,6 +20,7 @@ class Inventory:
+         self._items = {}
+         self._on_hand = {}
+         self._movements = []
++        self._counters = {}
+ 
+     def add_item(self, item):
+         if not isinstance(item, Item):
+@@ -56,6 +64,34 @@ class Inventory:
+         self._movements.append(Movement(sku, -qty, "issue", at))
+         return self._on_hand[sku]
+ 
++    def record_count(self, counts, at):
++        """Apply a physical stock count and return its ``CNT-nnnnnn`` identifier.
++
++        ``counts`` maps SKU to the counted number of units. Every line is
++        validated first; if any fails, nothing is changed. SKUs whose count
++        equals the on-hand level get no movement.
++        """
++        validated = {}
++        for raw_sku, counted in counts.items():
++            sku = self.item(raw_sku).sku
++            validated[sku] = require_non_negative_quantity(counted)
++
++        for sku, counted in validated.items():
++            delta = counted - self._on_hand[sku]
++            if delta == 0:
++                continue
++            self._on_hand[sku] = counted
++            self._movements.append(Movement(sku, delta, "count_adjust", at))
++            if delta < 0:
++                logger.warning("count_adjust %d x %s", -delta, sku)
++
++        return self._next_id("CNT")
++
++    def _next_id(self, prefix):
++        n = self._counters.get(prefix, 0) + 1
++        self._counters[prefix] = n
++        return f"{prefix}-{n:06d}"
++
+     def history(self, sku=None):
+         """Return movements in the order they were recorded.
+ 
+diff --git a/stockroom/quantities.py b/stockroom/quantities.py
+index 1f77ad1..f47fe48 100644
+--- a/stockroom/quantities.py
++++ b/stockroom/quantities.py
+@@ -11,3 +11,15 @@ def require_positive_quantity(qty):
+     if isinstance(qty, bool) or not isinstance(qty, int) or qty <= 0:
+         raise InvalidQuantityError(f"quantity must be a positive integer, got {qty!r}")
+     return qty
++
++
++def require_non_negative_quantity(qty):
++    """Return ``qty`` unchanged if it is an int >= 0, else raise.
++
++    ``bool`` is rejected even though it is a subclass of ``int``.
++    """
++    if isinstance(qty, bool) or not isinstance(qty, int) or qty < 0:
++        raise InvalidQuantityError(
++            f"quantity must be a non-negative integer, got {qty!r}"
++        )
++    return qty
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..9ca71c7 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -55,6 +55,35 @@ def test_history_order_and_sign(inv):
+     assert [m.delta for m in inv.history("blt-0001")] == [5, -2]
+ 
+ 
++def test_record_count(inv, caplog):
++    inv.receive("BLT-0001", 10, T0)
++    inv.receive("NUT-0001", 5, T0)
++    inv.receive("WSH-0001", 4, T0)
++    with caplog.at_level("WARNING", logger="stockroom"):
++        cid = inv.record_count({"blt-0001": 7, "NUT-0001": 8, "WSH-0001": 4}, T0)
++    assert cid == "CNT-000001"
++    assert [inv.on_hand(s) for s in ("BLT-0001", "NUT-0001", "WSH-0001")] == [7, 8, 4]
++    adjusts = [m for m in inv.history() if m.reason == "count_adjust"]
++    assert [(m.sku, m.delta, m.at) for m in adjusts] == [
++        ("BLT-0001", -3, T0),
++        ("NUT-0001", 3, T0),
++    ]
++    assert [r.getMessage() for r in caplog.records] == ["count_adjust 3 x BLT-0001"]
++    assert inv.record_count({"BLT-0001": 7}, T0) == "CNT-000002"
++
++
++def test_record_count_is_all_or_nothing(inv):
++    inv.receive("BLT-0001", 10, T0)
++    before = inv.history()
++    with pytest.raises(UnknownSkuError):
++        inv.record_count({"BLT-0001": 1, "ZZZ-9999": 2}, T0)
++    with pytest.raises(InvalidQuantityError):
++        inv.record_count({"BLT-0001": 1, "NUT-0001": -1}, T0)
++    assert inv.on_hand("BLT-0001") == 10
++    assert inv.history() == before
++    assert inv.record_count({}, T0) == "CNT-000001"
++
++
+ def test_items_sorted_by_sku(inv):
+     inv.add_item(Item("AAA-0001", "Anchor", 100))
+     assert [i.sku for i in inv.items()] == ["AAA-0001", "BLT-0001", "NUT-0001", "WSH-0001"]
