@@ -6,8 +6,8 @@ that the page would load without a click. That covers URLs referenced in the HTM
 preloads and preconnects, images and srcsets, media, posters, tracks, frames, objects, SVG references, inline
 `style` and `<style>` `url()`/`@import`) and in the site's own stylesheets (`url()`/`@import`, so fonts and
 images loaded by CSS). Requests made by JavaScript at run time are not seen; Lighthouse's network log is the
-check for those. Also: an unknown path is a real 404, the home page is in the sitemap, and it shows the package
-version from ``site/src/data/release-facts.json``.
+check for those. Also: an unknown path is a real 404, the home page is in the sitemap, and it shows the published
+version the site renders (``site_version`` in ``site/src/data/release-facts.json``).
 
     python scripts/site_probe.py [--base URL] [--out probe.json]
 
@@ -135,7 +135,9 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     base = a.base if a.base.endswith("/") else a.base + "/"
     host = urllib.parse.urlsplit(base).netloc
-    version = json.loads((ROOT / "site/src/data/release-facts.json").read_text(encoding="utf-8"))["package"]["version"]
+    # the version the site renders (site/src/config.ts: facts.site_version, the published release), not the source
+    # version, which runs ahead of the site between a version bump and the recorded PyPI release
+    version = json.loads((ROOT / "site/src/data/release-facts.json").read_text(encoding="utf-8"))["site_version"]
 
     def foreign(page: str, refs: list[str]) -> list[str]:
         out = []

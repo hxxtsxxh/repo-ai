@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
 - verify names the test files that the project's pytest `norecursedirs` keeps out of a full run when it matches
   tests by name: a targeted run passes them to pytest, which runs them anyway, while a full run does not reach them,
@@ -8,18 +8,36 @@
   would use; no note when the command picks its own configuration or the file cannot be read. A note in the plan
   only: nothing is removed on this reading, and `repo-ai verify --record` still learns pytest's own collection.
 - Docs: the shipped capability catalog cited three research files that are not in the public repository (as
-  evidence and review references in `capabilities show --json`, and in the catalog's note); each now says it is in the private development history.
+  evidence and review references in `capabilities show --json`, and in the catalog's note); each now says it is
+  in the private development history. User-facing strings (two catalog entries, ProofLab's node-scenario reason)
+  no longer name an internal development session.
 - Faster (measured on an Apple Silicon Mac, medians of 7 to 9 runs on a small pytest project; not a re-run of
   speed-v1): every repo-ai command parsed its arguments by importing the mission runtime and every provider
   adapter, about 80 ms before doing anything. They now load only in the commands that use them. Agent hooks
-  take about half as long (Claude `prompt`, `post-edit` and `stop` 147–150 ms → 67–81 ms; `session-start`
-  324 → 205 ms) and `repo-ai --version` 145 → 49 ms.
+  take about half as long there (Claude `prompt`, `post-edit` and `stop` 147–150 ms → 67–81 ms; `session-start`
+  324 → 205 ms, partly the macOS git change below) and `repo-ai --version` 145 → 49 ms. Not measured on Linux or
+  Windows, where only the import saving applies.
 - Faster on macOS: `/usr/bin/git` is Apple's launcher stub, which asks xcrun for the developer directory on every
   call (35 ms per git command here, against 17 ms for the program it runs). repo-ai now runs the selected
   developer directory's git directly: `DEVELOPER_DIR`, else the `xcode-select` link, else what `xcode-select -p`
   prints (asked once per process). Another git first on PATH (Homebrew's), or anything unusual, runs as before.
   `verify --run` on that project: comment-only change 965 → 636 ms, a behaviour change with the full suite
   1,370 → 992 ms, re-verifying an unchanged state 544 → 330 ms. Linux and Windows run git as before.
+- Evaluation: speed-v1 run 3 (`benchmarks/speed-v1/`, a replication stated before the run as Amendment 3, GitHub
+  runner, on a commit that already includes the startup change above): verify is still **not** faster than the
+  native suite (2.23× geometric mean, slower on 30 of 30; run 2: 1.84×, 24 of 30). Its more-itertools changes were
+  measured differently (a targeted run of 2 files where run 2's full-suite attempt ended early); without them the
+  two runs agree (run 3 2.61×, run 2 2.64×). Absolute overheads are not compared (the runner CPU changed), and the
+  ~80 ms startup saving cannot be seen in these data. Exit codes agreed with the native suite on 23 of 30 changes
+  (run 2: 16): the more-itertools (full suite seen passing once) and humanize disagreements are gone, consistent
+  with fixes in 0.11.4/0.11.5 but not isolated by the runs; pyjwt's failing tests (consistent with the sandbox
+  denying the network) and one name-matched marshmallow change still disagree. Run 2 stays the result.
+  marshmallow 2fc8207d's two verdicts (targeted exit 1, full exit 0) are inferred to come from files pytest's
+  `norecursedirs` skips, which only a targeted run names (see the first item); why the strategy differed between
+  the two runs is not recorded.
+- Site: a weekly probe of the deployed site from a GitHub runner (every sitemap URL over HTTPS, no third-party
+  URLs in its HTML or stylesheets, the published version the site renders) and Lighthouse on six pages; the first runs scored 100 on accessibility,
+  best practices and SEO everywhere, and 95–100 on performance.
 
 ## 0.11.5 — agents doctor sandbox fix, ACP conformance kit, real-project journeys
 
