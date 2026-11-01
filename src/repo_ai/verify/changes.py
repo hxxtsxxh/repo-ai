@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from types import CodeType
 
+from .. import gitbin
 from ..gitinfo import safe_ref
 
 PY_SUFFIXES = {".py"}
@@ -89,7 +90,7 @@ class Change:
 # git plumbing (no shell; refs validated)
 # --------------------------------------------------------------------------
 def _git(root: Path, *args: str, binary: bool = False, check: bool = False):
-    proc = subprocess.run(["git", *args], cwd=root, capture_output=True, timeout=60,
+    proc = subprocess.run([gitbin.git(), *args], cwd=root, capture_output=True, timeout=60,
                           check=False, stdin=subprocess.DEVNULL)
     if check and proc.returncode != 0:
         raise ChangeError(f"git {args[0]} failed: {proc.stderr.decode('utf-8', 'replace').strip()[:200]}")
@@ -156,7 +157,7 @@ def _flagged(root: Path, commit: str) -> list[tuple[str, str]]:
     plain = [p for p in present if p not in odd]
     ids: dict[str, str] = {}
     if plain:
-        proc = subprocess.run(["git", "hash-object", "--no-filters", "--stdin-paths"], cwd=root,
+        proc = subprocess.run([gitbin.git(), "hash-object", "--no-filters", "--stdin-paths"], cwd=root,
                               capture_output=True, timeout=120, check=False,
                               input="\n".join(plain).encode("utf-8", "surrogateescape") + b"\n")
         ids = dict(zip(plain, proc.stdout.decode("ascii", "replace").split(), strict=False))
@@ -174,7 +175,7 @@ def _flagged(root: Path, commit: str) -> list[tuple[str, str]]:
 def _base_ids(root: Path, commit: str, wanted: set[str]) -> dict[str, str]:
     if not commit or not wanted:
         return {}
-    listing = subprocess.run(["git", "ls-tree", "-r", "-z", "--full-tree", "--end-of-options", commit],
+    listing = subprocess.run([gitbin.git(), "ls-tree", "-r", "-z", "--full-tree", "--end-of-options", commit],
                              cwd=root, capture_output=True, timeout=120, check=False,
                              stdin=subprocess.DEVNULL).stdout.decode("utf-8", "surrogateescape")
     out: dict[str, str] = {}
@@ -236,7 +237,7 @@ def _eol_drift(root: Path, config: dict[str, str], attributes: list[str]) -> lis
 def base_blob(root: Path, commit: str, path: str) -> bytes | None:
     if not commit:
         return None
-    proc = subprocess.run(["git", "cat-file", "blob", f"{commit}:{path}"], cwd=root,
+    proc = subprocess.run([gitbin.git(), "cat-file", "blob", f"{commit}:{path}"], cwd=root,
                           capture_output=True, timeout=60, check=False, stdin=subprocess.DEVNULL)
     return proc.stdout if proc.returncode == 0 else None
 
@@ -281,7 +282,7 @@ def _blobs(root: Path, ids: list[str]) -> dict[str, bytes | None]:
     want = sorted({i for i in ids if i and all(c in "0123456789abcdef" for c in i)})
     if not want:
         return {}
-    proc = subprocess.run(["git", "cat-file", "--batch"], cwd=root, input=("\n".join(want) + "\n").encode(),
+    proc = subprocess.run([gitbin.git(), "cat-file", "--batch"], cwd=root, input=("\n".join(want) + "\n").encode(),
                           capture_output=True, timeout=120, check=False)
     out: dict[str, bytes | None] = {}
     data, pos = proc.stdout, 0
@@ -302,7 +303,7 @@ def _blobs(root: Path, ids: list[str]) -> dict[str, bytes | None]:
     # partial clone whose promisor is unreachable) is read on its own, as `base_blob` would
     for oid in want:
         if oid not in out:
-            proc = subprocess.run(["git", "cat-file", "blob", oid], cwd=root, capture_output=True, timeout=60,
+            proc = subprocess.run([gitbin.git(), "cat-file", "blob", oid], cwd=root, capture_output=True, timeout=60,
                                   check=False, stdin=subprocess.DEVNULL)
             out[oid] = proc.stdout if proc.returncode == 0 else None
     return {i: out.get(i) for i in want}

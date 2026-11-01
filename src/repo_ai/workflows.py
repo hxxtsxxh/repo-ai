@@ -36,6 +36,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from . import gitbin
+
 MIN_SESSIONS = 3
 
 
@@ -182,7 +184,7 @@ def verify(root: Path, book: Playbook, facts: dict[str, Any]) -> dict[str, Any]:
     tmp = Path(tempfile.mkdtemp(prefix="repo-ai-wf-"))
     try:
         try:
-            listed = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True,
+            listed = subprocess.run([gitbin.git(), "ls-files", "-z"], cwd=root, capture_output=True,
                                     timeout=30, check=False).stdout.decode("utf-8", "replace")
             files = [f for f in listed.split("\0") if f]
         except (OSError, subprocess.SubprocessError):

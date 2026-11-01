@@ -35,6 +35,7 @@ import os
 import sys
 from pathlib import Path
 
+from . import gitbin
 from . import __version__
 
 AGENT_CHOICES = ("claude", "bob", "both", "auto", "none")
@@ -1002,7 +1003,7 @@ def cmd_prove(args: argparse.Namespace) -> int:
                 except ValueError:
                     rel = ""
                 if rel and not rel.startswith((".repo-ai/", ".git/")) and subprocess.run(
-                        ["git", "check-ignore", "-q", "--", rel], cwd=root, check=False,
+                        [gitbin.git(), "check-ignore", "-q", "--", rel], cwd=root, check=False,
                         stdin=subprocess.DEVNULL).returncode != 0:
                     print(f"note: {rel} is now part of the working tree, so the passport no longer describes it "
                           "(stale); write reports under .repo-ai/ or outside the repository", file=sys.stderr)
@@ -1280,7 +1281,7 @@ def cmd_review(args: argparse.Namespace) -> int:
         from .gitinfo import safe_ref
         if not safe_ref(base):
             raise SystemExit(f"error: not a valid git revision: {base!r}")
-        base = (subprocess_out(root, ["git", "merge-base", "--end-of-options", "HEAD", base])
+        base = (subprocess_out(root, [gitbin.git(), "merge-base", "--end-of-options", "HEAD", base])
                 or base).strip()
     try:
         passport = build(root, index, _facts_obj(layout), layout, base)

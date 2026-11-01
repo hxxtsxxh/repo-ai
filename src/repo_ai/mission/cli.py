@@ -7,10 +7,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from ..locks import file_lock
-from .ledger import TERMINAL, Store, transition
-from ..providers.discovery import PROVIDERS
-from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, handoff, plan, status, undo_mission, verify_handoff
+# The mission runtime, ledger and provider adapters load in the commands that use them: argument parsing for
+# every repo-ai command (agent hooks included) imports this module.
+from ..locks import file_lock  # module-level: stdlib only, and tests patch mission.cli.file_lock
+from ..provider_names import PROVIDERS
 
 
 def _root(args) -> Path:
@@ -131,6 +131,7 @@ def _emit(value: dict[str, Any], args) -> None:
 
 
 def cmd_do(args) -> int:
+    from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, plan
     if args.run and args.dry_run:
         raise ValueError('--run and --dry-run are mutually exclusive')
     if args.resume:
@@ -249,6 +250,7 @@ def _cmd_live_tournament(args, root: Path, allow_live: bool) -> int:
 
 
 def cmd_apply(args) -> int:
+    from .runtime import apply_mission
     res = apply_mission(_root(args), args.id)
     _emit(res, args)
     return 0 if res.get('post_apply_verdict') == 'PASS' else 2
@@ -277,6 +279,7 @@ def cmd_coverage(args) -> int:
 
 
 def cmd_undo(args) -> int:
+    from .runtime import undo_mission
     res = undo_mission(_root(args), args.id)
     _emit(res, args)
     return 0
@@ -440,6 +443,8 @@ def _agents_setup(args) -> int:
 
 
 def cmd_mission(args) -> int:
+    from .ledger import TERMINAL, Store, transition
+    from .runtime import execute, status
     root, mission = _root(args), args.id
     store = Store(root)
     if args.action == 'list':
@@ -503,6 +508,7 @@ def cmd_mission(args) -> int:
 
 
 def cmd_read(args) -> int:
+    from .runtime import handoff, status, verify_handoff
     if args.command == 'why':
         from .explanation import explain, render
         report = explain(_root(args), args.id)

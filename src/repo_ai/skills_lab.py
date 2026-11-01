@@ -42,6 +42,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from . import gitbin
 from .skillcheck import RISKY_RE, command_text, validate_skill_text
 
 _WORD = re.compile(r"[a-z][a-z0-9]{2,}")
@@ -102,7 +103,7 @@ def test_skill(root: Path, name: str, text: str, facts: dict[str, Any],
     tmp = Path(tempfile.mkdtemp(prefix="repo-ai-skilltest-"))
     try:
         try:
-            listed = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True,
+            listed = subprocess.run([gitbin.git(), "ls-files", "-z"], cwd=root, capture_output=True,
                                     timeout=30, check=False).stdout.decode("utf-8", "replace")
         except (OSError, subprocess.SubprocessError):
             listed = ""

@@ -30,6 +30,8 @@ from datetime import datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from .. import gitbin
+
 SCHEMA = "repo-ai.proof-claim/1"
 MAX_SCENARIO_BYTES = 1024 * 1024
 MAX_CLAIM_CHARS = 2000
@@ -84,7 +86,7 @@ def _inside(root: Path, rel: str) -> bool:
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=root, capture_output=True, timeout=60, check=False,
+    return subprocess.run([gitbin.git(), *args], cwd=root, capture_output=True, timeout=60, check=False,
                           stdin=subprocess.DEVNULL)
 
 

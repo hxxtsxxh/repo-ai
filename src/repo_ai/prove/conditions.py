@@ -35,6 +35,8 @@ import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
+from .. import gitbin
+
 try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover - Python 3.10
@@ -181,12 +183,12 @@ def compare(base: dict[str, str], candidate: dict[str, str]) -> list[str]:
 def base_reader(root: Path, commit: str) -> tuple[list[str], Reader]:
     """The file list of `commit` and a reader of its blobs (git plumbing; no
     hooks or filters run)."""
-    out = subprocess.run(["git", "ls-tree", "-r", "-z", "--name-only", "--end-of-options", commit], cwd=root,
+    out = subprocess.run([gitbin.git(), "ls-tree", "-r", "-z", "--name-only", "--end-of-options", commit], cwd=root,
                          capture_output=True, timeout=60, check=False, stdin=subprocess.DEVNULL)
     files = sorted(p for p in out.stdout.decode("utf-8", "surrogateescape").split("\0") if p)
 
     def read(rel: str) -> bytes | None:
-        res = subprocess.run(["git", "cat-file", "blob", f"{commit}:{rel}"], cwd=root, capture_output=True,
+        res = subprocess.run([gitbin.git(), "cat-file", "blob", f"{commit}:{rel}"], cwd=root, capture_output=True,
                              timeout=60, check=False, stdin=subprocess.DEVNULL)
         return res.stdout if res.returncode == 0 else None
     return files, read

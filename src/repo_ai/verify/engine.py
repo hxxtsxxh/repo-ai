@@ -24,6 +24,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
+from .. import gitbin
 from .. import sandbox
 from . import cache, dynamic, evidence, isolate, results, strategy
 from . import changes as ch
@@ -49,7 +50,7 @@ def establish_runner(root: Path, layout, override: str | None = None,
 
 
 def repo_files(root: Path) -> list[str]:
-    out = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+    out = subprocess.run([gitbin.git(), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
                          cwd=root, capture_output=True, timeout=60, check=False,
                          stdin=subprocess.DEVNULL).stdout.decode("utf-8", "replace").split("\0")
     return sorted(p for p in out if p and not p.startswith((".repo-ai/", ".bob/")) and (root / p).is_file())
@@ -208,7 +209,7 @@ def _same_tree(root: Path, indexed: str, base: str, cache_path: Path | None = No
             return cache[key]
     # --no-renames: a source file moved into repo-ai's own directory is a deleted source file,
     # not "only repo-ai's files changed"; the answer must not depend on diff configuration
-    out = subprocess.run(["git", "diff", "--no-renames", "--no-ext-diff", "--name-only", "-z", "--end-of-options",
+    out = subprocess.run([gitbin.git(), "diff", "--no-renames", "--no-ext-diff", "--name-only", "-z", "--end-of-options",
                           indexed, base], cwd=root, capture_output=True, text=True, timeout=60, check=False,
                          stdin=subprocess.DEVNULL)
     if out.returncode != 0:
@@ -273,7 +274,7 @@ def _git_bookkeeping(root: Path) -> list[str]:
 
 
 def _head(root: Path) -> str:
-    out = subprocess.run(["git", "rev-parse", "--verify", "-q", "HEAD"], cwd=root, capture_output=True,
+    out = subprocess.run([gitbin.git(), "rev-parse", "--verify", "-q", "HEAD"], cwd=root, capture_output=True,
                          text=True, timeout=60, check=False, stdin=subprocess.DEVNULL)
     return out.stdout.strip() if out.returncode == 0 else ""
 
@@ -353,7 +354,7 @@ def _shared(layout) -> bool:
 def _ignored(root: Path, rel: str) -> bool:
     """git ignores the directory `rel` (False when git cannot say)."""
     try:
-        out = subprocess.run(["git", "check-ignore", "-q", "--no-index", "--", rel.rstrip("/") + "/"], cwd=root,
+        out = subprocess.run([gitbin.git(), "check-ignore", "-q", "--no-index", "--", rel.rstrip("/") + "/"], cwd=root,
                              capture_output=True, timeout=60, check=False, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError):
         return False
@@ -1048,7 +1049,7 @@ MAX_CONFIRM = 25
 
 
 def _base_files(root: Path, commit: str) -> set[str]:
-    out = subprocess.run(["git", "ls-tree", "-r", "-z", "--name-only", "--end-of-options", commit], cwd=root,
+    out = subprocess.run([gitbin.git(), "ls-tree", "-r", "-z", "--name-only", "--end-of-options", commit], cwd=root,
                          capture_output=True, timeout=60, check=False, stdin=subprocess.DEVNULL)
     return {p for p in out.stdout.decode("utf-8", "surrogateescape").split("\0") if p}
 

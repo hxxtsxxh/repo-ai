@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import pytest
 
 from conftest import _git
-from repo_ai import __version__
+from repo_ai import __version__, gitbin
 from repo_ai.verify import cache, evidence, execute
 
 pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="POSIX Apple launcher paths")
@@ -32,10 +32,11 @@ def layout(tmp_path, monkeypatch):
     clt = tmp_path / "CommandLineTools"
     monkeypatch.setattr(execute, "_APPLE_DEVELOPER_LINK", link, raising=False)
     monkeypatch.setattr(execute, "_APPLE_CLT_ROOT", clt, raising=False)
+    monkeypatch.setattr(gitbin, "_default_developer", lambda: None)  # sys.platform is faked: no xcode-select
     actual_run = subprocess.run
 
     def no_interpreter_or_selection_probe(args, **kwargs):
-        assert args[0] == "git", f"selection executed a program: {args}"
+        assert args[0] in {"git", gitbin.git()}, f"selection executed a program: {args}"
         return actual_run(args, **kwargs)
 
     monkeypatch.setattr(execute.subprocess, "run", no_interpreter_or_selection_probe)

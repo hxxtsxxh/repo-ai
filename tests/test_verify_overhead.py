@@ -12,6 +12,7 @@ import pytest
 
 from conftest import run_cli
 
+from repo_ai import gitbin
 from repo_ai.verify import changes, engine, isolate
 
 
@@ -162,10 +163,12 @@ def test_base_blobs_the_batch_did_not_answer_are_read_one_by_one(repo: Path, mon
     """`cat-file --batch` stops at the first object it cannot read (a partial clone offline):
     every object it did not answer is read on its own, so no present blob is lost."""
     real = changes.subprocess.run
+    hits = []
 
     def truncated(cmd, **kw):
         res = real(cmd, **kw)
-        if cmd[:3] == ["git", "cat-file", "--batch"]:
+        if cmd[:3] == [gitbin.git(), "cat-file", "--batch"]:
+            hits.append(cmd)
             first = res.stdout.split(b"\n", 1)[0].split(b" ")
             size = int(first[2]) if len(first) == 3 and first[2].isdigit() else 0
             keep = len(first[0]) + len(first[1]) + len(first[2]) + 3 + size + 1 if size else 0
@@ -173,6 +176,7 @@ def test_base_blobs_the_batch_did_not_answer_are_read_one_by_one(repo: Path, mon
         return res
     monkeypatch.setattr(changes.subprocess, "run", truncated)
     change = changes.detect(repo, "HEAD")
+    assert hits, "the batch read was never truncated: the test would prove nothing"
     for f in change.files:
         if f.status != "added":
             assert f.old_sha == changes.sha(changes.base_blob(repo, change.base_commit, f.old_path or f.path)), f.path

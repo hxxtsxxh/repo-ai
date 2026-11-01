@@ -32,6 +32,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from . import gitbin
+
 FREE_TEXT_LIMIT = 160  # a string longer than this in an outcome store is suspicious
 
 
@@ -73,13 +75,13 @@ def _size(path: Path) -> tuple[int, int | None]:
 
 def _git_state(root: Path, rel: str) -> str:
     try:
-        tracked = subprocess.run(["git", "ls-files", "--", rel], cwd=root, capture_output=True,
+        tracked = subprocess.run([gitbin.git(), "ls-files", "--", rel], cwd=root, capture_output=True,
                                  text=True, timeout=10, check=False)
         if tracked.returncode != 0:
             return "n/a"
         if tracked.stdout.strip():
             return "yes"
-        ignored = subprocess.run(["git", "check-ignore", "-q", "--", rel], cwd=root,
+        ignored = subprocess.run([gitbin.git(), "check-ignore", "-q", "--", rel], cwd=root,
                                  capture_output=True, timeout=10, check=False)
         return "no (gitignored)" if ignored.returncode == 0 else "untracked"
     except (OSError, subprocess.SubprocessError):
