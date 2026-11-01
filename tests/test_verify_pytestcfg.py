@@ -113,3 +113,24 @@ def test_a_linked_configuration_file_is_not_read_and_stops_the_search(tmp_path):
     (root / "pytest.ini").symlink_to(real)
     (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\nnorecursedirs = "build"\n')
     assert skipped(root) == ("", [], {})  # not the pyproject.toml pytest would not use
+
+
+def test_testpaths_entries_are_starting_points_when_pytest_uses_them(tmp_path):
+    root = _project(tmp_path, {"pytest.ini": "[pytest]\ntestpaths = build/tests\nnorecursedirs = build tests_old\n"})
+    files = ["build/tests/test_a.py", "build/tests/tests_old/test_b.py", "build/other/test_c.py"]
+    # `build` is a parent of a starting point, so it never counts (build/other is outside testpaths: not this note)
+    assert skipped(root, files)[2] == {"norecursedirs tests_old": ["build/tests/tests_old/test_b.py"]}
+
+
+def test_the_search_starts_at_the_common_ancestor_of_the_command_paths(tmp_path):
+    root = _project(tmp_path, {"pytest.ini": "[pytest]\nnorecursedirs = docs\n",
+                               "tests/tox.ini": "[pytest]\nnorecursedirs = fixtures\n"})
+    (root / "tests" / "fixtures").mkdir()
+    cfg, _, found = skipped(root, ["tests/fixtures/test_f.py", "tests/docs/test_d.py"], paths=["tests"])
+    assert cfg == "tests/tox.ini" and found == {"norecursedirs fixtures": ["tests/fixtures/test_f.py"]}
+
+
+def test_clustered_short_flags_that_may_choose_the_configuration_give_no_note(tmp_path):
+    root = _project(tmp_path, {"pytest.ini": "[pytest]\nnorecursedirs = docs\n"})
+    assert skipped(root, argv=["python", "-m", "pytest", "-qc", "ci.ini"]) == ("", [], {})
+    assert skipped(root, argv=["python", "-m", "pytest", "-q", "-x"])[2]
