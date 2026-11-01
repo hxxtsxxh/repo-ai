@@ -350,14 +350,15 @@
     "first-run bug (init then do) found on the published 0.11.0; fixed in 0.11.1 (PR #11, #13)",
     "python-humanize (second real repository, real upstream defect ca892b3): live Claude and Codex scoped missions PASS [LIVE_CANDIDATE_VERIFIED] on a development build; Claude equal to upstream on the sampled domain, Codex differs just below a googol; found 4 repo-ai bugs, fixed in #16 (init .gitignore), #17 (interpreter, tracked-but-ignored files) and #18 (verify counts); the slugify 20-vs-0 discrepancy was a hard-coded post-apply count in `apply` (fixed in #21), not the interpreter bug as first claimed; evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md",
     "published 0.11.2 (2026-10-30T23:46Z): fresh first run on python-humanize, live Claude PASS [LIVE_CANDIDATE_VERIFIED], project venv, apply 739/0, undo exact",
-    "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)"
+    "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)",
+    "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 with power (5 regression, 2 refused); J2 fix confirmed 3/6 (pyjwt network-denied tests; more-itertools no trusted test command at older commits); J3 uninstall restored the original revision 7/7"
    ],
    "limits": [
     "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
     "two repositories; on the published build, one live run (Claude, python-humanize)"
    ],
-   "next_action": "journey-offline-v2: select from merged pull requests too, require the fix's tests to fail without the fix, compare uninstall (tracked and untracked) with the original revision"
+   "next_action": "live half (provider journey, needs a live-call budget); unittest inference when the suite framework is unknown"
   },
   {
    "id": "C22",
