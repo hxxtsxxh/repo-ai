@@ -123,7 +123,7 @@
    "observations": [
     "local vetting + honest NO_RECOMMENDATION-style output observed (fixture skill: 'do not install, matches no gap')",
     "2026-11-01 capability-fresh-v1 (preregistered, 60 tasks by an independent author, matcher unchanged): top-3 recall 0.69 (gate 0.80) and 2 constraint-forbidden recommendations (gate 0): FAILED; correct abstention 19/20, precision 0.68. Both forbidden items came from constraints stated in prose the matcher did not detect",
-    "2026-11-01 component verdict: the deterministic capability recommender (`capabilities.recommend`, curated registry) is a NEGATIVE_RESULT. It failed its recall gate on two independent fresh corpora (0.385 on 120 tasks, 0.69 on 60) and its constraint gate on both; tuning stopped. The gate stays EXPERIMENTAL because its other parts (online search via `skills discover --online`, metadata caching, provenance pinning) have not been validated against any corpus: not tested, not shown false"
+    "2026-11-01 component verdict: the deterministic capability recommender (`capabilities.recommend`, curated registry) is a NEGATIVE_RESULT. It failed its recall gate on two independent fresh corpora (0.385 on 120 tasks, 0.69 on 60) and its constraint gate on both; tuning stopped. The gate stays EXPERIMENTAL because its other parts (online search via `skills discover --online`, metadata caching, provenance pinning, and the radar's own gap ranking and abstention in `recommend.py`) have not been validated against a corpus or live (offline unit tests only); not shown false"
    ],
    "limits": [
     "top-3 recall below the 0.80 gate on two fresh corpora (0.385 on 120 tasks, 0.69 on 60)",
