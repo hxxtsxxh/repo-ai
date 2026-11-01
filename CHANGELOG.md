@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: repo-ai's mission git commands could let git start its background maintenance after a commit, which
+  then wrote `.git/objects/maintenance.lock` in a repository or workspace repo-ai was copying (a macOS CI failure).
+  They now run with `maintenance.auto=false` and `gc.auto=0`.
+
 ## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
 - verify names the test files that the project's pytest `norecursedirs` keeps out of a full run when it matches
