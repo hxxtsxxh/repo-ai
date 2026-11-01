@@ -102,7 +102,6 @@ PASS. A candidate that deletes a docstring or comment stating a requirement is n
 | Antigravity `agy` | live on macOS only | cost UNKNOWN under subscription |
 | OpenCode + a local model | live on macOS, account-free, $0 (`repo-ai agents setup opencode`) | loopback-only network (on macOS it also admits the machine's own addresses and listening on every interface; see the security page), deny-by-default tools; small local models often fail (1 of 4 passed) and repo-ai refuses those runs |
 | IBM Bob | live, verified changes on small tasks (earlier release) | hard USD cap supported |
-| Gemini CLI | rejected for the tested account; needs `GEMINI_API_KEY` | |
 
 "Live" means a model-generated change was independently re-verified through repo-ai on this
 project's development machine, with small n. Your account, quota and platform decide what works for you;

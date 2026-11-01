@@ -49,5 +49,5 @@ def test_agent_list_does_not_invoke_a_model(bug):
     result = run_cli(bug, 'agents', 'list', '--json')
     assert result.returncode == 0, result.stderr
     profiles = json.loads(result.stdout)['providers']
-    assert {p['provider'] for p in profiles} == {'codex', 'claude', 'gemini', 'bob', 'agy', 'opencode', 'opencode-acp'}
+    assert {p['provider'] for p in profiles} == {'codex', 'claude', 'bob', 'agy', 'opencode', 'opencode-acp'}
     assert all(p['authentication'] == 'UNKNOWN' for p in profiles)

@@ -73,7 +73,8 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED"
+    "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED",
+    "2026-11-01: the gemini provider and gemini-cli host were removed at the owner's direction (Gemini CLI superseded by Antigravity, supported as agy); the provider set is codex, claude, bob, agy, opencode, opencode-acp"
    ],
    "limits": [
     "Bob not re-run on 0.10.0 (entitlement not re-checked)",

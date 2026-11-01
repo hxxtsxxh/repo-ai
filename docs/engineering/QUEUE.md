@@ -18,7 +18,7 @@ Updated 2026-11-01: 0.11.6 published (#59–#67).
 | 2 | Skill value: pilot run 2026-10-30, INCONCLUSIVE (`evidence/SKILL-VALUE-PILOT-2026-10-30.md`); next a confirmatory trial with independently written tasks and oracles (5 calls left in the second budget) | C10 | todo |
 | 2a | Skill radar recommended against project-convention skills | C07 | done (#14) |
 | 3 | python-slugify post-apply 0 vs sandbox 20 failures | C21 | explained: `apply` printed a hard-coded "0 failed"; the post-apply observation had 20 (same interpreter); fixed in #21. An earlier note blamed the interpreter bug: wrong |
-| 4 | ACP: client with one permission policy (#30) and `opencode-acp` provider under the opencode sandbox (#31, live $0 PASS) | C04, C05 | in progress: next a Gemini ACP provider (needs the owner's Gemini login) and other ACP agents as they are installed |
+| 4 | ACP: client with one permission policy (#30) and `opencode-acp` provider under the opencode sandbox (#31, live $0 PASS) | C04, C05 | in progress: next other ACP agents as they are installed (Gemini CLI was removed: superseded by Antigravity) |
 | 4a | Tournaments count `opencode` and `opencode-acp` as distinct providers although they share a binary and model | C12 | done (#33): providers sharing an executable are refused as a pair |
 | 5 | Linux live provider run (podman + bwrap) | C17 | todo |
 | 6 | `verify --show-fixed` names tests a change fixed, each confirmed alone at base and change | C11 | done (#26, redesigned after review found four false claims) |

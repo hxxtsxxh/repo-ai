@@ -95,24 +95,6 @@ PROVIDER_CONTRACTS: dict[str, ProviderContract] = {
         turn_limit_flag=None,
         enforces_hard_usd_budget=True,
     ),
-    "gemini": ProviderContract(
-        provider="gemini",
-        headless_argv=(
-            "--prompt",
-            "--output-format",
-            "stream-json",
-            "--approval-mode",
-            "auto_edit",
-            "--skip-trust",
-        ),
-        event_format="gemini-stream-json",
-        event_flag="--output-format",
-        workspace_flag=None,
-        sandbox_flags=("--approval-mode", "auto_edit", "--skip-trust"),
-        cost_limit_flag=None,
-        turn_limit_flag=None,
-        enforces_hard_usd_budget=False,
-    ),
     # Antigravity CLI 1.4.9. Headless: `agy --print PROMPT --output-format stream-json --mode accept-edits`
     # (flags taken from the installed `agy --help`). No USD flag exists; its stream reports tokens only.
     "agy": ProviderContract(
@@ -243,17 +225,6 @@ def build_invocation(
         # an ACP server on stdio: the prompt is sent in `session/prompt` (acp_prompt), the model comes from the inline
         # configuration (opencode_cfg.config_content sets it)
         return [exe, "acp"]
-    if provider == "gemini":
-        return [
-            exe,
-            "--prompt",
-            safe_prompt,
-            "--output-format",
-            "stream-json",
-            "--approval-mode",
-            "auto_edit",
-            "--skip-trust",
-        ]
     # bob 2.0.6+
     argv = [
         exe,
@@ -341,7 +312,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         etype = str(obj.get("type") or obj.get("event") or "")
         expected_terminal = {
             "codex": {"turn.completed", "turn.failed"},
-            "claude": {"result"}, "gemini": {"result"}, "bob": {"result"}, "agy": {"result"},
+            "claude": {"result"}, "bob": {"result"}, "agy": {"result"},
             "opencode": {"text"},
         }[provider]
         if etype in expected_terminal:
@@ -776,10 +747,6 @@ def _seed_live_provider_auth(provider: str, scratch_home: Path, *, codex_config:
             pass  # nothing is copied: see claude_auth (token in the environment, or a dedicated repo-ai login)
         elif provider == "agy":
             pass  # nothing is copied: agy authenticates from the real HOME under a read-restricted sandbox
-        elif provider == "gemini":
-            # nothing is copied: ~/.gemini holds OAuth tokens, account lists and other agents' state (agy's
-            # conversation history lives under ~/.gemini/antigravity-cli). Live Gemini needs an API key variable.
-            pass
     except OSError:
         pass
 
@@ -805,7 +772,7 @@ def live_constraint_prompt(provider: str, prompt: str, allowed: str, workspace: 
     if provider == "agy" or provider in OPENCODE_PROVIDERS:
         return base + ("Use only your file view and edit tools. Shell commands are not available and will be denied; "
                        "do not try to run tests.")
-    if provider in {"codex", "claude", "gemini"}:
+    if provider in {"codex", "claude"}:
         return base + ("Read files with read-only commands (cat, ls, grep) if you need to; do not run the tests "
                        "or any command that writes files other than your edit.")
     return base + "Do not run shell commands; inspect and edit the source file directly."
@@ -1150,7 +1117,7 @@ def run_provider(
         }
 
     live_run = not simulated and allow_live
-    if (provider == "gemini" or provider in OPENCODE_PROVIDERS) and live_run:
+    if provider in OPENCODE_PROVIDERS and live_run:
         problems = setup_problems(provider)
         if problems:
             return {
@@ -1250,7 +1217,6 @@ def run_provider(
                 "bob": ("BOB_API_KEY", "USER"),
                 "claude": (*claude_auth.TOKEN_ENV_VARS, "USER", "ANTHROPIC_MODEL"),
                 "codex": ("OPENAI_API_KEY", "USER"),
-                "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY", "USER"),
             }.get(provider, ())
             for var_name in auth_vars:
                 val = os.environ.get(var_name)
@@ -1366,8 +1332,6 @@ def run_provider(
             reasons.append(f"codex broker: the upstream refused the login's credential (HTTP {denied[0]})")
         if not broker_summary["requests"]:
             reasons.append("codex broker: Codex sent no request through the broker")
-    if provider == "gemini" and result.returncode == 41:  # Gemini CLI's documented authentication-failure exit code
-        reasons.append("gemini not authenticated for isolated execution (exit 41): check GEMINI_API_KEY / GOOGLE_API_KEY")
     if not events["valid_jsonl"]:
         reasons.append("provider output did not conform to structured JSONL event contract")
     if not simulated and not events["protocol_valid"]:
@@ -1407,7 +1371,6 @@ def run_provider(
     }
 
 
-GEMINI_KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
 CODEX_HOME_ENV = "REPO_AI_CODEX_HOME"
 
 
@@ -1468,9 +1431,6 @@ def setup_problems(provider: str) -> list[str]:
         return list(claude_auth.plan().problems)
     if provider in OPENCODE_PROVIDERS:
         return opencode_cfg.setup_problems()
-    if provider == "gemini" and not any(os.environ.get(v) for v in GEMINI_KEY_VARS):
-        return ["set GEMINI_API_KEY (or GOOGLE_API_KEY) in repo-ai's environment; repo-ai no longer copies ~/.gemini "
-                "(OAuth tokens and other agents' state) into the sandbox"]
     return []
 
 
