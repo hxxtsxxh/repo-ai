@@ -20,7 +20,9 @@ from .models import Dependency, FileRecord, TestSuite
 
 FRAMEWORK_IMPORT_MARKERS: list[tuple[re.Pattern[str], str, str]] = [
     (re.compile(r"^\s*import\s+pytest|^\s*from\s+pytest\b|@pytest\.", re.M), "pytest", "Python"),
-    (re.compile(r"^\s*import\s+unittest\b(?!\.)|unittest\.TestCase", re.M), "unittest", "Python"),
+    # `from unittest import TestCase` too (more-itertools); `from unittest.mock import …` is not a unittest suite
+    (re.compile(r"^\s*import\s+unittest\b(?!\.)|^\s*from\s+unittest\s+import\b|unittest\.TestCase", re.M), "unittest",
+     "Python"),
     (re.compile(r"\bfrom\s+django\.test\b"), "Django test", "Python"),
     (re.compile(r"\bfrom\s+fastapi\.testclient\b"), "FastAPI TestClient", "Python"),
     (re.compile(r"\bfrom\s+hypothesis\b"), "Hypothesis", "Python"),
