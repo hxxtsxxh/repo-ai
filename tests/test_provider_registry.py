@@ -168,7 +168,7 @@ def test_ready_observation_is_bound_to_the_binary_and_expires(repo: Path) -> Non
 
 
 def test_ready_is_never_claimed_without_an_observation(repo: Path) -> None:
-    r = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex", "agy", "claude", "gemini"))
+    r = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex", "agy", "claude"))
     assert all(c["readiness"] != "READY" for c in r["considered"])
 
 
@@ -206,7 +206,7 @@ def test_route_list_doctor_and_dry_run_never_start_a_process(repo: Path, monkeyp
     def guard(*a, **k):
         argv = a[0] if a else k.get("args")
         first = str(argv[0] if isinstance(argv, (list, tuple)) and argv else argv)
-        if any(n in first for n in ("codex", "agy", "bob", "claude", "gemini")):
+        if any(n in first for n in ("codex", "agy", "bob", "claude")):
             spawned.append(first)
             raise AssertionError("provider process spawned: " + first)
         return real_popen(*a, **k)
@@ -239,13 +239,12 @@ def test_every_readiness_state_has_a_status_class_and_no_host_ready_is_invented(
 
 
 def test_status_class_distinguishes_auth_quota_sandbox_and_unsupported(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("GEMINI_API_KEY", "k")  # gemini needs a key variable to be isolated-ready
     registry.note_observation(repo, "bob", "USAGE_LIMITED", "id1", now=1000.0)
     registry.note_observation(repo, "codex", "AUTHORIZED_BUT_UNREADY", "id1", now=1000.0)
-    r = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex", "gemini"), now=1100.0)
+    r = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex", "agy"), now=1100.0)
     assert _row(r, "bob")["status_class"] == "BLOCKED_QUOTA"
     assert _row(r, "codex")["status_class"] == "BLOCKED_AUTH"
-    assert _row(r, "gemini")["status_class"] == "ISOLATED_READY"
+    assert _row(r, "agy")["status_class"] == "ISOLATED_READY"
     assert _row(r, "claude")["status_class"] == "NOT_INSTALLED"
     assert registry.route(repo, profiles=_prof("bob"))["considered"][0]["status_class"] in {"NOT_AUTHORIZED", "ISOLATED_READY"}
     monkeypatch.setattr(sys, "platform", "linux")

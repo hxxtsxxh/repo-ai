@@ -234,7 +234,7 @@ def _version(provider: str, output: bytes) -> str | None:
 
 def _observed_modes(provider: str, output: bytes) -> list[str]:
     text = output.decode("utf-8", "replace")
-    expected = {"codex": "codex exec", "claude": "claude", "gemini": "gemini", "bob": "bob run", "agy": "agy",
+    expected = {"codex": "codex exec", "claude": "claude", "bob": "bob run", "agy": "agy",
                 "opencode": "opencode run", "opencode-acp": "opencode acp"}[provider]
     if provider in {"opencode", "opencode-acp"}:  # "USAGE" heading, usage line indented below it
         if not re.search(rf"(?m)^USAGE\s*\n\s+{re.escape(expected)}(?:\s|$)", text):
@@ -244,9 +244,9 @@ def _observed_modes(provider: str, output: bytes) -> list[str]:
     elif not re.search(rf"(?m)^Usage(?: of)?:? {re.escape(expected)}:?(?:\s|$)", text):
         return []
     flags = set(re.findall(r"(?m)^\s+(?:-\w, )?(--[\w-]+)(?=[\s,=]|$)", text))
-    headless = provider in {"codex", "bob", "opencode"} or ("--prompt" if provider == "gemini" else "--print") in flags
+    headless = provider in {"codex", "bob", "opencode"} or "--print" in flags
     modes = ["headless"] if headless else []
-    event_flag = {"codex": "--json", "claude": "--output-format", "gemini": "--output-format", "bob": "--format",
+    event_flag = {"codex": "--json", "claude": "--output-format", "bob": "--format",
                   "agy": "--output-format", "opencode": "--format"}[provider]
     if event_flag in flags:
         modes.append("structured_events")

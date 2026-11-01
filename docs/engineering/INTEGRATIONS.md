@@ -104,7 +104,10 @@ Host: macOS, OpenCode **2.2.1** (Homebrew, MIT), Ollama **0.40.12/0.40.13** serv
 * Events embed whole tool inputs/outputs: a 28-edit local run produced 68 KB (86 lines), over repo-ai's 64 KB
   default; OpenCode gets a 256 KB bounded capture.
 
-## Gemini CLI
+## Gemini CLI (removed)
+
+Removed after 0.11.6: the owner reports that Gemini CLI was superseded by Antigravity (`agy`), so repo-ai no longer
+has a `gemini` provider or a `gemini-cli` skill host. The history below is kept.
 
 0.9.0 copied the entire `~/.gemini` (OAuth tokens, account list and **agy's per-user state under
 `antigravity-cli/`**, including conversation history) into the provider's scratch HOME. Removed: live Gemini now needs

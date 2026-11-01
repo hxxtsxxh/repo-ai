@@ -689,7 +689,7 @@ skill lifecycle (experimental, except the read-only inventory and vet): list \| 
 | `--approve` `HASH` | install, enable, rollback: the content hash you reviewed |
 | `--accept-review` | install: accept high-severity findings you have read |
 | `--allow-scripts` | install, enable, rollback: the skill ships scripts |
-| `--host` `HOSTS` | install: comma-separated hosts (default claude-code; codex, gemini-cli, antigravity and ibm-bob are export-only) |
+| `--host` `HOSTS` | install: comma-separated hosts (default claude-code; codex, antigravity and ibm-bob are export-only) |
 | `--check` | updates: check upstream (network); inventory: exit 1 on a high-severity issue |
 | `--max-cost-per-run` `MAX_COST_PER_RUN` | benchmark: cap per run |
 | `--trial-tasks` `REGEX` | benchmark: task ids to use |
@@ -914,7 +914,7 @@ plan an outcome offline; run an isolated replay or authorized live provider cand
 | `--from-handoff` `FILE` | continue an interrupted/failed mission from a verified handoff capsule JSON file |
 | `--apply` | apply the candidate diff to the working tree after fresh PASS verification |
 | `--json` | machine-readable JSON output |
-| `--agent` `AGENT` | one of `auto`, `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode`, `opencode-acp` |
+| `--agent` `AGENT` | one of `auto`, `none`, `replay`, `codex`, `claude`, `bob`, `agy`, `opencode`, `opencode-acp` |
 | `--replay` `FILE` | explicitly simulated bounded JSON edit proposal; never a live agent |
 | `--provider-executable` `FILE` | local non-billable provider executable for contract simulation |
 | `--candidate` `FILE` | opt-in tournament: repeat for 2–3 isolated simulated proposals |
@@ -999,7 +999,7 @@ local mission handoff; no provider disclosure
 | `id` | mission ID |
 | `--json` | machine-readable JSON output |
 | `--format` `FORMAT` | one of `text`, `json` |
-| `--to` `TO` | optional target provider for local handoff adaptation (one of `none`, `replay`, `codex`, `claude`, `gemini`, `bob`, `agy`, `opencode`, `opencode-acp`) |
+| `--to` `TO` | optional target provider for local handoff adaptation (one of `none`, `replay`, `codex`, `claude`, `bob`, `agy`, `opencode`, `opencode-acp`) |
 | `--verify` `FILE` | verify a local handoff capsule JSON file against current repository state |
 
 ## `repo-ai replay`
