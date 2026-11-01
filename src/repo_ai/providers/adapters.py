@@ -918,6 +918,108 @@ def acp_handshake(provider: str, root: Path, executable: Path | str | None = Non
     return {**out, "model_invoked": False, "cleanup_problems": cleanup}
 
 
+ACP_CONFORMANCE_SCHEMA = "repo-ai.acp-conformance/1"
+
+
+_CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f-\x9f]")
+
+
+def _shown(value: object, limit: int = 120) -> str:
+    """An agent-supplied value as it may be printed: control characters (terminal escapes) and Unicode format
+    characters (bidi overrides, zero-width) removed, bounded."""
+    import unicodedata
+    text = _CONTROL_CHARS.sub(" ", str(value))
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Cf")[:limit]
+
+
+def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: float = 20.0) -> dict[str, Any]:
+    """The conformance kit for an Agent Client Protocol agent repo-ai has no adapter for: whether the executable you
+    name answers `initialize` with ACP 1, who it says it is and what it advertises. It runs only that handshake, in
+    the network-denied probe sandbox `agents doctor` uses (no network, no LaunchServices or Apple events, writes only
+    to a scratch directory, scratch HOME, an empty workspace; every process it starts is swept afterwards), so no
+    session is created and no model is called. Passing says the agent speaks the protocol; it does not make it a
+    repo-ai execution provider (that needs an adapter with its own isolation and conformance tests). An agent that
+    needs the network to start (OpenCode's ACP mode runs its own local server) does not pass here."""
+    base: dict[str, Any] = {"schema": ACP_CONFORMANCE_SCHEMA, "executable": executable, "args": list(args),
+                            "model_invoked": False, "execution_support": "PLANNED",
+                            "note": "handshake only: no session, no model call; repo-ai runs an agent only through "
+                                    "an adapter, with its own sandbox and tests"}
+    raw = Path(executable)
+    if not raw.is_absolute():
+        return {**base, "verdict": "REFUSED", "problem": "name the agent by absolute path (no PATH lookup)"}
+    if _repo_owned(raw, root.resolve()):
+        return {**base, "verdict": "REFUSED", "problem": "repository-owned executable or symlink alias; it was not run"}
+    try:
+        resolved = raw.resolve(strict=True)
+    except (OSError, RuntimeError):
+        return {**base, "verdict": "REFUSED", "problem": "the executable does not exist or cannot be resolved"}
+    if not resolved.is_file() or not os.access(resolved, os.X_OK):
+        return {**base, "verdict": "REFUSED", "problem": "not an executable file"}
+    if _repo_owned(resolved, root.resolve()):
+        return {**base, "verdict": "REFUSED", "problem": "resolves into the repository; it was not run"}
+    from .. import sandbox as _sandbox
+    with tempfile.TemporaryDirectory(prefix="repo-ai-acp-conformance-") as directory:
+        scratch = Path(directory).resolve()
+        for name in ("home", "tmp", "work"):
+            (scratch / name).mkdir()
+        prefix = _sandbox_prefix(scratch)
+        if prefix is None:
+            return {**base, "verdict": "NO_SANDBOX",
+                    "problem": "no network-denying sandbox on this host (seatbelt or bubblewrap); nothing was run"}
+        run_marker = None
+        if prefix[:1] == ["/usr/bin/sandbox-exec"]:
+            run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex
+            # an agent's runtime may start a helper with its output sent to /dev/null (OpenCode's does); the marker
+            # tags every descendant (setsid, double fork) for the sweep below
+            prefix = [*prefix[:2], prefix[2] + '(allow file-write* (literal "/dev/null"))'
+                      '(deny user-preference-read (preference-domain-regex #"^com\\.repo-ai\\.run\\."))'
+                      f'(allow user-preference-read (preference-domain "{run_marker}"))', *prefix[3:]]
+        env = _probe_env(scratch)
+        # an npm-installed agent starts through `env node`: its own directory and the host's node (never one inside
+        # the repository), nothing else
+        extra = [str(raw.parent)]
+        node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
+        if node and Path(node).is_absolute() and not _repo_owned(node, root.resolve()):
+            extra.append(str(Path(node).resolve().parent))
+        env["PATH"] = os.pathsep.join([*dict.fromkeys(extra), env["PATH"]])
+        client = AcpClient([*prefix, str(resolved), *args], scratch / "work", allowed_writes=[], env=env)
+        try:
+            out = client.probe(timeout_s)
+        finally:
+            cleanup = _reap_provider_run(run_marker) if run_marker else []
+    try:
+        identity = _identity(resolved)
+    except (OSError, ValueError):
+        identity = ""
+    raw_agent, raw_caps = out.get("agent"), out.get("capabilities")
+    agent: dict[str, Any] = raw_agent if isinstance(raw_agent, dict) else {}
+    caps: dict[str, Any] = raw_caps if isinstance(raw_caps, dict) else {}
+    result = {**base, "acp": bool(out.get("acp")), "identity": identity, "cleanup_problems": cleanup,
+              "protocol_version": out.get("protocol_version") if isinstance(out.get("protocol_version"), int) else
+              (None if out.get("protocol_version") is None else _shown(out.get("protocol_version"), 40)),
+              "agent": {k: _shown(agent[k]) for k in ("name", "version", "title") if k in agent},
+              "capabilities": sorted(_shown(k, 60) for k in list(caps)[:40]),
+              "auth_methods": [_shown(m, 60) for m in (out.get("auth_methods") or [])[:20]],
+              "sandbox": "no network, no LaunchServices, writes only to a scratch directory, swept after"}
+    if out.get("problem"):
+        result["problem"] = _shown(out["problem"], 300)
+    if not out.get("acp") and client.result.stderr:
+        result["diagnostic_summary"] = _shown(redact_text(client.result.stderr.decode("utf-8", "replace")), 240)
+    checks = {
+        "answers_initialize_with_acp_1": bool(out.get("acp")),
+        "names_itself": bool(result["agent"].get("name")),
+        "states_its_version": bool(result["agent"].get("version")),
+    }
+    result["checks"] = checks
+    # NOT_ACP: it answered, but not with ACP 1; NO_HANDSHAKE: it exited or stayed silent before answering
+    answered = out.get("protocol_version") is not None
+    result["verdict"] = ("HANDSHAKE_CONFORMANT" if checks["answers_initialize_with_acp_1"]
+                         else "NOT_ACP" if answered else "NO_HANDSHAKE")
+    if cleanup and result["verdict"] == "HANDSHAKE_CONFORMANT":
+        result["verdict"] = "CLEANUP_UNCONFIRMED"  # it may still be running: not a pass
+    return result
+
+
 def _acp_run_result(provider: str, run: AcpResult, *, resolved: Path, identity: str, simulated: bool,
                     max_cost_usd: float, cleanup_problems: list[str]) -> dict[str, Any]:
     """run_provider's result for an ACP run. Any problem, refusal, timeout or stop reason other than `end_turn` is a

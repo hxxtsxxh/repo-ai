@@ -40,6 +40,23 @@ repo-ai agents catalog   # 24 coding agents and what repo-ai can honestly do wit
 execution path. Routing checks offline whether a provider has any login repo-ai's isolation can use (`SETUP_REQUIRED`,
 reported as `BLOCKED_AUTH`) without reading credentials; it does not check quota before a live run.
 
+### ACP conformance kit (agents without an adapter)
+
+```sh
+repo-ai agents conformance --acp-executable /absolute/path/to/agent --acp-arg acp [--json]
+```
+
+For an [Agent Client Protocol](https://agentclientprotocol.com) agent repo-ai has no adapter for, this checks whether
+the executable you name answers `initialize` with ACP 1, and records who it says it is and what it advertises. It
+runs only that handshake, in the probe sandbox `agents doctor` uses: no session, no model call, no network, no
+LaunchServices or Apple events, writes only to a scratch directory, every process it starts swept afterwards, and
+never a repository-owned executable. Agent-supplied text is stripped of terminal escapes and bounded. Verdicts:
+`HANDSHAKE_CONFORMANT`, `NOT_ACP` (it answered, not with ACP 1), `NO_HANDSHAKE` (it exited or stayed silent; what it
+printed is shown, redacted), `REFUSED`, `NO_SANDBOX`. Passing says the agent speaks the protocol. It does not make it
+an execution provider: that needs an adapter with its own isolation and conformance tests, and every such agent stays
+`PLANNED` until then. Observed on 2026-10-31: Gemini CLI 0.65.0 (`--acp-arg=--acp`) conforms; OpenCode 2.2.1 does not
+start without network (its ACP mode runs its own local server) and reports `NO_HANDSHAKE` with that reason.
+
 ## Per-provider notes
 
 ### IBM Bob
