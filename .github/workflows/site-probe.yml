@@ -1,0 +1,81 @@
+# Probe the deployed website from a GitHub runner, not the development host (acceptance gate C19):
+# every sitemap URL over HTTPS (status, HTML, no third-party subresources), a real 404, the released version on the
+# home page, and Lighthouse scores (mobile and desktop) for the main pages. Reads only the public site.
+name: site-probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["probe/**"]
+  schedule:
+    - cron: "17 6 * * 1"  # weekly, Monday 06:17 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Probe every sitemap URL
+        run: python scripts/site_probe.py --out site-probe.json
+      - name: Lighthouse (mobile and desktop)
+        env:
+          BASE: https://hxxtsxxh.github.io/repo-ai/
+        run: |
+          mkdir -p lighthouse
+          for page in "" docs/ docs/quickstart/ docs/verify/ docs/evidence/ docs/changelog/; do
+            name=$(echo "home/${page}" | tr '/' '_' | sed 's/_*$//')
+            for form in mobile desktop; do
+              preset=""; [ "$form" = desktop ] && preset="--preset=desktop"
+              npx --yes lighthouse@12.2.1 "${BASE}${page}" $preset --quiet \
+                --only-categories=performance,accessibility,best-practices,seo \
+                --chrome-flags="--headless=new --no-sandbox" \
+                --output=json --output-path="lighthouse/${name}.${form}.json"
+            done
+          done
+      - name: Summarise
+        run: |
+          python - <<'PY'
+          import glob, json, os
+          rows = []
+          for f in sorted(glob.glob("lighthouse/*.json")):
+              r = json.load(open(f))
+              cats = {k: round(v["score"] * 100) if v.get("score") is not None else None for k, v in r["categories"].items()}
+              audits = r["audits"]
+              rows.append({"report": os.path.basename(f), "url": r["finalDisplayedUrl"], **cats,
+                           "lcp_ms": round(audits["largest-contentful-paint"]["numericValue"]),
+                           "cls": round(audits["cumulative-layout-shift"]["numericValue"], 3),
+                           "tbt_ms": round(audits["total-blocking-time"]["numericValue"]),
+                           "lighthouse": r["lighthouseVersion"]})
+          json.dump(rows, open("lighthouse-summary.json", "w"), indent=1)
+          lines = ["| report | perf | a11y | best practices | SEO | LCP ms | CLS | TBT ms |", "|---|---|---|---|---|---|---|---|"]
+          for x in rows:
+              lines.append(f"| {x['report']} | {x['performance']} | {x['accessibility']} | {x['best-practices']} | {x['seo']} "
+                           f"| {x['lcp_ms']} | {x['cls']} | {x['tbt_ms']} |")
+          open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          # thresholds: performance >= 90; accessibility, best practices and SEO at 100 (deterministic audits)
+          low = [f"{x['report']}: {k} {x[k]}" for x in rows for k in ("performance", "accessibility", "best-practices", "seo")
+                 if x[k] is None or x[k] < (90 if k == "performance" else 100)]
+          if not rows or low:
+              raise SystemExit("below threshold: " + ("; ".join(low) or "no Lighthouse reports"))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-probe
+          path: |
+            site-probe.json
+            lighthouse-summary.json
+            lighthouse/
