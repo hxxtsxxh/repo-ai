@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.7 — faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed
 
 - A mission record now says how a live Claude run authenticated: `provider.auth_mode` (`token_env` or
   `dedicated_config`) and `provider.auth_env_vars` (the variable names found, such as `CLAUDE_CODE_OAUTH_TOKEN`;
@@ -23,7 +23,18 @@
   commit, which then wrote `.git/objects/maintenance.lock` in a repository or workspace repo-ai was copying (a macOS
   CI failure). They now run with `maintenance.auto=false` and `gc.auto=0` (the eval lab also with
   `core.fsmonitor=false`, whose daemon socket in `.git` would break the copy too).
-
+- Evaluation: c10-confirm-v1 (`benchmarks/c10-confirm-v1/`, preregistered; fixture and skill, tasks and hidden
+  oracles, and an ambiguity review written by three separate model sessions; 48 host-mode runs with Claude Code and
+  sonnet, a new empty Claude config per run): with a project-conventions skill installed by `repo-ai skills install`,
+  Claude's changes passed every convention assertion; without it, about a third (0.319). Skill arm higher on 8 of 8
+  tasks (sign test p = 0.0039), with no cost to the requested behaviour. Limits: one fixture project, one model, one
+  conventions skill; the control had no conventions text, so this is not a comparison with the same text in
+  CLAUDE.md; it says nothing about third-party skills in general. C10 moves to PASS_WITH_LIMITS.
+- Evaluation: the Claude provider ran live on Linux for the first time (a disposable Ubuntu container with
+  bubblewrap, repo-ai 0.11.6 and Claude Code 2.1.316 with a `CLAUDE_CODE_OAUTH_TOKEN`): a toy journey PASS,
+  `LIVE_CANDIDATE_VERIFIED`; a probe found that a Read outside the workspace was refused (recorded), and the model
+  reported that its Read tool also refused `/proc/self/environ` (not recorded). n = 1;
+  `docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md`.
 ## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
 - verify names the test files that the project's pytest `norecursedirs` keeps out of a full run when it matches
