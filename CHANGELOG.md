@@ -2,7 +2,7 @@
 
 ## 0.11.5 — agents doctor sandbox fix, ACP conformance kit, real-project journeys
 
-Includes everything listed under 0.11.4 in CHANGELOG.md, which was qualified but never published to PyPI.
+Includes everything listed under 0.11.4 (see CHANGELOG.md), which was qualified but never published to PyPI.
 
 - Fixed (found by journey-offline-v2 on more-itertools): `from unittest import TestCase` (or
   `IsolatedAsyncioTestCase`) now marks a unittest suite, so verify runs it by discovery. `from unittest import mock`
