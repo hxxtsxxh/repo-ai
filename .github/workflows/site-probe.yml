@@ -65,6 +65,11 @@ jobs:
                            f"| {x['lcp_ms']} | {x['cls']} | {x['tbt_ms']} |")
           open(os.environ["GITHUB_STEP_SUMMARY"], "a").write("\n".join(lines) + "\n")
           print("\n".join(lines))
+          # thresholds: performance >= 90; accessibility, best practices and SEO at 100 (deterministic audits)
+          low = [f"{x['report']}: {k} {x[k]}" for x in rows for k in ("performance", "accessibility", "best-practices", "seo")
+                 if x[k] is None or x[k] < (90 if k == "performance" else 100)]
+          if not rows or low:
+              raise SystemExit("below threshold: " + ("; ".join(low) or "no Lighthouse reports"))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
