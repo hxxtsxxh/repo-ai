@@ -132,7 +132,7 @@ the CPU all changed, so this is not a controlled test of those fixes.
   install; verify and native ran the same environment, so the comparison stands, but the install is incomplete.
 
 Follow-up 1: its symptoms are gone for more-itertools (exit codes; the full suite seen passing once) and humanize
-f772e59b; marshmallow 2fc8207d's verdict flip is explained in the addendum below. Follow-up 2 shipped in 0.11.4 (not measured here).
+f772e59b; marshmallow 2fc8207d's verdict difference is explained in the addendum below (why the strategy differed is not recorded). Follow-up 2 shipped in 0.11.4 (not measured here).
 Follow-up 3 stays open: the Linux overhead could not be compared across these runs.
 
 ## Addendum (2026-11-01): marshmallow 2fc8207d's two verdicts
