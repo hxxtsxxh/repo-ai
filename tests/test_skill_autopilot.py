@@ -622,10 +622,12 @@ def test_enable_and_rollback_of_a_retired_host_record_point_at_reinstalling(tmp_
     repo.mkdir()
     src = skill(tmp_path / "in", "retired")
     _local_install(repo, src)
+    (src / "SKILL.md").write_text((src / "SKILL.md").read_text() + "3. Run them.\n")
+    _local_install(repo, src)  # a second version, so rollback has history and reaches the host check
     portfolio.disable(repo, ["retired"])
     capbundle.set_record(repo, "retired", hosts=["gemini-cli"])  # what an earlier version recorded
     for action in (portfolio.enable, portfolio.rollback):
-        with pytest.raises(portfolio.PortfolioError, match=r"skills install retired --host|no previous version"):
+        with pytest.raises(portfolio.PortfolioError, match=r"skills install retired --host"):
             action(repo, "retired", level="PROPOSE")
     assert not (repo / ".claude/skills/retired").exists()
 
