@@ -83,5 +83,5 @@ cost is paid on every prompt. It belongs only in a preregistered experiment, and
   invocations in 212.
 - That agent selection beats the deterministic top 3. It was not measured; that would be a model trial.
 - That discovery is reliable. On a fresh preregistered corpus, top-3 recall was 0.385 and shortlist
-  recall 0.736, both FAIL ([research/capability-discovery-C-2026-10/RESULTS.md](research/capability-discovery-C-2026-10/RESULTS.md)).
+  recall 0.736, both FAIL (`docs/research/capability-discovery-C-2026-10/RESULTS.md`, private development history).
 - That any capability improves a task outcome. `measured_effect` is `null` everywhere.
