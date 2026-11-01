@@ -96,6 +96,14 @@ def snapshot(root: Path, skip: tuple[str, ...] = (".git", ".repo-ai/state")) -> 
     return out
 
 
+@pytest.fixture(autouse=True, scope="session")
+def _gitbin_default_developer_cached():
+    """Ask xcode-select (gitbin's macOS fallback) once, before any test wraps `subprocess.run`: a wrapper that
+    calls `gitbin.git()` must not start that process from inside itself."""
+    from repo_ai import gitbin
+    gitbin._default_developer()
+
+
 @pytest.fixture
 def pyweb(tmp_path: Path) -> Path:
     return make_repo(tmp_path, "pyweb")

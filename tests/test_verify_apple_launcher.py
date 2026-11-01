@@ -32,6 +32,7 @@ def layout(tmp_path, monkeypatch):
     clt = tmp_path / "CommandLineTools"
     monkeypatch.setattr(execute, "_APPLE_DEVELOPER_LINK", link, raising=False)
     monkeypatch.setattr(execute, "_APPLE_CLT_ROOT", clt, raising=False)
+    monkeypatch.setattr(gitbin, "_default_developer", lambda: None)  # sys.platform is faked: no xcode-select
     actual_run = subprocess.run
 
     def no_interpreter_or_selection_probe(args, **kwargs):
