@@ -1,0 +1,198 @@
+[
+ {
+  "id": "repo-ai.verify",
+  "title": "Verify the change",
+  "description": "What the current change can break and which tests show it; `--run` runs them in a sandbox.",
+  "kind": "builtin",
+  "languages": [
+   "Python",
+   "JavaScript",
+   "TypeScript",
+   "Go",
+   "Rust",
+   "Java"
+  ],
+  "network": false
+ },
+ {
+  "id": "repo-ai.impact",
+  "title": "Change impact",
+  "description": "Importers, tests and co-changed files reachable from changed paths or a symbol.",
+  "kind": "builtin",
+  "languages": [
+   "*"
+  ],
+  "network": false
+ },
+ {
+  "id": "repo-ai.context",
+  "title": "Task context shortlist",
+  "description": "Ranks the files most relevant to a task description.",
+  "kind": "builtin",
+  "languages": [
+   "*"
+  ],
+  "network": false
+ },
+ {
+  "id": "repo-ai.review",
+  "title": "Change passport",
+  "description": "Pre-PR evidence packet: what the diff touches, linked tests, risks and blind spots.",
+  "kind": "builtin",
+  "languages": [
+   "*"
+  ],
+  "network": false
+ },
+ {
+  "id": "repo-ai.skills-vet",
+  "title": "Vet a skill or plugin before installing",
+  "description": "Pins a GitHub URL (or reads a local directory) and statically inspects its skills and plugin components.",
+  "kind": "builtin",
+  "languages": [
+   "*"
+  ],
+  "network": "only with --online"
+ },
+ {
+  "id": "repo-ai.skills-inventory",
+  "title": "Audit installed skills, hooks and MCP servers",
+  "description": "Everything Claude Code loads here, whoever installed it, with firewall findings and context cost.",
+  "kind": "builtin",
+  "languages": [
+   "*"
+  ],
+  "network": false
+ },
+ {
+  "id": "repo-ai.budget",
+  "title": "Context budget",
+  "description": "Always-loaded and per-prompt context repo-ai adds, against limits.",
+  "kind": "builtin",
+  "languages": [
+   "*"
+  ],
+  "network": false
+ },
+ {
+  "id": "adapter.ruff-security",
+  "title": "Python security lint on the change (ruff S rules)",
+  "description": "Runs an approved local ruff with a curated set of flake8-bandit rules on the changed Python files and reports findings on added lines as SARIF.",
+  "kind": "adapter",
+  "languages": [
+   "Python"
+  ],
+  "network": false
+ },
+ {
+  "id": "adapter.semgrep",
+  "title": "Multi-language SAST (Semgrep CE)",
+  "description": "Dataflow-aware static analysis with SARIF output for JS/TS, Go, Java, Python and more.",
+  "kind": "adapter",
+  "languages": [
+   "JavaScript",
+   "TypeScript",
+   "Go",
+   "Java",
+   "Kotlin",
+   "Ruby",
+   "PHP",
+   "C#",
+   "Python",
+   "Rust",
+   "Scala"
+  ],
+  "network": "rule registry downloads unless local rules and --metrics=off"
+ },
+ {
+  "id": "adapter.dependency-audit",
+  "title": "Vulnerable dependency audit",
+  "description": "pip-audit, npm audit or osv-scanner against the lockfiles the change touches.",
+  "kind": "adapter",
+  "languages": [
+   "Python",
+   "JavaScript",
+   "TypeScript",
+   "Go",
+   "Rust",
+   "Java"
+  ],
+  "network": true
+ },
+ {
+  "id": "ext.lsp-references",
+  "title": "Precise references and rename (language server)",
+  "description": "Claude Code's LSP tool through an official language-server plugin (pyright-lsp, typescript-lsp, gopls-lsp \u2026).",
+  "kind": "external",
+  "languages": [
+   "Python",
+   "TypeScript",
+   "JavaScript",
+   "Go",
+   "Rust",
+   "Java",
+   "C",
+   "C++",
+   "C#",
+   "Kotlin",
+   "Swift",
+   "PHP",
+   "Ruby",
+   "Lua"
+  ],
+  "network": "none at runtime; installing the server binary is yours"
+ },
+ {
+  "id": "ext.browser-evidence",
+  "title": "Browser runtime evidence (Chrome DevTools MCP)",
+  "description": "Console errors, network, performance traces and screenshots for front-end changes, from an isolated browser profile.",
+  "kind": "external",
+  "languages": [
+   "TypeScript",
+   "JavaScript",
+   "HTML",
+   "CSS",
+   "Vue",
+   "Svelte"
+  ],
+  "network": "the pages you open; usage statistics are ON by default (use --no-usage-statistics --no-performance-crux)"
+ },
+ {
+  "id": "ext.mutation-testing",
+  "title": "Mutation testing",
+  "description": "Measures whether the tests would catch a change (mutmut for Python, Stryker for JS/TS, mewt via Trail of Bits).",
+  "kind": "external",
+  "languages": [
+   "Python",
+   "JavaScript",
+   "TypeScript",
+   "Rust",
+   "Java",
+   "Go"
+  ],
+  "network": false
+ },
+ {
+  "id": "ext.property-testing",
+  "title": "Property-based testing",
+  "description": "Hypothesis or fast-check tests for invariants, round-trips and edge cases.",
+  "kind": "external",
+  "languages": [
+   "Python",
+   "JavaScript",
+   "TypeScript",
+   "Rust"
+  ],
+  "network": false
+ },
+ {
+  "id": "ext.differential-security-review",
+  "title": "Differential security review workflow",
+  "description": "Trail of Bits' structured security review of a diff (threat-model the change, then check each class).",
+  "kind": "external",
+  "languages": [
+   "*"
+  ],
+  "network": false
+ }
+]
