@@ -9,8 +9,8 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
 
 - **Faster** every command builds its argument parser without loading the mission runtime or the provider
   adapters (about 80 ms). On one Apple Silicon Mac, Claude hooks took about half as long (`prompt`, `post-edit`,
-  `stop` about 150 ms → 67–81 ms; `session-start` 324 → 205 ms); not measured on Linux or Windows, where only this
-  saving applies.
+  `stop` about 150 ms → 67–81 ms; `session-start` 324 → 205 ms, partly the macOS git change below; not a re-run of
+  speed-v1); not measured on Linux or Windows, where only this saving applies.
 - **Faster on macOS** repo-ai runs the selected developer directory's git directly instead of Apple's `/usr/bin/git`
   stub, which looks it up on every call (35 ms against 17 ms per git command there). Another git first on PATH,
   or anything unusual, runs as before.
