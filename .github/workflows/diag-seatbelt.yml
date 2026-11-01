@@ -1,0 +1,24 @@
+# Queue 13: which seatbelt rules keep a process to loopback only. Harmless sockets on a disposable macOS runner.
+name: diag-seatbelt
+
+on:
+  push:
+    branches: ["diag/seatbelt-**"]
+
+permissions:
+  contents: read
+
+jobs:
+  loopback:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python benchmarks/seatbelt-loopback/probe.py | tee matrix.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seatbelt-loopback
+          path: matrix.json
