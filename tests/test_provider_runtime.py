@@ -50,12 +50,11 @@ def test_provider_contracts_and_lifecycle_stages_are_complete(tmp_path: Path) ->
         "FAILED",
         "VERIFIED",
     )
-    assert set(PROVIDER_CONTRACTS) == {"codex", "claude", "gemini", "bob", "agy", "opencode", "opencode-acp"}
+    assert set(PROVIDER_CONTRACTS) == {"codex", "claude", "bob", "agy", "opencode", "opencode-acp"}
     assert contract_for("opencode").enforces_hard_usd_budget is False
     assert contract_for("claude").enforces_hard_usd_budget is True
     assert contract_for("bob").enforces_hard_usd_budget is True
     assert contract_for("codex").enforces_hard_usd_budget is False
-    assert contract_for("gemini").enforces_hard_usd_budget is False
 
     profiles = discover(tmp_path)
     for p in profiles:
@@ -63,7 +62,7 @@ def test_provider_contracts_and_lifecycle_stages_are_complete(tmp_path: Path) ->
         assert p["contract"]["provider"] == p["provider"]
 
 
-@pytest.mark.parametrize("provider", ["codex", "claude", "gemini", "bob"])
+@pytest.mark.parametrize("provider", ["codex", "claude", "bob"])
 def test_build_invocation_and_budget_enforcement(tmp_path: Path, provider: str) -> None:
     ws = tmp_path / "ws"
     ws.mkdir()
@@ -85,7 +84,7 @@ def test_build_invocation_and_budget_enforcement(tmp_path: Path, provider: str) 
             )
 
 
-@pytest.mark.parametrize("provider", ["codex", "claude", "gemini", "bob"])
+@pytest.mark.parametrize("provider", ["codex", "claude", "bob"])
 def test_parse_event_stream_redacts_and_aggregates(provider: str) -> None:
     stream = (
         json.dumps({"type": "init", "session_id": "sess-123", "tool": "edit_file"}) + "\n"
@@ -108,7 +107,7 @@ def test_parse_event_stream_redacts_and_aggregates(provider: str) -> None:
     assert bad["valid_jsonl"] is False
 
 
-@pytest.mark.parametrize("provider", ["codex", "claude", "gemini", "bob"])
+@pytest.mark.parametrize("provider", ["codex", "claude", "bob"])
 def test_run_provider_simulated_contract_and_guards(tmp_path: Path, provider: str) -> None:
     root = tmp_path / "repo"
     root.mkdir()
@@ -280,7 +279,7 @@ def test_codex_inner_sandbox_is_disabled_only_when_externally_sandboxed(tmp_path
     assert alone[alone.index("--sandbox") + 1] == "workspace-write"
     wrapped = build_invocation("codex", "/usr/local/bin/codex", "Fix bug", ws, externally_sandboxed=True)
     assert "--dangerously-bypass-approvals-and-sandbox" in wrapped and "--sandbox" not in wrapped
-    for other in ("claude", "gemini", "bob"):
+    for other in ("claude", "bob"):
         assert "--dangerously-bypass-approvals-and-sandbox" not in build_invocation(
             other, f"/usr/local/bin/{other}", "Fix bug", ws, externally_sandboxed=True)
 

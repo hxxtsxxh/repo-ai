@@ -51,17 +51,18 @@
    "owner": "principal",
    "code_sha": "f53d027",
    "test_run": "tests/test_provider_claude_isolation.py",
-   "environment": "macOS Darwin 25.5 arm64, seatbelt, Claude Code 2.1.314, dedicated_config",
+   "environment": "macOS Darwin 25.5 arm64, seatbelt; Claude Code 2.1.314 dedicated_config (0.10.0 journeys), 2.1.316 token_env (2026-11-01)",
    "observations": [
-    "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code"
+    "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code",
+    "2026-11-01 token_env live check on the published 0.11.6 (Claude Code 2.1.316, token_env with only CLAUDE_CODE_OAUTH_TOKEN set in the running shell, ANTHROPIC_API_KEY unset; scratch HOME and no keychain by design): repo-ai do on a toy repository with a seeded bug: PASS, assurance FULL, full suite passed, correct one-line diff, tools Read/Edit only, no denied action, $0.0145 notional (docs/engineering/LIVE-SPEND-2026-11.md). The record does not name the mode in 0.11.6 (plan() picks token_env when a token variable is set; the variable was checked by presence); the mission record names the mode and variable names from the next release"
    ],
    "limits": [
     "n=1 synthetic tasks, single author",
-    "token_env mode and Linux not live-verified",
+    "Linux not live-verified; token_env live-verified once on macOS (n=1, toy task)",
     "in-sandbox token refresh not re-observed"
    ],
-   "next_action": "re-observe token refresh; token_env live check if owner creates a setup-token",
-   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
+   "next_action": "Linux live run (token_env, podman machine); re-observe dedicated_config token refresh",
+   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md; docs/engineering/LIVE-SPEND-2026-11.md"
   },
   {
    "id": "C04",
@@ -72,7 +73,8 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED"
+    "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED",
+    "2026-11-01: the gemini provider and gemini-cli host were removed at the owner's direction (Gemini CLI superseded by Antigravity, supported as agy); the provider set is codex, claude, bob, agy, opencode, opencode-acp"
    ],
    "limits": [
     "Bob not re-run on 0.10.0 (entitlement not re-checked)",
@@ -268,13 +270,14 @@
     "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance, with little power (only 5 of 30 native suites failed, 2 of them contaminated by a harness defect); verify failed natively passing tests in 14 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)",
     "2026-11-01 profile of the fixed overhead (macOS, Apple Silicon; a 40-test pytest project; not a re-run of speed-v1): a comment-only verify --run spent ~0.68 s of 0.92 s in 18 sequential git subprocesses (35 ms each through Apple's /usr/bin/git launcher stub, 17 ms direct) and ~80 ms importing the mission runtime and provider adapters to build the argument parser. Fixed: the stub is resolved once per process (gitbin.git(): DEVELOPER_DIR, the xcode-select link, else xcode-select -p) and those imports are lazy. verify --run 965 -> 636 ms (comment-only), 1,370 -> 992 ms (behaviour change, full suite), reuse 544 -> 330 ms; Claude hooks ~150 -> 67-81 ms (session-start 324 -> 205 ms). Remaining duplicate git reads are the before/after source-tree checks and are kept. Linux overhead (speed-v1) is not re-measured by this",
     "2026-11-01 speed-v1 run 3 (Amendment 3, a replication stated before the run; GitHub run 41306386452, commit 8cd3afd, different runner CPU): cold 2.23x the native suite (geometric mean), slower on 30 of 30 (run 2: 1.84x, 24 of 30); without more-itertools (measured differently: targeted in run 3, full in run 2) 2.61x vs 2.64x; absolute overhead confounded by the CPU change, not compared. Exit codes agree with the native suite on 23 of 30 (run 2: 16): more-itertools 6/6 and humanize f772e59b now agree, consistent with the 0.11.4/0.11.5 fixes but not isolated by the runs (more-itertools full suite seen passing once); pyjwt 6 (pre-existing, consistent with the denied network) and marshmallow 2fc8207d still disagree, and 2fc8207d still gives two verdicts for one state (cold exit 1, --rerun exit 0); no false assurance, little power (0 of 4 failing native suites, all configuration or collection crashes)",
-    "2026-11-01 #65: when verify matches pytest tests by name, the plan names test files under the project's norecursedirs (read from the file pytest would use), so a targeted/full disagreement like marshmallow 2fc8207d is explained in the product; a note only, nothing removed"
+    "2026-11-01 #65: when verify matches pytest tests by name, the plan names test files under the project's norecursedirs (read from the file pytest would use), so a targeted/full disagreement like marshmallow 2fc8207d is explained in the product; a note only, nothing removed",
+    "2026-11-01 Linux profile (scripts/profile_verify.py on GitHub runners, 40-test generated project with its own .venv; profile runs 41340493434 before, 41340833864 after): git was negligible on Linux (18 calls, 0.03 s); the two source-tree snapshots took ~0.62 of 0.70 s (profiled) of a comment-only verify, mostly pathlib relative_to over ~2,000 venv entries (cProfile inflates such code; unprofiled comment-only 0.34 -> 0.23 s on a slower runner). Fixed by carrying relative prefixes (oracle-tested): ratio to the native suite on ubuntu 2.16x -> 1.12x (comment-only), 3.54x -> 2.38x (behaviour change; the sandboxed pytest, ~0.2 of 0.49 s, is now the largest single part; most of that ratio drop is the slower runner's larger native time, absolute 0.55 -> 0.49 s); macOS 2.86x -> 1.71x, 4.17x -> 3.04x. One run per platform, runners differed (native suite +25-32% in the after run), so ratios are reported, not absolute times; speed-v1 not re-run"
    ],
    "limits": [
     "small, fast pure-Python suites on one runner type; not a general claim",
     "verify still exits 1 on natively passing suites whose failing tests are consistent with the denied network (pyjwt) or are matched by name without verify --record (marshmallow 2fc8207d, whose verdict also flips between a cold run and --rerun: the targeted run names files pytest's norecursedirs skips, the full run does not (RESULTS.md addendum; why the strategy differed is not recorded); a limit until verify --record)"
    ],
-   "next_action": "profile the Linux cold path on a runner (copy, base comparison, interpreter and pytest start); record sandbox_network_suspected, full-suite counts, strategy.reason and the pytest argv in the harness"
+   "next_action": "re-run speed-v1 (a replication amendment) after the snapshot fix; record sandbox_network_suspected, full-suite counts, strategy.reason and the pytest argv in the harness"
   },
   {
    "id": "C17",

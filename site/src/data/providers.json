@@ -112,23 +112,6 @@
       },
       "host": "Same binary as opencode; a live tournament refuses the pair (not independent).",
       "cost": "$0 (local model, loopback only); a positive --max-cost-usd is refused"
-    },
-    {
-      "id": "gemini",
-      "name": "Gemini CLI",
-      "agent": "gemini",
-      "label": "BLOCKED",
-      "execution": {
-        "status": "BLOCKED",
-        "observed": "Rejected for the tested account (exit 41, authentication) on 2026-10-30. From 0.10.0 repo-ai no longer copies ~/.gemini into the sandbox; live Gemini needs GEMINI_API_KEY or GOOGLE_API_KEY.",
-        "verified_on": "2026-10-30",
-        "version": "0.65.0",
-        "sample": "1 bounded retry",
-        "platforms": "macOS",
-        "source": "docs/engineering/INTEGRATIONS.md"
-      },
-      "host": "Not wired as a host by repo-ai init.",
-      "cost": "—"
     }
   ]
 }

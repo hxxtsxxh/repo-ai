@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- A mission record now says how a live Claude run authenticated: `provider.auth_mode` (`token_env` or
+  `dedicated_config`) and `provider.auth_env_vars` (the variable names found, such as `CLAUDE_CODE_OAUTH_TOKEN`;
+  never a value).
+- Removed: the `gemini` provider and the `gemini-cli` skill-export host. Gemini CLI was superseded by Antigravity,
+  which repo-ai supports as `agy` (its `~/.gemini` state paths stay protected). `--agent gemini` and
+  `--host gemini-cli` are no longer accepted. A skill an earlier version exported to `.gemini/skills` can still be
+  disabled or uninstalled byte-exactly; enabling or rolling it back is refused with the command that moves it
+  (`repo-ai skills install <name> --host <host>`), instead of moving it to `.claude/skills` silently.
+- Faster `verify --run` (measured on GitHub's ubuntu and macOS runners with `scripts/profile_verify.py`, a
+  40-test project with its own virtualenv; medians of 7, one run per platform, runners not identical; Windows
+  not measured): the two source-tree snapshots that check a run left the working tree alone built a `pathlib`
+  path for every entry, virtualenv included (under the profiler, most of a comment-only run). The walk now carries
+  each directory's relative prefix; what is recorded and compared is unchanged. Comment-only change on the ubuntu
+  runner 0.34 → 0.23 s although that run's native suite was 32% slower (ratio 2.16× → 1.12×; macOS 2.86× →
+  1.71×); behaviour change 0.55 → 0.49 s (ratio 3.54× → 2.38×; macOS 4.17× → 3.04×). Re-verifying an unchanged
+  state did not get faster.
+  The profiling script and its workflow (`.github/workflows/profile.yml`) are included.
 - Fixed: repo-ai's mission and eval-lab git commands could let git start its background maintenance after a
   commit, which then wrote `.git/objects/maintenance.lock` in a repository or workspace repo-ai was copying (a macOS
   CI failure). They now run with `maintenance.auto=false` and `gc.auto=0` (the eval lab also with
