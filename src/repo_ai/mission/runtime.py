@@ -803,6 +803,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         )
                         if 'codex_broker' in run_res:  # evidence that the credential stayed outside: mode, counts only
                             state['provider']['codex_broker'] = run_res['codex_broker']
+                        if run_res.get('auth_mode') in {'token_env', 'dedicated_config', 'none'}:
+                            state['provider']['auth_mode'] = run_res['auth_mode']  # how Claude authenticated: a name, never a value
                         if run_res.get('rate_limited') and is_live_provider:
                             from ..providers.registry import note_rate_limited
                             note_rate_limited(root, contract.provider)
