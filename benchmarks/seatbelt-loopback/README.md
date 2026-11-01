@@ -22,7 +22,8 @@
   machine on the local network (the gateway) nor the internet.
 - `localhost` also matches the machine's own non-loopback address, even in an outbound-only rule: a sandboxed process
   can reach services bound to the host's own addresses. Seatbelt cannot express 127.0.0.1 alone.
-- An inbound `localhost` rule permits a wildcard bind (listening on every interface); a later deny cannot narrow it.
+- An inbound `localhost` rule permits a wildcard bind (listening on every interface); a deny followed by re-allowing
+  `localhost` does not narrow it (other orderings were not tested).
 - An outbound-only rule denies all listening. OpenCode's rule could become outbound-only only if OpenCode works
   without listening; its ACP mode runs its own local server, and plain `opencode run` was not tested that way
   (queued).
