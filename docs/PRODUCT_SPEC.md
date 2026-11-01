@@ -7,7 +7,7 @@ per repository with `repo-ai init --agent claude --smart`.
 ## Non-functional constraints (measured)
 
 Measured on macOS arm64 with Python 3.12, against the 0.6.0 development
-build. Re-measure before each release (`docs/EXECUTION_LEDGER.md`).
+build. Re-measure before each release (`docs/EXECUTION_LEDGER.md`, private development history).
 
 | Constraint | Budget | Measured |
 |---|---|---|

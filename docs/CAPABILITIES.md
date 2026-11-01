@@ -69,10 +69,10 @@ Claude Code, its availability, and a next step with no runnable install or appro
 
 **Measured limits.**
 - The first matcher was precise (0.91–0.93) and conservative (recall 0.43–0.58) on two 60-task
-  corpora ([research/capability-eval-2026-10.md](research/capability-eval-2026-10.md)).
+  corpora (`docs/research/capability-eval-2026-10.md`, private development history).
 - The discovery redesign was measured once, on a fresh 120-task corpus, under a protocol frozen
   beforehand. It **failed**: top-3 recall 0.385 against a gate of 0.80, and shortlist recall@6 0.736
-  ([research/capability-discovery-C-2026-10/RESULTS.md](research/capability-discovery-C-2026-10/RESULTS.md)).
+  (`docs/research/capability-discovery-C-2026-10/RESULTS.md`, private development history).
   It still beat both baselines: lexical 0.088, repository-only 0.286.
 - **Stated constraints are detected only partly** (9 of 18). Pass them with `--deny`, which is always
   enforced, on `recommend`, `candidates` and `select` alike. The output separates `explicit`
@@ -173,7 +173,7 @@ this change**. It never runs anything. The result is `fresh` only if all of thes
 
 Otherwise the result is `stale`, `incomplete` or `none`, and the command exits 3. It is informational and never part of a
 pass/fail verdict. This is the producer side of proposal P4 in
-[research/VERIFY-INTERFACE-PROPOSALS-2026-10.md](research/VERIFY-INTERFACE-PROPOSALS-2026-10.md).
+`docs/research/VERIFY-INTERFACE-PROPOSALS-2026-10.md` (private development history).
 
 **What it is not:** a pattern lint, not dataflow analysis. Authorization, CSRF and logic flaws are invisible to it. The native `/security-review` is model-based and nondeterministic; this adapter is deterministic and offline.
 
