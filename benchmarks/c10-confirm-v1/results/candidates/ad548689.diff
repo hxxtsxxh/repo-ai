@@ -1,0 +1,31 @@
+diff --git a/stockroom/report.py b/stockroom/report.py
+index cdc54b5..09cc7ad 100644
+--- a/stockroom/report.py
++++ b/stockroom/report.py
+@@ -1,5 +1,7 @@
+ """Plain-text stock reports."""
+ 
++from datetime import timezone
++
+ from stockroom.valuation import item_value_cents
+ 
+ 
+@@ -10,6 +12,18 @@ def format_cents(cents):
+     return f"{sign}${dollars:,}.{rem:02d}"
+ 
+ 
++def movement_lines(inventory, sku=None):
++    """One line per movement, in recorded order: "<timestamp> <SKU> <delta> <reason>".
++
++    With ``sku`` given, only that item's movements are rendered.
++    """
++    return tuple(
++        f"{m.at.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')} "
++        f"{m.sku} {m.delta:+d} {m.reason}"
++        for m in inventory.history(sku)
++    )
++
++
+ def stock_lines(inventory):
+     """One line per item, sorted by SKU: "SKU  name  on_hand  value"."""
+     return tuple(

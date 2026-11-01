@@ -1,0 +1,1319 @@
+[
+ {
+  "id": "017192a6",
+  "task": "t2",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t2_baseline_issue_many_issues_every_line",
+   "test_t2_convention_batch_ids",
+   "test_t2_convention_failed_batch_changes_nothing",
+   "test_t2_convention_first_failing_line_wins"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Read",
+   "Write"
+  ],
+  "outside": [],
+  "cost": 0.0901278,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "06864e26",
+  "task": "t6",
+  "repeat": 2,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t6_baseline_filters_by_period",
+   "test_t6_convention_tuple_in_recorded_order"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0653745,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "07306c77",
+  "task": "t6",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t6_baseline_filters_by_period",
+   "test_t6_convention_half_open_period",
+   "test_t6_convention_invalid_period",
+   "test_t6_convention_tuple_in_recorded_order"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.1058975,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "113ec3aa",
+  "task": "t4",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t4_baseline_weighted_average",
+   "test_t4_convention_half_even_rounding",
+   "test_t4_convention_no_stock_returns_none",
+   "test_t4_convention_result_is_int_cents"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.047624,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "15a77947",
+  "task": "t6",
+  "repeat": 1,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t6_baseline_filters_by_period",
+   "test_t6_convention_tuple_in_recorded_order"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0706214,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "18e92d57",
+  "task": "t1",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t1_baseline_write_off_reduces_stock",
+   "test_t1_convention_insufficient_stock_error",
+   "test_t1_convention_invalid_quantity",
+   "test_t1_convention_logs_one_warning"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.07917340000000002,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "1bf6e543",
+  "task": "t5",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t5_baseline_share_of_value",
+   "test_t5_convention_percentage_format",
+   "test_t5_convention_zero_total_returns_none"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0554873,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "223c4833",
+  "task": "t5",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t5_baseline_share_of_value",
+   "test_t5_convention_percentage_format",
+   "test_t5_convention_zero_total_returns_none"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.05463880000000001,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "22fdc8ed",
+  "task": "t7",
+  "repeat": 0,
+  "convention": 0.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t7_baseline_line_fields"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0471998,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "24dd1d60",
+  "task": "t5",
+  "repeat": 1,
+  "convention": 0.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t5_baseline_share_of_value"
+  ],
+  "tools": [
+   "Read",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0316475,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "27aca516",
+  "task": "t6",
+  "repeat": 0,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t6_baseline_filters_by_period",
+   "test_t6_convention_tuple_in_recorded_order"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.064306,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "311a24c9",
+  "task": "t2",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t2_baseline_issue_many_issues_every_line",
+   "test_t2_convention_batch_ids",
+   "test_t2_convention_failed_batch_changes_nothing",
+   "test_t2_convention_first_failing_line_wins"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0815004,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "31360d81",
+  "task": "t3",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t3_baseline_count_sets_levels",
+   "test_t3_convention_bad_line_changes_nothing",
+   "test_t3_convention_count_ids",
+   "test_t3_convention_shrinkage_logs_warning"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.10728800000000001,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "3e14b5e9",
+  "task": "t8",
+  "repeat": 1,
+  "convention": 0.6666666666666666,
+  "baseline": 1.0,
+  "passed": [
+   "test_t8_baseline_ranks_by_units_issued",
+   "test_t8_convention_returns_tuple",
+   "test_t8_convention_ties_broken_by_sku"
+  ],
+  "tools": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Write"
+  ],
+  "outside": [],
+  "cost": 0.0539383,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "3fe0b4e2",
+  "task": "t1",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t1_baseline_write_off_reduces_stock",
+   "test_t1_convention_insufficient_stock_error",
+   "test_t1_convention_invalid_quantity",
+   "test_t1_convention_logs_one_warning"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.077673,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "40f794cb",
+  "task": "t5",
+  "repeat": 2,
+  "convention": 0.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t5_baseline_share_of_value"
+  ],
+  "tools": [
+   "Read",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.031744600000000005,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "422b64b8",
+  "task": "t3",
+  "repeat": 1,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t3_baseline_count_sets_levels",
+   "test_t3_convention_bad_line_changes_nothing"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.08432529999999999,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "4275bc7a",
+  "task": "t7",
+  "repeat": 1,
+  "convention": 0.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t7_baseline_line_fields"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0483401,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "483478f7",
+  "task": "t8",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t8_baseline_ranks_by_units_issued",
+   "test_t8_convention_half_open_period",
+   "test_t8_convention_returns_tuple",
+   "test_t8_convention_ties_broken_by_sku"
+  ],
+  "tools": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write"
+  ],
+  "outside": [],
+  "cost": 0.0619631,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "4afdc763",
+  "task": "t4",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t4_baseline_weighted_average",
+   "test_t4_convention_half_even_rounding",
+   "test_t4_convention_no_stock_returns_none",
+   "test_t4_convention_result_is_int_cents"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0483522,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "695c233a",
+  "task": "t4",
+  "repeat": 2,
+  "convention": 0.0,
+  "baseline": 0.0,
+  "passed": [],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read"
+  ],
+  "outside": [
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/695c233a/p/stockroom/valuation.py",
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/695c233a/p/stockroom/valuation.py",
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/695c233a/p/stockroom/inventory.py"
+  ],
+  "cost": 0.0357385,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "69839a58",
+  "task": "t3",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t3_baseline_count_sets_levels",
+   "test_t3_convention_bad_line_changes_nothing",
+   "test_t3_convention_count_ids",
+   "test_t3_convention_shrinkage_logs_warning"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.1076575,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "6e155f70",
+  "task": "t1",
+  "repeat": 0,
+  "convention": 0.6666666666666666,
+  "baseline": 1.0,
+  "passed": [
+   "test_t1_baseline_write_off_reduces_stock",
+   "test_t1_convention_insufficient_stock_error",
+   "test_t1_convention_invalid_quantity"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.061281600000000006,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "7461f0f8",
+  "task": "t1",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t1_baseline_write_off_reduces_stock",
+   "test_t1_convention_insufficient_stock_error",
+   "test_t1_convention_invalid_quantity",
+   "test_t1_convention_logs_one_warning"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.07809569999999999,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "7e39b10e",
+  "task": "t4",
+  "repeat": 0,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t4_baseline_weighted_average",
+   "test_t4_convention_result_is_int_cents"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.045723799999999995,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "88b0bb5b",
+  "task": "t5",
+  "repeat": 0,
+  "convention": 0.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t5_baseline_share_of_value"
+  ],
+  "tools": [
+   "Read",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.031797599999999995,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "97edfafc",
+  "task": "t4",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t4_baseline_weighted_average",
+   "test_t4_convention_half_even_rounding",
+   "test_t4_convention_no_stock_returns_none",
+   "test_t4_convention_result_is_int_cents"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.048119800000000004,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "9a77d3cb",
+  "task": "t8",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t8_baseline_ranks_by_units_issued",
+   "test_t8_convention_half_open_period",
+   "test_t8_convention_returns_tuple",
+   "test_t8_convention_ties_broken_by_sku"
+  ],
+  "tools": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write"
+  ],
+  "outside": [],
+  "cost": 0.06313350000000001,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "a413662c",
+  "task": "t6",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t6_baseline_filters_by_period",
+   "test_t6_convention_half_open_period",
+   "test_t6_convention_invalid_period",
+   "test_t6_convention_tuple_in_recorded_order"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.1091074,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "ad548689",
+  "task": "t7",
+  "repeat": 2,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t7_baseline_line_fields",
+   "test_t7_convention_timestamp_rendering"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0609754,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "b43a367d",
+  "task": "t7",
+  "repeat": 2,
+  "convention": 0.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t7_baseline_line_fields"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0480592,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "bdceb048",
+  "task": "t3",
+  "repeat": 2,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t3_baseline_count_sets_levels",
+   "test_t3_convention_bad_line_changes_nothing"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0790188,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "c07a03b7",
+  "task": "t8",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t8_baseline_ranks_by_units_issued",
+   "test_t8_convention_half_open_period",
+   "test_t8_convention_returns_tuple",
+   "test_t8_convention_ties_broken_by_sku"
+  ],
+  "tools": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write"
+  ],
+  "outside": [],
+  "cost": 0.0628933,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "c30883dd",
+  "task": "t5",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t5_baseline_share_of_value",
+   "test_t5_convention_percentage_format",
+   "test_t5_convention_zero_total_returns_none"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0548313,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "c3de7098",
+  "task": "t3",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t3_baseline_count_sets_levels",
+   "test_t3_convention_bad_line_changes_nothing",
+   "test_t3_convention_count_ids",
+   "test_t3_convention_shrinkage_logs_warning"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.10802350000000001,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "c6476272",
+  "task": "t7",
+  "repeat": 1,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t7_baseline_line_fields",
+   "test_t7_convention_timestamp_rendering"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.061508900000000005,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "cfb213a3",
+  "task": "t8",
+  "repeat": 2,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t8_baseline_ranks_by_units_issued",
+   "test_t8_convention_ties_broken_by_sku"
+  ],
+  "tools": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Write"
+  ],
+  "outside": [],
+  "cost": 0.053262,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "d33f4cb4",
+  "task": "t7",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t7_baseline_line_fields",
+   "test_t7_convention_timestamp_rendering"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0625411,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "d7aebc7a",
+  "task": "t2",
+  "repeat": 1,
+  "convention": 0.6666666666666666,
+  "baseline": 1.0,
+  "passed": [
+   "test_t2_baseline_issue_many_issues_every_line",
+   "test_t2_convention_failed_batch_changes_nothing",
+   "test_t2_convention_first_failing_line_wins"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Grep"
+  ],
+  "outside": [],
+  "cost": 0.1038125,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "def422af",
+  "task": "t2",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t2_baseline_issue_many_issues_every_line",
+   "test_t2_convention_batch_ids",
+   "test_t2_convention_failed_batch_changes_nothing",
+   "test_t2_convention_first_failing_line_wins"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Grep",
+   "Read"
+  ],
+  "outside": [],
+  "cost": 0.08551079999999998,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "e2165160",
+  "task": "t3",
+  "repeat": 0,
+  "convention": 0.3333333333333333,
+  "baseline": 1.0,
+  "passed": [
+   "test_t3_baseline_count_sets_levels",
+   "test_t3_convention_bad_line_changes_nothing"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.10146600000000001,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "e55fa845",
+  "task": "t2",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t2_baseline_issue_many_issues_every_line",
+   "test_t2_convention_batch_ids",
+   "test_t2_convention_failed_batch_changes_nothing",
+   "test_t2_convention_first_failing_line_wins"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.079989,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ },
+ {
+  "id": "eac71532",
+  "task": "t1",
+  "repeat": 2,
+  "convention": 0.6666666666666666,
+  "baseline": 1.0,
+  "passed": [
+   "test_t1_baseline_write_off_reduces_stock",
+   "test_t1_convention_insufficient_stock_error",
+   "test_t1_convention_invalid_quantity"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.06620530000000001,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "eae5478c",
+  "task": "t4",
+  "repeat": 1,
+  "convention": 0.0,
+  "baseline": 0.0,
+  "passed": [],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read"
+  ],
+  "outside": [
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/eae5478c/p/stockroom/valuation.py",
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/eae5478c/p/stockroom/valuation.py",
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/eae5478c/p/stockroom/models.py"
+  ],
+  "cost": 0.0353787,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "ee67994e",
+  "task": "t2",
+  "repeat": 2,
+  "convention": 0.6666666666666666,
+  "baseline": 1.0,
+  "passed": [
+   "test_t2_baseline_issue_many_issues_every_line",
+   "test_t2_convention_failed_batch_changes_nothing",
+   "test_t2_convention_first_failing_line_wins"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "outside": [],
+  "cost": 0.0907009,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "f47f7d29",
+  "task": "t1",
+  "repeat": 1,
+  "convention": 0.6666666666666666,
+  "baseline": 1.0,
+  "passed": [
+   "test_t1_baseline_write_off_reduces_stock",
+   "test_t1_convention_insufficient_stock_error",
+   "test_t1_convention_invalid_quantity"
+  ],
+  "tools": [
+   "Read",
+   "Glob",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Read"
+  ],
+  "outside": [],
+  "cost": 0.06452060000000001,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "f5e39e65",
+  "task": "t8",
+  "repeat": 0,
+  "convention": 0.0,
+  "baseline": 0.0,
+  "passed": [],
+  "tools": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read"
+  ],
+  "outside": [
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/f5e39e65/p/stockroom/inventory.py",
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/f5e39e65/p/stockroom/models.py",
+   "/private/tmp/claude-501/-Users-heetshah-cdbdce7a-aef8-435c-932a-1dd9406ba8ff/scratchpad/c10work/f5e39e65/p/stockroom/reorder.py"
+  ],
+  "cost": 0.0370219,
+  "result": "success",
+  "invalid": [],
+  "skill_called": false,
+  "arm": "control"
+ },
+ {
+  "id": "fb94a74b",
+  "task": "t6",
+  "repeat": 0,
+  "convention": 1.0,
+  "baseline": 1.0,
+  "passed": [
+   "test_t6_baseline_filters_by_period",
+   "test_t6_convention_half_open_period",
+   "test_t6_convention_invalid_period",
+   "test_t6_convention_tuple_in_recorded_order"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.10730879999999998,
+  "result": "success",
+  "invalid": [],
+  "skill_called": true,
+  "arm": "skill"
+ }
+]

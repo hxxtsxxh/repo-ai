@@ -1,0 +1,43 @@
+diff --git a/stockroom/errors.py b/stockroom/errors.py
+index 48e351b..e37c169 100644
+--- a/stockroom/errors.py
++++ b/stockroom/errors.py
+@@ -13,6 +13,13 @@ class InvalidQuantityError(StockroomError, ValueError):
+     """Raised when a quantity is not a positive integer."""
+ 
+ 
++class InvalidPeriodError(StockroomError, ValueError):
++    """Raised when a period's start is not before its end."""
++
++    def __init__(self):
++        super().__init__("period start must be before end")
++
++
+ class UnknownSkuError(StockroomError, LookupError):
+     """Raised when an operation refers to a SKU that is not registered."""
+ 
+diff --git a/stockroom/movers.py b/stockroom/movers.py
+new file mode 100644
+index 0000000..ae10700
+--- /dev/null
++++ b/stockroom/movers.py
+@@ -0,0 +1,19 @@
++"""Fastest-moving items over a period."""
++
++from stockroom.errors import InvalidPeriodError
++
++
++def top_movers(inventory, start, end, n):
++    """Return up to ``n`` ``(sku, units_issued)`` pairs, most issued first.
++
++    Only ``"issue"`` movements with ``start <= at < end`` count. Ties are
++    broken by SKU ascending. SKUs with no issues in the period are omitted.
++    """
++    if start >= end:
++        raise InvalidPeriodError()
++    totals = {}
++    for m in inventory.history():
++        if m.reason == "issue" and start <= m.at < end:
++            totals[m.sku] = totals.get(m.sku, 0) - m.delta
++    ranked = sorted(totals.items(), key=lambda pair: (-pair[1], pair[0]))
++    return tuple(ranked[: max(n, 0)])

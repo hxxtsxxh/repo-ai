@@ -1,0 +1,25 @@
+diff --git a/stockroom/movers.py b/stockroom/movers.py
+new file mode 100644
+index 0000000..975e814
+--- /dev/null
++++ b/stockroom/movers.py
+@@ -0,0 +1,19 @@
++"""Fastest-moving items over a period."""
++
++
++def top_movers(inventory, start, end, n):
++    """Return the ``n`` items with the most units issued between ``start`` and ``end``.
++
++    Only ``"issue"`` movements whose timestamp lies in ``[start, end]``
++    (both ends inclusive) are counted. The result is a list of at most ``n``
++    ``(sku, units_issued)`` pairs, highest ``units_issued`` first, covering
++    only SKUs with at least one such issue. Ties are broken by SKU ascending.
++    """
++    if n <= 0:
++        return []
++    totals = {}
++    for m in inventory.history():
++        if m.reason == "issue" and start <= m.at <= end:
++            totals[m.sku] = totals.get(m.sku, 0) - m.delta
++    ranked = sorted(totals.items(), key=lambda pair: (-pair[1], pair[0]))
++    return ranked[:n]

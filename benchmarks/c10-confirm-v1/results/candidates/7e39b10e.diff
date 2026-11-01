@@ -1,0 +1,20 @@
+diff --git a/stockroom/valuation.py b/stockroom/valuation.py
+index baa5d53..aec8691 100644
+--- a/stockroom/valuation.py
++++ b/stockroom/valuation.py
+@@ -8,3 +8,15 @@ def item_value_cents(inventory, sku):
+ 
+ def total_value_cents(inventory):
+     return sum(item_value_cents(inventory, item.sku) for item in inventory.items())
++
++
++def average_unit_cost_cents(inventory):
++    """Weighted average unit cost of stock on hand, in integer cents.
++
++    Total stock value divided by total units on hand across all items,
++    rounded half up to the nearest cent. Returns 0 when no units are on hand.
++    """
++    units = sum(inventory.on_hand(item.sku) for item in inventory.items())
++    if units == 0:
++        return 0
++    return (2 * total_value_cents(inventory) + units) // (2 * units)
