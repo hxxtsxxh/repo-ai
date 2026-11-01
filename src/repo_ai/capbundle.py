@@ -459,9 +459,6 @@ HOSTS: dict[str, HostTranslator] = {t.host: t for t in (
     HostTranslator("codex", ".agents/skills", EXPORT_ONLY,
                    "codex-cli 0.165.0 binary strings name `.agents/skills` (a repository skills root) and "
                    "`$CODEX_HOME/skills`; not observed loading a skill"),
-    HostTranslator("gemini-cli", ".gemini/skills", EXPORT_ONLY,
-                   "gemini-cli 0.65.0 bundled docs: workspace skills in `.gemini/skills/` or the "
-                   "`.agents/skills/` alias, which takes precedence; not observed loading a skill"),
     HostTranslator("antigravity", ".agents/skills", EXPORT_ONLY,
                    "agy binary strings: `{workspace}/.agents/skills/{skill_name}/SKILL.md`; not observed "
                    "loading a skill"),
@@ -475,6 +472,25 @@ HOSTS: dict[str, HostTranslator] = {t.host: t for t in (
                    "not observed loading a skill"),
 )}
 DEFAULT_HOSTS = ("claude-code",)
+# Hosts repo-ai no longer installs to. Kept only so that a skill exported there by an earlier version can still be
+# disabled or uninstalled byte-exactly (the machine-local manifest records what was written).
+RETIRED_HOSTS: dict[str, HostTranslator] = {t.host: t for t in (
+    HostTranslator("gemini-cli", ".gemini/skills", "RETIRED",
+                   "Gemini CLI was superseded by Antigravity (`antigravity` host); removal only"),
+)}
+KNOWN_HOSTS: dict[str, HostTranslator] = {**HOSTS, **RETIRED_HOSTS}
+
+
+def usable_hosts(recorded: tuple[str, ...] | list[str], name: str = "") -> tuple[str, ...]:
+    """The recorded hosts repo-ai still installs to. A record whose hosts are all retired is refused rather than
+    silently moved to the default host (an export-only host's skill must not start auto-loading in Claude Code)."""
+    recorded = tuple(recorded)
+    usable = tuple(h for h in recorded if h in HOSTS)
+    if recorded and not usable:
+        raise BundleError(f"this skill was exported only to {', '.join(recorded)}, which repo-ai no longer supports; "
+                          f"install it again for a supported host: `repo-ai skills install {name or '<name>'} --host "
+                          f"<host>` ({', '.join(HOSTS)}); that also removes the old export")
+    return usable
 
 
 def parse_hosts(spec: str | None) -> tuple[str, ...]:
@@ -582,12 +598,12 @@ def load_manifest(root: Path, name: str) -> dict[str, Any]:
     hosts: dict[str, Any] = raw_hosts if isinstance(raw_hosts, dict) else {}
     clean: dict[str, Any] = {}
     for host, entry in hosts.items():
-        if host not in HOSTS or not isinstance(entry, dict):
+        if host not in KNOWN_HOSTS or not isinstance(entry, dict):  # retired hosts stay: removal only
             continue
-        base = HOSTS[host].target_dir(name).as_posix() + "/"
+        base = KNOWN_HOSTS[host].target_dir(name).as_posix() + "/"
         paths = {p: v for p, v in (entry.get("paths") or {}).items()
                  if isinstance(p, str) and p.startswith(base) and isinstance(v, dict) and _safe_project_rel(p)}
-        target = HOSTS[host].target_dir(name)
+        target = KNOWN_HOSTS[host].target_dir(name)
         allowed = {target.as_posix(), *(p.as_posix() for p in target.parents if p.as_posix() != ".")}
         dirs = [d for d in (entry.get("created_dirs") or []) if isinstance(d, str) and d in allowed]
         clean[host] = {**entry, "paths": paths, "created_dirs": dirs}
@@ -596,7 +612,7 @@ def load_manifest(root: Path, name: str) -> dict[str, Any]:
     record: dict[str, Any] = raw_record if isinstance(raw_record, dict) else {}
     data["record"] = {
         "approved_by": str(record.get("approved_by", ""))[:40] if isinstance(record.get("approved_by"), str) else "",
-        "hosts": [h for h in (record.get("hosts") or []) if isinstance(h, str) and h in HOSTS],
+        "hosts": [h for h in (record.get("hosts") or []) if isinstance(h, str) and h in KNOWN_HOSTS],
         "content_hash": str(record.get("content_hash", "")) if re.fullmatch(
             r"[0-9a-f]{64}", str(record.get("content_hash", ""))) else "",
         "status": record.get("status") if record.get("status") in ("active", "disabled") else "",

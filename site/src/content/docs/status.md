@@ -58,7 +58,6 @@ Condensed from `docs/STATUS.md` in the source tree, which remains the record whe
 | `repo-ai do` offline plan, `why`, `why-test-failed`, `agents doctor` | usable; no model needed |
 | Live execution with IBM Bob, Codex CLI, agy (macOS) | works on small tasks; small n; Codex and agy cost `UNKNOWN` |
 | Claude Code as a mission provider | **experimental** from 0.10.0 (macOS live-verified, n = 1 journeys; own login, file tools only) |
-| Gemini CLI as a mission provider | rejected for the tested account |
 | Provider routing (`--agent auto`, `agents route`) | deterministic; does not check login or quota before a run |
 | `apply` / `undo` | transactional; existing regular tracked files only |
 | Live tournament (`--tournament`) / replay comparison (`--candidate`) | experimental; abstains on several distinct passes |

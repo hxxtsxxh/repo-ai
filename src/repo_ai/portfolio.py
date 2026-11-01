@@ -227,8 +227,8 @@ def install(root: Path, name: str, src_dir: Path, report: firewall.Report, candi
         # hosts come from the machine-local record, never from the committed lockfile
         active_hosts = tuple(capbundle.load_manifest(root, name)["hosts"])
         previous_hosts = tuple(capbundle.get_record(root, name).get("hosts") or ()) or active_hosts
-        if hosts is None:
-            hosts = previous_hosts or capbundle.DEFAULT_HOSTS
+        if hosts is None:  # a retired host's export is removed below (`dropped`), never re-targeted silently
+            hosts = capbundle.usable_hosts(previous_hosts, name) or capbundle.DEFAULT_HOSTS
         dropped = tuple(h for h in active_hosts if h not in hosts)
         ip = capbundle.plan_install(root, bundle, hosts, _legacy_files(root, name, entry))
     except (capbundle.BundleError, firewall.QuarantineError) as exc:
@@ -488,7 +488,7 @@ def _restore(root: Path, entry: dict[str, Any], chash: str, lock: dict[str, Any]
                                         "--allow-scripts after reviewing them")
         if report.verdict == "review" and not explicit and not entry.get("accepted_review"):
             raise capbundle.BundleError("high-severity findings: approve the hash explicitly after reading them")
-        hosts = tuple(record.get("hosts") or ()) or capbundle.DEFAULT_HOSTS
+        hosts = capbundle.usable_hosts(record.get("hosts") or (), name) or capbundle.DEFAULT_HOSTS
         bundle = capbundle.from_files(name, obj, files, chash, assessment=assessment)
         ip = capbundle.plan_install(root, bundle, hosts, _legacy_files(root, name, entry))
         if ip.conflicts:
