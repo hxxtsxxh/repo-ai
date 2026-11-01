@@ -24,3 +24,10 @@ The author agent was stopped by a safety classifier while starting the harmful s
 retried or reworded, and the content was not given to another agent. The unblock is a corpus written by a person
 (or taken from an external, legitimately published benchmark), following the corpus section above, then
 `python benchmarks/skill-vet-fresh-v2/run.py` once.
+
+## Status (2026-11-01): still blocked
+
+The owner asked the agent to build the corpus. The agent's briefing of an author was stopped by a safety classifier
+(the second stop on this task); following the rule above it was not retried, reworded or handed to another agent,
+and the partly launched author wrote nothing. The unblock is unchanged: a person-written corpus, or an external,
+legitimately published benchmark, run once on CI (attack-like fixtures are never written on the development host).

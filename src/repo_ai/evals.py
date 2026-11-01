@@ -221,7 +221,8 @@ _GIT_ENV = {"GIT_AUTHOR_NAME": "eval", "GIT_AUTHOR_EMAIL": "eval@example.invalid
 
 
 def _git(ws: Path, *args: str) -> None:
-    subprocess.run([gitbin.git(), "-c", "core.autocrlf=false", "-c", "commit.gpgsign=false", *args],
+    subprocess.run([gitbin.git(), "-c", "core.autocrlf=false", "-c", "commit.gpgsign=false", "-c", "maintenance.auto=false",
+                    "-c", "gc.auto=0", "-c", "core.fsmonitor=false", *args],
                    cwd=ws, check=True, timeout=60, env={**os.environ, **_GIT_ENV},
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
