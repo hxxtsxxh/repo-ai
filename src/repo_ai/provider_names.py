@@ -4,4 +4,4 @@ Argument parsing needs these names on every command (including agent hooks); `re
 from `providers.discovery`, which also loads every adapter."""
 from __future__ import annotations
 
-PROVIDERS = ("codex", "claude", "gemini", "bob", "agy", "opencode", "opencode-acp")
+PROVIDERS = ("codex", "claude", "bob", "agy", "opencode", "opencode-acp")

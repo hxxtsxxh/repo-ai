@@ -198,36 +198,6 @@ def test_verbose_opencode_streams_get_a_larger_bounded_capture(tmp_path, monkeyp
     assert seen["output_limit"] == adapters.MAX_OUTPUT * 4 and res["stage"] == "READY"
 
 
-# ---------------------------------------------------------------- gemini (same no-copy rule)
-
-def test_gemini_state_is_never_copied_into_the_scratch_home(tmp_path, monkeypatch):
-    real = tmp_path / "real"
-    (real / ".gemini" / "antigravity-cli" / "conversations").mkdir(parents=True)
-    (real / ".gemini" / "oauth_creds.json").write_text('{"refresh_token": "x"}')
-    monkeypatch.setattr(Path, "home", classmethod(lambda cls: real))
-    scratch_home = tmp_path / "scratch"
-    scratch_home.mkdir()
-    adapters._seed_live_provider_auth("gemini", scratch_home)
-    assert not any(scratch_home.rglob("*"))
-
-
-def test_gemini_without_an_api_key_is_setup_required_and_never_started(tmp_path, monkeypatch):
-    for v in adapters.GEMINI_KEY_VARS:
-        monkeypatch.delenv(v, raising=False)
-    assert adapters.setup_problems("gemini")
-    marker = tmp_path / "started"
-    exe = tmp_path / "gemini"
-    exe.write_text(f"#!/bin/sh\ntouch {marker}\n")
-    exe.chmod(0o755)
-    (tmp_path / "root").mkdir()
-    (tmp_path / "ws").mkdir()
-    res = adapters.run_provider("gemini", tmp_path / "root", tmp_path / "ws", "fix", write_paths=["a.py"],
-                                executable=exe, timeout=10, simulated=False, allow_live=True)
-    assert res["stage"] == "BLOCKED" and res["capture_status"] == "not_configured" and not marker.exists()
-    monkeypatch.setenv("GEMINI_API_KEY", "k")
-    assert adapters.setup_problems("gemini") == []
-
-
 # ---------------------------------------------------------------- review findings (2026-10-30)
 
 @pytest.mark.parametrize("model", ["qwen3-coder:480b-cloud", "gpt-oss:120b-cloud", "cloud"])
@@ -285,3 +255,18 @@ def test_a_daemonised_descendant_is_killed_before_verification(tmp_path, monkeyp
     if alive:
         os.kill(pid, 9)
     assert not alive
+
+
+# ---------------------------------------------------------------- agy (no-copy rule)
+
+def test_agy_state_under_dot_gemini_is_never_copied_into_the_scratch_home(tmp_path, monkeypatch):
+    """agy keeps its conversations under ~/.gemini/antigravity-cli next to other OAuth state: nothing of it is
+    copied into a provider's scratch HOME (agy authenticates from the real HOME under a read-restricted sandbox)."""
+    real = tmp_path / "real"
+    (real / ".gemini" / "antigravity-cli" / "conversations").mkdir(parents=True)
+    (real / ".gemini" / "oauth_creds.json").write_text('{"refresh_token": "x"}')
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: real))
+    scratch_home = tmp_path / "scratch"
+    scratch_home.mkdir()
+    adapters._seed_live_provider_auth("agy", scratch_home)
+    assert not any(scratch_home.rglob("*"))

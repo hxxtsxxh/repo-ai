@@ -444,8 +444,8 @@ repo-ai skills install <name> --approve <hash> --host claude-code,codex --dry-ru
 - Every install carries a repo-ai ownership marker and never adds permissions.
 - A file repo-ai does not own refuses the whole install. Nothing is overwritten.
 - Uninstall, `disable` and `rollback` put back exactly the bytes that were there before.
-- **Other hosts are export-only:** Codex and Antigravity (`.agents/skills`), Gemini CLI
-  (`.gemini/skills`) and IBM Bob (`.bob/skills`) are labelled `CAPABILITY_EXPORT_ONLY`. repo-ai has
+- **Other hosts are export-only:** Codex and Antigravity (`.agents/skills`) and IBM Bob
+  (`.bob/skills`) are labelled `CAPABILITY_EXPORT_ONLY`. repo-ai has
   not observed those hosts load a skill.
 
 Engineering notes and the diagnosis of the failed validations:

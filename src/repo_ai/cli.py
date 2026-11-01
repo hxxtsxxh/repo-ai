@@ -4474,8 +4474,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--allow-scripts", action="store_true",
                    help="install, enable, rollback: the skill ships scripts")
     p.add_argument("--host", metavar="HOSTS",
-                   help="install: comma-separated hosts (default claude-code; codex, gemini-cli, antigravity "
-                        "and ibm-bob are export-only)")
+                   help="install: comma-separated hosts (default claude-code; codex, antigravity and ibm-bob "
+                        "are export-only)")
     p.add_argument("--check", action="store_true", help="updates: check upstream (network); "
                    "inventory: exit 1 on a high-severity issue")
     p.add_argument("--max-cost-per-run", type=float, help="benchmark: cap per run")
