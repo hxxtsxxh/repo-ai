@@ -1,6 +1,6 @@
 # Work queue (living; top = next)
 
-Updated 2026-11-01: 0.11.5 published (#40–#58; includes 0.11.4, which was qualified but never tagged).
+Updated 2026-11-01: 0.11.5 published (#40–#58; includes 0.11.4, which was qualified but never tagged); since then #59–#65 (site facts, per-command overhead, site probe and Lighthouse, catalog refs, speed-v1 run 3, the 2fc8207d explanation, the norecursedirs note) are on main, unreleased.
 
 | # | Item | Gate | State |
 |---|---|---|---|
@@ -33,7 +33,7 @@ Updated 2026-11-01: 0.11.5 published (#40–#58; includes 0.11.4, which was qual
 | 13 | Seatbelt's `localhost` filter also matches local interface addresses: the OpenCode adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (found by the review of #45) | C18 | disclosed (#46, measured with controls). An outbound-only rule did not work as tested: OpenCode 2.2.1's `opencode run --standalone`, model pointed at a closed port (127.0.0.1:9, no model call), failed with "Standalone server exited before reporting readiness" (local check, 2026-10-31), consistent with its server being unable to listen; its ACP mode likewise fails with all network denied (#45). Residual risk stands as disclosed |
 | 14 | ACP conformance kit for agents without an adapter (C05) | C05 | done (#45): handshake only; Gemini CLI conforms, OpenCode needs network |
 | 15 | verify found no trusted test command for more-itertools at older commits (journey-offline-v2): `from unittest import TestCase` left the suite "unknown" | C21 | done (#51): a TestCase import marks a unittest suite (`from unittest import mock` does not); on the two real commits verify now infers `python -m unittest discover -s tests -t .` and passes (CI run 41266835569) |
-| 16 | verify (targeted pytest runs): when a selected test file lies under a directory the project's pytest configuration excludes (`norecursedirs`, `testpaths`, `--ignore`), say so next to its result (pytest collects explicitly named files anyway, so a targeted and a full run can disagree; speed-v1 marshmallow 2fc8207d). A note only: no file is removed on a static reading | C16 | todo |
+| 16 | verify (targeted pytest runs): when a selected test file lies under a directory the project's pytest configuration excludes (`norecursedirs`, `testpaths`, `--ignore`), say so next to its result (pytest collects explicitly named files anyway, so a targeted and a full run can disagree; speed-v1 marshmallow 2fc8207d). A note only: no file is removed on a static reading | C16 | done (#65): the plan names files under `norecursedirs` (only it; no note when the command picks its own configuration or the file cannot be read safely) |
 
 Decided 2026-10-31:
 - **ACP cost label.** An ACP run keeps `cost_status: OBSERVED` at $0, with `cost_basis` naming the confinement. Any
