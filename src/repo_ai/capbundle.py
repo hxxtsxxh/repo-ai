@@ -481,14 +481,15 @@ RETIRED_HOSTS: dict[str, HostTranslator] = {t.host: t for t in (
 KNOWN_HOSTS: dict[str, HostTranslator] = {**HOSTS, **RETIRED_HOSTS}
 
 
-def usable_hosts(recorded: tuple[str, ...] | list[str]) -> tuple[str, ...]:
+def usable_hosts(recorded: tuple[str, ...] | list[str], name: str = "") -> tuple[str, ...]:
     """The recorded hosts repo-ai still installs to. A record whose hosts are all retired is refused rather than
     silently moved to the default host (an export-only host's skill must not start auto-loading in Claude Code)."""
     recorded = tuple(recorded)
     usable = tuple(h for h in recorded if h in HOSTS)
     if recorded and not usable:
         raise BundleError(f"this skill was exported only to {', '.join(recorded)}, which repo-ai no longer supports; "
-                          f"choose a host with --host ({', '.join(HOSTS)})")
+                          f"install it again for a supported host: `repo-ai skills install {name or '<name>'} --host "
+                          f"<host>` ({', '.join(HOSTS)}); that also removes the old export")
     return usable
 
 
