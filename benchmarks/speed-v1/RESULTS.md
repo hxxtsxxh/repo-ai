@@ -74,3 +74,48 @@ Every disagreement was examined:
    example a network-denied test), instead of only "pre-existing".
 3. Fixed overhead (~0.4–1.8 s): profile the cold path on small suites (copy, base comparison, interpreter start)
    without reducing isolation.
+
+## Run 3: replication after 0.11.5 and #60 (Amendment 3)
+
+Stated before the run in [Amendment 3](PREREGISTRATION.md). GitHub Actions run
+[41306386452](https://github.com/hxxtsxxh/repo-ai/actions/runs/41306386452), commit 8cd3afd (main at c462f0e plus the
+amendment), 2026-11-01T12:33Z, `ubuntu-latest` (4 vCPU, AMD EPYC 9V74: a different CPU from run 2's 9V45),
+Python 3.12, bwrap sandbox, Amendment 2 harness. Raw: [results/run-3.json](results/run-3.json). Spend: $0. Run 2
+remains the speed-v1 result; the runs are not pooled.
+
+| | run 2 (47d950c) | run 3 (8cd3afd) |
+|---|---|---|
+| valid changes | 30 | 30 |
+| verify --run (cold) / native, geometric mean | 1.84× | **2.23×** |
+| slower than the native suite | 24 of 30 | **30 of 30** |
+| overhead, median (range) | +0.63 s (−1.26 to +5.88) | +0.82 s (+0.07 to +6.38) |
+| same, more-itertools excluded (24 changes) | 2.64× | 2.61× |
+| re-verifying an unchanged state, median (max) | 0.20 s (0.88) | 0.21 s (1.01) |
+| exit code agrees with the native suite | 16 of 30 | **23 of 30** |
+| verify passed where the native suite failed | 0 (of 5 failing) | 0 (of 4 failing) |
+
+**Question 1 (overhead): no measurable change.** By the reading rule, verify is again **not** faster than the
+native suite. The geometric mean rose because more-itertools' six changes now run their tests (1.18×) instead of
+ending early with `full-suite-failed` (0.43× in run 2, not a speed win then either). Without more-itertools the two
+runs agree (2.64× and 2.61×). Per-project ratios are unchanged (pyjwt 1.09× and 1.10×, itsdangerous 1.84× both,
+marshmallow 3.39× and 3.32×, humanize 8.96× and 9.27×). Absolute times are 20–30% higher on both sides, native
+included (marshmallow's suite: 0.76 s and 0.97 s median), consistent with the different runner CPU, so absolute
+overheads are not compared across the runs. #60's saving (about 80 ms of imports per command; its git change is
+macOS-only) is smaller than that run-to-run difference and is not visible here.
+
+**Question 2 (agreement): the attributed causes are confirmed for more-itertools and humanize.**
+- more-itertools, 6 of 6: `selected-passed (full suite not run)`, exit 0, where run 2 reported a passing suite
+  `full-suite-failed`. The fixes from 0.11.4/0.11.5 (a lint-only `make check` taken for the suite, the unittest
+  marker) account for it.
+- humanize f772e59b: `selected-passed`, where run 2 had 5 files failing at base and change alike (the missing
+  build-time version file, fixed in 0.11.4). f8c144eb (contaminated in run 2) also agrees now. The four humanize
+  changes whose native suite fails (an old pytest configuration naming `coverage`, and exit 5, no tests collected,
+  on 1bf3f4c7) fail under verify too.
+- Still disagreeing, as expected: pyjwt 6 of 6 (`failing (all failures pre-existing at the base)`:
+  `tests/test_jwks_client.py`, consistent with the sandbox denying the network) and marshmallow 2fc8207d (files
+  matched by name that pytest's `norecursedirs` excludes; the documented limit without `verify --record`). Whether
+  verify named pyjwt's failures as sandbox-network suspects is **not recorded**: the harness does not capture
+  `summary.sandbox_network_suspected`.
+
+Follow-ups 1 is resolved for more-itertools and humanize f772e59b; follow-up 2 shipped in 0.11.4 (not measured
+here, see above); follow-up 3 stays open: the fixed overhead on Linux is unchanged.
