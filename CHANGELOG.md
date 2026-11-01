@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Added: `repo-ai agents conformance --acp-executable PATH [--acp-arg ARG]`, a conformance kit for Agent Client
+  Protocol agents repo-ai has no adapter for. It runs only the `initialize` handshake (no session, no model call) in
+  the network-denied probe sandbox, refuses repository-owned executables, sweeps every process the agent started, and
+  reports the protocol version, the agent's name and version and what it advertises (terminal escapes stripped) or,
+  when it fails, what it printed. A conformant agent is still `PLANNED` for execution. Gemini CLI 0.65.0 conforms;
+  OpenCode 2.2.1 needs network to start its ACP mode and does not.
+- Security: the probe sandbox of `agents doctor` (and the kit) did not deny LaunchServices `open` or Apple events on
+  macOS, so a probed program could start an application outside the sandbox, with network access (found by an
+  independent review of the kit, with a harmless probe). It now does; on Linux the probe also gets its own process
+  namespace, so nothing it starts outlives it.
+
 ## 0.11.4 — SAFE_AUTO hardened after a failed unseen-corpus test; verify fixes from real projects
 
 - Added: when tests fail at the base and the change alike and their output shows a network denial (name
