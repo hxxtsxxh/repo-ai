@@ -9,6 +9,7 @@ from typing import Any
 
 # The mission runtime, ledger and provider adapters load in the commands that use them: argument parsing for
 # every repo-ai command (agent hooks included) imports this module.
+from ..locks import file_lock  # module-level: stdlib only, and tests patch mission.cli.file_lock
 from ..provider_names import PROVIDERS
 
 
@@ -442,7 +443,6 @@ def _agents_setup(args) -> int:
 
 
 def cmd_mission(args) -> int:
-    from ..locks import file_lock
     from .ledger import TERMINAL, Store, transition
     from .runtime import execute, status
     root, mission = _root(args), args.id
