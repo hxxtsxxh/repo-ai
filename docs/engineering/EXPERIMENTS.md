@@ -100,6 +100,12 @@ fail without them (pyjwt, humanize, more-itertools, marshmallow). **No false ass
 pre-existing, likely network-dependent test; more-itertools: no trusted test command); uninstall left no tracked or
 untracked difference in 7 of 7. One clone per project was reused (a deviation from "fresh clone").
 
+## Capability recommendation, fresh corpus (C07), 2026-11-01, $0
+
+`benchmarks/capability-fresh-v1/` (preregistered; 60 tasks by an independent author; matcher unchanged). **Failed:**
+top-3 recall 0.69 (gate 0.80) and 2 constraint-forbidden recommendations (gate 0), both from prose constraints the
+matcher did not detect. Correct abstention 19 of 20; precision 0.68.
+
 ## Open experiment protocols (not run)
 
 - **C03 Claude end-to-end journey**: `repo-ai do --agent claude --run --allow-live-provider --allow-write durations.py
