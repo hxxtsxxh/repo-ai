@@ -1,0 +1,24 @@
+{
+ "own_address": "192.168.64.16",
+ "current (localhost)": {
+  "bind 0.0.0.0": "ok",
+  "bind 127.0.0.1": "ok",
+  "connect 127.0.0.1": "ok",
+  "connect own LAN address": "ok"
+ },
+ "ip-literal 127.0.0.1": {
+  "error": "sandbox-exec: host must be * or localhost in network address\n\nBacktrace: \n<input string>:1:67:\n\t(remote ip \"127.0.0.1:*\")\n\n"
+ },
+ "localhost, no bind rule": {
+  "bind 0.0.0.0": "ok",
+  "bind 127.0.0.1": "ok",
+  "connect 127.0.0.1": "ok",
+  "connect own LAN address": "ok"
+ },
+ "localhost + deny bind *": {
+  "bind 0.0.0.0": "ok",
+  "bind 127.0.0.1": "ok",
+  "connect 127.0.0.1": "ok",
+  "connect own LAN address": "ok"
+ }
+}
