@@ -1,4 +1,4 @@
-# repo-ai Claude Code plugin (v0.11.4)
+# repo-ai Claude Code plugin (v0.11.5)
 
 Optional alternative to per-project wiring. The plugin provides the repo-ai
 skills (`/repo-ai:locate`, `/repo-ai:impact`, `/repo-ai:verify`, `/repo-ai:debug`,
