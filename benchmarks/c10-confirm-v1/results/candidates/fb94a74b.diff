@@ -1,0 +1,113 @@
+diff --git a/stockroom/__init__.py b/stockroom/__init__.py
+index 821a56a..44b8d25 100644
+--- a/stockroom/__init__.py
++++ b/stockroom/__init__.py
+@@ -3,6 +3,7 @@
+ from stockroom.errors import (
+     DuplicateSkuError,
+     InsufficientStockError,
++    InvalidPeriodError,
+     InvalidQuantityError,
+     InvalidSkuError,
+     StockroomError,
+@@ -15,6 +16,7 @@ from stockroom.skus import normalize_sku
+ __all__ = [
+     "DuplicateSkuError",
+     "InsufficientStockError",
++    "InvalidPeriodError",
+     "InvalidQuantityError",
+     "InvalidSkuError",
+     "Inventory",
+diff --git a/stockroom/errors.py b/stockroom/errors.py
+index 48e351b..6ecfe6d 100644
+--- a/stockroom/errors.py
++++ b/stockroom/errors.py
+@@ -13,6 +13,13 @@ class InvalidQuantityError(StockroomError, ValueError):
+     """Raised when a quantity is not a positive integer."""
+ 
+ 
++class InvalidPeriodError(StockroomError, ValueError):
++    """Raised when a time period's start is not before its end."""
++
++    def __init__(self):
++        super().__init__("period start must be before end")
++
++
+ class UnknownSkuError(StockroomError, LookupError):
+     """Raised when an operation refers to a SKU that is not registered."""
+ 
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..42ebdd2 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -1,6 +1,11 @@
+ """The Inventory ledger: registered items plus their movement history."""
+ 
+-from stockroom.errors import DuplicateSkuError, InsufficientStockError, UnknownSkuError
++from stockroom.errors import (
++    DuplicateSkuError,
++    InsufficientStockError,
++    InvalidPeriodError,
++    UnknownSkuError,
++)
+ from stockroom.models import Item, Movement
+ from stockroom.quantities import require_positive_quantity
+ from stockroom.skus import normalize_sku
+@@ -65,3 +70,13 @@ class Inventory:
+             return tuple(self._movements)
+         sku = self.item(sku).sku
+         return tuple(m for m in self._movements if m.sku == sku)
++
++    def movements_between(self, start, end, sku=None):
++        """Return movements with ``start <= at < end``, in recorded order.
++
++        With ``sku`` given, only that item's movements are returned.
++        Raises ``InvalidPeriodError`` if ``start`` is not before ``end``.
++        """
++        if start >= end:
++            raise InvalidPeriodError()
++        return tuple(m for m in self.history(sku) if start <= m.at < end)
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..1ba379a 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -1,15 +1,39 @@
++from datetime import timedelta
++
+ import pytest
+ 
+ from conftest import T0
+ from stockroom import (
+     DuplicateSkuError,
+     InsufficientStockError,
++    InvalidPeriodError,
+     InvalidQuantityError,
+     Item,
+     UnknownSkuError,
+ )
+ 
+ 
++def test_movements_between_is_half_open_and_filters_sku(inv):
++    t1, t2, t3 = (T0 + timedelta(hours=h) for h in (1, 2, 3))
++    inv.receive("BLT-0001", 10, T0)
++    inv.receive("NUT-0001", 5, t1)
++    inv.issue("BLT-0001", 4, t2)
++    inv.receive("BLT-0001", 1, t3)
++
++    got = inv.movements_between(t1, t3)
++    assert isinstance(got, tuple)
++    assert [m.at for m in got] == [t1, t2]  # start inclusive, end exclusive
++    assert [m.at for m in inv.movements_between(t1, t3, sku="blt-0001")] == [t2]
++
++
++def test_movements_between_invalid_period(inv):
++    with pytest.raises(InvalidPeriodError) as exc:
++        inv.movements_between(T0, T0)
++    assert str(exc.value) == "period start must be before end"
++    with pytest.raises(UnknownSkuError):
++        inv.movements_between(T0, T0 + timedelta(hours=1), sku="ZZZ-9999")
++
++
+ def test_receive_and_issue(inv):
+     assert inv.receive("blt-0001", 50, T0) == 50
+     assert inv.issue("BLT-0001", 20, T0) == 30

@@ -73,7 +73,7 @@ Condensed from `docs/STATUS.md` in the source tree, which remains the record whe
 | `skills inventory` | stable candidate; offline, read-only |
 | `skills vet` (skills) | stable candidate; pinned, quarantined, read-only |
 | Plugin inspection | experimental; its fresh validation failed, plugins are never reported eligible |
-| Third-party skills (discover, install, trials) | experimental; no controlled benefit shown |
+| Third-party skills (discover, install, trials) | experimental; no controlled benefit shown for third-party skills (a preregistered trial showed a project-conventions skill installed by repo-ai raised convention adherence on one project: 8 of 8 tasks; see the Evidence Lab) |
 | Capability registry (`capabilities list`, `show`) | stable candidate |
 | Ruff security adapter | stable candidate; needs your approval in a terminal |
 | Capability discovery (`recommend`, `candidates`, `select`) | experimental; preregistered evaluation failed |

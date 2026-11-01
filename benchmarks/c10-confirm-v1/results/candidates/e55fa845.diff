@@ -1,0 +1,81 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..085c32d 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -13,6 +13,7 @@ class Inventory:
+         self._items = {}
+         self._on_hand = {}
+         self._movements = []
++        self._counters = {}
+ 
+     def add_item(self, item):
+         if not isinstance(item, Item):
+@@ -56,6 +57,31 @@ class Inventory:
+         self._movements.append(Movement(sku, -qty, "issue", at))
+         return self._on_hand[sku]
+ 
++    def _next_id(self, prefix):
++        self._counters[prefix] = self._counters.get(prefix, 0) + 1
++        return f"{prefix}-{self._counters[prefix]:06d}"
++
++    def issue_many(self, lines, at):
++        """Issue several ``(sku, qty)`` lines at once and return a ``BAT-`` batch ID.
++
++        All-or-nothing: every line is validated first (in input order, taking
++        earlier lines of the same batch into account); the first failing line's
++        error is raised and nothing is changed.
++        """
++        remaining = {}
++        validated = []
++        for sku, qty in lines:
++            sku = self.item(sku).sku
++            qty = require_positive_quantity(qty)
++            current = remaining.get(sku, self._on_hand[sku])
++            if qty > current:
++                raise InsufficientStockError(sku, qty, current)
++            remaining[sku] = current - qty
++            validated.append((sku, qty))
++        for sku, qty in validated:
++            self.issue(sku, qty, at)
++        return self._next_id("BAT")
++
+     def history(self, sku=None):
+         """Return movements in the order they were recorded.
+ 
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..86b60db 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -55,6 +55,32 @@ def test_history_order_and_sign(inv):
+     assert [m.delta for m in inv.history("blt-0001")] == [5, -2]
+ 
+ 
++def test_issue_many(inv):
++    inv.receive("BLT-0001", 10, T0)
++    inv.receive("NUT-0001", 5, T0)
++    assert inv.issue_many([("blt-0001", 3), ("NUT-0001", 5), ("BLT-0001", 2)], T0) == "BAT-000001"
++    assert [(m.sku, m.delta, m.reason, m.at) for m in inv.history()[2:]] == [
++        ("BLT-0001", -3, "issue", T0),
++        ("NUT-0001", -5, "issue", T0),
++        ("BLT-0001", -2, "issue", T0),
++    ]
++    assert inv.on_hand("BLT-0001") == 5
++    assert inv.issue_many([("BLT-0001", 1)], T0) == "BAT-000002"
++
++
++def test_issue_many_all_or_nothing(inv):
++    inv.receive("BLT-0001", 5, T0)
++    before = inv.history()
++    with pytest.raises(InsufficientStockError) as exc:
++        inv.issue_many([("BLT-0001", 3), ("BLT-0001", 3), ("ZZZ-9999", 1)], T0)
++    assert str(exc.value) == "insufficient stock for BLT-0001: requested 3, on hand 2"
++    with pytest.raises(UnknownSkuError):
++        inv.issue_many([("BLT-0001", 1), ("ZZZ-9999", 1)], T0)
++    assert inv.on_hand("BLT-0001") == 5
++    assert inv.history() == before
++    assert inv.issue_many([("BLT-0001", 1)], T0) == "BAT-000001"
++
++
+ def test_items_sorted_by_sku(inv):
+     inv.add_item(Item("AAA-0001", "Anchor", 100))
+     assert [i.sku for i in inv.items()] == ["AAA-0001", "BLT-0001", "NUT-0001", "WSH-0001"]

@@ -1,0 +1,32 @@
+diff --git a/stockroom/valuation.py b/stockroom/valuation.py
+index baa5d53..2ab6761 100644
+--- a/stockroom/valuation.py
++++ b/stockroom/valuation.py
+@@ -1,5 +1,9 @@
+ """Stock valuation at unit cost. All amounts are integer cents."""
+ 
++from decimal import ROUND_HALF_UP, Decimal
++
++from stockroom.skus import normalize_sku
++
+ 
+ def item_value_cents(inventory, sku):
+     item = inventory.item(sku)
+@@ -8,3 +12,17 @@ def item_value_cents(inventory, sku):
+ 
+ def total_value_cents(inventory):
+     return sum(item_value_cents(inventory, item.sku) for item in inventory.items())
++
++
++def value_share_percent(inventory, sku):
++    """Item's share of total stock value as a percentage (0-100, one decimal).
++
++    Returns None when the total stock value is zero.
++    """
++    sku = normalize_sku(sku)
++    value_cents = item_value_cents(inventory, sku)
++    total_cents = total_value_cents(inventory)
++    if total_cents == 0:
++        return None
++    share = Decimal(value_cents) * 100 / Decimal(total_cents)
++    return share.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)

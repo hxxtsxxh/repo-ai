@@ -1,0 +1,19 @@
+diff --git a/stockroom/valuation.py b/stockroom/valuation.py
+index baa5d53..deb8560 100644
+--- a/stockroom/valuation.py
++++ b/stockroom/valuation.py
+@@ -8,3 +8,14 @@ def item_value_cents(inventory, sku):
+ 
+ def total_value_cents(inventory):
+     return sum(item_value_cents(inventory, item.sku) for item in inventory.items())
++
++
++def value_share_percent(inventory, sku):
++    """Return the item's share of total stock value as a percentage (0-100).
++
++    Returns 0.0 when the total stock value is zero.
++    """
++    total = total_value_cents(inventory)
++    if total == 0:
++        return 0.0
++    return item_value_cents(inventory, sku) * 100 / total

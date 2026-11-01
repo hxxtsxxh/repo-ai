@@ -1,0 +1,90 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..e25ac35 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -1,6 +1,11 @@
+ """The Inventory ledger: registered items plus their movement history."""
+ 
+-from stockroom.errors import DuplicateSkuError, InsufficientStockError, UnknownSkuError
++from stockroom.errors import (
++    DuplicateSkuError,
++    InsufficientStockError,
++    InvalidQuantityError,
++    UnknownSkuError,
++)
+ from stockroom.models import Item, Movement
+ from stockroom.quantities import require_positive_quantity
+ from stockroom.skus import normalize_sku
+@@ -13,6 +18,7 @@ class Inventory:
+         self._items = {}
+         self._on_hand = {}
+         self._movements = []
++        self._count_seq = 0
+ 
+     def add_item(self, item):
+         if not isinstance(item, Item):
+@@ -56,6 +62,30 @@ class Inventory:
+         self._movements.append(Movement(sku, -qty, "issue", at))
+         return self._on_hand[sku]
+ 
++    def record_count(self, counts, at):
++        """Apply a physical stock count and return its identifier (``CNT-nnnn``).
++
++        ``counts`` maps SKU to the counted quantity (a non-negative int). Each
++        SKU whose count differs from on-hand is set to the counted quantity and
++        gets a ``count_adjust`` movement; matching SKUs get none. All input is
++        validated before anything is changed.
++        """
++        resolved = {}
++        for raw_sku, counted in counts.items():
++            sku = self.item(raw_sku).sku
++            if isinstance(counted, bool) or not isinstance(counted, int) or counted < 0:
++                raise InvalidQuantityError(
++                    f"count must be a non-negative integer, got {counted!r}"
++                )
++            resolved[sku] = counted
++        self._count_seq += 1
++        for sku, counted in resolved.items():
++            delta = counted - self._on_hand[sku]
++            if delta:
++                self._on_hand[sku] = counted
++                self._movements.append(Movement(sku, delta, "count_adjust", at))
++        return f"CNT-{self._count_seq:04d}"
++
+     def history(self, sku=None):
+         """Return movements in the order they were recorded.
+ 
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..abf9f83 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -55,6 +55,29 @@ def test_history_order_and_sign(inv):
+     assert [m.delta for m in inv.history("blt-0001")] == [5, -2]
+ 
+ 
++def test_record_count(inv):
++    inv.receive("BLT-0001", 10, T0)
++    inv.receive("WSH-0001", 4, T0)
++    cid = inv.record_count({"blt-0001": 7, "WSH-0001": 4, "NUT-0001": 3}, T0)
++    assert cid.startswith("CNT")
++    assert inv.on_hand("BLT-0001") == 7
++    assert inv.on_hand("WSH-0001") == 4
++    assert inv.on_hand("NUT-0001") == 3
++    adjusts = [(m.sku, m.delta) for m in inv.history() if m.reason == "count_adjust"]
++    assert adjusts == [("BLT-0001", -3), ("NUT-0001", 3)]
++    assert inv.record_count({"BLT-0001": 7}, T0) != cid
++
++
++def test_record_count_invalid_changes_nothing(inv):
++    inv.receive("BLT-0001", 10, T0)
++    with pytest.raises(InvalidQuantityError):
++        inv.record_count({"BLT-0001": 5, "NUT-0001": -1}, T0)
++    with pytest.raises(UnknownSkuError):
++        inv.record_count({"BLT-0001": 5, "ZZZ-9999": 1}, T0)
++    assert inv.on_hand("BLT-0001") == 10
++    assert len(inv.history()) == 1
++
++
+ def test_items_sorted_by_sku(inv):
+     inv.add_item(Item("AAA-0001", "Anchor", 100))
+     assert [i.sku for i in inv.items()] == ["AAA-0001", "BLT-0001", "NUT-0001", "WSH-0001"]

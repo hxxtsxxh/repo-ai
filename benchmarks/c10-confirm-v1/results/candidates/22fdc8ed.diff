@@ -1,0 +1,21 @@
+diff --git a/stockroom/report.py b/stockroom/report.py
+index cdc54b5..ae380c8 100644
+--- a/stockroom/report.py
++++ b/stockroom/report.py
+@@ -17,3 +17,16 @@ def stock_lines(inventory):
+         f"{format_cents(item_value_cents(inventory, item.sku))}"
+         for item in inventory.items()
+     )
++
++
++def movement_lines(inventory, sku=None):
++    """One line per movement: "<timestamp> <SKU> <delta> <reason>".
++
++    The timestamp is ISO 8601 (so it contains no spaces) and the delta
++    always carries an explicit sign, e.g. "+5" or "-2". With ``sku``
++    given, only that item's movements are listed.
++    """
++    return tuple(
++        f"{m.at.isoformat()} {m.sku} {m.delta:+d} {m.reason}"
++        for m in inventory.history(sku)
++    )

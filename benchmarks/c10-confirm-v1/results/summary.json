@@ -1,0 +1,50 @@
+{
+ "per_task": {
+  "t1": {
+   "skill": 1.0,
+   "control": 0.6666666666666666,
+   "diff": 0.3333
+  },
+  "t2": {
+   "skill": 1.0,
+   "control": 0.7777777777777777,
+   "diff": 0.2222
+  },
+  "t3": {
+   "skill": 1.0,
+   "control": 0.3333333333333333,
+   "diff": 0.6667
+  },
+  "t4": {
+   "skill": 1.0,
+   "control": 0.1111111111111111,
+   "diff": 0.8889
+  },
+  "t5": {
+   "skill": 1.0,
+   "control": 0.0,
+   "diff": 1.0
+  },
+  "t6": {
+   "skill": 1.0,
+   "control": 0.3333333333333333,
+   "diff": 0.6667
+  },
+  "t7": {
+   "skill": 1.0,
+   "control": 0.0,
+   "diff": 1.0
+  },
+  "t8": {
+   "skill": 1.0,
+   "control": 0.3333333333333333,
+   "diff": 0.6667
+  }
+ },
+ "skill_higher": 8,
+ "control_higher": 0,
+ "sign_test_p": 0.0039,
+ "verdict": "SUPPORTED",
+ "invalid": [],
+ "cost": 3.2509
+}
