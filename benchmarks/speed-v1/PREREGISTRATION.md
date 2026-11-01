@@ -96,3 +96,19 @@ harness. Two questions, both stated before the run:
 
 Run 3 is reported next to run 2 in RESULTS.md, whatever it shows. The reading rule is applied to run 3 alone;
 the two runs are not pooled. Spend: $0 (GitHub-hosted runner).
+
+## Amendment 4 (2026-11-01, before run 4; a replication, analysis unchanged)
+
+Run 2 remains the speed-v1 result. **Run 4** repeats it unchanged (projects, pinned refs, selection, measurements,
+reading rule; the Amendment 2 harness) on main at 34cb2e9 (0.11.7, after PR #69), which removed a per-entry `pathlib` cost from the
+source-tree snapshots that every verify run takes twice. A profile on a generated project put that cost at most of
+verify's own time on Linux; each speed-v1 project keeps its virtualenv inside its clone, so the snapshots walk it.
+Questions, stated before the run:
+
+1. Does the cold ratio to the native suite fall below run 3's (2.23× geometric mean; 2.61× without
+   more-itertools), and by the reading rule is verify faster than the native suite?
+2. Do exit codes still agree with the native suite on at least run 3's 23 of 30 changes (the change must not alter
+   verdicts)?
+
+Run 4 is reported next to runs 2 and 3, whatever it shows; the reading rule is applied to run 4 alone, and the runs
+are not pooled. Runner CPUs may differ between runs, so only ratios are compared. Spend: $0 (GitHub-hosted runner).
