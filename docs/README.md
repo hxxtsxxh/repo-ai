@@ -59,7 +59,7 @@ usage guides.
 | [STATISTICS_COVERAGE.md](STATISTICS_COVERAGE.md) | coverage of the task-clustered success interval |
 
 The evaluations behind the skills and capabilities claims, in this repository (preregistered, with their data):
-- [../benchmarks/skill-vet-fresh-v1/RESULTS.md](../benchmarks/skill-vet-fresh-v1/RESULTS.md): skill vetting on 80 fresh cases, **failed** its install gate (8 of 30 harmful skills); fixed on `main` afterwards, not re-measured on a fresh corpus;
+- [../benchmarks/skill-vet-fresh-v1/RESULTS.md](../benchmarks/skill-vet-fresh-v1/RESULTS.md): skill vetting on 80 fresh cases, **failed** its main gate: opt-in `SAFE_AUTO` would have installed 8 of 30 harmful skills without asking. Hardened on `main` afterwards (not yet released); a re-run on the same corpus is not a confirmation, and the fresh confirmation (skill-vet-fresh-v2) is blocked;
 - [../benchmarks/capability-fresh-v1/RESULTS.md](../benchmarks/capability-fresh-v1/RESULTS.md): capability discovery on 60 fresh tasks, **failed** recall and constraints.
 
 Earlier evaluations whose files stay in the private development history (their figures are in
@@ -77,3 +77,6 @@ above and under `benchmarks/`.
 | [PREREGISTRATION.md](PREREGISTRATION.md) | Option A: plain Claude Code vs repo-ai Core vs Full |
 | [PREREGISTRATION-v2.md](PREREGISTRATION-v2.md) | repo-ai 0.7.6 on sealed-v2 |
 | [EXPERIMENT_PLAN.md](EXPERIMENT_PLAN.md) | proposed live experiments |
+| [../benchmarks/skill-vet-fresh-v1/PREREGISTRATION.md](../benchmarks/skill-vet-fresh-v1/PREREGISTRATION.md) | fresh skill-vetting corpus (run; failed) |
+| [../benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md](../benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md) | the confirmation corpus for the skill-scanner fix (blocked: needs a human author) |
+| [../benchmarks/capability-fresh-v1/PREREGISTRATION.md](../benchmarks/capability-fresh-v1/PREREGISTRATION.md) | fresh capability-discovery corpus (run; failed) |

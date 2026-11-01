@@ -69,10 +69,10 @@ Claude Code, its availability, and a next step with no runnable install or appro
 
 **Measured limits.**
 - The first matcher was precise (0.91–0.93) and conservative (recall 0.43–0.58) on two 60-task
-  corpora (`docs/research/capability-eval-2026-10.md` (private development history)).
+  corpora (`docs/research/capability-eval-2026-10.md`, private development history).
 - The discovery redesign was measured once, on a fresh 120-task corpus, under a protocol frozen
   beforehand. It **failed**: top-3 recall 0.385 against a gate of 0.80, and shortlist recall@6 0.736
-  (`docs/research/capability-discovery-C-2026-10/RESULTS.md` (private development history)).
+  (`docs/research/capability-discovery-C-2026-10/RESULTS.md`, private development history).
   It still beat both baselines: lexical 0.088, repository-only 0.286.
 - **Stated constraints are detected only partly** (9 of 18). Pass them with `--deny`, which is always
   enforced, on `recommend`, `candidates` and `select` alike. The output separates `explicit`

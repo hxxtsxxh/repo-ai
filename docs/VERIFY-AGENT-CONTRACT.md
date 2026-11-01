@@ -2,7 +2,7 @@
 
 This file answers Session B's proposals
 (`docs/research/VERIFY-INTERFACE-PROPOSALS-2026-10.md`, branch
-`research/instagram-skills-20261022`). It also fixes the interface that
+`research/instagram-skills-20261022`, both in the private development history). It also fixes the interface that
 skills, hooks and plugins may rely on. It describes PR #25 as of the
 held-out-5 freeze; `benchmarks/verify-eval/FREEZE.md` names that commit.
 
