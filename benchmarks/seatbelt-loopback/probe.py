@@ -9,6 +9,8 @@ import threading
 
 BASE = "(version 1)(allow default)(deny network*)"
 CANDIDATES = {
+    "control: deny network* only": "",
+    "outbound-only localhost (no inbound, no bind)": '(allow network-outbound (remote ip "localhost:*"))',
     "current (localhost)": '(allow network-outbound (remote ip "localhost:*"))(allow network-inbound (local ip "localhost:*"))(allow network-bind (local ip "localhost:*"))',
     "ip-literal 127.0.0.1": '(allow network-outbound (remote ip "127.0.0.1:*"))(allow network-inbound (local ip "127.0.0.1:*"))(allow network-bind (local ip "127.0.0.1:*"))',
     "localhost, no bind rule": '(allow network-outbound (remote ip "localhost:*"))(allow network-inbound (local ip "localhost:*"))',
@@ -16,7 +18,7 @@ CANDIDATES = {
 }
 CHILD = r'''
 import json, socket, sys
-lan, lport, loport = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+lan, lport, loport, gw = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
 out = {}
 def tryit(name, fn):
     try:
@@ -31,6 +33,8 @@ tryit("bind 0.0.0.0", lambda: bind("0.0.0.0"))
 tryit("bind 127.0.0.1", lambda: bind("127.0.0.1"))
 tryit("connect 127.0.0.1", lambda: conn("127.0.0.1", loport))
 tryit("connect own LAN address", lambda: conn(lan, lport))
+tryit("connect another LAN host (gateway, port 9)", lambda: conn(gw, 9))  # denial: PermissionError, not refused
+tryit("connect 1.1.1.1:443", lambda: conn("1.1.1.1", 443))
 print(json.dumps(out))
 '''
 
@@ -51,11 +55,12 @@ def own_address():
 
 
 lan = own_address()
+gw = ".".join(lan.split(".")[:3] + ["1"])
 lport, loport = listener(lan), listener("127.0.0.1")
-matrix = {"own_address": lan}
+matrix = {"own_address": lan, "gateway": gw}
 for name, rules in CANDIDATES.items():
     r = subprocess.run(["/usr/bin/sandbox-exec", "-p", BASE + rules, sys.executable, "-I", "-c", CHILD, lan,
-                        str(lport), str(loport)], capture_output=True, text=True, timeout=60)
+                        str(lport), str(loport), gw], capture_output=True, text=True, timeout=60)
     try:
         matrix[name] = json.loads(r.stdout.strip().splitlines()[-1])
     except Exception:
