@@ -34,15 +34,18 @@ def _maintenance_ran(root: Path) -> bool:
         or (objects / "maintenance.lock").exists()
 
 
-def test_the_control_shows_a_commit_runs_maintenance_without_the_flags(tmp_path: Path):
+def _require_auto_maintenance(tmp_path: Path) -> None:
+    """Control: a plain commit in such a repository does run maintenance here. Where it does not (an older git, or a
+    global config that turns maintenance.auto off), a passing test below would prove nothing, so it is skipped."""
     root = _repo_with_eager_maintenance(tmp_path / "control")
     subprocess.run(["git", "-C", str(root), "add", "-A"], check=True)
     subprocess.run(["git", "-C", str(root), "commit", "-qm", "x"], check=True, env={**os.environ, **GIT_ID})
     if not _maintenance_ran(root):
-        pytest.skip("this git does not run auto-maintenance after a commit; the test below would prove nothing")
+        pytest.skip("this git (or its global config) runs no auto-maintenance after a commit")
 
 
 def test_mission_git_commits_start_no_maintenance(tmp_path: Path):
+    _require_auto_maintenance(tmp_path)
     root = _repo_with_eager_maintenance(tmp_path / "mission")
     runtime.git(root, "add", "-A")
     runtime.git(root, "commit", "-qm", "x")
@@ -50,6 +53,7 @@ def test_mission_git_commits_start_no_maintenance(tmp_path: Path):
 
 
 def test_eval_lab_git_commits_start_no_maintenance(tmp_path: Path):
+    _require_auto_maintenance(tmp_path)
     root = _repo_with_eager_maintenance(tmp_path / "lab")
     evals._git(root, "add", "-A")
     evals._git(root, "commit", "-qm", "x")
