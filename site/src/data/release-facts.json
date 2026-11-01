@@ -261,6 +261,20 @@
         "source_url": "https://github.com/hxxtsxxh/repo-ai/blob/main/docs/CAPABILITIES.md"
       },
       {
+        "id": "capability-recommend-fresh-v1",
+        "title": "capabilities recommend finds the needed capability (fresh corpus)",
+        "status": "NEGATIVE_RESULT",
+        "stat": "0.69",
+        "result": "Preregistered, 60 tasks by an independent author: top-3 recall 0.69 against a gate of 0.80, and 2 recommendations a stated constraint ruled out (gate 0). Correct abstention on 19 of 20 tasks that need nothing; precision 0.68. Higher than the earlier fresh measurement (0.385) on a different corpus; still failing.",
+        "date": "2026-11-01",
+        "sample_size": "60 tasks (40 need a capability)",
+        "method": "benchmarks/capability-fresh-v1: protocol, author inputs and scorer committed before the corpus; corpus committed before one scoring run; matcher unchanged.",
+        "limits": "One model author; constraints in prose are detected only partly (--deny is enforced).",
+        "source": "benchmarks/capability-fresh-v1/RESULTS.md",
+        "featured": false,
+        "source_url": "https://github.com/hxxtsxxh/repo-ai/blob/main/benchmarks/capability-fresh-v1/RESULTS.md"
+      },
+      {
         "id": "plugin-inspection-fresh",
         "title": "Plugin inspection passes its fresh validation",
         "status": "NEGATIVE_RESULT",
