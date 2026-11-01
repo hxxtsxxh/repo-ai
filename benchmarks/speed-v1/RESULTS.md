@@ -94,28 +94,43 @@ remains the speed-v1 result; the runs are not pooled.
 | exit code agrees with the native suite | 16 of 30 | **23 of 30** |
 | verify passed where the native suite failed | 0 (of 5 failing) | 0 (of 4 failing) |
 
-**Question 1 (overhead): no measurable change.** By the reading rule, verify is again **not** faster than the
-native suite. The geometric mean rose because more-itertools' six changes now run their tests (1.18×) instead of
-ending early with `full-suite-failed` (0.43× in run 2, not a speed win then either). Without more-itertools the two
-runs agree (2.64× and 2.61×). Per-project ratios are unchanged (pyjwt 1.09× and 1.10×, itsdangerous 1.84× both,
-marshmallow 3.39× and 3.32×, humanize 8.96× and 9.27×). Absolute times are 20–30% higher on both sides, native
-included (marshmallow's suite: 0.76 s and 0.97 s median), consistent with the different runner CPU, so absolute
-overheads are not compared across the runs. #60's saving (about 80 ms of imports per command; its git change is
-macOS-only) is smaller than that run-to-run difference and is not visible here.
+**Question 1 (overhead): not answerable in absolute terms; the ratios are flat.** By the reading rule, verify
+is again **not** faster than the native suite. Three things changed between the runs (repo-ai, the Amendment 2
+harness and the runner CPU), and there is one run per CPU, so no run-to-run variance estimate. Absolute times rose
+on both sides for four projects (native ×1.25–1.30: humanize, more-itertools, itsdangerous, marshmallow) and
+barely for pyjwt (native ×1.06, verify ×1.07); the absolute overhead (+0.63 → +0.82 s; +0.69 → +0.86 s without
+more-itertools) is therefore confounded by the CPU and is not compared. The ratios are comparable and did not
+move: without more-itertools 2.64× and 2.61×; per project pyjwt 1.09× both, itsdangerous 1.84× both, marshmallow
+3.39× and 3.31×, humanize 8.96× and 9.27×. The geometric mean over all 30 rose because more-itertools went from
+0.43× (run 2: `full` strategy runs that ended early with `full-suite-failed`, not a speed win) to 1.18× (run 3:
+`targeted` runs of 2 selected test files, below), a different measurement rather than a slowdown. #60's saving
+(about 80 ms of imports per command; its git change is macOS-only) cannot be seen in these data.
 
-**Question 2 (agreement): the attributed causes are confirmed for more-itertools and humanize.**
-- more-itertools, 6 of 6: `selected-passed (full suite not run)`, exit 0, where run 2 reported a passing suite
-  `full-suite-failed`. The fixes from 0.11.4/0.11.5 (a lint-only `make check` taken for the suite, the unittest
-  marker) account for it.
-- humanize f772e59b: `selected-passed`, where run 2 had 5 files failing at base and change alike (the missing
-  build-time version file, fixed in 0.11.4). f8c144eb (contaminated in run 2) also agrees now. The four humanize
-  changes whose native suite fails (an old pytest configuration naming `coverage`, and exit 5, no tests collected,
-  on 1bf3f4c7) fail under verify too.
-- Still disagreeing, as expected: pyjwt 6 of 6 (`failing (all failures pre-existing at the base)`:
-  `tests/test_jwks_client.py`, consistent with the sandbox denying the network) and marshmallow 2fc8207d (files
-  matched by name that pytest's `norecursedirs` excludes; the documented limit without `verify --record`). Whether
-  verify named pyjwt's failures as sandbox-network suspects is **not recorded**: the harness does not capture
-  `summary.sandbox_network_suspected`.
+**Question 2 (agreement): the symptoms are gone for more-itertools and humanize f772e59b; the runs do not isolate
+why.** The observations are consistent with the fixes from 0.11.4/0.11.5, but the repo-ai version, the harness and
+the CPU all changed, so this is not a controlled test of those fixes.
+- more-itertools, 6 of 6: exit 0, `selected-passed (full suite not run)`, where run 2 reported `full-suite-failed`
+  on a natively passing suite. Run 3 chose the `targeted` strategy (2 selected test files) on all 6 cold runs,
+  where run 2 chose `full`. So exit codes agree on 6 of 6, but verify's full suite on more-itertools ran in only
+  1 of the 18 run 3 measurements (the e7331924 `--rerun`: `selected-and-full-suite-passed`, no counts recorded).
+  That the full-suite failure is gone is shown once, not 6 times.
+- humanize f772e59b: `selected-passed` cold; its `--rerun` ran the full suite, 605 passed and 24 skipped, the same
+  as the native suite. Run 2 had 5 files failing at base and change alike. This is the strongest evidence that
+  the missing build-time version file (fixed in 0.11.4) was the cause. f8c144eb (contaminated in run 2) also
+  agrees now.
+- The four humanize changes whose native suite fails (an old pytest configuration naming `coverage`; exit 5, no
+  tests collected, on 1bf3f4c7) fail under verify too. "No false assurance" (0 of 4) again has **little power**:
+  all four are configuration or collection crashes of 0.15–0.19 s, not tests failing on a defect.
+- Still disagreeing: pyjwt 6 of 6 (`failing (all failures pre-existing at the base)`: `tests/test_jwks_client.py`,
+  consistent with the sandbox denying the network), and marshmallow 2fc8207d (files matched by name that pytest's
+  `norecursedirs` excludes; the documented limit without `verify --record`). Whether verify named pyjwt's failures
+  as sandbox-network suspects is **not recorded**: the harness does not capture `summary.sandbox_network_suspected`.
+- **Still unexplained, carried forward from run 2:** marshmallow 2fc8207d again gives two verdicts for one state:
+  exit 1 cold, exit 0 under `--rerun` (`selected-and-full-suite-passed`).
+- Also different from run 2: itsdangerous c2300185 ran `targeted` in run 3 (`full` in run 2): 1.52× against 1.84×.
+- In both runs pyjwt's native suite skips 4 tests ("cryptography library not installed") despite the `.[crypto]`
+  install; verify and native ran the same environment, so the comparison stands, but the install is incomplete.
 
-Follow-ups 1 is resolved for more-itertools and humanize f772e59b; follow-up 2 shipped in 0.11.4 (not measured
-here, see above); follow-up 3 stays open: the fixed overhead on Linux is unchanged.
+Follow-up 1: its symptoms are gone for more-itertools (exit codes; the full suite seen passing once) and humanize
+f772e59b; marshmallow 2fc8207d's verdict flip stays open. Follow-up 2 shipped in 0.11.4 (not measured here).
+Follow-up 3 stays open: the Linux overhead could not be compared across these runs.
