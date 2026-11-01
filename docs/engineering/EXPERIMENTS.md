@@ -84,12 +84,13 @@ on a GitHub ubuntu runner with bwrap. **verify --run took 1.84× the native suit
 failed natively passing tests in 14 changes (pyjwt network-denied tests; more-itertools and one humanize change
 unexplained; marshmallow name-matched files without `--record`). Third-party code ran only on the CI runner.
 
-## Offline journey on real projects (C21), 2026-10-31, $0
+## Offline journey on real projects (C21), 2026-11-01 (UTC), $0
 
 `benchmarks/journey-offline-v1/` (preregistered at 0576dc3; CI run 41260337468). **INCONCLUSIVE.** No false assurance,
-but no power: the mechanically chosen fix commits gave no state where the native suite failed without the fix. The
-uninstall check was mis-measured by the harness. A v2 protocol should select fix commits whose tests fail without
-the fix.
+but no power: the selection (`--no-merges --first-parent`) skipped fixes merged via pull requests and chose commits
+that gave no state where the native suite failed without the fix. The uninstall check is unknown (compared with the
+init commit, output truncated). A v2 protocol should select from merged pull requests and require the fix's tests to
+fail without the fix.
 
 ## Open experiment protocols (not run)
 
