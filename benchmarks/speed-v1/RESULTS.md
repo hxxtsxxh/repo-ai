@@ -137,12 +137,15 @@ Follow-up 3 stays open: the Linux overhead could not be compared across these ru
 
 ## Addendum (2026-11-01): marshmallow 2fc8207d's two verdicts, explained from the recorded data
 
-Identical in run 2 and run 3. The cold run had no per-file durations for the selected files, so the strategy
-chooser ran the selection (`targeted`), naming `tests/mypy_test_cases/test_*.py` on pytest's command line. pytest
+Identical in run 2 and run 3. The recorded facts: the cold run was `targeted`, the `--rerun` `full`, with the
+files and counts below. The harness does not record the strategy chooser's reason; by its code
+(`verify/strategy.py` `decide`), a run without per-file durations for the selected files runs the selection, which
+fits. The cold run named `tests/mypy_test_cases/test_*.py` on pytest's command line. pytest
 collects files named explicitly even inside a `norecursedirs` directory (marshmallow's configuration excludes
 `tests/mypy_test_cases`), and two of them fail at base and change alike: `failing (all failures pre-existing at
-the base)`, exit 1. The cold run measured those files; with a full-suite time measured earlier in the same clone,
-the `--rerun` chooser found the full suite no slower and ran it (`full`): pytest skipped the directory, the three
+the base)`, exit 1. The cold run measured those files, and the same clone had run marshmallow's full suite just before
+(5c136b11, `full`), so by the same code the `--rerun` chooser could compare the two and found the full suite no
+slower (inferred, not recorded). It ran the full suite: pytest skipped the directory, the three
 files were reported `no_tests`, and 1,117 tests passed, exit 0. So the verdict followed a timing-driven strategy
 choice, through the documented limit that files are matched by name until `repo-ai verify --record` has captured
 pytest's own collection (verify deliberately never removes a test file on a static reading of pytest's
