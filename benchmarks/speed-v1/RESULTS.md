@@ -162,3 +162,36 @@ This is the documented limit that files are matched by name until `repo-ai verif
 own collection; verify deliberately never removes a test file on a static reading of pytest's configuration. It is
 not a new defect. Queued: a note that names such files (QUEUE row 16), and recording `strategy.reason` and the argv
 in the harness.
+
+## Run 4: replication after the snapshot fix (Amendment 4)
+
+Stated before the run in [Amendment 4](PREREGISTRATION.md). GitHub Actions run
+[41360280119](https://github.com/hxxtsxxh/repo-ai/actions/runs/41360280119), commit 0f5bda4 (0.11.7 at 34cb2e9 plus
+the amendment), `ubuntu-latest` on an **AMD EPYC 9V45, the same CPU model as run 2** (run 3 used a 9V74), Python 3.12,
+bwrap, Amendment 2 harness. Raw: [results/run-4.json](results/run-4.json). Spend: $0. Run 2 remains the speed-v1
+result; the runs are not pooled.
+
+| | run 2 (47d950c, 9V45) | run 3 (8cd3afd, 9V74) | run 4 (0f5bda4, 9V45) |
+|---|---|---|---|
+| verify --run (cold) / native, geometric mean | 1.84× | 2.23× | **2.00×** |
+| slower than the native suite | 24 of 30 | 30 of 30 | **30 of 30** |
+| same, more-itertools excluded (24 changes) | 2.64× | 2.61× | **2.26×** |
+| overhead, median | +0.63 s | +0.82 s | **+0.38 s** |
+| re-verifying an unchanged state, median (max) | 0.20 s (0.88) | 0.21 s (1.01) | 0.16 s (0.69) |
+| exit code agrees with the native suite | 16 of 30 | 23 of 30 | **24 of 30** |
+| verify passed where the native suite failed | 0 of 5 | 0 of 4 | 0 of 4 |
+
+**Question 1 (overhead): the cold ratio fell below run 3's (2.00× against 2.23×; 2.26× against 2.61× without
+more-itertools). By the reading rule verify is still not faster than the native suite** (slower on 30 of 30). Because
+run 4 ran on the same CPU model as run 2 and the native suites took about the same time (median pyjwt 4.95 s in both,
+itsdangerous 0.71 → 0.68 s, marshmallow 0.76 → 0.67 s, humanize 0.16 → 0.14 s), absolute overheads can be set side by
+side with run 2 here, though not with run 3: per-project median overhead pyjwt 0.42 → 0.18 s, itsdangerous 0.58 →
+0.30 s, humanize 1.10 → 0.83 s, marshmallow 1.79 → 1.43 s; overall median +0.63 → +0.38 s. That is consistent with
+the snapshot fix (PR #69), whose cost the profiler put at most of a comment-only run's own time on a generated
+project; it is one run per configuration, and repo-ai changed in other ways between runs 2 and 4 as well.
+more-itertools ran `targeted` on 2 and `full` on 4 of its 6 changes (run 3: all `targeted`), so its ratio is not
+comparable across runs.
+
+**Question 2 (agreement): 24 of 30, not fewer than run 3's 23.** The only disagreements are pyjwt's 6
+(`failing (all failures pre-existing at the base)`, consistent with the sandbox denying the network). No false
+assurance (0 of 4 failing native suites, all humanize configuration or collection crashes: little power).
