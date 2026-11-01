@@ -1,0 +1,1803 @@
+[
+ {
+  "id": "017192a6",
+  "arm": "skill",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Read",
+   "Write"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "06864e26",
+  "arm": "control",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "07306c77",
+  "arm": "skill",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "113ec3aa",
+  "arm": "skill",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "15a77947",
+  "arm": "control",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "18e92d57",
+  "arm": "skill",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "1bf6e543",
+  "arm": "skill",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "223c4833",
+  "arm": "skill",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "22fdc8ed",
+  "arm": "control",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "24dd1d60",
+  "arm": "control",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "27aca516",
+  "arm": "control",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "311a24c9",
+  "arm": "skill",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "31360d81",
+  "arm": "skill",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "3e14b5e9",
+  "arm": "control",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Write"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "3fe0b4e2",
+  "arm": "skill",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "40f794cb",
+  "arm": "control",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "422b64b8",
+  "arm": "control",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "4275bc7a",
+  "arm": "control",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "483478f7",
+  "arm": "skill",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "4afdc763",
+  "arm": "skill",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "695c233a",
+  "arm": "control",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "69839a58",
+  "arm": "skill",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "6e155f70",
+  "arm": "control",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "7461f0f8",
+  "arm": "skill",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "7e39b10e",
+  "arm": "control",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "88b0bb5b",
+  "arm": "control",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "97edfafc",
+  "arm": "skill",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "9a77d3cb",
+  "arm": "skill",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "a413662c",
+  "arm": "skill",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "ad548689",
+  "arm": "skill",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "b43a367d",
+  "arm": "control",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "bdceb048",
+  "arm": "control",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "c07a03b7",
+  "arm": "skill",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "c30883dd",
+  "arm": "skill",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "c3de7098",
+  "arm": "skill",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "c6476272",
+  "arm": "skill",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "cfb213a3",
+  "arm": "control",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Write"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "d33f4cb4",
+  "arm": "skill",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Grep",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "d7aebc7a",
+  "arm": "control",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "def422af",
+  "arm": "control",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Grep",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "e2165160",
+  "arm": "control",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "e55fa845",
+  "arm": "skill",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ },
+ {
+  "id": "eac71532",
+  "arm": "control",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "eae5478c",
+  "arm": "control",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "ee67994e",
+  "arm": "control",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "f47f7d29",
+  "arm": "control",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Read",
+   "Glob",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "f5e39e65",
+  "arm": "control",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "fb94a74b",
+  "arm": "skill",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "stockroom-conventions"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-sonnet-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.316"
+  },
+  "tool_calls": [
+   "Skill",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "stockroom-conventions"
+  ]
+ }
+]
