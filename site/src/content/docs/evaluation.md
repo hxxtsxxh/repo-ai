@@ -29,7 +29,7 @@ The current qualification of `repo-ai verify`, run by a separate evaluation sess
 | False alarms | 0 |
 | Runtime no-miss rate | 96.7% |
 | Working tree unchanged | 234 of 234 runs |
-| Speed vs. the native suite | slower: 1.84× the native suite on 30 real upstream commits, slower on 24 (speed-v1, 2026-10-31, GitHub runner with bwrap, not the podman scope above); a replication after 0.11.5 gave 2.23×, slower on all 30 (more-itertools now runs its tests instead of failing early; without it 2.61× against 2.64×); earlier, slower on 3 of 5 projects (1.44–2.31×). No speed advantage on small suites |
+| Speed vs. the native suite | slower: 1.84× the native suite on 30 real upstream commits, slower on 24 (speed-v1, 2026-10-31, GitHub runner with bwrap, not the podman scope above); a replication after 0.11.5 gave 2.23×, slower on all 30 (more-itertools ran 2 selected test files where run 2's full-suite attempt ended early; without it 2.61× against 2.64×); earlier, slower on 3 of 5 projects (1.44–2.31×). No speed advantage on small suites |
 
 **Scope:** five public projects, frozen and independently labelled, using pytest and `node --test`, run in podman
 containers. The verdict is *conditional, with explicit limitations*. **Not qualified:** unittest and TypeScript (no
