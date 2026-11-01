@@ -366,3 +366,11 @@ def test_plugin_inspection_ignores_one_leading_bom(tmp_path):
 
     assert "hidden-unicode" not in rules("\ufeffconsole.log('ok')\n")
     assert "hidden-unicode" in rules("console.log('o\u200bk')\n")
+
+
+def test_from_unittest_import_is_a_unittest_suite_but_unittest_mock_is_not():
+    """journey-offline-v2: more-itertools' tests use `from unittest import TestCase`, which left the suite "unknown",
+    so verify found no runner it trusted and refused."""
+    assert _suite("tests/test_more.py", "from unittest import TestCase\n\nclass T(TestCase):\n    def test_a(self):\n"
+                                        "        pass\n") == "unittest"
+    assert _suite("tests/test_b.py", "from unittest.mock import patch\n\ndef test_b():\n    pass\n") != "unittest"
