@@ -755,7 +755,7 @@ def _names(items: V) -> str:
 
 
 NODE_REASON = ("ProofLab does not parse JavaScript, so it cannot tell whether a node scenario checks the change's "
-               "behaviour or only something the change set up for it (Session A's G4): a node claim is never "
+               "behaviour or only something the change set up for it: a node claim is never "
                "supported; the observations are recorded")
 
 
