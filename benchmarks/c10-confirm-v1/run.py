@@ -25,6 +25,8 @@ HERE = Path(__file__).resolve().parent
 WORK = Path(os.environ.get("C10_WORK", "")).resolve() if os.environ.get("C10_WORK") else None
 REPO_AI = os.environ.get("REPO_AI", "repo-ai")
 REPEATS = 3
+BUDGET_USD = 4.00  # the preregistered ceiling; a run is not started if it could exceed it
+RUN_CAP_USD = 0.30
 TOOLS = "Read,Write,Edit,Glob,Grep,Skill"
 CLEAN = {k: v for k, v in os.environ.items() if k not in {"AI_AGENT", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT",
                                                            "ANTHROPIC_API_KEY", "CLAUDE_CONFIG_DIR"}}
@@ -87,18 +89,36 @@ def run() -> None:
         out = WORK / r["id"] / "stream.jsonl"
         if out.exists():
             continue
+        spent = sum(_stream_cost(WORK / x["id"] / "stream.jsonl") for x in m["runs"])
+        if spent + RUN_CAP_USD > BUDGET_USD:
+            print(f"budget stop: ${spent:.4f} spent; another run could exceed ${BUDGET_USD:.2f}", flush=True)
+            return
         proj = WORK / r["id"] / "p"
         cfg = Path(tempfile.mkdtemp(prefix="c10cfg-"))  # new and empty for every run
         env = dict(CLEAN, CLAUDE_CONFIG_DIR=str(cfg))
         cmd = ["claude", "-p", tasks[r["task"]]["request"], "--model", "sonnet", "--tools", TOOLS,
                "--setting-sources", "project", "--strict-mcp-config", "--permission-mode", "acceptEdits",
-               "--no-session-persistence", "--output-format", "stream-json", "--verbose", "--max-budget-usd", "0.30"]
+               "--no-session-persistence", "--output-format", "stream-json", "--verbose", "--max-budget-usd", str(RUN_CAP_USD)]
         p = subprocess.run(cmd, cwd=proj, env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                            timeout=900)
         out.write_text(p.stdout)
         (WORK / r["id"] / "stderr.txt").write_text(p.stderr[-4000:])
         shutil.rmtree(cfg, ignore_errors=True)
         print(r["id"], "exit", p.returncode, flush=True)
+
+
+def _stream_cost(path: Path) -> float:
+    if not path.is_file():
+        return 0.0
+    cost = 0.0
+    for line in path.read_text().splitlines():
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if ev.get("type") == "result" and isinstance(ev.get("total_cost_usd"), (int, float)):
+            cost = float(ev["total_cost_usd"])
+    return cost
 
 
 def audit(rid: str, skill: str, arm: str) -> dict:
