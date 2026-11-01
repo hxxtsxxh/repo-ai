@@ -78,5 +78,5 @@ above and under `benchmarks/`.
 | [PREREGISTRATION-v2.md](PREREGISTRATION-v2.md) | repo-ai 0.7.6 on sealed-v2 |
 | [EXPERIMENT_PLAN.md](EXPERIMENT_PLAN.md) | proposed live experiments |
 | [../benchmarks/skill-vet-fresh-v1/PREREGISTRATION.md](../benchmarks/skill-vet-fresh-v1/PREREGISTRATION.md) | fresh skill-vetting corpus (run; failed) |
-| [../benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md](../benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md) | the confirmation corpus for the skill-scanner fix (blocked: needs a human author) |
+| [../benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md](../benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md) | the confirmation corpus for the skill-scanner fix (blocked: needs a human-written or published corpus) |
 | [../benchmarks/capability-fresh-v1/PREREGISTRATION.md](../benchmarks/capability-fresh-v1/PREREGISTRATION.md) | fresh capability-discovery corpus (run; failed) |
