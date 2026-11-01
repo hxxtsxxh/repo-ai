@@ -9,12 +9,15 @@ first eligible provider in order. Decisions are made from inputs alone: starting
 from __future__ import annotations
 
 import itertools
+import shutil
 import subprocess
+import sys
 
 import pytest
 
-from repo_ai.providers import registry
+from repo_ai.providers import adapters, registry
 from repo_ai.providers.adapters import contract_for
+from repo_ai.providers.discovery import PROVIDERS
 
 OBSERVATIONS = (None, "READY", "USAGE_LIMITED", "ACCOUNT_INELIGIBLE", "AUTHORIZED_BUT_UNREADY")
 NOW = 1_000_000.0
@@ -56,13 +59,29 @@ def _expected_capable(name: str, s: dict, max_cost: float) -> bool:
             and obs not in {"USAGE_LIMITED", "ACCOUNT_INELIGIBLE", "AUTHORIZED_BUT_UNREADY"} and not over_budget)
 
 
-def _expected_readiness(s: dict, consented: bool) -> str:
+# Providers with no tested live containment anywhere but macOS seatbelt (checked against the adapter below).
+NO_CONTAINMENT_OFF_MACOS = {"agy", "opencode", "opencode-acp"}
+
+
+class _Platform:
+    """`sys` as seen by one module, with another platform name (the real `sys` is untouched)."""
+
+    def __init__(self, platform: str):
+        self.platform = platform
+
+    def __getattr__(self, key):
+        return getattr(sys, key)
+
+
+def _expected_readiness(s: dict, consented: bool, name: str = "claude", platform: str = "darwin") -> str:
     """The label, by the documented priority: not installed, sandbox, setup, quota, account/auth, consent, probed."""
     obs = s["obs"] if s["fresh"] == "fresh" else None
     if not s["installed"]:
         return "NOT_INSTALLED"
     if not s["isolated"]:
-        return "ISOLATION_BLOCKED"  # these providers have a sandbox on this platform when the check passes
+        # no containment exists for this provider on this platform, versus a sandbox that exists but did not pass
+        unsupported = name in NO_CONTAINMENT_OFF_MACOS and platform != "darwin"
+        return "RUNTIME_UNSUPPORTED" if unsupported else "ISOLATION_BLOCKED"
     if s["setup"]:
         return "SETUP_REQUIRED"
     if s["cooldown"] == "active" or obs == "USAGE_LIMITED":
@@ -84,8 +103,10 @@ def _space():
                "fresh": fresh, "consent": consent}
 
 
-@pytest.mark.parametrize("name", ["claude", "codex"])  # one enforces a USD ceiling, one does not
-def test_every_single_provider_state_routes_as_specified(tmp_path, monkeypatch, name):
+@pytest.mark.parametrize("platform", ["darwin", "linux"])
+@pytest.mark.parametrize("name", PROVIDERS)  # every provider repo-ai knows, each alone
+def test_every_single_provider_state_routes_as_specified(tmp_path, monkeypatch, name, platform):
+    monkeypatch.setattr(registry, "sys", _Platform(platform))
     checked = 0
     for s in _space():
         for max_cost, run_authorized in itertools.product((0.0, 1.0), (False, True)):
@@ -100,12 +121,55 @@ def test_every_single_provider_state_routes_as_specified(tmp_path, monkeypatch, 
             assert d["outcome"] == want, (name, s, max_cost, run_authorized, row)
             assert d["selected"] == (name if want == "SELECTED" else None)
             assert row["eligible"] == (want == "SELECTED")
-            assert row["readiness"] == _expected_readiness(s, consented), (name, s, run_authorized, row)
+            label = _expected_readiness(s, consented, name, platform)
+            assert row["readiness"] == label, (name, s, run_authorized, row)
             assert row["status_class"] == registry.STATUS_CLASS[row["readiness"]]
             assert "authenticated" in d["not_evaluated"] and "quota_remaining" in d["not_evaluated"]
+            # a provider discovery said nothing about is UNKNOWN and never eligible
+            others = [r for r in d["considered"] if r["provider"] != name]
+            assert len(others) == len(PROVIDERS) - 1
+            assert all(r["readiness"] == "UNKNOWN" and not r["eligible"] for r in others), others
             checked += 1
     states = 2 * 2 * 2 * 3 * (1 + (len(OBSERVATIONS) - 1) * 3) * 2  # 624 states
-    assert checked == states * 4  # 2,496 decisions per provider
+    assert checked == states * 4  # 2,496 decisions per provider and platform
+
+
+class _Which:
+    """`shutil` as seen by the adapter, where only bwrap is on PATH (the real `shutil` is untouched)."""
+
+    @staticmethod
+    def which(name, path=None):
+        return "/usr/bin/bwrap" if name == "bwrap" else None
+
+    def __getattr__(self, key):
+        return getattr(shutil, key)
+
+
+@pytest.mark.parametrize("name", PROVIDERS)
+def test_runtime_unsupported_matches_the_adapter(tmp_path, monkeypatch, name):
+    """The label's premise: on Linux with bubblewrap present, the adapter builds a live sandbox for every provider
+    except these, which it refuses (a positive control for the rest, so the refusal is not just a missing bwrap)."""
+    from repo_ai.providers import claude_auth
+    monkeypatch.setattr(adapters, "sys", _Platform("linux"))
+    monkeypatch.setattr(adapters, "shutil", _Which())
+    plan = claude_auth.ClaudeAuthPlan("token_env", None, ("ANTHROPIC_API_KEY",), ())
+    prefix = adapters._execution_sandbox_prefix(tmp_path, tmp_path, allow_network=True, provider=name, live=True,
+                                                claude_plan=plan)
+    if name in NO_CONTAINMENT_OFF_MACOS:
+        assert prefix is None
+    else:
+        assert prefix is not None and prefix[0] == "/usr/bin/bwrap", (name, prefix)
+
+
+def test_a_failed_discovery_is_unknown_and_never_selected(tmp_path, monkeypatch):
+    ready = {"installed": True, "isolated": True, "setup": False, "cooldown": "none", "obs": "READY", "fresh": "fresh",
+             "consent": True}
+    profiles = _setup(monkeypatch, {"claude": ready}, ["claude"])
+    profiles[0]["stage"] = profiles[0]["status"] = "FAILED"
+    d = registry.route(tmp_path, run_authorized=True, now=NOW, profiles=profiles)
+    row = next(r for r in d["considered"] if r["provider"] == "claude")
+    assert d["outcome"] == "NO_AGENT" and row["readiness"] == "UNKNOWN" and not row["eligible"]
+    assert row["status_class"] == "UNKNOWN"
 
 
 def test_the_first_eligible_provider_in_order_is_selected(tmp_path, monkeypatch):
@@ -152,3 +216,19 @@ def test_preferred_providers_come_first_from_the_argument_and_the_policy(tmp_pat
     policy = registry.load_policy(tmp_path)
     policy["preferred"] = [other]
     assert registry.route(tmp_path, now=NOW, profiles=profiles)["selected"] == other
+
+
+def test_the_argument_outranks_the_policy_and_unknown_names_are_ignored(tmp_path, monkeypatch):
+    ready = {"installed": True, "isolated": True, "setup": False, "cooldown": "none", "obs": "READY", "fresh": "fresh",
+             "consent": True}
+    names = ["claude", "codex", "opencode"]
+    profiles = _setup(monkeypatch, {n: ready for n in names}, names)
+    registry.load_policy(tmp_path)["preferred"] = ["codex"]
+    d = registry.route(tmp_path, now=NOW, profiles=profiles, preferred=["no-such-agent", "opencode"])
+    assert d["selected"] == "opencode"
+    assert [r["provider"] for r in d["considered"]][:2] == ["opencode", "codex"]
+    assert "no-such-agent" not in {r["provider"] for r in d["considered"]}
+    # the argument's provider cannot run: the policy's preference is next, ahead of the default order
+    profiles = _setup(monkeypatch, {"claude": ready, "codex": ready, "opencode": {**ready, "cooldown": "active"}}, names)
+    registry.load_policy(tmp_path)["preferred"] = ["codex"]
+    assert registry.route(tmp_path, now=NOW, profiles=profiles, preferred=["opencode"])["selected"] == "codex"
