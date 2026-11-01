@@ -56,6 +56,24 @@ def _expected_capable(name: str, s: dict, max_cost: float) -> bool:
             and obs not in {"USAGE_LIMITED", "ACCOUNT_INELIGIBLE", "AUTHORIZED_BUT_UNREADY"} and not over_budget)
 
 
+def _expected_readiness(s: dict, consented: bool) -> str:
+    """The label, by the documented priority: not installed, sandbox, setup, quota, account/auth, consent, probed."""
+    obs = s["obs"] if s["fresh"] == "fresh" else None
+    if not s["installed"]:
+        return "NOT_INSTALLED"
+    if not s["isolated"]:
+        return "ISOLATION_BLOCKED"  # these providers have a sandbox on this platform when the check passes
+    if s["setup"]:
+        return "SETUP_REQUIRED"
+    if s["cooldown"] == "active" or obs == "USAGE_LIMITED":
+        return "USAGE_LIMITED"
+    if obs in {"ACCOUNT_INELIGIBLE", "AUTHORIZED_BUT_UNREADY"}:
+        return obs
+    if not consented:
+        return "AVAILABLE_BUT_UNAUTHORIZED"
+    return "READY" if obs == "READY" else "INSTALLED_UNPROBED"
+
+
 def _space():
     for installed, isolated, setup, cooldown, obs, fresh, consent in itertools.product(
             (True, False), (True, False), (True, False), ("none", "active", "expired"), OBSERVATIONS,
@@ -82,6 +100,8 @@ def test_every_single_provider_state_routes_as_specified(tmp_path, monkeypatch, 
             assert d["outcome"] == want, (name, s, max_cost, run_authorized, row)
             assert d["selected"] == (name if want == "SELECTED" else None)
             assert row["eligible"] == (want == "SELECTED")
+            assert row["readiness"] == _expected_readiness(s, consented), (name, s, run_authorized, row)
+            assert row["status_class"] == registry.STATUS_CLASS[row["readiness"]]
             assert "authenticated" in d["not_evaluated"] and "quota_remaining" in d["not_evaluated"]
             checked += 1
     states = 2 * 2 * 2 * 3 * (1 + (len(OBSERVATIONS) - 1) * 3) * 2  # 624 states
@@ -109,3 +129,26 @@ def test_a_persisted_allowlist_restricts_the_per_run_flag(tmp_path, monkeypatch)
     profiles = _setup(monkeypatch, {"claude": ready}, ["codex"])  # the project allows only codex
     d = registry.route(tmp_path, run_authorized=True, now=NOW, profiles=profiles)
     assert d["outcome"] == "NOT_AUTHORIZED" and d["selected"] is None
+
+
+def test_a_blocked_stage_is_never_selected(tmp_path, monkeypatch):
+    ready = {"installed": True, "isolated": True, "setup": False, "cooldown": "none", "obs": "READY", "fresh": "fresh",
+             "consent": True}
+    profiles = _setup(monkeypatch, {"claude": ready}, ["claude"])
+    profiles[0]["stage"] = "BLOCKED"
+    d = registry.route(tmp_path, now=NOW, profiles=profiles)
+    row = next(r for r in d["considered"] if r["provider"] == "claude")
+    assert d["outcome"] == "NO_AGENT" and row["readiness"] == "ISOLATION_BLOCKED" and not row["eligible"]
+
+
+def test_preferred_providers_come_first_from_the_argument_and_the_policy(tmp_path, monkeypatch):
+    ready = {"installed": True, "isolated": True, "setup": False, "cooldown": "none", "obs": "READY", "fresh": "fresh",
+             "consent": True}
+    names = ["claude", "codex", "opencode"]
+    profiles = _setup(monkeypatch, {n: ready for n in names}, names)
+    default = registry.route(tmp_path, now=NOW, profiles=profiles)["selected"]
+    other = next(n for n in names if n != default)
+    assert registry.route(tmp_path, now=NOW, profiles=profiles, preferred=[other])["selected"] == other
+    policy = registry.load_policy(tmp_path)
+    policy["preferred"] = [other]
+    assert registry.route(tmp_path, now=NOW, profiles=profiles)["selected"] == other
