@@ -69,12 +69,14 @@ def test_a_recorded_collection_leaves_out_what_pytest_itself_never_runs(tmp_path
     root = _project(tmp_path, MARSHMALLOW_SHAPE)
     (root / "pkg" / "core.py").write_text("def f():\n    return 2 - 1\n")  # a passing change
     before = _plan(root)
-    assert any("configures which files pytest collects" in u for u in before["uncertainty"])
+    note = [u for u in before["uncertainty"] if "pytest's own run does not collect" in u]
+    assert note and "tests/mypy_test_cases/test_case.py" in note[0] and "norecursedirs" in note[0]
     assert _run(root)["verdict"] != "selected-passed (full suite not run)"  # the excluded file still runs
     assert run_cli(root, "verify", "--record", "--test-command", CMD).returncode == 0
     after = _plan(root)
     assert "tests/mypy_test_cases/test_case.py" in after["runner"]["excluded"]
-    assert not any("configures which files pytest collects" in u for u in after["uncertainty"])
+    assert not any("configures which files pytest collects" in u or "does not collect" in u
+                   for u in after["uncertainty"])
     ev = _run(root)
     assert ev["verdict"].startswith(("selected-passed", "selected-and-full-suite-passed")), ev["verdict"]
 

@@ -169,6 +169,18 @@ def _apply_collection(root: Path, runner: TestRunner, files: list[str], tmap) ->
                                 f"it does not collect are left out, {len(runner.included)} it collects are added")
         return ""
     if any(PurePosixPath(f).name in COLLECTION_CONFIG for f in files):
+        from .pytestcfg import skipped_by_config
+        try:
+            cfg, skipped = skipped_by_config(root, runner.test_files(files), runner.cwd)
+        except (OSError, ValueError):
+            cfg, skipped = "", {}
+        if skipped:
+            listed = sorted({f for fs in skipped.values() for f in fs})
+            why = "; ".join(f"{reason}: {len(fs)}" for reason, fs in sorted(skipped.items()))
+            return (f"{cfg}: {len(listed)} name-matched test file(s) lie where pytest's own run does not collect them "
+                    f"({why}; e.g. {', '.join(listed[:3])}). A full run skips them; a targeted run names them and "
+                    "pytest runs them anyway, so the two can disagree on the same change. They are not removed on "
+                    "this reading; `repo-ai verify --record` learns pytest's own collection")
         for f in files:
             if PurePosixPath(f).name in COLLECTION_CONFIG:
                 try:
