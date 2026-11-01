@@ -72,3 +72,12 @@ the code does not show), model-written authors (not people), host mode only.
 One run of the 48 after the materials are frozen. A harness crash is fixed and the affected runs repeated; nothing in
 the materials, analysis or rule changes after the first live call. Results: `results/`, `RESULTS.md` with commit,
 versions and times.
+
+## Amendment 1 (2026-11-01, before any material exists and before any live call)
+
+A $0 init probe (an empty `CLAUDE_CONFIG_DIR`, a model name that does not exist, the run flags above; no model was
+invoked) showed that Claude Code 2.1.316 lists **19 built-in skills** and **3 built-in plugins** in every session
+(`probe/builtin-init-2.1.316.json`). The validity rule is therefore measured against that set: a run is `INVALID`
+when its init event lists a skill outside the built-in set (control) or outside the built-in set plus the installed
+skill (skill arm), a plugin whose source is not `@builtin`, any MCP server, or a tool beyond the list above. The
+built-in skills are present in both arms alike. Nothing else changes.
