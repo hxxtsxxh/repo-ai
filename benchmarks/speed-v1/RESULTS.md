@@ -190,11 +190,11 @@ itsdangerous 0.71 → 0.68 s, marshmallow 0.76 → 0.67 s, humanize 0.16 → 0.1
 side with run 2 here, though not with run 3: per-project median overhead pyjwt 0.42 → 0.18 s, itsdangerous 0.58 →
 0.30 s, humanize 1.10 → 0.83 s, marshmallow 1.79 → 1.43 s; overall median +0.63 → +0.38 s. That is consistent with
 the snapshot fix (PR #69), whose cost the profiler put at most of a comment-only run's own time on a generated
-project (cProfile inflates such code; without the profiler that project's comment-only run fell only about 0.11 s,
-0.34 → 0.23 s, so the ~0.25 s median drop here is larger than the profile alone predicts). Confounders: one run per
+project (cProfile inflates such code; without the profiler that project's comment-only run fell about 0.11 s,
+0.34 → 0.23 s, measured on a slower runner, so the saving there may be larger). Confounders: one run per
 configuration; repo-ai changed in other ways between runs 2 and 4; run 2 used the harness before Amendment 2 (no
 `git clean`), run 4 the Amendment 2 harness; the same CPU model is not the same host, and run 4's native suites were
-4–12% faster (marshmallow ×0.88, humanize ×0.90, itsdangerous ×0.96), so part of the drop may be the host.
+up to 12% faster (marshmallow ×0.88, humanize ×0.90, itsdangerous ×0.96, more-itertools ×0.97; pyjwt unchanged), so part of the drop may be the host.
 Strategies also moved: more-itertools ran `targeted` on 2 and `full` on 4 of its 6 changes (run 3: all `targeted`),
 so its ratio is not comparable across runs; within the other 24 changes, marshmallow 2fc8207d, itsdangerous's sixth
 change and humanize's second ran `full` where an earlier run had `targeted`, so the 24-change subset is not
