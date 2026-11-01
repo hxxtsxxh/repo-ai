@@ -373,4 +373,7 @@ def test_from_unittest_import_is_a_unittest_suite_but_unittest_mock_is_not():
     so verify found no runner it trusted and refused."""
     assert _suite("tests/test_more.py", "from unittest import TestCase\n\nclass T(TestCase):\n    def test_a(self):\n"
                                         "        pass\n") == "unittest"
-    assert _suite("tests/test_b.py", "from unittest.mock import patch\n\ndef test_b():\n    pass\n") != "unittest"
+    assert _suite("tests/test_c.py", "from unittest import IsolatedAsyncioTestCase\n") == "unittest"
+    # a pytest file that only takes mock (or skip) from unittest stays pytest: unittest discovery cannot collect it
+    assert _suite("tests/test_b.py", "from unittest import mock\n\ndef test_b():\n    assert True\n") == "pytest"
+    assert _suite("tests/test_d.py", "from unittest import skip, mock\n\ndef test_d():\n    pass\n") == "pytest"
