@@ -51,18 +51,19 @@
    "owner": "principal",
    "code_sha": "f53d027",
    "test_run": "tests/test_provider_claude_isolation.py",
-   "environment": "macOS Darwin 25.5 arm64, seatbelt; Claude Code 2.1.314 dedicated_config (0.10.0 journeys), 2.1.316 token_env (2026-11-01)",
+   "environment": "macOS Darwin 25.5 arm64, seatbelt; Claude Code 2.1.314 dedicated_config (0.10.0 journeys), 2.1.316 token_env (2026-11-01); Linux: ubuntu:24.04 container on podman (arm64), bwrap, Claude Code 2.1.316 token_env (2026-11-01)",
    "observations": [
     "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code",
-    "2026-11-01 token_env live check on the published 0.11.6 (Claude Code 2.1.316, token_env with only CLAUDE_CODE_OAUTH_TOKEN set in the running shell, ANTHROPIC_API_KEY unset; scratch HOME and no keychain by design): repo-ai do on a toy repository with a seeded bug: PASS, assurance FULL, full suite passed, correct one-line diff, tools Read/Edit only, no denied action, $0.0145 notional (docs/engineering/LIVE-SPEND-2026-11.md). The record does not name the mode in 0.11.6 (plan() picks token_env when a token variable is set; the variable was checked by presence); the mission record names the mode and variable names from the next release"
+    "2026-11-01 token_env live check on the published 0.11.6 (Claude Code 2.1.316, token_env with only CLAUDE_CODE_OAUTH_TOKEN set in the running shell, ANTHROPIC_API_KEY unset; scratch HOME and no keychain by design): repo-ai do on a toy repository with a seeded bug: PASS, assurance FULL, full suite passed, correct one-line diff, tools Read/Edit only, no denied action, $0.0145 notional (docs/engineering/LIVE-SPEND-2026-11.md). The record does not name the mode in 0.11.6 (plan() picks token_env when a token variable is set; the variable was checked by presence); the mission record names the mode and variable names from the next release",
+    "2026-11-01 Linux live (ubuntu:24.04 container on the owner's podman machine, repo-ai 0.11.6 from PyPI, bubblewrap, Claude Code 2.1.316; token_env by setup, the 0.11.6 record names neither the mode nor the invocation flags): the toy journey PASS, exercise assurance FULL, LIVE_CANDIDATE_VERIFIED, $0.0129; a read-boundary probe (Read only): a Read outside the workspace refused (1 recorded denial, tool name only), and the model reported that its Read tool refused /proc/self/environ (not recorded); no token-shaped string in any output (docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md)"
    ],
    "limits": [
     "n=1 synthetic tasks, single author",
-    "Linux not live-verified; token_env live-verified once on macOS (n=1, toy task)",
-    "in-sandbox token refresh not re-observed"
+    "in-sandbox token refresh not re-observed",
+    "Linux and token_env each live-verified once (n=1, toy task); the /proc boundary rests on the model's report (Read only; Glob/Grep and the dedicated-config credentials file not probed)"
    ],
-   "next_action": "Linux live run (token_env, podman machine); re-observe dedicated_config token refresh",
-   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md; docs/engineering/LIVE-SPEND-2026-11.md"
+   "next_action": "re-observe dedicated_config token refresh; repeat the Linux read-boundary probe per Claude Code version",
+   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md; docs/engineering/LIVE-SPEND-2026-11.md; docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md"
   },
   {
    "id": "C04",
@@ -71,16 +72,17 @@
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
-   "environment": "macOS Darwin 25.5 arm64",
+   "environment": "macOS Darwin 25.5 arm64; Linux (Claude only): ubuntu:24.04 container on podman, bwrap (2026-11-01)",
    "observations": [
     "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED",
-    "2026-11-01: the gemini provider and gemini-cli host were removed at the owner's direction (Gemini CLI superseded by Antigravity, supported as agy); the provider set is codex, claude, bob, agy, opencode, opencode-acp"
+    "2026-11-01: the gemini provider and gemini-cli host were removed at the owner's direction (Gemini CLI superseded by Antigravity, supported as agy); the provider set is codex, claude, bob, agy, opencode, opencode-acp",
+    "2026-11-01: Claude live-verified on Linux (bubblewrap, token_env; see C03); Codex, Bob, agy and OpenCode not run on Linux"
    ],
    "limits": [
     "Bob not re-run on 0.10.0 (entitlement not re-checked)",
-    "n=1 per provider, synthetic tasks, macOS only"
+    "n=1 per provider, synthetic tasks; Linux only for Claude"
    ],
-   "next_action": "Linux live run; ACP client to reach PLANNED agents"
+   "next_action": "Linux live runs for the other providers that support it; ACP client to reach PLANNED agents"
   },
   {
    "id": "C05",
@@ -144,7 +146,8 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "autonomy policy, five kinds, strict inert check; independent review: 10 findings fixed with regression tests",
-    "2026-10-31 skill-vet-fresh-v1 (unseen, preregistered, 80 cases): G1 FAILED, SAFE_AUTO would auto-install 8 of 30 harmful (prose-only) skills; G2-G4 passed; 6 of 10 harmful script skills rated eligible. Fixed (prose instruction classes, script behaviour); diagnostic re-run 0 of 30, not a confirmation"
+    "2026-10-31 skill-vet-fresh-v1 (unseen, preregistered, 80 cases): G1 FAILED, SAFE_AUTO would auto-install 8 of 30 harmful (prose-only) skills; G2-G4 passed; 6 of 10 harmful script skills rated eligible. Fixed (prose instruction classes, script behaviour); diagnostic re-run 0 of 30, not a confirmation",
+    "2026-11-01: the owner asked the agent to build the v2 corpus; the agent's briefing of the author was stopped by a safety classifier (the second stop); per the earlier rule it was not retried or reworded, and the partly launched author wrote nothing"
    ],
    "limits": [
     "fix not confirmed: the v2 corpus author was stopped by a safety classifier (not worked around); needs a person-written corpus",
@@ -252,10 +255,11 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "150 preregistered runs: plain 92%, Core 90%, Full 88%"
+    "150 preregistered runs: plain 92%, Core 90%, Full 88%",
+    "2026-11-01 decision (owner delegated it to the agent): no re-run on the $20 budget. The only public task split (final) was analysed in Option A and 0.7.6 was tuned on it, so a re-run would favour repo-ai and still not be fresh confirmatory evidence; the eval config also carries the account's synced-skills cache, which the lab must first prove never loads (per-run init-event check, as the provider path does)"
    ],
    "limits": [],
-   "next_action": "fresh study needs budget"
+   "next_action": "a fresh study needs new held-out tasks and the lab's synced-skills check; not started"
   },
   {
    "id": "C16",
