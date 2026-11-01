@@ -69,7 +69,8 @@ def prepare() -> None:
         if r["arm"] == "skill":
             out = sh([REPO_AI, "skills", "discover", "--from-path", str(skill), "--json"], proj, env).stdout
             data = json.loads(out)
-            hashes = {c.get("content_hash") for c in data.get("candidates", data.get("results", [])) if c.get("content_hash")}
+            reports = data.get("reports") if isinstance(data.get("reports"), dict) else {}
+            hashes = {r.get("content_hash") for r in reports.values() if isinstance(r, dict) and r.get("content_hash")}
             assert len(hashes) == 1, out[:400]
             approve = next(iter(hashes))
             sh([REPO_AI, "skills", "install", skill.name, "--approve", approve[:16], "--host", "claude-code"], proj, env)
