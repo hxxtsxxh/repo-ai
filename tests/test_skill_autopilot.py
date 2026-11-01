@@ -574,8 +574,8 @@ def test_symlinked_host_directory_is_refused(tmp_path: Path):
 def test_uninstall_restores_the_tree_byte_for_byte_across_every_host(tmp_path: Path):
     repo = tmp_path / "proj"
     (repo / ".claude" / "skills").mkdir(parents=True)  # pre-existing and empty: must survive
-    (repo / ".gemini").mkdir()
-    (repo / ".gemini" / "settings.json").write_bytes(b'{"theme": "dark"}\r\n')
+    (repo / ".bob").mkdir()  # an existing host directory holding a user file: must come back byte-exact
+    (repo / ".bob" / "settings.json").write_bytes(b'{"theme": "dark"}\r\n')
     (repo / "README.md").write_bytes(b"\xef\xbb\xbfhello\r\n")
     before = snapshot(repo)
     b = bundle_of(skill(tmp_path / "in", "roundtrip", extra={"LICENSE": "MIT License\n"}))
@@ -587,6 +587,32 @@ def test_uninstall_restores_the_tree_byte_for_byte_across_every_host(tmp_path: P
     assert not result["kept"]
     assert snapshot(repo) == before
     assert not capbundle.load_manifest(repo, "roundtrip")["hosts"]
+
+
+def test_a_skill_exported_to_a_retired_host_is_still_removed_and_never_retargeted(tmp_path: Path, monkeypatch):
+    """An earlier repo-ai exported a skill to `gemini-cli` (since retired): uninstall still restores the tree byte for
+    byte from the machine-local manifest, and enable/rollback refuse instead of moving it to `.claude/skills`."""
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    before = snapshot(repo)
+    b = bundle_of(skill(tmp_path / "in", "oldhost"))
+    with monkeypatch.context() as m:  # the earlier version, which still had the host
+        m.setitem(capbundle.HOSTS, "gemini-cli", capbundle.RETIRED_HOSTS["gemini-cli"])
+        capbundle.apply_install(capbundle.plan_install(repo, b, ("gemini-cli",)))
+        capbundle.set_record(repo, "oldhost", hosts=["gemini-cli"], status="active", approved_by="user",
+                             content_hash=b.content_hash)
+    assert "gemini-cli" not in capbundle.HOSTS
+    assert (repo / ".gemini/skills/oldhost/SKILL.md").is_file()
+    assert "gemini-cli" in capbundle.load_manifest(repo, "oldhost")["hosts"]
+    assert capbundle.get_record(repo, "oldhost")["hosts"] == ["gemini-cli"]
+    with pytest.raises(capbundle.BundleError, match="no longer supports"):
+        capbundle.usable_hosts(capbundle.get_record(repo, "oldhost")["hosts"])
+    assert capbundle.usable_hosts(["gemini-cli", "codex"]) == ("codex",)
+    with pytest.raises(capbundle.BundleError):
+        capbundle.parse_hosts("gemini-cli")  # never an install target again
+    result = capbundle.uninstall(repo, "oldhost")
+    assert not result["kept"]
+    assert snapshot(repo) == before
 
 
 def test_uninstall_keeps_a_file_you_edited(tmp_path: Path):

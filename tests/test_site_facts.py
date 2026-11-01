@@ -141,7 +141,11 @@ def test_unknown_status_and_missing_source_are_rejected(inputs):
 def test_provider_execution_label_needs_an_execution_observation(inputs):
     _, providers = inputs
     row = next(p for p in providers["providers"] if p["id"] == "codex")
-    row["label"] = "BLOCKED"  # the label no longer matches its recorded EXECUTION observation
+    row["execution"]["status"] = "BLOCKED"  # label EXECUTION claimed without an EXECUTION observation
+    problems = site_facts.validate_providers(providers)
+    assert any("must go together" in p for p in problems)
+    row["execution"]["status"] = "EXECUTION"
+    row["label"] = "BLOCKED"  # and the reverse: the label no longer matches the observation
     problems = site_facts.validate_providers(providers)
     assert any("must go together" in p for p in problems)
     row["label"] = "WORKS"
