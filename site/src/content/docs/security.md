@@ -86,7 +86,7 @@ untouched until `repo-ai apply`. The residual risks, stated plainly:
   outer sandbox is not backstopped.
 - **agy (macOS):** can read the encrypted login keychain database files it needs to authenticate.
 - **OpenCode on macOS, "loopback only":** measured on a CI runner (`benchmarks/seatbelt-loopback/`), the rule
-  denies every other host (another machine on the local network, the internet). But seatbelt can name hosts only as
+  denies every other host (another machine on the local network, the internet; IPv4 measured, IPv6 not). But seatbelt can name hosts only as
   `*` or `localhost`, and `localhost` also matches your machine's own network addresses, so the agent can reach
   services bound to them; and the rule's inbound part lets it listen on every interface, not only 127.0.0.1. Whether
   such a listener is reachable from your network (the macOS firewall may intervene) was not measured. Any service on
