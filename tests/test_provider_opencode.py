@@ -255,3 +255,18 @@ def test_a_daemonised_descendant_is_killed_before_verification(tmp_path, monkeyp
     if alive:
         os.kill(pid, 9)
     assert not alive
+
+
+# ---------------------------------------------------------------- agy (no-copy rule)
+
+def test_agy_state_under_dot_gemini_is_never_copied_into_the_scratch_home(tmp_path, monkeypatch):
+    """agy keeps its conversations under ~/.gemini/antigravity-cli next to other OAuth state: nothing of it is
+    copied into a provider's scratch HOME (agy authenticates from the real HOME under a read-restricted sandbox)."""
+    real = tmp_path / "real"
+    (real / ".gemini" / "antigravity-cli" / "conversations").mkdir(parents=True)
+    (real / ".gemini" / "oauth_creds.json").write_text('{"refresh_token": "x"}')
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: real))
+    scratch_home = tmp_path / "scratch"
+    scratch_home.mkdir()
+    adapters._seed_live_provider_auth("agy", scratch_home)
+    assert not any(scratch_home.rglob("*"))

@@ -13,7 +13,8 @@ picking, `shortlist` (now also reporting AST-identical candidates), handoff with
 Codex → agy demonstration), `coverage` (developer-declared requirement map; never a correctness claim).
 **0.10:** Claude Code is a live isolated execution provider (macOS; its own login, file tools only, per-run isolation
 probe; n=1 journeys, hidden oracle 17/17) and OpenCode with a local model is a new account-free provider (macOS; 1 of 4
-end-to-end attempts passed, every failure refused). Gemini needs an API key. Evidence:
+end-to-end attempts passed, every failure refused). The Gemini CLI provider was later removed (superseded by
+Antigravity, see engineering/INTEGRATIONS.md). Evidence:
 [engineering/INTEGRATIONS.md](engineering/INTEGRATIONS.md), [engineering/evidence/](engineering/evidence/).
 **Skills (0.10):** autonomy policy and capability-bundle installs are **experimental**; a repo-ai-installed skill was
 observed loading on Claude Code and OpenCode; skill *benefit* is **not demonstrated**
