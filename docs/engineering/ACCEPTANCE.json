@@ -107,7 +107,8 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "route reports SETUP_REQUIRED (offline, no credential read) for Claude, OpenCode, Gemini",
-    "2026-11-01 routing decisions measured over the per-provider state space (tests/test_provider_routing_matrix.py): 624 states (installed, sandboxed, setup, cooldown none/active/expired, each storable observation fresh/expired/other-binary, consent) x 4 (USD ceiling, per-run flag) = 2,496 decisions per provider, for one provider with an enforceable USD ceiling and one without; plus default selection order and the allowlist rule. Every decision matched the specification; no process started. Readiness labels checked per state against an oracle that restates the documented priority (it mirrors the code, so a priority wrong in both would pass); stage BLOCKED and preferred-list ordering (argument and policy) covered. Not covered: RUNTIME_UNSUPPORTED/UNKNOWN labels, providers other than claude/codex, argument-vs-policy precedence"
+    "2026-11-01 routing decisions measured over the per-provider state space (tests/test_provider_routing_matrix.py): 624 states (installed, sandboxed, setup, cooldown none/active/expired, each storable observation fresh/expired/other-binary, consent) x 4 (USD ceiling, per-run flag) = 2,496 decisions per provider, for one provider with an enforceable USD ceiling and one without; plus default selection order and the allowlist rule. Every decision matched the specification; no process started. Readiness labels checked per state against an oracle that restates the documented priority (it mirrors the code, so a priority wrong in both would pass); stage BLOCKED and preferred-list ordering (argument and policy) covered. Not covered: RUNTIME_UNSUPPORTED/UNKNOWN labels, providers other than claude/codex, argument-vs-policy precedence",
+    "2026-11-01 #56 closes the gaps named above: all seven providers, each alone, under macOS and Linux platform names (34,944 decisions; containability is an input, only the label depends on the platform name); UNKNOWN for a missing profile and a FAILED stage; RUNTIME_UNSUPPORTED checked against the adapter with bwrap present (positive control for the other four); argument > policy > default order"
    ],
    "limits": [],
    "next_action": "measure decisions on real host states over time (rate-limit cooldowns, stale observations) once live calls are budgeted"
@@ -355,14 +356,15 @@
     "python-humanize (second real repository, real upstream defect ca892b3): live Claude and Codex scoped missions PASS [LIVE_CANDIDATE_VERIFIED] on a development build; Claude equal to upstream on the sampled domain, Codex differs just below a googol; found 4 repo-ai bugs, fixed in #16 (init .gitignore), #17 (interpreter, tracked-but-ignored files) and #18 (verify counts); the slugify 20-vs-0 discrepancy was a hard-coded post-apply count in `apply` (fixed in #21), not the interpreter bug as first claimed; evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md",
     "published 0.11.2 (2026-10-30T23:46Z): fresh first run on python-humanize, live Claude PASS [LIVE_CANDIDATE_VERIFIED], project venv, apply 739/0, undo exact",
     "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)",
-    "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 (5 detected as regression, 2 refused; small sample, ~35% 95% bound); J2 fix 3/6 as selected-passed (pyjwt jwks tests pre-existing, likely network; more-itertools no trusted test command, likely an 'unknown' framework); J3 uninstall left no tracked or untracked difference 7/7; deviation: one clone per project, not fresh"
+    "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 (5 detected as regression, 2 refused; small sample, ~35% 95% bound); J2 fix 3/6 as selected-passed (pyjwt jwks tests pre-existing, likely network; more-itertools no trusted test command, likely an 'unknown' framework); J3 uninstall left no tracked or untracked difference 7/7; deviation: one clone per project, not fresh",
+    "2026-11-01 #51: `from unittest import TestCase` marks a unittest suite (more-itertools gap from journey-offline-v2 closed; confirmed on real commits by CI diagnose)"
    ],
    "limits": [
     "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
     "two repositories; on the published build, one live run (Claude, python-humanize)"
    ],
-   "next_action": "live half (provider journey, needs a live-call budget); unittest inference when the suite framework is unknown"
+   "next_action": "live half (provider journey, needs a live-call budget)"
   },
   {
    "id": "C22",

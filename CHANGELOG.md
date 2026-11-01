@@ -9,13 +9,16 @@ Includes everything listed under 0.11.4, which was qualified but never published
   alone does not: pytest projects stay under pytest.
 - Evaluation: journey-offline-v2 (`benchmarks/journey-offline-v2/`, preregistered, CI runner): on 7 real upstream
   fixes whose tests fail without them, verify never reported a pass for the broken state (0 of 7). It confirmed the
-  fix in 3 of 6 (the rest: network-only tests and a project with no test command repo-ai trusts), and uninstall
-  restored the original tree in 7 of 7. journey-offline-v1 was inconclusive and is kept, with its cause.
-- Evaluation: capability-fresh-v1 (`benchmarks/capability-fresh-v1/`, preregistered, 60 tasks by an independent
-  author): the capability recommender **failed** again: top-3 recall 0.69 (gate 0.80) and 2 recommendations a stated
-  constraint ruled out. Together with Corpus C this makes the recommender a negative result; `--deny` remains the
+  fix in 3 of 6 (selected tests passed; full suite not run). The rest: tests that also failed at the base (likely
+  network) and more-itertools, whose unittest suite repo-ai did not recognise (fixed above). Uninstall left no
+  tracked or untracked difference in 7 of 7 (ignored files and state outside the repository not checked). journey-offline-v1 was inconclusive and is kept, with its cause.
+- Evaluation: capability-fresh-v1 (`benchmarks/capability-fresh-v1/`, preregistered, 60 tasks by one independent
+  model author): the capability recommender **failed** again: top-3 recall 0.69 (gate 0.80) and 2 recommendations a stated
+  constraint ruled out. Together with Corpus C this makes the deterministic matcher a negative result (the Skill
+  Radar gate, C07, stays experimental: online discovery, caching and pinning are untested, not shown false); `--deny` remains the
   enforced way to rule capabilities out.
-- Tests: provider routing is checked over every provider, alone, on macOS and Linux (34,944 decisions), including
+- Tests: provider routing is checked over every provider, alone, under macOS and Linux platform names (34,944
+  decisions), including
   the UNKNOWN and RUNTIME_UNSUPPORTED labels and argument-over-policy preference; a 1-in-256 flake in a
   large-binary test is gone.
 - Docs: 24 links pointed at research files that are not in the public repository; they now say where the files are,
