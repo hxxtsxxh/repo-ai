@@ -2,7 +2,8 @@
 
 Protocol: [PREREGISTRATION.md](PREREGISTRATION.md) (commit `119cb67`, before any material), Amendment 1 (`5cbc855`,
 built-in skills, before any material), Amendment 2 (`b662e9d`, ceiling $6 after the first run's cost, before any
-grading). Materials frozen at `2364125` ([MATERIALS.md](MATERIALS.md)); the harness that ran is the one at `b662e9d`.
+grading). Materials frozen at `2364125` ([MATERIALS.md](MATERIALS.md)); the harness process that ran all 48 runs was started from `f5260123` (budget constant $4; `b662e9d` only
+raised it to $6, which never came into play).
 48 runs on 2026-11-01, the first finishing at 21:06:58Z (before Amendment 2, committed 21:07:33Z) and the last at
 21:20:45Z (stream file times). Claude
 Code 2.1.316, model `sonnet` (claude-sonnet-5-5), repo-ai 0.11.6 from PyPI for `init` and the
