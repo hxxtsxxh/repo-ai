@@ -134,3 +134,11 @@ def test_clustered_short_flags_that_may_choose_the_configuration_give_no_note(tm
     root = _project(tmp_path, {"pytest.ini": "[pytest]\nnorecursedirs = docs\n"})
     assert skipped(root, argv=["python", "-m", "pytest", "-qc", "ci.ini"]) == ("", [], {})
     assert skipped(root, argv=["python", "-m", "pytest", "-q", "-x"])[2]
+
+
+def test_short_flag_values_do_not_hide_the_note_and_glob_testpaths_do(tmp_path):
+    root = _project(tmp_path, {"pytest.ini": "[pytest]\nnorecursedirs = docs\n"})
+    for argv in (["-Werror"], ["-pno:cacheprovider"], ["-nauto"], ["-qWignore::DeprecationWarning"]):
+        assert skipped(root, argv=["python", "-m", "pytest", *argv])[2], argv
+    (root / "pytest.ini").write_text("[pytest]\ntestpaths = build/*/tests\nnorecursedirs = build\n")
+    assert skipped(root, ["build/x/tests/test_a.py"]) == ("", [], {})
