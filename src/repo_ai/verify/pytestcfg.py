@@ -87,7 +87,8 @@ def _read(path: Path):
     if patterns is None or len(patterns) > MAX_PATTERNS:
         return _STOP
     other = sorted(k for k in section if k in {"testpaths", "python_files", "addopts", "collect_ignore"})
-    return {"norecursedirs": patterns, "other": other}
+    testpaths = _words(section.get("testpaths")) or []
+    return {"norecursedirs": patterns, "other": other, "testpaths": testpaths[:MAX_PATTERNS]}
 
 
 def find_config(root: Path, start: str = ""):
@@ -124,6 +125,8 @@ def _chooses_config(argv: list[str]) -> bool:
                 return True
             if opt in {"-c", "-o"} and tok.startswith(opt) and len(tok) > 2:  # -cfile, -okey=value
                 return True
+        if tok.startswith("-") and not tok.startswith("--") and ("c" in tok[1:] or "o" in tok[1:]):
+            return True  # a cluster of short flags such as -qc FILE: conservatively, no note
     return False
 
 
@@ -135,12 +138,32 @@ def skipped_by_config(root: Path, test_files: list[str], start: str = "", argv: 
     `norecursedirs` to an initial path or its parents. Empty when the command chooses its own configuration."""
     if _chooses_config(argv or []):
         return "", [], {}
-    found = find_config(root, start)
+    base = PurePosixPath(start) if start not in {"", "."} else PurePosixPath()
+    roots = [base / p for p in (paths or [])] or [base]
+    search = base
+    if paths:  # pytest searches from the common ancestor of its path arguments (a file counts as its directory)
+        dirs_of = [r if (root / r).is_dir() else r.parent for r in roots]
+        common = [*dirs_of[0].parts]
+        for d in dirs_of[1:]:
+            n = 0
+            while n < min(len(common), len(d.parts)) and common[n] == d.parts[n]:
+                n += 1
+            common = common[:n]
+        search = PurePosixPath(*common) if common else PurePosixPath()
+    found = find_config(root, str(search) if str(search) not in {"", "."} else "")
     if found is None:
         return "", [], {}
     cfg_rel, settings = found
-    base = PurePosixPath(start) if start not in {"", "."} else PurePosixPath()
-    roots = [base / p for p in (paths or [])] or [base]
+    # without path arguments, run from the configuration's directory, pytest starts from `testpaths`: never
+    # apply norecursedirs to those entries or to their parents
+    protected: set[PurePosixPath] = set()
+    cfg_dir = PurePosixPath(cfg_rel).parent
+    if not paths and (cfg_dir == base or (str(cfg_dir) == "." and str(base) in {"", "."})):
+        for entry in settings["testpaths"]:
+            if any(ch in entry for ch in "*?[") or entry.startswith("/"):
+                continue
+            target = PurePosixPath("/") / (cfg_dir / entry if str(cfg_dir) != "." else PurePosixPath(entry))
+            protected |= {target, *target.parents}
     skipped: dict[str, list[str]] = {}
     for rel in test_files:
         p = PurePosixPath(rel)
@@ -149,7 +172,7 @@ def skipped_by_config(root: Path, test_files: list[str], start: str = "", argv: 
             continue
         below = p.relative_to(top) if str(top) not in {"", "."} else p
         anchored = PurePosixPath("/") / p  # pytest matches absolute paths: anchor so "*/a/b" can match "a/b"
-        dirs = [anchored.parents[i] for i in range(len(below.parts) - 1)]  # strictly below the start
+        dirs = [d for d in (anchored.parents[i] for i in range(len(below.parts) - 1)) if d not in protected]
         for pat in settings["norecursedirs"]:
             if any(_fnmatch_ex(pat, d) for d in dirs):
                 skipped.setdefault(f"norecursedirs {pat}", []).append(rel)
