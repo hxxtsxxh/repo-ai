@@ -57,14 +57,15 @@ usage guides.
 | [EXPLORATORY-v2-pairs.md](EXPLORATORY-v2-pairs.md) | the exploratory Core vs plain Claude run on sealed-v2 |
 | [SEALED_V2.md](SEALED_V2.md) | the sealed-v2 benchmark |
 | [STATISTICS_COVERAGE.md](STATISTICS_COVERAGE.md) | coverage of the task-clustered success interval |
-| [EXECUTION_LEDGER.md](EXECUTION_LEDGER.md) | the resumable work record for development sessions |
-| [research/](research/README.md) | the research workflow, and the evaluations of `skills vet`, plugin vetting and capability discovery |
 
-The evaluations behind the skills and capabilities claims:
-- [research/plugin-vet-fresh-2026-10/RESULTS.md](research/plugin-vet-fresh-2026-10/RESULTS.md): plugin vetting, fresh and preregistered, **failed**;
-- [research/capability-discovery-C-2026-10/RESULTS.md](research/capability-discovery-C-2026-10/RESULTS.md): capability discovery, fresh and preregistered, **failed**;
-- [research/vet-eval-2026-10.md](research/vet-eval-2026-10.md): `skills vet` and `inventory` on real skills (tuning and held-out sets);
-- [research/capability-eval-2026-10.md](research/capability-eval-2026-10.md): the capability registry, offline (both held-out corpora failed recall).
+The evaluations behind the skills and capabilities claims, in this repository (preregistered, with their data):
+- [../benchmarks/skill-vet-fresh-v1/RESULTS.md](../benchmarks/skill-vet-fresh-v1/RESULTS.md): skill vetting on 80 fresh cases, **failed** its install gate (8 of 30 harmful skills); fixed on `main` afterwards, not re-measured on a fresh corpus;
+- [../benchmarks/capability-fresh-v1/RESULTS.md](../benchmarks/capability-fresh-v1/RESULTS.md): capability discovery on 60 fresh tasks, **failed** recall and constraints.
+
+Earlier evaluations whose files stay in the private development history (their figures are in
+[STATUS.md](STATUS.md) and [CAPABILITIES.md](CAPABILITIES.md)): the fresh plugin-vetting run (**failed**), capability
+discovery Corpus C (**failed**), `skills vet` and `inventory` on real skills, and the offline capability registry
+evaluation (both held-out corpora failed recall).
 
 ## Preregistrations and experiment plans
 
@@ -76,6 +77,3 @@ above and under `benchmarks/`.
 | [PREREGISTRATION.md](PREREGISTRATION.md) | Option A: plain Claude Code vs repo-ai Core vs Full |
 | [PREREGISTRATION-v2.md](PREREGISTRATION-v2.md) | repo-ai 0.7.6 on sealed-v2 |
 | [EXPERIMENT_PLAN.md](EXPERIMENT_PLAN.md) | proposed live experiments |
-| [research/CAPABILITIES-PROTOCOL-2026-10.md](research/CAPABILITIES-PROTOCOL-2026-10.md) | draft: do capability recommendations change what Claude Code does? (not run) |
-| [research/plugin-vet-fresh-2026-10/PROTOCOL.md](research/plugin-vet-fresh-2026-10/PROTOCOL.md) | the fresh plugin-vetting protocol |
-| [research/capability-discovery-C-2026-10/PROTOCOL.md](research/capability-discovery-C-2026-10/PROTOCOL.md) | the Corpus C protocol |

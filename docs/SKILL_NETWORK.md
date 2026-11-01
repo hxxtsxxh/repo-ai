@@ -320,7 +320,7 @@ fetched for a refused URL. Network use needs `--online` and follows the zone
 policy (`discovery=deny` refuses it).
 
 **Measured precision.** See
-[research/vet-eval-2026-10.md](research/vet-eval-2026-10.md): vetting real
+`docs/research/vet-eval-2026-10.md` (private development history): vetting real
 skill repositories found real `curl … | bash` install steps. It also found
 false positives, which led to two rule fixes. A third class (negated mentions
 of credential paths, such as "don't read `.env`") stays blocking by design.
@@ -383,12 +383,12 @@ The result keeps these dimensions apart:
 A claim of trust (`"trusted": true`, "pre-approved by Anthropic") is a
 finding and never lifts a verdict.
 
-Evidence: [research/plugin-vet-eval-2026-10.md](research/plugin-vet-eval-2026-10.md)
+Evidence: `docs/research/plugin-vet-eval-2026-10.md` (private development history)
 covers a 41-case adversarial corpus, 10 development repositories and 6 fresh
 held-out repositories.
 
 **Status: experimental.** A preregistered fresh validation
-([research/plugin-vet-fresh-2026-10/RESULTS.md](research/plugin-vet-fresh-2026-10/RESULTS.md),
+(`docs/research/plugin-vet-fresh-2026-10/RESULTS.md` (private development history),
 44 cases, analyser frozen) **failed** on false alarms and executable coverage:
 - 12 of 42 benign cases were blocked, mostly quoted prohibitions and detection regexes;
 - executable-resolution coverage was 0.25.
