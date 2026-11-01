@@ -92,6 +92,13 @@ that gave no state where the native suite failed without the fix. The uninstall 
 init commit, output truncated). A v2 protocol should select from merged pull requests and require the fix's tests to
 fail without the fix.
 
+## Offline journey v2 on real fixes (C21), 2026-11-01 (UTC), $0
+
+`benchmarks/journey-offline-v2/` (preregistered at fc329dc; CI run 41265931090). 7 real upstream fixes whose tests
+fail without them (pyjwt, humanize, more-itertools, marshmallow). **No false assurance in 7 of 7 failing states**
+(5 regression, 2 refused); the fix confirmed in 3 of 6 (pyjwt: network-denied tests; more-itertools: no trusted test
+command at older commits); uninstall restored the original revision in 7 of 7.
+
 ## Open experiment protocols (not run)
 
 - **C03 Claude end-to-end journey**: `repo-ai do --agent claude --run --allow-live-provider --allow-write durations.py
