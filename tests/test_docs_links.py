@@ -6,8 +6,10 @@ site/scripts/check-links.mjs). Anchors are not checked. Found missing: public do
 and `docs/EXECUTION_LEDGER.md`, which live only in the private development history."""
 from __future__ import annotations
 
+import os
 import posixpath
 import re
+import time
 import shutil
 import subprocess
 from pathlib import Path
@@ -16,8 +18,9 @@ from urllib.parse import unquote
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-INLINE = re.compile(r"\]\(\s*(<[^>\n]+>|[^)\s]+)(?:\s+[\"'(][^)\n]*)?\s*\)")
-REFDEF = re.compile(r"^ {0,3}\[[^\]\n]+\]:\s*(<[^>\n]+>|\S+)", re.M)
+# linear: a target cannot contain "(" or ")", and a title is one quoted or parenthesised run
+INLINE = re.compile(r"""\]\(\s*(<[^>\n]+>|[^()\s]+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?\s*\)""")
+REFDEF = re.compile(r"^ {0,3}\[(?!\^)[^\]\n]+\]:\s*(<[^>\n]+>|\S+)", re.M)  # not a footnote ([^1]: text)
 FENCE = re.compile(r"^[ \t]*(`{3,}|~{3,}).*?^[ \t]*\1[`~]*[ \t]*$", re.S | re.M)
 CODE = re.compile(r"(`+)(?!`)[^\n]+?(?<!`)\1")
 SKIP = ("benchmarks/skill-vet-fresh-v1/corpus/",  # defanged third-party-style fixture skills, kept verbatim
@@ -29,6 +32,8 @@ def _tracked() -> set[str]:
         pytest.skip("not a git checkout")
     out = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, capture_output=True)
     if out.returncode:
+        if os.environ.get("CI"):
+            pytest.fail("git ls-files failed on CI: " + out.stderr.decode("utf-8", "replace")[:200])
         pytest.skip("git ls-files failed: " + out.stderr.decode("utf-8", "replace")[:200])
     return {p for p in out.stdout.decode("utf-8").split("\0") if p}
 
@@ -48,9 +53,19 @@ def _relative(target: str) -> str | None:
 
 def test_the_parser_reads_the_link_forms_github_renders():
     md = ('[a](x.md) [b](<y z.md> "t") [c](w.md \'t\') [d](v.md#h) [e](u.md?plain=1) [f](https://e.x) [g](#top)\n'
-          "`[no](inline.md)`\n```\n[no](fenced.md)\n```\n  ~~~~\n  [no](indented.md)\n  ~~~~\n[r]: ref.md\n")
-    assert [_relative(t) for t in targets(md) if _relative(t)] == ["x.md", "y z.md", "w.md", "v.md", "u.md", "ref.md"]
+          "[h](t.md (title))\n`[no](inline.md)`\n```\n[no](fenced.md)\n```\n  ~~~~\n  [no](indented.md)\n  ~~~~\n"
+          "[r]: ref.md\n[^1]: A footnote, not a link.\n")
+    found = [_relative(t) for t in targets(md) if _relative(t)]
+    assert found == ["x.md", "y z.md", "w.md", "v.md", "u.md", "t.md", "ref.md"]
     assert _relative("my%20file.md") == "my file.md"
+
+
+def test_the_parser_is_linear_on_pathological_lines():
+    start = time.perf_counter()
+    targets("](" * 50_000)
+    targets('](a "' + " " * 50_000)
+    targets("```\n" * 5_000)
+    assert time.perf_counter() - start < 3.0
 
 
 def test_relative_markdown_links_resolve():
