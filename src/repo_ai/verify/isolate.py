@@ -196,26 +196,30 @@ def snapshot(root: Path, files: list[str] | None = None,
     snap = Snapshot(str(root), skip=skip)
     listing = files if files is not None else worktree_files(root)[0]
     keep = frozenset(listing)  # tracked and visible files: always checked, whatever a pattern says
-    stack = [root]
+    # each directory carries its repository-relative prefix: building `rel` from it is what
+    # `Path(e.path).relative_to(root).as_posix()` returned, without a Path per entry (that was most of
+    # the snapshot's time on a project with a virtualenv: two snapshots per verify run)
+    stack: list[tuple[str, str]] = [(str(root), "")]
     while stack:
-        cur = stack.pop()
+        cur, prefix = stack.pop()
         try:
             entries = list(os.scandir(cur))
         except OSError:
             continue
         for e in entries:
-            rel = Path(e.path).relative_to(root).as_posix()
-            if _skipped(rel, skip, e.is_dir(follow_symlinks=False), keep):
+            rel = prefix + e.name
+            is_dir = e.is_dir(follow_symlinks=False)
+            if _skipped(rel, skip, is_dir, keep):
                 continue
             try:
                 st = e.stat(follow_symlinks=False)
             except OSError:
                 continue
-            kind = "l" if e.is_symlink() else "d" if e.is_dir(follow_symlinks=False) else "f"
+            kind = "l" if e.is_symlink() else "d" if is_dir else "f"
             if kind == "d":
                 if not _walked_only(rel, skip):
                     snap.stat[rel] = ("d", st.st_mode)
-                stack.append(Path(e.path))
+                stack.append((e.path, rel + "/"))
             elif kind == "l":
                 snap.stat[rel] = ("l", os.readlink(e.path))
             else:
