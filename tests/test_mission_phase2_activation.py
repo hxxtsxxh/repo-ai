@@ -52,9 +52,6 @@ def test_priority_a_version_accurate_invocations_and_unknown_cost_fail_closed(tm
     assert "--disable-mcp" in bob_argv
     assert "--disable-subagents" in bob_argv
 
-    # Gemini 0.65.x includes --skip-trust for disposable workspaces
-    gemini_argv = build_invocation("gemini", "/usr/local/bin/gemini", "Fix bug", ws)
-    assert "--skip-trust" in gemini_argv
 
     # Bob JSON output with stats.session_costs and stats.tool_calls is parsed accurately
     bob_out = json.dumps({

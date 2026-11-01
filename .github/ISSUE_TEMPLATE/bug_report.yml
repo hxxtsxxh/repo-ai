@@ -31,7 +31,7 @@ body:
     id: provider
     attributes:
       label: Coding agent involved
-      options: [none (offline), Claude Code host, Codex, IBM Bob, Antigravity (agy), Gemini, other]
+      options: [none (offline), Claude Code host, Claude Code (provider), Codex, IBM Bob, Antigravity (agy), OpenCode, other]
     validations: {required: true}
   - type: checkboxes
     id: false-assurance

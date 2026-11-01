@@ -495,7 +495,7 @@ def test_install_rules_by_level():
 # --------------------------------------------------------------------------
 def test_host_support_is_labelled_honestly():
     assert capbundle.HOSTS["claude-code"].support == capbundle.INSTALL_TARGET
-    for host in ("codex", "gemini-cli", "antigravity", "ibm-bob"):
+    for host in ("codex", "antigravity", "ibm-bob"):
         assert capbundle.HOSTS[host].support == capbundle.EXPORT_ONLY
     # only hosts seen loading a repo-ai-installed skill say so, with the dated observation
     observed = {h for h, t in capbundle.HOSTS.items() if t.to_json()["runtime_observed"]}
@@ -555,7 +555,7 @@ def test_conflict_with_a_user_authored_file_is_never_overwritten(tmp_path: Path)
         assert ip.conflicts and "not repo-ai" in " ".join(ip.conflicts)
         with pytest.raises(capbundle.BundleError):
             capbundle.apply_install(ip)
-    ip = capbundle.plan_install(repo, b, ("gemini-cli", "codex"))  # one conflict refuses the whole install
+    ip = capbundle.plan_install(repo, b, ("ibm-bob", "codex"))  # one conflict refuses the whole install
     assert ip.conflicts and not ip.plan.effective()
     assert snapshot(repo) == before
 
@@ -574,8 +574,8 @@ def test_symlinked_host_directory_is_refused(tmp_path: Path):
 def test_uninstall_restores_the_tree_byte_for_byte_across_every_host(tmp_path: Path):
     repo = tmp_path / "proj"
     (repo / ".claude" / "skills").mkdir(parents=True)  # pre-existing and empty: must survive
-    (repo / ".gemini").mkdir()
-    (repo / ".gemini" / "settings.json").write_bytes(b'{"theme": "dark"}\r\n')
+    (repo / ".bob").mkdir()  # an existing host directory holding a user file: must come back byte-exact
+    (repo / ".bob" / "settings.json").write_bytes(b'{"theme": "dark"}\r\n')
     (repo / "README.md").write_bytes(b"\xef\xbb\xbfhello\r\n")
     before = snapshot(repo)
     b = bundle_of(skill(tmp_path / "in", "roundtrip", extra={"LICENSE": "MIT License\n"}))
@@ -587,6 +587,49 @@ def test_uninstall_restores_the_tree_byte_for_byte_across_every_host(tmp_path: P
     assert not result["kept"]
     assert snapshot(repo) == before
     assert not capbundle.load_manifest(repo, "roundtrip")["hosts"]
+
+
+def test_a_skill_exported_to_a_retired_host_is_still_removed_and_never_retargeted(tmp_path: Path, monkeypatch):
+    """An earlier repo-ai exported a skill to `gemini-cli` (since retired): uninstall still restores the tree byte for
+    byte from the machine-local manifest, and enable/rollback refuse instead of moving it to `.claude/skills`."""
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    before = snapshot(repo)
+    b = bundle_of(skill(tmp_path / "in", "oldhost"))
+    with monkeypatch.context() as m:  # the earlier version, which still had the host
+        m.setitem(capbundle.HOSTS, "gemini-cli", capbundle.RETIRED_HOSTS["gemini-cli"])
+        capbundle.apply_install(capbundle.plan_install(repo, b, ("gemini-cli",)))
+        capbundle.set_record(repo, "oldhost", hosts=["gemini-cli"], status="active", approved_by="user",
+                             content_hash=b.content_hash)
+    assert "gemini-cli" not in capbundle.HOSTS
+    assert (repo / ".gemini/skills/oldhost/SKILL.md").is_file()
+    assert "gemini-cli" in capbundle.load_manifest(repo, "oldhost")["hosts"]
+    assert capbundle.get_record(repo, "oldhost")["hosts"] == ["gemini-cli"]
+    with pytest.raises(capbundle.BundleError, match="no longer supports"):
+        capbundle.usable_hosts(capbundle.get_record(repo, "oldhost")["hosts"])
+    assert capbundle.usable_hosts(["gemini-cli", "codex"]) == ("codex",)
+    with pytest.raises(capbundle.BundleError):
+        capbundle.parse_hosts("gemini-cli")  # never an install target again
+    result = capbundle.uninstall(repo, "oldhost")
+    assert not result["kept"]
+    assert snapshot(repo) == before
+
+
+def test_enable_and_rollback_of_a_retired_host_record_point_at_reinstalling(tmp_path: Path):
+    """enable and rollback take no hosts: a record whose hosts are all retired is refused with the command that
+    works (`skills install <name> --host ...`), never re-targeted to the default host."""
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    src = skill(tmp_path / "in", "retired")
+    _local_install(repo, src)
+    (src / "SKILL.md").write_text((src / "SKILL.md").read_text() + "3. Run them.\n")
+    _local_install(repo, src)  # a second version, so rollback has history and reaches the host check
+    portfolio.disable(repo, ["retired"])
+    capbundle.set_record(repo, "retired", hosts=["gemini-cli"])  # what an earlier version recorded
+    for action in (portfolio.enable, portfolio.rollback):
+        with pytest.raises(portfolio.PortfolioError, match=r"skills install retired --host"):
+            action(repo, "retired", level="PROPOSE")
+    assert not (repo / ".claude/skills/retired").exists()
 
 
 def test_uninstall_keeps_a_file_you_edited(tmp_path: Path):
@@ -708,12 +751,12 @@ def test_cli_rollback_and_disable_are_byte_exact(tmp_path: Path, home):
     src = skill(tmp_path / "in", "versioned")
     h1 = _discover(repo, src, home)
     assert run_cli(repo, "skills", "install", "versioned", "--approve", h1[:16], "--host",
-                   "claude-code,gemini-cli", env=home).returncode == 0
+                   "claude-code,ibm-bob", env=home).returncode == 0
     v1 = snapshot(repo, own)
     (src / "SKILL.md").write_text((src / "SKILL.md").read_text() + "3. Run them.\n")
     h2 = _discover(repo, src, home)
     assert run_cli(repo, "skills", "install", "versioned", "--approve", h2[:16], env=home).returncode == 0
-    assert "3. Run them." in (repo / ".gemini/skills/versioned/SKILL.md").read_text()
+    assert "3. Run them." in (repo / ".bob/skills/versioned/SKILL.md").read_text()
     proc = run_cli(repo, "skills", "rollback", "versioned", env=home)
     assert proc.returncode == 0, proc.stderr
     assert snapshot(repo, own) == v1
@@ -859,10 +902,10 @@ def test_committed_lockfile_cannot_choose_hosts(tmp_path: Path):
     repo = tmp_path / "proj"
     repo.mkdir()
     _commit_lock(repo, {"helper": {"status": "disabled", "content_hash": "0" * 64, "files": [],
-                                   "hosts": ["ibm-bob", "codex", "gemini-cli"]}})
+                                   "hosts": ["ibm-bob", "codex", "antigravity"]}})
     _local_install(repo, skill(tmp_path / "in", "helper"))
     assert (repo / ".claude/skills/helper/SKILL.md").exists()
-    assert not (repo / ".bob").exists() and not (repo / ".agents").exists() and not (repo / ".gemini").exists()
+    assert not (repo / ".bob").exists() and not (repo / ".agents").exists()
 
 
 def test_front_matter_name_must_match_the_install_name(tmp_path: Path):

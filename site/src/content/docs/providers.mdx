@@ -127,10 +127,10 @@ listen on every interface: see [Security](/repo-ai/docs/security/#live-provider-
 cloud-routed models are refused. Small local models are weak at this: in recorded journeys several attempts failed
 (repo-ai refused them) and one passed the visible tests while dropping a requirement that no test pinned.
 
-### Gemini CLI
+### Gemini CLI (removed)
 
-The tested account was rejected (exit 41, 2026-10-30). From 0.10.0 repo-ai no longer copies `~/.gemini` into the
-sandbox; live Gemini needs `GEMINI_API_KEY` or `GOOGLE_API_KEY`.
+Gemini CLI was superseded by Antigravity (`agy`, above), so repo-ai no longer has a `gemini` provider. Before its
+removal, the tested account was rejected (exit 41, 2026-10-30).
 
 ## What every live run shares
 
