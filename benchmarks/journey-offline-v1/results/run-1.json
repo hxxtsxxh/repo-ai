@@ -1,0 +1,174 @@
+{
+ "protocol": "journey-offline-v1",
+ "commit": "0576dc3f3552a7ceced1e24465799183a55ca4b2",
+ "run_at": "2026-11-01T01:16:32Z",
+ "gates": {
+  "J1_false_assurance": {
+   "cases": [],
+   "pass": true
+  },
+  "J2_fix_passes_where_native_passes": [
+   [
+    "marshmallow-code/marshmallow",
+    true
+   ]
+  ],
+  "J3_uninstall_clean": [
+   [
+    "python-humanize/humanize",
+    false
+   ],
+   [
+    "marshmallow-code/marshmallow",
+    false
+   ]
+  ]
+ },
+ "projects": [
+  {
+   "project": "python-humanize/humanize",
+   "ref": "4.12.3",
+   "fix_commit": "1bf3f4c741979c7b5be62ef302ecbb858bbff83b",
+   "subject": "add humanize.humandate which overflows to include the year on dates 365+ days in the past, unlike humanize.humanday which always shows the month+day (fixes #2)\n",
+   "test_files": [
+    "tests/time.py"
+   ],
+   "parent": "a09068a5d05b967dce1d8ee32b2af39b072d7048",
+   "status": "RAN",
+   "steps": {
+    "quickstart": {
+     "exit": 0,
+     "seconds": 0.294,
+     "tail": "   repo-ai verify --run                           # run them, sandboxed (executes repo code)\n    repo-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+    },
+    "init": {
+     "exit": 0,
+     "seconds": 0.375,
+     "tail": "/_temp/journey/python-humanize__humanize\n[  0.02s] scanning /home/runner/work/_temp/journey/python-humanize__humanize\n[  0.04s] scan complete: 28 indexable files (31 seen, 6 skipped, 0 unchanged)\n[  0.04s] parsing 28 files (stdlib ast + regex fallback)\n[  0.06s] found 3 manifests, 0 declared dependencies\n[  0.10s] git: HEAD@a09068a, 30 commits, 148 contributors\n[  0.11s] analysis complete in 0.1s\n"
+    },
+    "record": {
+     "exit": 1,
+     "seconds": 0.271,
+     "tail": "recording runtime evidence for 0 test file(s) in the bwrap sandbox, in a disposable copy of the working tree (runs the test suite)\u2026\n  command:   [none found]\nerror: no trustworthy test command; pass --test-command\n"
+    },
+    "fix": {
+     "native": {
+      "exit": 5,
+      "seconds": 0.293,
+      "tail": "\nno tests ran in 0.01s\n"
+     },
+     "verify": {
+      "exit": 1,
+      "seconds": 0.28,
+      "verdict": null,
+      "new_failures": null,
+      "pre_existing": null,
+      "passed_files": null,
+      "tail": "error: no test command was established, so nothing can be run; pass --test-command \"...\" (it is shown before anything runs)\n"
+     }
+    },
+    "test_without_fix": {
+     "native": {
+      "exit": 5,
+      "seconds": 0.211,
+      "tail": "\nno tests ran in 0.01s\n"
+     },
+     "verify": {
+      "exit": 1,
+      "seconds": 0.268,
+      "verdict": null,
+      "new_failures": null,
+      "pre_existing": null,
+      "passed_files": null,
+      "tail": "error: no test command was established, so nothing can be run; pass --test-command \"...\" (it is shown before anything runs)\n"
+     }
+    },
+    "privacy_audit": {
+     "exit": 0,
+     "tail": "rted skills also contain code-derived policy; retention: retained after uninstall; remove user exports explicitly\n  result: PASS\n  PASS checks local store policy; this is not a complete secret or transmission audit.\n  delete outcome data: repo-ai learn forget   remove managed installation: repo-ai uninstall\n  User exports, provider records and user-owned settings/files can remain after uninstall.\n"
+    },
+    "uninstall": {
+     "exit": 0,
+     "tail": "repo-ai removed.\n",
+     "porcelain": " M .gitignore\n D .repo-ai/config.toml\n D .repo-ai/context/ARCHITECTURE.md\n D .repo-ai/context/CONTEXT_INDEX.md\n D .repo-ai/context/CONVENTIONS.md\n D .repo-ai/context/DEPENDENCIES.md\n D .repo-ai/context/HOTSPOTS.md\n D .repo-ai/context/NOTES.md\n D .repo-ai/context/PROJECT_OVERVIEW.md\n D .repo-ai/context/REPOSITORY_MAP.md\n D .repo-ai/context/SECURITY_NOTES.md\n D .repo-ai/context/TESTING.md\n D .repo-a",
+     "base": "067ff55206a8f5dd58e644ff47f1c4b4f078cd21"
+    }
+   }
+  },
+  {
+   "project": "pallets/itsdangerous",
+   "ref": "2.2.0",
+   "status": "NO_FIX_COMMIT"
+  },
+  {
+   "project": "marshmallow-code/marshmallow",
+   "ref": "4.0.0",
+   "fix_commit": "01fab376b36b094484752f9825c2fffc2ba9252c",
+   "subject": "Follow pep8 for TypeVar naming; fix typing for Context.get (#2785)\n",
+   "test_files": [
+    "tests/test_context.py"
+   ],
+   "parent": "d62c57113b9f932b0b665c1c719ec5470de3482f",
+   "status": "RAN",
+   "steps": {
+    "quickstart": {
+     "exit": 0,
+     "seconds": 0.225,
+     "tail": "   repo-ai verify --run                           # run them, sandboxed (executes repo code)\n    repo-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+    },
+    "init": {
+     "exit": 0,
+     "seconds": 1.275,
+     "tail": "y/marshmallow-code__marshmallow\n[  0.01s] scanning /home/runner/work/_temp/journey/marshmallow-code__marshmallow\n[  0.23s] scan complete: 90 indexable files (98 seen, 10 skipped, 0 unchanged)\n[  0.23s] parsing 90 files (stdlib ast + regex fallback)\n[  0.45s] found 2 manifests, 14 declared dependencies\n[  0.85s] git: HEAD@d62c5711, 3559 commits, 248 contributors\n[  1.00s] analysis complete in 1.0s\n"
+    },
+    "record": {
+     "exit": 0,
+     "seconds": 6.854,
+     "tail": "s.py: pass (0.5s)\n  recorded tests/test_registry.py: pass (0.5s)\n  recorded tests/test_deserialization.py: pass (1.8s)\n  recorded tests/test_utils.py: pass (0.6s)\n  recorded tests/test_schema.py: pass (1.2s)\n  recorded tests/test_serialization.py: pass (1.0s)\n  recorded tests/test_validate.py: pass (0.7s)\n  measured the full suite as one process: 2.5s (pass), for choosing how to run later changes\n"
+    },
+    "fix": {
+     "native": {
+      "exit": 0,
+      "seconds": 2.515,
+      "tail": "........... [ 58%]\n........................................................................ [ 65%]\n........................................................................ [ 71%]\n........................................................................ [ 78%]\n........................................................................ [ 85%]\n........................................................................ [ 91%]\n........................................................................ [ 98%]\n.....................                                                    [100%]\n1101 passed in 2.21s\n"
+     },
+     "verify": {
+      "exit": 0,
+      "seconds": 2.645,
+      "verdict": "selected-passed (full suite not run)",
+      "new_failures": [],
+      "pre_existing": [],
+      "passed_files": 12,
+      "tail": ""
+     }
+    },
+    "test_without_fix": {
+     "native": {
+      "exit": 0,
+      "seconds": 1.267,
+      "tail": "........... [ 58%]\n........................................................................ [ 65%]\n........................................................................ [ 71%]\n........................................................................ [ 78%]\n........................................................................ [ 85%]\n........................................................................ [ 91%]\n........................................................................ [ 98%]\n.....................                                                    [100%]\n1101 passed in 1.00s\n"
+     },
+     "verify": {
+      "exit": 0,
+      "seconds": 1.149,
+      "verdict": "selected-passed (full suite not run)",
+      "new_failures": [],
+      "pre_existing": [],
+      "passed_files": 1,
+      "tail": ""
+     }
+    },
+    "privacy_audit": {
+     "exit": 0,
+     "tail": "rted skills also contain code-derived policy; retention: retained after uninstall; remove user exports explicitly\n  result: PASS\n  PASS checks local store policy; this is not a complete secret or transmission audit.\n  delete outcome data: repo-ai learn forget   remove managed installation: repo-ai uninstall\n  User exports, provider records and user-owned settings/files can remain after uninstall.\n"
+    },
+    "uninstall": {
+     "exit": 0,
+     "tail": "repo-ai removed.\n",
+     "porcelain": " M .gitignore\n D .repo-ai/config.toml\n D .repo-ai/context/ARCHITECTURE.md\n D .repo-ai/context/CONTEXT_INDEX.md\n D .repo-ai/context/CONVENTIONS.md\n D .repo-ai/context/DEPENDENCIES.md\n D .repo-ai/context/HOTSPOTS.md\n D .repo-ai/context/NOTES.md\n D .repo-ai/context/PROJECT_OVERVIEW.md\n D .repo-ai/context/REPOSITORY_MAP.md\n D .repo-ai/context/SECURITY_NOTES.md\n D .repo-ai/context/TESTING.md\n D .repo-a",
+     "base": "7d10f5b99ecb57443099455e9163de43edd31d60"
+    }
+   }
+  }
+ ]
+}
