@@ -19,6 +19,10 @@
   1.71×); behaviour change 0.55 → 0.49 s (ratio 3.54× → 2.38×; macOS 4.17× → 3.04×). Re-verifying an unchanged
   state did not get faster.
   The profiling script and its workflow (`.github/workflows/profile.yml`) are included.
+- Fixed: repo-ai's mission and eval-lab git commands could let git start its background maintenance after a
+  commit, which then wrote `.git/objects/maintenance.lock` in a repository or workspace repo-ai was copying (a macOS
+  CI failure). They now run with `maintenance.auto=false` and `gc.auto=0` (the eval lab also with
+  `core.fsmonitor=false`, whose daemon socket in `.git` would break the copy too).
 
 ## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
