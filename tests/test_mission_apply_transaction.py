@@ -318,6 +318,7 @@ def test_failed_rollback_keeps_receipt_and_never_overwrites_foreign_bytes(prepar
 @pytest.mark.parametrize("reported", [
     {"auth_mode": "token_env", "auth_env_vars": ["CLAUDE_CODE_OAUTH_TOKEN"]},
     {"auth_mode": "sk-ant-oat01-not-a-mode", "auth_env_vars": ["sk-ant-oat01-not-a-name"]},
+    {"auth_mode": "token_env", "auth_env_vars": ["CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat01-not-a-name"]},
 ])
 def test_the_claude_auth_mode_reaches_the_mission_record(tmp_path, monkeypatch, reported):
     """The adapter reports how a live Claude run authenticated (a mode and variable NAMES); the mission record keeps
@@ -348,8 +349,8 @@ def test_the_claude_auth_mode_reaches_the_mission_record(tmp_path, monkeypatch, 
     result = runtime.execute(root, planned, None, provider_executable=Path(sys.executable), allow_live=True)
     if reported["auth_mode"] == "token_env":
         assert result['provider'].get('auth_mode') == 'token_env', result['provider']
-        assert result['provider'].get('auth_env_vars') == ['CLAUDE_CODE_OAUTH_TOKEN']
+        assert result['provider'].get('auth_env_vars') == ['CLAUDE_CODE_OAUTH_TOKEN']  # off-list names dropped
     else:
         assert 'auth_mode' not in result['provider'] and 'auth_env_vars' not in result['provider']
-        assert 'sk-ant' not in json.dumps(result)
+    assert 'sk-ant' not in json.dumps(result)
     assert sentinel not in json.dumps(result)
