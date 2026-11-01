@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- verify names the test files that the project's pytest `norecursedirs` keeps out of a full run when it matches
+  tests by name: a targeted run passes them to pytest, which runs them anyway, while a full run does not reach them,
+  so the two can disagree on one change (speed-v1: marshmallow's `tests/mypy_test_cases`). Read from the file pytest
+  would use; no note when the command picks its own configuration or the file cannot be read. A note in the plan
+  only: nothing is removed on this reading, and `repo-ai verify --record` still learns pytest's own collection.
 - Docs: the shipped capability catalog cited three research files that are not in the public repository (as
   evidence and review references in `capabilities show --json`, and in the catalog's note); each now says it is in the private development history.
 - Faster (measured on an Apple Silicon Mac, medians of 7 to 9 runs on a small pytest project; not a re-run of
