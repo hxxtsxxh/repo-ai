@@ -85,6 +85,11 @@ untouched until `repo-ai apply`. The residual risks, stated plainly:
 - **Codex:** its own inner sandbox is bypassed, only after repo-ai confirms the outer one is active. A flaw in the
   outer sandbox is not backstopped.
 - **agy (macOS):** can read the encrypted login keychain database files it needs to authenticate.
+- **OpenCode on macOS, "loopback only":** no other host can be reached, but seatbelt cannot restrict a process to
+  127.0.0.1: its `localhost` rule also matches the machine's own network addresses, and a wildcard bind is allowed. So
+  the agent could listen on every interface (reachable from your local network) and reach services bound to your
+  machine's own non-loopback addresses. Measured on a CI runner (`benchmarks/seatbelt-loopback/`); not fixable inside
+  seatbelt.
 - **Credentials inside the run.** Codex's login token is copied into its scratch `CODEX_HOME` unless the opt-in
   credential broker is on (`REPO_AI_CODEX_BROKER=1`, macOS); Bob's `~/.bob/settings` directory is copied into the
   scratch HOME; and a provider credential set in your environment is passed to that provider's process
