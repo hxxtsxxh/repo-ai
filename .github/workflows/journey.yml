@@ -32,3 +32,26 @@ jobs:
         with:
           name: journey-offline-v1
           path: journey-offline-v1.json
+
+  offline-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install .
+      - name: bubblewrap
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: journey-offline-v2
+        env:
+          REPO_AI_JOURNEY: "1"
+        run: python benchmarks/journey-offline-v2/run.py --work "$RUNNER_TEMP/journey2" --out journey-offline-v2.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: journey-offline-v2
+          path: journey-offline-v2.json
