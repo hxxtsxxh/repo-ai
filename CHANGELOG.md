@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A mission record now says how a live Claude run authenticated: `provider.auth_mode` (`token_env` or
+  `dedicated_config`) and `provider.auth_env_vars` (the variable names found, such as `CLAUDE_CODE_OAUTH_TOKEN`;
+  never a value).
 - Removed: the `gemini` provider and the `gemini-cli` skill-export host. Gemini CLI was superseded by Antigravity,
   which repo-ai supports as `agy` (its `~/.gemini` state paths stay protected). `--agent gemini` and
   `--host gemini-cli` are no longer accepted. A skill an earlier version exported to `.gemini/skills` can still be
