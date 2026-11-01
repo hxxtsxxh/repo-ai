@@ -615,6 +615,21 @@ def test_a_skill_exported_to_a_retired_host_is_still_removed_and_never_retargete
     assert snapshot(repo) == before
 
 
+def test_enable_and_rollback_of_a_retired_host_record_point_at_reinstalling(tmp_path: Path):
+    """enable and rollback take no hosts: a record whose hosts are all retired is refused with the command that
+    works (`skills install <name> --host ...`), never re-targeted to the default host."""
+    repo = tmp_path / "proj"
+    repo.mkdir()
+    src = skill(tmp_path / "in", "retired")
+    _local_install(repo, src)
+    portfolio.disable(repo, ["retired"])
+    capbundle.set_record(repo, "retired", hosts=["gemini-cli"])  # what an earlier version recorded
+    for action in (portfolio.enable, portfolio.rollback):
+        with pytest.raises(portfolio.PortfolioError, match=r"skills install retired --host|no previous version"):
+            action(repo, "retired", level="PROPOSE")
+    assert not (repo / ".claude/skills/retired").exists()
+
+
 def test_uninstall_keeps_a_file_you_edited(tmp_path: Path):
     repo = tmp_path / "proj"
     repo.mkdir()
