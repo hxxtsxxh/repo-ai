@@ -112,7 +112,8 @@ def git(root: Path, *args: str, raw: bool = False) -> str:
                GIT_AUTHOR_NAME='repo-ai mission', GIT_AUTHOR_EMAIL='local@example.invalid',
                GIT_COMMITTER_NAME='repo-ai mission', GIT_COMMITTER_EMAIL='local@example.invalid')
     p = subprocess.run([gitbin.git(), '--no-optional-locks', '-c', 'core.hooksPath=' + os.devnull,
-                        '-c', 'core.fsmonitor=false', *args], cwd=root, env=env,
+                        '-c', 'core.fsmonitor=false', '-c', 'maintenance.auto=false', '-c', 'gc.auto=0', *args],
+                       cwd=root, env=env,
                        stdin=subprocess.DEVNULL, capture_output=True, timeout=20, check=False)
     if p.returncode:
         raise ValueError('Git operation failed: ' + redact_text(p.stderr.decode('utf-8', 'replace'))[:500])
