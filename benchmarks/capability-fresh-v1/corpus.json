@@ -1,0 +1,737 @@
+{
+ "tasks": [
+  {
+   "id": "t01",
+   "task": "I refactored how the --output flag gets parsed in cli.py. Which tests should I run before pushing so I know the other subcommands still work?",
+   "repo_stack": "python-cli",
+   "changed_files": [
+    "src/tool/cli.py"
+   ],
+   "gold": [
+    "repo-ai.verify"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t02",
+   "task": "bump version to 2.4.1 in pyproject and __init__",
+   "repo_stack": "python-cli",
+   "changed_files": [
+    "pyproject.toml",
+    "src/tool/__init__.py"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t03",
+   "task": "Added a subprocess call that shells out to git using branch names the user types in. Can you check that for shell-injection type problems? I'm on a plane so no network, whatever you use has to be local.",
+   "repo_stack": "python-cli",
+   "changed_files": [
+    "src/tool/git_ops.py"
+   ],
+   "gold": [
+    "adapter.ruff-security"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t04",
+   "task": "Rename the `cfg` parameter to `config` everywhere. It gets threaded through like 30 functions and I don't want to miss a call site or clobber unrelated 'cfg' strings in help text.",
+   "repo_stack": "python-cli",
+   "changed_files": [
+    "src/tool/commands.py",
+    "src/tool/settings.py"
+   ],
+   "gold": [
+    "ext.lsp-references"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t05",
+   "task": "I wrote a loader/dumper for our .toolrc format. I'd like tests that generate random configs and check dump(load(x)) == x, plus whatever weird edge cases fall out.",
+   "repo_stack": "python-cli",
+   "changed_files": [
+    "src/tool/rcfile.py",
+    "tests/test_rcfile.py"
+   ],
+   "gold": [
+    "ext.property-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t06",
+   "task": "typo in the help text: 'recieve' -> 'receive'",
+   "repo_stack": "python-cli",
+   "changed_files": [
+    "src/tool/cli.py"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t07",
+   "task": "I added a raw SQL query to the reports view that builds the WHERE clause straight from GET params. Is that exploitable? Only care about what I changed, not the whole codebase.",
+   "repo_stack": "python-web-django",
+   "changed_files": [
+    "reports/views.py"
+   ],
+   "gold": [
+    "adapter.ruff-security",
+    "adapter.semgrep"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t08",
+   "task": "Add a phone_number field to the Customer model, make a migration, and show it in the admin list view.",
+   "repo_stack": "python-web-django",
+   "changed_files": [
+    "customers/models.py",
+    "customers/admin.py",
+    "customers/migrations/0014_customer_phone_number.py"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t09",
+   "task": "We just upgraded Django and a pile of other packages in requirements.txt. Are any of the pinned versions known to be vulnerable?",
+   "repo_stack": "python-web-django",
+   "changed_files": [
+    "requirements.txt"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t10",
+   "task": "After my change to static/js/cart.js the checkout totals stop updating and I think there's a JS error. I need to see what's actually happening in the browser - console, failed requests, whatever.",
+   "repo_stack": "python-web-django",
+   "changed_files": [
+    "static/js/cart.js",
+    "templates/shop/checkout.html"
+   ],
+   "gold": [
+    "ext.browser-evidence"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t11",
+   "task": "Change the password reset email subject to 'Reset your Acme password'.",
+   "repo_stack": "python-web-django",
+   "changed_files": [
+    "accounts/templates/registration/password_reset_subject.txt"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t12",
+   "task": "I'm reworking session handling in middleware/auth.py. Give the diff a careful security pass before I open the PR, but stick to what's already set up here - don't install any new plugins or workflows.",
+   "repo_stack": "python-web-django",
+   "changed_files": [
+    "core/middleware/auth.py"
+   ],
+   "gold": [
+    "repo-ai.review",
+    "adapter.ruff-security"
+   ],
+   "forbidden": [
+    "ext.differential-security-review"
+   ]
+  },
+  {
+   "id": "t13",
+   "task": "where's the token refresh logic? need to add sliding expiration and I have no idea which files are involved",
+   "repo_stack": "python-fastapi",
+   "changed_files": [],
+   "gold": [
+    "repo-ai.context"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t14",
+   "task": "I changed the signature of the get_db() dependency in app/deps.py. What imports it and what's going to break?",
+   "repo_stack": "python-fastapi",
+   "changed_files": [
+    "app/deps.py"
+   ],
+   "gold": [
+    "repo-ai.impact"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t15",
+   "task": "Add limit/offset pagination to GET /items, default limit 50, max 200.",
+   "repo_stack": "python-fastapi",
+   "changed_files": [
+    "app/routers/items.py",
+    "app/schemas/items.py"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t16",
+   "task": "Tests for the pricing calculator are all green but I don't trust them to catch a real regression. How strong are they actually? Strictly offline please, this box has no outbound access.",
+   "repo_stack": "python-fastapi",
+   "changed_files": [
+    "app/pricing.py",
+    "tests/test_pricing.py"
+   ],
+   "gold": [
+    "ext.mutation-testing"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t17",
+   "task": "Draft the PR description for my order-endpoint changes: what the diff touches, which tests cover it, and anything that looks risky or untested.",
+   "repo_stack": "python-fastapi",
+   "changed_files": [
+    "app/routers/orders.py",
+    "app/services/orders.py"
+   ],
+   "gold": [
+    "repo-ai.review"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t18",
+   "task": "switch the `created` field on the pydantic models from str to datetime",
+   "repo_stack": "python-fastapi",
+   "changed_files": [
+    "app/schemas/common.py"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t19",
+   "task": "Dashboard got noticeably janky after I added the chart widget. Can you grab a perf trace in a browser and tell me what's hogging the main thread?",
+   "repo_stack": "ts-react-frontend",
+   "changed_files": [
+    "src/components/ChartWidget.tsx",
+    "src/pages/Dashboard.tsx"
+   ],
+   "gold": [
+    "ext.browser-evidence"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t20",
+   "task": "Swap the primary button color from #3b82f6 to the new brand teal (#0f9d8a).",
+   "repo_stack": "ts-react-frontend",
+   "changed_files": [
+    "src/styles/theme.css"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t21",
+   "task": "Rename the useUser hook to useCurrentUser across the app. We can't add a language server plugin on this machine, so figure out the usages some other way.",
+   "repo_stack": "ts-react-frontend",
+   "changed_files": [
+    "src/hooks/useUser.ts"
+   ],
+   "gold": [
+    "repo-ai.impact"
+   ],
+   "forbidden": [
+    "ext.lsp-references"
+   ]
+  },
+  {
+   "id": "t22",
+   "task": "I touched our formatDate util and it's imported all over the place. Which components are affected and which tests should cover it? Don't actually run anything, just give me the list.",
+   "repo_stack": "ts-react-frontend",
+   "changed_files": [
+    "src/utils/formatDate.ts"
+   ],
+   "gold": [
+    "repo-ai.impact",
+    "repo-ai.verify"
+   ],
+   "forbidden": [
+    "ext.mutation-testing",
+    "ext.browser-evidence"
+   ]
+  },
+  {
+   "id": "t23",
+   "task": "npm audit started failing in CI after I added a markdown renderer. Which of the new deps are actually vulnerable?",
+   "repo_stack": "ts-react-frontend",
+   "changed_files": [
+    "package.json",
+    "package-lock.json"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t24",
+   "task": "Add an empty state to the Orders table: 'No orders yet' with a link to create one.",
+   "repo_stack": "ts-react-frontend",
+   "changed_files": [
+    "src/components/OrdersTable.tsx"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t25",
+   "task": "New endpoint takes a URL from the request body and fetches it server-side for link previews. I'm worried about SSRF. Can we trace where that input flows and get a proper security look at it?",
+   "repo_stack": "ts-node-api",
+   "changed_files": [
+    "src/routes/preview.ts",
+    "src/lib/fetcher.ts"
+   ],
+   "gold": [
+    "adapter.semgrep",
+    "ext.differential-security-review"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t26",
+   "task": "I've got a zod schema and a hand-rolled query string encoder. Want tests asserting decode(encode(obj)) round-trips for arbitrary objects, not just the three examples I wrote.",
+   "repo_stack": "ts-node-api",
+   "changed_files": [
+    "src/lib/querystring.ts",
+    "src/lib/querystring.test.ts"
+   ],
+   "gold": [
+    "ext.property-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t27",
+   "task": "Pull the express error handler out of app.ts into its own middleware file. No behavior change.",
+   "repo_stack": "ts-node-api",
+   "changed_files": [
+    "src/app.ts",
+    "src/middleware/errorHandler.ts"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t28",
+   "task": "Before I merge the auth middleware rewrite I want a structured security review of the diff - threat model it, then go vuln class by vuln class. This is an airgapped box, nothing that phones home.",
+   "repo_stack": "ts-node-api",
+   "changed_files": [
+    "src/middleware/auth.ts"
+   ],
+   "gold": [
+    "ext.differential-security-review"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t29",
+   "task": "Bump express 4.18 -> 4.19 and while you're in there check the lockfile for known CVEs.",
+   "repo_stack": "ts-node-api",
+   "changed_files": [
+    "package.json",
+    "package-lock.json"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t30",
+   "task": "Update the curl examples in the README to use the new /v2 prefix.",
+   "repo_stack": "ts-node-api",
+   "changed_files": [
+    "README.md"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t31",
+   "task": "I reordered the chi middleware in internal/http/router.go (moved auth before rate limiting). What could that break and which tests exercise it? Don't run the tests, I just want the list.",
+   "repo_stack": "go-service",
+   "changed_files": [
+    "internal/http/router.go"
+   ],
+   "gold": [
+    "repo-ai.verify",
+    "repo-ai.impact"
+   ],
+   "forbidden": [
+    "ext.mutation-testing"
+   ]
+  },
+  {
+   "id": "t32",
+   "task": "add a /healthz handler that returns 200 with {\"status\":\"ok\"}",
+   "repo_stack": "go-service",
+   "changed_files": [
+    "internal/http/health.go",
+    "internal/http/router.go"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t33",
+   "task": "Rename NewStore to NewPostgresStore and fix every caller, including the ones in cmd/ and the tests.",
+   "repo_stack": "go-service",
+   "changed_files": [
+    "internal/store/store.go"
+   ],
+   "gold": [
+    "ext.lsp-references"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t34",
+   "task": "Look over the file-download handlers I changed for path traversal and injection. Only stuff we already have, no new installs, and no network access at all.",
+   "repo_stack": "go-service",
+   "changed_files": [
+    "internal/http/files.go"
+   ],
+   "gold": [
+    "repo-ai.review"
+   ],
+   "forbidden": [
+    "adapter.semgrep",
+    "adapter.dependency-audit",
+    "ext.differential-security-review"
+   ]
+  },
+  {
+   "id": "t35",
+   "task": "go.sum changed a lot after go get -u. Did we pull in any modules with known vulns?",
+   "repo_stack": "go-service",
+   "changed_files": [
+    "go.mod",
+    "go.sum"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t36",
+   "task": "Include the request ID in the access log line.",
+   "repo_stack": "go-service",
+   "changed_files": [
+    "internal/http/logging.go"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t37",
+   "task": "Implemented a custom serde Deserialize for our Duration newtype. I'd like to throw arbitrary values at it and check serialize -> deserialize gives back the same thing.",
+   "repo_stack": "rust-lib",
+   "changed_files": [
+    "src/duration.rs"
+   ],
+   "gold": [
+    "ext.property-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t38",
+   "task": "Coverage on the ring buffer module is 95% but I suspect half those tests barely assert anything. Is there a way to find out if they'd actually catch a bug?",
+   "repo_stack": "rust-lib",
+   "changed_files": [
+    "src/ring.rs",
+    "tests/ring.rs"
+   ],
+   "gold": [
+    "ext.mutation-testing"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t39",
+   "task": "fix the clippy needless_borrow warning in lib.rs",
+   "repo_stack": "rust-lib",
+   "changed_files": [
+    "src/lib.rs"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t40",
+   "task": "I'm adding a method to the public Codec trait. Which types implement it and will need updating?",
+   "repo_stack": "rust-lib",
+   "changed_files": [
+    "src/codec.rs"
+   ],
+   "gold": [
+    "repo-ai.impact",
+    "ext.lsp-references"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t41",
+   "task": "Need to check Cargo.lock against the advisory DB, but the build host has zero internet, so it has to work fully offline.",
+   "repo_stack": "rust-lib",
+   "changed_files": [
+    "Cargo.lock"
+   ],
+   "gold": [],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t42",
+   "task": "Refresh the usage example in the README so it matches the 0.9 API.",
+   "repo_stack": "rust-lib",
+   "changed_files": [
+    "README.md"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t43",
+   "task": "Added a new @RestController for invoices that parses uploaded XML. Scan it for SQL injection, XXE, that kind of thing.",
+   "repo_stack": "java-spring",
+   "changed_files": [
+    "src/main/java/com/acme/billing/InvoiceController.java"
+   ],
+   "gold": [
+    "adapter.semgrep"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t44",
+   "task": "What tests exercise InvoiceService? I changed how tax gets rounded. No need to set up mutation testing or anything fancy, just tell me what to run.",
+   "repo_stack": "java-spring",
+   "changed_files": [
+    "src/main/java/com/acme/billing/InvoiceService.java"
+   ],
+   "gold": [
+    "repo-ai.verify"
+   ],
+   "forbidden": [
+    "ext.mutation-testing"
+   ]
+  },
+  {
+   "id": "t45",
+   "task": "Rename CustomerDto to CustomerResponse across the whole project.",
+   "repo_stack": "java-spring",
+   "changed_files": [
+    "src/main/java/com/acme/crm/CustomerDto.java"
+   ],
+   "gold": [
+    "ext.lsp-references"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t46",
+   "task": "Change the default server.port to 8081 in application.yml.",
+   "repo_stack": "java-spring",
+   "changed_files": [
+    "src/main/resources/application.yml"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t47",
+   "task": "Write me a pre-PR summary of this branch: blast radius, linked tests, risky spots, blind spots. Read-only - don't execute any scanners or tests.",
+   "repo_stack": "java-spring",
+   "changed_files": [
+    "src/main/java/com/acme/billing/InvoiceService.java",
+    "src/main/java/com/acme/billing/TaxCalculator.java"
+   ],
+   "gold": [
+    "repo-ai.review"
+   ],
+   "forbidden": [
+    "adapter.semgrep",
+    "adapter.dependency-audit",
+    "ext.mutation-testing"
+   ]
+  },
+  {
+   "id": "t48",
+   "task": "Reword the intro of the onboarding guide so it sounds less like a legal document.",
+   "repo_stack": "docs-only",
+   "changed_files": [
+    "docs/onboarding.md"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t49",
+   "task": "A coworker linked a Claude Code skill on GitHub for writing release notes (github.com/someone/release-notes-skill). Is it safe to install? What does it actually do?",
+   "repo_stack": "docs-only",
+   "changed_files": [],
+   "gold": [
+    "repo-ai.skills-vet"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t50",
+   "task": "Claude feels sluggish in this repo and I suspect all the stuff that loads at session start. What hooks, skills and MCP servers are active here, and how much context are they eating?",
+   "repo_stack": "docs-only",
+   "changed_files": [
+    ".claude/settings.json"
+   ],
+   "gold": [
+    "repo-ai.skills-inventory",
+    "repo-ai.budget"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t51",
+   "task": "Fix the broken relative links after we moved the API pages into docs/reference/.",
+   "repo_stack": "docs-only",
+   "changed_files": [
+    "docs/index.md",
+    "docs/reference/api.md"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t52",
+   "task": "How much of my context window is repo-ai itself taking up on every prompt? Feels like it's crowding out the actual code.",
+   "repo_stack": "docs-only",
+   "changed_files": [],
+   "gold": [
+    "repo-ai.budget"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t53",
+   "task": "Teammate gave me a plugin in a local folder (~/dev/team-plugin). Before I enable it, check what it ships - hooks, commands, skills. Offline only, don't hit GitHub.",
+   "repo_stack": "docs-only",
+   "changed_files": [],
+   "gold": [
+    "repo-ai.skills-vet"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t54",
+   "task": "Discount rounding is computed in services/pricing (Python) and then formatted in the React app. I need to change the rounding rule - which files across the repo should I be looking at?",
+   "repo_stack": "mixed-monorepo",
+   "changed_files": [],
+   "gold": [
+    "repo-ai.context"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t55",
+   "task": "I changed the shared API types in packages/api-types. Which Go and TS consumers will be affected?",
+   "repo_stack": "mixed-monorepo",
+   "changed_files": [
+    "packages/api-types/src/index.ts"
+   ],
+   "gold": [
+    "repo-ai.impact"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t56",
+   "task": "Security review my diff - it touches the FastAPI upload endpoint and the React upload form. This sandbox has no network access.",
+   "repo_stack": "mixed-monorepo",
+   "changed_files": [
+    "services/api/app/uploads.py",
+    "web/src/components/Upload.tsx"
+   ],
+   "gold": [
+    "ext.differential-security-review",
+    "adapter.ruff-security"
+   ],
+   "forbidden": [
+    "adapter.dependency-audit"
+   ]
+  },
+  {
+   "id": "t57",
+   "task": "Translate the settings page strings to Spanish.",
+   "repo_stack": "mixed-monorepo",
+   "changed_files": [
+    "web/src/locales/es.json"
+   ],
+   "gold": [],
+   "forbidden": []
+  },
+  {
+   "id": "t58",
+   "task": "Audit every lockfile we have (poetry.lock, pnpm-lock.yaml, go.sum) for known vulnerable packages.",
+   "repo_stack": "mixed-monorepo",
+   "changed_files": [
+    "services/api/poetry.lock",
+    "web/pnpm-lock.yaml",
+    "services/worker/go.sum"
+   ],
+   "gold": [
+    "adapter.dependency-audit"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t59",
+   "task": "Somebody added a bunch of MCP servers and hooks under .claude/ in this monorepo. I want a list of everything that's configured and whether any of it looks sketchy.",
+   "repo_stack": "mixed-monorepo",
+   "changed_files": [
+    ".claude/settings.json",
+    ".mcp.json"
+   ],
+   "gold": [
+    "repo-ai.skills-inventory"
+   ],
+   "forbidden": []
+  },
+  {
+   "id": "t60",
+   "task": "Just reason from the code, don't spin up the app or a browser or run any tools: why would the login form submit twice?",
+   "repo_stack": "ts-react-frontend",
+   "changed_files": [
+    "src/components/LoginForm.tsx"
+   ],
+   "gold": [],
+   "forbidden": [
+    "ext.browser-evidence"
+   ]
+  }
+ ]
+}
