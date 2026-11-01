@@ -122,7 +122,8 @@ checked between turns: one turn of overshoot was observed. Claude is also a **ho
 
 Account-free: OpenCode runs against a loopback model endpoint such as Ollama (`ollama pull qwen3:8b`, then
 `export REPO_AI_OPENCODE_MODEL=qwen3:8b`; `repo-ai agents setup opencode`). The sandbox allows network to loopback
-only, a deny-by-default tool policy allows read, edit, glob, grep and list, project configuration is ignored and
+only (no other host is reachable; on macOS this also admits your machine's own network addresses and lets the agent
+listen on every interface: see [Security](/repo-ai/docs/security/#live-provider-runs)), a deny-by-default tool policy allows read, edit, glob, grep and list, project configuration is ignored and
 cloud-routed models are refused. Small local models are weak at this: in recorded journeys several attempts failed
 (repo-ai refused them) and one passed the visible tests while dropping a requirement that no test pinned.
 
