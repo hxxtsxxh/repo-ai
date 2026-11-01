@@ -107,7 +107,7 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "route reports SETUP_REQUIRED (offline, no credential read) for Claude, OpenCode, Gemini",
-    "2026-11-01 routing decisions measured over the per-provider state space (tests/test_provider_routing_matrix.py): 624 states (installed, sandboxed, setup, cooldown none/active/expired, each storable observation fresh/expired/other-binary, consent) x 4 (USD ceiling, per-run flag) = 2,496 decisions per provider, for one provider with an enforceable USD ceiling and one without; plus default selection order and the allowlist rule. Every decision matched the specification; no process started. Not covered: readiness labels per state, stage BLOCKED, preferred-list ordering"
+    "2026-11-01 routing decisions measured over the per-provider state space (tests/test_provider_routing_matrix.py): 624 states (installed, sandboxed, setup, cooldown none/active/expired, each storable observation fresh/expired/other-binary, consent) x 4 (USD ceiling, per-run flag) = 2,496 decisions per provider, for one provider with an enforceable USD ceiling and one without; plus default selection order and the allowlist rule. Every decision matched the specification; no process started. Readiness labels checked per state against an independent priority oracle; stage BLOCKED and preferred-list ordering (argument and policy) covered"
    ],
    "limits": [],
    "next_action": "measure decisions on real host states over time (rate-limit cooldowns, stale observations) once live calls are budgeted"
