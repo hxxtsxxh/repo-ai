@@ -96,8 +96,9 @@ fail without the fix.
 
 `benchmarks/journey-offline-v2/` (preregistered at fc329dc; CI run 41265931090). 7 real upstream fixes whose tests
 fail without them (pyjwt, humanize, more-itertools, marshmallow). **No false assurance in 7 of 7 failing states**
-(5 regression, 2 refused); the fix confirmed in 3 of 6 (pyjwt: network-denied tests; more-itertools: no trusted test
-command at older commits); uninstall restored the original revision in 7 of 7.
+(5 detected as regression, 2 refused; small sample); the fix confirmed in 3 of 6 as "selected passed" (pyjwt: a
+pre-existing, likely network-dependent test; more-itertools: no trusted test command); uninstall left no tracked or
+untracked difference in 7 of 7. One clone per project was reused (a deviation from "fresh clone").
 
 ## Open experiment protocols (not run)
 
