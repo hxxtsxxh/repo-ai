@@ -140,11 +140,11 @@ def test_unknown_status_and_missing_source_are_rejected(inputs):
 
 def test_provider_execution_label_needs_an_execution_observation(inputs):
     _, providers = inputs
-    gemini = next(p for p in providers["providers"] if p["id"] == "gemini")
-    gemini["label"] = "EXECUTION"  # flipped without recording an EXECUTION observation
+    row = next(p for p in providers["providers"] if p["id"] == "codex")
+    row["label"] = "BLOCKED"  # the label no longer matches its recorded EXECUTION observation
     problems = site_facts.validate_providers(providers)
     assert any("must go together" in p for p in problems)
-    gemini["label"] = "WORKS"
+    row["label"] = "WORKS"
     problems = site_facts.validate_providers(providers)
     assert any("unknown label 'WORKS'" in p for p in problems)
 

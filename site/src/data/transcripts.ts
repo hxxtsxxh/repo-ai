@@ -140,7 +140,6 @@ export const transcripts: Transcript[] = [
       { k: 'cmd', t: 'repo-ai agents list' },
       o('codex: PLANNING_ONLY | version not probed | auth UNKNOWN'),
       o('claude: PLANNING_ONLY | version not probed | auth UNKNOWN'),
-      o('gemini: PLANNING_ONLY | version not probed | auth UNKNOWN'),
       o('bob: PLANNING_ONLY | version not probed | auth UNKNOWN'),
       o('agy: PLANNING_ONLY | version not probed | auth UNKNOWN'),
       h('No model was invoked. Installed executable does not establish authenticated runnable availability.'),

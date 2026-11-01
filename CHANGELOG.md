@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Removed: the `gemini` provider and the `gemini-cli` skill-export host. Gemini CLI was superseded by Antigravity,
+  which repo-ai supports as `agy` (its `~/.gemini` state paths stay protected). `--agent gemini` and
+  `--host gemini-cli` are no longer accepted.
+
 ## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
 - verify names the test files that the project's pytest `norecursedirs` keeps out of a full run when it matches

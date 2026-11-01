@@ -495,7 +495,7 @@ def test_install_rules_by_level():
 # --------------------------------------------------------------------------
 def test_host_support_is_labelled_honestly():
     assert capbundle.HOSTS["claude-code"].support == capbundle.INSTALL_TARGET
-    for host in ("codex", "gemini-cli", "antigravity", "ibm-bob"):
+    for host in ("codex", "antigravity", "ibm-bob"):
         assert capbundle.HOSTS[host].support == capbundle.EXPORT_ONLY
     # only hosts seen loading a repo-ai-installed skill say so, with the dated observation
     observed = {h for h, t in capbundle.HOSTS.items() if t.to_json()["runtime_observed"]}
@@ -555,7 +555,7 @@ def test_conflict_with_a_user_authored_file_is_never_overwritten(tmp_path: Path)
         assert ip.conflicts and "not repo-ai" in " ".join(ip.conflicts)
         with pytest.raises(capbundle.BundleError):
             capbundle.apply_install(ip)
-    ip = capbundle.plan_install(repo, b, ("gemini-cli", "codex"))  # one conflict refuses the whole install
+    ip = capbundle.plan_install(repo, b, ("ibm-bob", "codex"))  # one conflict refuses the whole install
     assert ip.conflicts and not ip.plan.effective()
     assert snapshot(repo) == before
 
@@ -708,12 +708,12 @@ def test_cli_rollback_and_disable_are_byte_exact(tmp_path: Path, home):
     src = skill(tmp_path / "in", "versioned")
     h1 = _discover(repo, src, home)
     assert run_cli(repo, "skills", "install", "versioned", "--approve", h1[:16], "--host",
-                   "claude-code,gemini-cli", env=home).returncode == 0
+                   "claude-code,ibm-bob", env=home).returncode == 0
     v1 = snapshot(repo, own)
     (src / "SKILL.md").write_text((src / "SKILL.md").read_text() + "3. Run them.\n")
     h2 = _discover(repo, src, home)
     assert run_cli(repo, "skills", "install", "versioned", "--approve", h2[:16], env=home).returncode == 0
-    assert "3. Run them." in (repo / ".gemini/skills/versioned/SKILL.md").read_text()
+    assert "3. Run them." in (repo / ".bob/skills/versioned/SKILL.md").read_text()
     proc = run_cli(repo, "skills", "rollback", "versioned", env=home)
     assert proc.returncode == 0, proc.stderr
     assert snapshot(repo, own) == v1
@@ -859,10 +859,10 @@ def test_committed_lockfile_cannot_choose_hosts(tmp_path: Path):
     repo = tmp_path / "proj"
     repo.mkdir()
     _commit_lock(repo, {"helper": {"status": "disabled", "content_hash": "0" * 64, "files": [],
-                                   "hosts": ["ibm-bob", "codex", "gemini-cli"]}})
+                                   "hosts": ["ibm-bob", "codex", "antigravity"]}})
     _local_install(repo, skill(tmp_path / "in", "helper"))
     assert (repo / ".claude/skills/helper/SKILL.md").exists()
-    assert not (repo / ".bob").exists() and not (repo / ".agents").exists() and not (repo / ".gemini").exists()
+    assert not (repo / ".bob").exists() and not (repo / ".agents").exists()
 
 
 def test_front_matter_name_must_match_the_install_name(tmp_path: Path):

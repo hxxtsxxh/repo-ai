@@ -459,9 +459,6 @@ HOSTS: dict[str, HostTranslator] = {t.host: t for t in (
     HostTranslator("codex", ".agents/skills", EXPORT_ONLY,
                    "codex-cli 0.165.0 binary strings name `.agents/skills` (a repository skills root) and "
                    "`$CODEX_HOME/skills`; not observed loading a skill"),
-    HostTranslator("gemini-cli", ".gemini/skills", EXPORT_ONLY,
-                   "gemini-cli 0.65.0 bundled docs: workspace skills in `.gemini/skills/` or the "
-                   "`.agents/skills/` alias, which takes precedence; not observed loading a skill"),
     HostTranslator("antigravity", ".agents/skills", EXPORT_ONLY,
                    "agy binary strings: `{workspace}/.agents/skills/{skill_name}/SKILL.md`; not observed "
                    "loading a skill"),
