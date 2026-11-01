@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.6 — faster hooks and commands, a pytest collection note, speed-v1 replicated
 
 - verify names the test files that the project's pytest `norecursedirs` keeps out of a full run when it matches
   tests by name: a targeted run passes them to pytest, which runs them anyway, while a full run does not reach them,
@@ -20,6 +20,18 @@
   prints (asked once per process). Another git first on PATH (Homebrew's), or anything unusual, runs as before.
   `verify --run` on that project: comment-only change 965 → 636 ms, a behaviour change with the full suite
   1,370 → 992 ms, re-verifying an unchanged state 544 → 330 ms. Linux and Windows run git as before.
+- Evaluation: speed-v1 run 3 (`benchmarks/speed-v1/`, a replication stated before the run as Amendment 3, GitHub
+  runner): verify is still **not** faster than the native suite (2.23× geometric mean, slower on 30 of 30; run 2:
+  1.84×, 24 of 30). Its more-itertools changes were measured differently (a targeted run of 2 files where run 2's
+  full-suite attempt ended early); without them the two runs agree (2.61× and 2.64×), and absolute overheads are not
+  compared (the runner CPU changed). Exit codes agreed with the native suite on 23 of 30 changes (run 2: 16): the
+  more-itertools and humanize disagreements are gone, consistent with fixes in 0.11.4/0.11.5 but not isolated by
+  the runs; pyjwt's network-denied tests and one name-matched marshmallow change still disagree. Run 2 stays the
+  result. marshmallow 2fc8207d's two verdicts (targeted exit 1, full exit 0) come from files pytest's
+  `norecursedirs` skips, which only the targeted run names (see the first item).
+- Site: a weekly probe of the deployed site from a GitHub runner (every sitemap URL over HTTPS, no third-party
+  requests, the released version shown) and Lighthouse on six pages; the first runs scored 100 on accessibility,
+  best practices and SEO everywhere, and 95–100 on performance.
 
 ## 0.11.5 — agents doctor sandbox fix, ACP conformance kit, real-project journeys
 
