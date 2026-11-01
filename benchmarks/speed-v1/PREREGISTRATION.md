@@ -79,3 +79,20 @@ removing untracked ones, so files a commit adds leaked into the older changes re
 30 measurements). Run 2 stands as recorded, with the two measurements disclosed in RESULTS.md. The harness now also
 runs `git clean -fdq` (which keeps ignored paths: the project's `.venv` and repo-ai's state) before each change, for
 any future run.
+
+## Amendment 3 (2026-11-01, before run 3; a replication, analysis unchanged)
+
+Run 2 remains the speed-v1 result. **Run 3** repeats it, unchanged in projects, pinned refs, selection,
+measurements and reading rule, on a later repo-ai commit (main at c462f0e, after 0.11.5 and PR #60), with the Amendment 2
+harness. Two questions, both stated before the run:
+
+1. **Overhead.** Does verify's fixed cost per change differ from run 2's (median +0.63 s, cold ratio 1.84×)?
+   PR #60 removed about 80 ms of argument-parser imports from every command; its git change applies only on
+   macOS, so little difference is expected on this Linux runner.
+2. **Agreement.** Run 2's disagreements with the native suite were attributed to causes fixed in 0.11.4 and
+   0.11.5 (more-itertools: a lint-only `make check` taken for the suite and a unittest marker; humanize: a
+   git-ignored version file missing from verify's copy). Are they gone? pyjwt's network-denied tests are expected
+   to stay `pre-existing` (verify's sandbox denies the network) and to be named as sandbox-network suspects.
+
+Run 3 is reported next to run 2 in RESULTS.md, whatever it shows. The reading rule is applied to run 3 alone;
+the two runs are not pooled. Spend: $0 (GitHub-hosted runner).
