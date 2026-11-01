@@ -20,6 +20,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from .. import gitbin
 from ..config import load_config
 from ..locks import file_lock
 from ..providers.discovery import PROVIDERS
@@ -110,7 +111,7 @@ def git(root: Path, *args: str, raw: bool = False) -> str:
     env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_SYSTEM=os.devnull, GIT_TERMINAL_PROMPT='0',
                GIT_AUTHOR_NAME='repo-ai mission', GIT_AUTHOR_EMAIL='local@example.invalid',
                GIT_COMMITTER_NAME='repo-ai mission', GIT_COMMITTER_EMAIL='local@example.invalid')
-    p = subprocess.run(['git', '--no-optional-locks', '-c', 'core.hooksPath=' + os.devnull,
+    p = subprocess.run([gitbin.git(), '--no-optional-locks', '-c', 'core.hooksPath=' + os.devnull,
                         '-c', 'core.fsmonitor=false', *args], cwd=root, env=env,
                        stdin=subprocess.DEVNULL, capture_output=True, timeout=20, check=False)
     if p.returncode:

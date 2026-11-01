@@ -23,6 +23,7 @@ from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
+from . import gitbin
 from .logging_setup import get_logger
 from .models import GitFileStat
 
@@ -34,7 +35,7 @@ _TIMEOUT = 90
 def _run(root: Path, args: list[str], timeout: int = _TIMEOUT) -> str:
     try:
         proc = subprocess.run(
-            ["git", "--no-optional-locks", *args], cwd=root, capture_output=True, text=True,
+            [gitbin.git(), "--no-optional-locks", *args], cwd=root, capture_output=True, text=True,
             timeout=timeout, check=False, encoding="utf-8", errors="replace",
         )
     except (OSError, subprocess.SubprocessError) as exc:

@@ -68,6 +68,7 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from . import gitbin
 from . import __version__, evals, integrity
 from .evals import Base, Task
 
@@ -275,7 +276,7 @@ def preflight_settings(settings: dict[str, Any], claude_cmd: list[str],
     try:
         (probe / ".claude").mkdir()
         (probe / ".claude" / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
-        subprocess.run(["git", "init", "-q"], cwd=probe, check=False, timeout=30)
+        subprocess.run([gitbin.git(), "init", "-q"], cwd=probe, check=False, timeout=30)
         env = {k: v for k, v in os.environ.items() if not k.startswith("REPO_AI_")}
         if config_dir:
             env["CLAUDE_CONFIG_DIR"] = str(config_dir)
@@ -695,9 +696,9 @@ def run_one(task: Task, base: Base, suite: Path, arm: Arm, opts: LabOptions, roo
         row["tool_calls"] = sum(metrics["tool_uses"].values())
         row["first_edit_s"] = _first_edit_s(lines)
         row["repo_ai_context_tokens_est"] = evals._flight_tokens(ws) if arm.uses_repo_ai else 0
-        changed = subprocess.run(["git", "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
+        changed = subprocess.run([gitbin.git(), "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
                                  text=True, check=False, timeout=60).stdout.split()
-        untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"], cwd=ws,
+        untracked = subprocess.run([gitbin.git(), "ls-files", "--others", "--exclude-standard"], cwd=ws,
                                    capture_output=True, text=True, check=False,
                                    timeout=60).stdout.split()
         # Running the code (tests, an import) leaves untracked bytecode and tool

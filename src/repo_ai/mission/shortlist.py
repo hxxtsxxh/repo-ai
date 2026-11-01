@@ -17,6 +17,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from .. import gitbin
+
 SCHEMA = 'repo-ai.shortlist/1'
 POLICIES = ('strict', 'smallest-diff')
 LABEL = 'POLICY_PREFERENCE'
@@ -64,7 +66,7 @@ def _post_images(root: Path, base: str, diff: str, files: list[str]) -> dict[str
         work.mkdir()
         before: dict[str, bytes] = {}
         for rel in files:
-            shown = subprocess.run(['git', '-c', 'core.hooksPath=/dev/null', 'show', '--end-of-options', f'{base}:{rel}'],
+            shown = subprocess.run([gitbin.git(), '-c', 'core.hooksPath=/dev/null', 'show', '--end-of-options', f'{base}:{rel}'],
                                    cwd=root, capture_output=True, timeout=30, stdin=subprocess.DEVNULL)
             if shown.returncode != 0:
                 return None  # a base we cannot read: no claim
@@ -72,7 +74,7 @@ def _post_images(root: Path, base: str, diff: str, files: list[str]) -> dict[str
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(shown.stdout)
             before[rel] = shown.stdout
-        applied = subprocess.run(['git', 'apply', '--whitespace=nowarn', '-'], cwd=work, input=diff.encode(),
+        applied = subprocess.run([gitbin.git(), 'apply', '--whitespace=nowarn', '-'], cwd=work, input=diff.encode(),
                                  capture_output=True, timeout=30, env=_git_env(Path(tmp)))
         if applied.returncode != 0:
             return None

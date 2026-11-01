@@ -34,6 +34,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from . import gitbin
+
 _DENIAL = ("permission denied", "operation not permitted", "was denied", "has been denied",
            "access denied", "blocked by", "eacces", "eperm")
 
@@ -126,7 +128,7 @@ def scan_transcript(lines: list[str], protected: list[str], canary: str) -> dict
 
 def _git_show(ws: Path, rel: str) -> str:
     try:
-        out = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=ws, capture_output=True, text=True,
+        out = subprocess.run([gitbin.git(), "show", f"HEAD:{rel}"], cwd=ws, capture_output=True, text=True,
                              check=False, timeout=30)
     except (OSError, subprocess.SubprocessError):
         return ""
