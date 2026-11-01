@@ -15,25 +15,27 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
   conformant agent is still `PLANNED` for execution. Gemini CLI 0.65.0 conforms; OpenCode 2.2.1 needs network to
   start its ACP mode and does not.
 - **Security** the probe sandbox of `agents doctor` (and the kit) did not deny LaunchServices `open` or Apple events
-  on macOS, so a probed program could start an application outside the sandbox. It now does; on Linux the probe gets
-  its own process namespace.
+  on macOS, so a probed program could start an application outside the sandbox, with network access. It now does; on
+  Linux the probe gets its own process namespace.
 - **Security** (disclosed, measured) on macOS the OpenCode providers' "loopback only" network reaches no other host,
   but seatbelt's `localhost` rule also admits the machine's own addresses and lets the agent listen on every
   interface. Earlier "loopback-only" wording (0.10.0, 0.11.3) is qualified by this.
 - **Security** (opt-in `SAFE_AUTO`) a preregistered unseen-corpus evaluation (skill-vet-fresh-v1) **failed**: 8 of 30
-  harmful prose-only skills would have installed without asking, and 6 of 10 harmful script-bearing skills were rated
+  harmful skills (all 8 prose-only) would have installed without asking, and 6 of 10 harmful script-bearing skills were rated
   `eligible`. The firewall now reads prose for seven instruction-risk classes (a match asks) and reads code for more
   harmful behaviour (now `review` or `blocked`). This is a hardening, not a validated detector: the confirming corpus
-  (v2) is not yet available.
+  (v2) is not yet available, and phrase checks can be paraphrased around.
 - **Added** verify flags failures that look like its sandbox's missing network (`summary.sandbox_network_suspected`;
   no verdict changes).
 - **Fixed** in real projects: a build-time version file (setuptools-scm, hatch-vcs) was missing from verify's copy; a
   lint-only `make check` was run as the test suite; `from unittest import TestCase` now marks a unittest suite.
 - **Evaluation** speed-v1: `verify --run` took 1.84× the native suite on 30 real commits, a negative result.
   journey-offline-v2: on 7 real upstream fixes, verify never reported a pass for the broken state (0 of 7) and
-  confirmed the fix in 3 of 6; uninstall left no tracked or untracked difference in 7 of 7. capability-fresh-v1: the
-  capability recommender **failed** (top-3 recall 0.69, gate 0.80); the deterministic matcher is a negative result
-  and Skill Radar stays experimental.
+  confirmed the fix in 3 of 6 (selected tests only; full suite not run); uninstall left no tracked or untracked
+  difference in 7 of 7 (ignored files and state outside the repository not checked). capability-fresh-v1: the
+  capability recommender **failed** (top-3 recall 0.69, gate 0.80, and 2 recommendations a stated constraint ruled
+  out); the deterministic matcher is a negative result and Skill Radar stays experimental. `--deny` remains the
+  enforced way to rule capabilities out.
 - **Tests** provider routing is checked over every provider under macOS and Linux platform names; tests that write
   attack-like fixtures run on CI and are skipped on developer machines unless `REPO_AI_SECURITY_FIXTURES=1`.
 
