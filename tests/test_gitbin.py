@@ -76,10 +76,8 @@ def test_xcode_select_output_is_used_only_when_it_is_one_absolute_path(monkeypat
     for out, want in (("/Library/Developer/CommandLineTools\n", "/Library/Developer/CommandLineTools"),
                       ("relative\n", None), ("/a\n/b\n", None), ("", None)):
         fake.out = out
-        gitbin._default_developer.cache_clear()
-        assert gitbin._default_developer() == want
+        assert gitbin._default_developer.__wrapped__() == want  # the process-wide cache is left alone
     assert calls[0] == [gitbin._XCODE_SELECT, "-p"]
-    gitbin._default_developer.cache_clear()
 
 
 def test_an_explicit_selection_never_falls_back_to_another_developer_dir(mac, monkeypatch):
