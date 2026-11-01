@@ -42,7 +42,7 @@ from .adapters import _execution_sandbox_prefix, contract_for
 from .discovery import PROVIDERS, discover
 
 POLICY_SCHEMA = "repo-ai.provider-policy/1"
-DEFAULT_ORDER = ("bob", "claude", "codex", "agy", "gemini", "opencode", "opencode-acp")
+DEFAULT_ORDER = ("bob", "claude", "codex", "agy", "opencode", "opencode-acp")
 COOLDOWN_SECONDS = 3600.0
 OBSERVATION_TTL = {"READY": 86_400.0, "USAGE_LIMITED": COOLDOWN_SECONDS, "AUTHORIZED_BUT_UNREADY": 3600.0,
                    "ACCOUNT_INELIGIBLE": 43_200.0}
