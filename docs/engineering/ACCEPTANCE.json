@@ -51,17 +51,18 @@
    "owner": "principal",
    "code_sha": "f53d027",
    "test_run": "tests/test_provider_claude_isolation.py",
-   "environment": "macOS Darwin 25.5 arm64, seatbelt, Claude Code 2.1.314, dedicated_config",
+   "environment": "macOS Darwin 25.5 arm64, seatbelt; Claude Code 2.1.314 dedicated_config (0.10.0 journeys), 2.1.316 token_env (2026-11-01)",
    "observations": [
-    "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code"
+    "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code",
+    "2026-11-01 token_env live check on the published 0.11.6 (Claude Code 2.1.316, token_env with only CLAUDE_CODE_OAUTH_TOKEN set in the running shell, ANTHROPIC_API_KEY unset; scratch HOME and no keychain by design): repo-ai do on a toy repository with a seeded bug: PASS, assurance FULL, full suite passed, correct one-line diff, tools Read/Edit only, no denied action, $0.0145 notional (docs/engineering/LIVE-SPEND-2026-11.md). The record does not name the mode in 0.11.6 (plan() picks token_env when a token variable is set; the variable was checked by presence); the mission record names the mode and variable names from the next release"
    ],
    "limits": [
     "n=1 synthetic tasks, single author",
-    "token_env mode and Linux not live-verified",
+    "Linux not live-verified; token_env live-verified once on macOS (n=1, toy task)",
     "in-sandbox token refresh not re-observed"
    ],
-   "next_action": "re-observe token refresh; token_env live check if owner creates a setup-token",
-   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md"
+   "next_action": "Linux live run (token_env, podman machine); re-observe dedicated_config token refresh",
+   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md; docs/engineering/LIVE-SPEND-2026-11.md"
   },
   {
    "id": "C04",
