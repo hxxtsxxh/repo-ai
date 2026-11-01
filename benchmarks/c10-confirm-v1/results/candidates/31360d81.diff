@@ -1,0 +1,111 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..f649a64 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -1,10 +1,19 @@
+ """The Inventory ledger: registered items plus their movement history."""
+ 
+-from stockroom.errors import DuplicateSkuError, InsufficientStockError, UnknownSkuError
++import logging
++
++from stockroom.errors import (
++    DuplicateSkuError,
++    InsufficientStockError,
++    InvalidQuantityError,
++    UnknownSkuError,
++)
+ from stockroom.models import Item, Movement
+ from stockroom.quantities import require_positive_quantity
+ from stockroom.skus import normalize_sku
+ 
++logger = logging.getLogger(__name__)
++
+ 
+ class Inventory:
+     """In-memory stock ledger for one warehouse."""
+@@ -13,6 +22,7 @@ class Inventory:
+         self._items = {}
+         self._on_hand = {}
+         self._movements = []
++        self._counters = {}
+ 
+     def add_item(self, item):
+         if not isinstance(item, Item):
+@@ -56,6 +66,40 @@ class Inventory:
+         self._movements.append(Movement(sku, -qty, "issue", at))
+         return self._on_hand[sku]
+ 
++    def _next_id(self, prefix):
++        """Return the next generated identifier for ``prefix`` (``PFX-000001``)."""
++        n = self._counters.get(prefix, 0) + 1
++        self._counters[prefix] = n
++        return f"{prefix}-{n:06d}"
++
++    def record_count(self, counts, at):
++        """Apply a physical stock count and return its ``CNT-`` identifier.
++
++        ``counts`` maps SKU to the counted units (a non-negative int). Every
++        line is validated first; if any fails, its error is raised and nothing
++        changes. SKUs whose count differs from on hand are set to the counted
++        quantity and get a ``count_adjust`` movement; matching SKUs get none.
++        """
++        planned = []
++        for raw_sku, counted in counts.items():
++            sku = self.item(raw_sku).sku
++            if isinstance(counted, bool) or not isinstance(counted, int) or counted < 0:
++                raise InvalidQuantityError(
++                    f"count must be a non-negative integer, got {counted!r}"
++                )
++            planned.append((sku, counted))
++
++        count_id = self._next_id("CNT")
++        for sku, counted in planned:
++            previous = self._on_hand[sku]
++            if counted == previous:
++                continue
++            self._on_hand[sku] = counted
++            self._movements.append(Movement(sku, counted - previous, "count_adjust", at))
++            if counted < previous:
++                logger.warning("count_adjust %d x %s", previous - counted, sku)
++        return count_id
++
+     def history(self, sku=None):
+         """Return movements in the order they were recorded.
+ 
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..2fa6c97 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -55,6 +55,32 @@ def test_history_order_and_sign(inv):
+     assert [m.delta for m in inv.history("blt-0001")] == [5, -2]
+ 
+ 
++def test_record_count(inv, caplog):
++    inv.receive("BLT-0001", 10, T0)
++    inv.receive("NUT-0001", 5, T0)
++    inv.receive("WSH-0001", 4, T0)
++    with caplog.at_level("WARNING", logger="stockroom"):
++        count_id = inv.record_count({"blt-0001": 7, "NUT-0001": 8, "WSH-0001": 4}, T0)
++    assert count_id == "CNT-000001"
++    assert [inv.on_hand(s) for s in ("BLT-0001", "NUT-0001", "WSH-0001")] == [7, 8, 4]
++    adjusts = [(m.sku, m.delta) for m in inv.history() if m.reason == "count_adjust"]
++    assert adjusts == [("BLT-0001", -3), ("NUT-0001", 3)]
++    assert [r.getMessage() for r in caplog.records] == ["count_adjust 3 x BLT-0001"]
++    assert inv.record_count({}, T0) == "CNT-000002"
++
++
++def test_record_count_is_all_or_nothing(inv):
++    inv.receive("BLT-0001", 10, T0)
++    before = inv.history()
++    with pytest.raises(UnknownSkuError):
++        inv.record_count({"BLT-0001": 2, "ZZZ-9999": 1}, T0)
++    with pytest.raises(InvalidQuantityError):
++        inv.record_count({"BLT-0001": 2, "NUT-0001": -1}, T0)
++    assert inv.on_hand("BLT-0001") == 10
++    assert inv.history() == before
++    assert inv.record_count({"BLT-0001": 0}, T0) == "CNT-000001"
++
++
+ def test_items_sorted_by_sku(inv):
+     inv.add_item(Item("AAA-0001", "Anchor", 100))
+     assert [i.sku for i in inv.items()] == ["AAA-0001", "BLT-0001", "NUT-0001", "WSH-0001"]

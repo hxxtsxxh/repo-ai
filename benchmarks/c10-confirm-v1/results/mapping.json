@@ -1,0 +1,295 @@
+{
+ "seed": 1323758276,
+ "skill": "stockroom-conventions",
+ "approve": "f16852915f9e531e38e44e55a38795a68d30ea3090dc75f28b859c558dc1c1ee",
+ "runs": [
+  {
+   "task": "t2",
+   "arm": "control",
+   "repeat": 1,
+   "id": "d7aebc7a"
+  },
+  {
+   "task": "t8",
+   "arm": "control",
+   "repeat": 1,
+   "id": "3e14b5e9"
+  },
+  {
+   "task": "t6",
+   "arm": "control",
+   "repeat": 2,
+   "id": "06864e26"
+  },
+  {
+   "task": "t1",
+   "arm": "control",
+   "repeat": 0,
+   "id": "6e155f70"
+  },
+  {
+   "task": "t7",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "c6476272"
+  },
+  {
+   "task": "t2",
+   "arm": "control",
+   "repeat": 2,
+   "id": "ee67994e"
+  },
+  {
+   "task": "t4",
+   "arm": "control",
+   "repeat": 2,
+   "id": "695c233a"
+  },
+  {
+   "task": "t8",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "c07a03b7"
+  },
+  {
+   "task": "t4",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "97edfafc"
+  },
+  {
+   "task": "t3",
+   "arm": "control",
+   "repeat": 2,
+   "id": "bdceb048"
+  },
+  {
+   "task": "t1",
+   "arm": "control",
+   "repeat": 1,
+   "id": "f47f7d29"
+  },
+  {
+   "task": "t5",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "223c4833"
+  },
+  {
+   "task": "t3",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "31360d81"
+  },
+  {
+   "task": "t5",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "c30883dd"
+  },
+  {
+   "task": "t6",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "07306c77"
+  },
+  {
+   "task": "t6",
+   "arm": "control",
+   "repeat": 0,
+   "id": "27aca516"
+  },
+  {
+   "task": "t8",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "483478f7"
+  },
+  {
+   "task": "t7",
+   "arm": "control",
+   "repeat": 0,
+   "id": "22fdc8ed"
+  },
+  {
+   "task": "t5",
+   "arm": "control",
+   "repeat": 1,
+   "id": "24dd1d60"
+  },
+  {
+   "task": "t7",
+   "arm": "control",
+   "repeat": 2,
+   "id": "b43a367d"
+  },
+  {
+   "task": "t6",
+   "arm": "control",
+   "repeat": 1,
+   "id": "15a77947"
+  },
+  {
+   "task": "t1",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "18e92d57"
+  },
+  {
+   "task": "t5",
+   "arm": "control",
+   "repeat": 0,
+   "id": "88b0bb5b"
+  },
+  {
+   "task": "t3",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "69839a58"
+  },
+  {
+   "task": "t4",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "113ec3aa"
+  },
+  {
+   "task": "t7",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "d33f4cb4"
+  },
+  {
+   "task": "t6",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "a413662c"
+  },
+  {
+   "task": "t3",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "c3de7098"
+  },
+  {
+   "task": "t4",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "4afdc763"
+  },
+  {
+   "task": "t7",
+   "arm": "control",
+   "repeat": 1,
+   "id": "4275bc7a"
+  },
+  {
+   "task": "t6",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "fb94a74b"
+  },
+  {
+   "task": "t3",
+   "arm": "control",
+   "repeat": 0,
+   "id": "e2165160"
+  },
+  {
+   "task": "t8",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "9a77d3cb"
+  },
+  {
+   "task": "t4",
+   "arm": "control",
+   "repeat": 0,
+   "id": "7e39b10e"
+  },
+  {
+   "task": "t7",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "ad548689"
+  },
+  {
+   "task": "t2",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "e55fa845"
+  },
+  {
+   "task": "t1",
+   "arm": "control",
+   "repeat": 2,
+   "id": "eac71532"
+  },
+  {
+   "task": "t3",
+   "arm": "control",
+   "repeat": 1,
+   "id": "422b64b8"
+  },
+  {
+   "task": "t2",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "017192a6"
+  },
+  {
+   "task": "t4",
+   "arm": "control",
+   "repeat": 1,
+   "id": "eae5478c"
+  },
+  {
+   "task": "t1",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "3fe0b4e2"
+  },
+  {
+   "task": "t2",
+   "arm": "control",
+   "repeat": 0,
+   "id": "def422af"
+  },
+  {
+   "task": "t5",
+   "arm": "control",
+   "repeat": 2,
+   "id": "40f794cb"
+  },
+  {
+   "task": "t2",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "311a24c9"
+  },
+  {
+   "task": "t8",
+   "arm": "control",
+   "repeat": 0,
+   "id": "f5e39e65"
+  },
+  {
+   "task": "t1",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "7461f0f8"
+  },
+  {
+   "task": "t8",
+   "arm": "control",
+   "repeat": 2,
+   "id": "cfb213a3"
+  },
+  {
+   "task": "t5",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "1bf6e543"
+  }
+ ]
+}

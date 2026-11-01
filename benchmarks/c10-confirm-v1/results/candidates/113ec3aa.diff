@@ -1,0 +1,25 @@
+diff --git a/stockroom/valuation.py b/stockroom/valuation.py
+index baa5d53..4395492 100644
+--- a/stockroom/valuation.py
++++ b/stockroom/valuation.py
+@@ -1,5 +1,7 @@
+ """Stock valuation at unit cost. All amounts are integer cents."""
+ 
++from decimal import ROUND_HALF_EVEN, Decimal
++
+ 
+ def item_value_cents(inventory, sku):
+     item = inventory.item(sku)
+@@ -8,3 +10,12 @@ def item_value_cents(inventory, sku):
+ 
+ def total_value_cents(inventory):
+     return sum(item_value_cents(inventory, item.sku) for item in inventory.items())
++
++
++def average_unit_cost_cents(inventory):
++    """Weighted average unit cost in cents (banker's rounding), or None if no units on hand."""
++    total_units = sum(inventory.on_hand(item.sku) for item in inventory.items())
++    if total_units == 0:
++        return None
++    average = Decimal(total_value_cents(inventory)) / Decimal(total_units)
++    return int(average.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))

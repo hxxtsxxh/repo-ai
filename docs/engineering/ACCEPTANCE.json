@@ -174,21 +174,23 @@
   {
    "id": "C10",
    "title": "Skill value evidence",
-   "status": "NOT_YET_DEMONSTRATED",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "paired run shows the instruction is followed, not that outcomes improve",
-    "pilot 2026-10-30 (6 haiku calls, predeclared rule): INCONCLUSIVE - skill higher on t2 (per-line tax, 7/7 vs 4/7), control higher on t1 (6/8 vs 8/8; oracle rounding ambiguity found post hoc), tie on t3; skill invoked unprompted 3/3; evidence/SKILL-VALUE-PILOT-2026-10-30.md"
+    "pilot 2026-10-30 (6 haiku calls, predeclared rule): INCONCLUSIVE - skill higher on t2 (per-line tax, 7/7 vs 4/7), control higher on t1 (6/8 vs 8/8; oracle rounding ambiguity found post hoc), tie on t3; skill invoked unprompted 3/3; evidence/SKILL-VALUE-PILOT-2026-10-30.md",
+    "2026-11-01 c10-confirm-v1, on one fixture project and 8 tasks (preregistered; fixture+skill, tasks+oracles and ambiguity review by three separate model sessions; 8 tasks x 2 arms x 3 repeats, sonnet, token_env with an empty config dir per run): SUPPORTED, skill arm higher on 8 of 8 tasks (sign test p = 0.0039); convention score 1.000 vs 0.319, baseline score 1.000 vs 0.875 (three control runs ended without editing after reading a mangled path; without them 8 of 8 holds and the control baseline is 1.000); skill invoked unprompted in 24 of 24; $3.25 notional (benchmarks/c10-confirm-v1/RESULTS.md)"
    ],
    "limits": [
-    "single author of fixture, skill, tasks and oracle",
-    "one model, n = 3 pairs",
-    "designed knowledge gap"
+    "one fixture project, one model, one project-conventions skill (its value is by construction the rules the code does not show)",
+    "authors and reviewer were separate model sessions, not people; host mode only",
+    "says nothing about third-party skills in general or about repo-ai's discovery choosing helpful skills",
+    "the control had no conventions text: shows conventions-as-installed-skill vs none, not the skill format vs the same text elsewhere (e.g. CLAUDE.md)"
    ],
-   "next_action": "confirmatory trial with independently written tasks/oracles and unambiguous rules"
+   "next_action": "repeat on a second project and model; a third-party skill trial"
   },
   {
    "id": "C11",

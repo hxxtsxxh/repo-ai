@@ -1,6 +1,6 @@
 {
   "schema": "repo-ai.evidence-matrix/1",
-  "updated": "2026-10-31",
+  "updated": "2026-11-01",
   "about": "Machine-readable evidence ledger behind the website's Evidence Lab. Condensed from docs/launch/ACCEPTANCE.json, docs/STATUS.md, docs/launch/EVALUATION.md and the study results they cite; when an entry and its source disagree, the source is the record. scripts/site_facts.py validates this file and copies it into site/src/data/release-facts.json. Dates given as YYYY-MM are not recorded more precisely in the public tree; date_note says what is known.",
   "statuses": {
     "DEMONSTRATED": "Measured on fresh or held-out data under a frozen protocol; the claim holds within the stated scope.",
@@ -406,6 +406,19 @@
       "method": "repo-ai do --agent codex --expect-fix … on a development build of the init-then-do fix (0.11.0 itself refused the run because of that first-run bug).",
       "limits": "One repository, one task, regression injected by the author; the claim stays ASSURANCE_PARTIAL. The passing run used a development build of the init-then-do fix (PR #11, released in 0.11.1): 0.11.0 itself refused the run. The Claude provider attempt was blocked by a revoked login. The post-apply run in the real checkout reported 0 failures where the sandbox saw 20 (unexplained).",
       "source": "docs/engineering/evidence/REAL-PROJECT-2026-10-30.md",
+      "featured": true
+    },
+    {
+      "id": "skill-value-conventions",
+      "title": "A repo-ai-installed project-conventions skill improves Claude Code's adherence to project conventions, on one fixture project (8 tasks, sonnet)",
+      "status": "DEMONSTRATED",
+      "stat": "8 of 8 tasks",
+      "result": "Preregistered c10-confirm-v1: with the skill installed by repo-ai, Claude Code (sonnet) satisfied every convention assertion in all 24 runs; without it, about a third (0.319). Skill arm higher on 8 of 8 tasks (sign test p = 0.0039); the requested behaviour itself was not hurt (baseline 1.000 vs 0.875, 1.000 once three control runs that ended without editing are set aside).",
+      "date": "2026-11-01",
+      "sample_size": "48 runs (8 tasks x 2 arms x 3 repeats)",
+      "method": "benchmarks/c10-confirm-v1: protocol committed before any material; fixture and skill, tasks and hidden oracles, and an ambiguity review written by three separate model sessions; host mode, a new empty Claude config per run; grading by script in a network-denied sandbox.",
+      "limits": "One fixture project, one model, one conventions skill (its value is by construction the rules the code does not show); the authors were model sessions, not people. It does not show that third-party skills in general, or repo-ai's discovery, pick skills that help. The control had no conventions text at all, so it does not show a benefit of the skill format over the same text elsewhere (e.g. CLAUDE.md).",
+      "source": "benchmarks/c10-confirm-v1/RESULTS.md",
       "featured": true
     }
   ]

@@ -1,0 +1,226 @@
+{
+ "tasks": [
+  {
+   "id": "t1",
+   "request": "Please add a method `Inventory.write_off(sku, qty, at)` to `stockroom/inventory.py` for stock that is damaged, lost or expired. It removes `qty` units of `sku` from on-hand stock, records a `Movement` with reason `\"write_off\"` and a negative delta of `-qty` at time `at`, and returns the new on-hand level. It must not be possible to write off more units than are on hand or to write off a nonsensical quantity. Please add a test for it.",
+   "assertions": [
+    {
+     "test": "test_t1_baseline_write_off_reduces_stock",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t1_convention_logs_one_warning",
+     "kind": "convention",
+     "rule": 14,
+     "why": "rule 14: non-issue removal emits exactly one WARNING '<reason> <qty> x <SKU>' via a stockroom.* logger -> 'write_off 3 x BLT-0001'"
+    },
+    {
+     "test": "test_t1_convention_insufficient_stock_error",
+     "kind": "convention",
+     "rule": 4,
+     "why": "rule 4: taking more than on hand raises InsufficientStockError 'insufficient stock for NUT-0001: requested 5, on hand 3'"
+    },
+    {
+     "test": "test_t1_convention_invalid_quantity",
+     "kind": "convention",
+     "rule": 3,
+     "why": "rule 3: qty 0 raises InvalidQuantityError 'quantity must be a positive integer, got 0'"
+    }
+   ]
+  },
+  {
+   "id": "t2",
+   "request": "Pickers often pull several items for one order, so please add a method `Inventory.issue_many(lines, at)` to `stockroom/inventory.py`. `lines` is a sequence of `(sku, qty)` pairs; each line is issued exactly like `Inventory.issue` (an `\"issue\"` movement with delta `-qty` at time `at`, recorded in the order of the lines). The method returns a generated identifier for the batch; batch identifiers use the prefix `BAT`. Please add a test.",
+   "assertions": [
+    {
+     "test": "test_t2_baseline_issue_many_issues_every_line",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t2_convention_failed_batch_changes_nothing",
+     "kind": "convention",
+     "rule": 12,
+     "why": "rule 12: a failing line raises its error and leaves on-hand levels and history exactly as before"
+    },
+    {
+     "test": "test_t2_convention_first_failing_line_wins",
+     "kind": "convention",
+     "rule": 12,
+     "why": "rule 12: the first failing line in input order (unknown SKU) determines the raised error"
+    },
+    {
+     "test": "test_t2_convention_batch_ids",
+     "kind": "convention",
+     "rule": 13,
+     "why": "rule 13: '<PREFIX>-<n>' zero-padded to 6 digits, per-Inventory counter from 1 -> BAT-000001, BAT-000002, new inventory BAT-000001"
+    }
+   ]
+  },
+  {
+   "id": "t3",
+   "request": "Please add a method `Inventory.record_count(counts, at)` to `stockroom/inventory.py` for applying the result of a physical stock count. `counts` is a mapping of SKU to the counted number of units (a non-negative int). For every SKU in the mapping whose counted quantity differs from the current on-hand level, set the on-hand level to the counted quantity and record a `Movement` with reason `\"count_adjust\"` and delta `counted - previous_on_hand` at time `at`; SKUs whose count matches get no movement. The method returns a generated identifier for the count; count identifiers use the prefix `CNT`. Please add a test.",
+   "assertions": [
+    {
+     "test": "test_t3_baseline_count_sets_levels",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t3_convention_shrinkage_logs_warning",
+     "kind": "convention",
+     "rule": 14,
+     "why": "rule 14: negative adjustment emits exactly one WARNING '<reason> <qty> x <SKU>' via stockroom.* logger -> 'count_adjust 4 x BLT-0001'"
+    },
+    {
+     "test": "test_t3_convention_bad_line_changes_nothing",
+     "kind": "convention",
+     "rule": 12,
+     "why": "rule 12: a stock count with a failing line (unknown SKU) raises and changes nothing"
+    },
+    {
+     "test": "test_t3_convention_count_ids",
+     "kind": "convention",
+     "rule": 13,
+     "why": "rule 13: per-Inventory counter, 6-digit padding -> CNT-000001, CNT-000002, fresh inventory CNT-000001"
+    }
+   ]
+  },
+  {
+   "id": "t4",
+   "request": "Please add a function `average_unit_cost_cents(inventory)` to `stockroom/valuation.py` that returns the weighted average unit cost of the stock currently on hand: the total stock value divided by the total number of units on hand across all items.",
+   "assertions": [
+    {
+     "test": "test_t4_baseline_weighted_average",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t4_convention_half_even_rounding",
+     "kind": "convention",
+     "rule": 6,
+     "why": "rule 6: ROUND_HALF_EVEN to whole cents: 250/100 -> 2, 350/100 -> 4"
+    },
+    {
+     "test": "test_t4_convention_no_stock_returns_none",
+     "kind": "convention",
+     "rule": 8,
+     "why": "rule 8: average over zero units returns None"
+    },
+    {
+     "test": "test_t4_convention_result_is_int_cents",
+     "kind": "convention",
+     "rule": 1,
+     "why": "rule 1: money is an int number of cents (type int, not float/Decimal)"
+    }
+   ]
+  },
+  {
+   "id": "t5",
+   "request": "Please add a function `value_share_percent(inventory, sku)` to `stockroom/valuation.py` that returns the given item's share of the total stock value (on hand x unit cost, across all items) as a percentage, e.g. an item holding a quarter of the stock value gives 25.",
+   "assertions": [
+    {
+     "test": "test_t5_baseline_share_of_value",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t5_convention_percentage_format",
+     "kind": "convention",
+     "rule": 9,
+     "why": "rule 9: Decimal, 0-100, one decimal place, ROUND_HALF_UP: 1/16 -> Decimal('6.3'); 1/1 -> Decimal('100.0')"
+    },
+    {
+     "test": "test_t5_convention_zero_total_returns_none",
+     "kind": "convention",
+     "rule": 8,
+     "why": "rule 8: ratio with zero denominator (total value 0) returns None"
+    }
+   ]
+  },
+  {
+   "id": "t6",
+   "request": "Please add a method `Inventory.movements_between(start, end, sku=None)` to `stockroom/inventory.py` that returns the recorded movements whose timestamp falls within the period from `start` to `end` (both datetimes), optionally restricted to one SKU like `Inventory.history`. Please add a test.",
+   "assertions": [
+    {
+     "test": "test_t6_baseline_filters_by_period",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t6_convention_half_open_period",
+     "kind": "convention",
+     "rule": 10,
+     "why": "rule 10: start <= at < end: movement at start included, at end excluded"
+    },
+    {
+     "test": "test_t6_convention_invalid_period",
+     "kind": "convention",
+     "rule": 10,
+     "why": "rule 10: start >= end raises InvalidPeriodError (stockroom.errors, StockroomError+ValueError) 'period start must be before end'"
+    },
+    {
+     "test": "test_t6_convention_tuple_in_recorded_order",
+     "kind": "convention",
+     "rule": 5,
+     "why": "rule 5: tuple, movements in recorded order (not timestamp order)"
+    }
+   ]
+  },
+  {
+   "id": "t7",
+   "request": "Please add a function `movement_lines(inventory, sku=None)` to `stockroom/report.py` that renders the movement history (all movements, or only one SKU's when `sku` is given) as text, one string per movement in the form `\"<timestamp> <SKU> <delta> <reason>\"` separated by single spaces, where `<timestamp>` is the movement's time and `<delta>` is the signed delta with an explicit sign (`+5`, `-2`).",
+   "assertions": [
+    {
+     "test": "test_t7_baseline_line_fields",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t7_convention_timestamp_rendering",
+     "kind": "convention",
+     "rule": 11,
+     "why": "rule 11: UTC, ISO 8601 seconds, 'Z', microseconds truncated: 11:30:15.987654+02:00 -> 2024-03-01T09:30:15Z"
+    }
+   ]
+  },
+  {
+   "id": "t8",
+   "request": "Please add a new module `stockroom/movers.py` with a function `top_movers(inventory, start, end, n)` that reports the fastest-moving items over a period: for each SKU, sum the units removed by `\"issue\"` movements whose timestamp falls in the period from `start` to `end`, and return at most `n` `(sku, units_issued)` pairs for SKUs with at least one such issue, highest `units_issued` first.",
+   "assertions": [
+    {
+     "test": "test_t8_baseline_ranks_by_units_issued",
+     "kind": "baseline",
+     "rule": null,
+     "why": "requested behaviour on an input no convention decides"
+    },
+    {
+     "test": "test_t8_convention_ties_broken_by_sku",
+     "kind": "convention",
+     "rule": 7,
+     "why": "rule 7: metric descending, ties by SKU ascending -> BLT, NUT, WSH after PIN"
+    },
+    {
+     "test": "test_t8_convention_half_open_period",
+     "kind": "convention",
+     "rule": 10,
+     "why": "rule 10: issue at start counted, issue at end excluded"
+    },
+    {
+     "test": "test_t8_convention_returns_tuple",
+     "kind": "convention",
+     "rule": 5,
+     "why": "rule 5: several records returned as a tuple"
+    }
+   ]
+  }
+ ]
+}

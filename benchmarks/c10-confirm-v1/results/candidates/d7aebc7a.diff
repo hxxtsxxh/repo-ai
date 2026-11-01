@@ -1,0 +1,74 @@
+diff --git a/stockroom/inventory.py b/stockroom/inventory.py
+index d4b46c7..5d9ca40 100644
+--- a/stockroom/inventory.py
++++ b/stockroom/inventory.py
+@@ -13,6 +13,7 @@ class Inventory:
+         self._items = {}
+         self._on_hand = {}
+         self._movements = []
++        self._batch_count = 0
+ 
+     def add_item(self, item):
+         if not isinstance(item, Item):
+@@ -56,6 +57,25 @@ class Inventory:
+         self._movements.append(Movement(sku, -qty, "issue", at))
+         return self._on_hand[sku]
+ 
++    def issue_many(self, lines, at):
++        """Issue every ``(sku, qty)`` line at time ``at`` and return a batch id.
++
++        Each line is recorded exactly like :meth:`issue`, in line order. The
++        batch is all-or-nothing: if any line is invalid or stock is
++        insufficient (counting earlier lines for the same SKU), nothing is
++        issued. Batch ids look like ``BAT-0001`` and are unique per Inventory.
++        """
++        lines = [(self.item(sku).sku, require_positive_quantity(qty)) for sku, qty in lines]
++        remaining = dict(self._on_hand)
++        for sku, qty in lines:
++            if qty > remaining[sku]:
++                raise InsufficientStockError(sku, qty, remaining[sku])
++            remaining[sku] -= qty
++        for sku, qty in lines:
++            self.issue(sku, qty, at)
++        self._batch_count += 1
++        return f"BAT-{self._batch_count:04d}"
++
+     def history(self, sku=None):
+         """Return movements in the order they were recorded.
+ 
+diff --git a/tests/test_inventory.py b/tests/test_inventory.py
+index 567f0ba..8a1d0bc 100644
+--- a/tests/test_inventory.py
++++ b/tests/test_inventory.py
+@@ -55,6 +55,31 @@ def test_history_order_and_sign(inv):
+     assert [m.delta for m in inv.history("blt-0001")] == [5, -2]
+ 
+ 
++def test_issue_many(inv):
++    inv.receive("BLT-0001", 10, T0)
++    inv.receive("NUT-0001", 10, T0)
++    batch = inv.issue_many([("blt-0001", 3), ("NUT-0001", 4), ("BLT-0001", 2)], T0)
++    assert batch == "BAT-0001"
++    assert [(m.sku, m.delta, m.reason, m.at) for m in inv.history()[2:]] == [
++        ("BLT-0001", -3, "issue", T0),
++        ("NUT-0001", -4, "issue", T0),
++        ("BLT-0001", -2, "issue", T0),
++    ]
++    assert inv.on_hand("BLT-0001") == 5
++    assert inv.on_hand("NUT-0001") == 6
++    assert inv.issue_many([("BLT-0001", 1)], T0) == "BAT-0002"
++
++
++def test_issue_many_is_all_or_nothing(inv):
++    inv.receive("BLT-0001", 5, T0)
++    with pytest.raises(InsufficientStockError):
++        inv.issue_many([("BLT-0001", 3), ("BLT-0001", 3)], T0)
++    with pytest.raises(UnknownSkuError):
++        inv.issue_many([("BLT-0001", 1), ("ZZZ-9999", 1)], T0)
++    assert inv.on_hand("BLT-0001") == 5
++    assert len(inv.history()) == 1
++
++
+ def test_items_sorted_by_sku(inv):
+     inv.add_item(Item("AAA-0001", "Anchor", 100))
+     assert [i.sku for i in inv.items()] == ["AAA-0001", "BLT-0001", "NUT-0001", "WSH-0001"]
