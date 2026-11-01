@@ -1,12 +1,16 @@
-"""Which name-matched test files pytest's own configuration would not collect, for a note only.
+"""Which name-matched test files pytest's `norecursedirs` keeps out of a full run, for a note only.
 
 verify matches pytest test files by name until `repo-ai verify --record` has captured pytest's own collection, and it
 never removes a file on a static reading of the configuration (a wrong reading would hide a test). But a targeted run
-names files on pytest's command line, and pytest collects a named file even inside a `norecursedirs` directory or
-outside `testpaths`; a full run does not. So a targeted and a full run of one state can disagree (speed-v1:
-marshmallow's `tests/mypy_test_cases`). This module reads `norecursedirs` and `testpaths` from the configuration file
-pytest would use, to name such files in the plan's uncertainty. It parses text only and never imports or runs
-anything from the repository.
+names files on pytest's command line, and pytest collects a named file even inside a `norecursedirs` directory; a
+full run, which recurses, does not. So a targeted and a full run of one state can disagree (speed-v1: marshmallow's
+`tests/mypy_test_cases`). This module reads `norecursedirs` from the configuration file pytest would use, to name
+such files in the plan's uncertainty.
+
+Deliberately narrow, so that a note is right when it appears: only `norecursedirs` (not `testpaths`, whose use
+depends on how pytest is invoked); no note when the command chooses the configuration or rootdir itself (`-c`,
+`--config-file`, `--rootdir`, `-o`/`--override-ini`, `--pyargs`); a parse error, a linked file or an oversized
+value ends the search with no note. It parses text only and never imports or runs anything from the repository.
 """
 from __future__ import annotations
 
@@ -21,67 +25,83 @@ except ModuleNotFoundError:  # pragma: no cover - 3.10
     import tomli as tomllib  # type: ignore[no-redef]
 
 MAX_CONFIG_BYTES = 1_000_000
-# pytest's lookup order within one directory (pytest 9 also reads pytest.toml and [tool.pytest])
-CANDIDATES = ("pytest.ini", ".pytest.ini", "pytest.toml", ".pytest.toml", "pyproject.toml", "tox.ini", "setup.cfg")
+MAX_PATTERNS = 256
+# pytest 9's lookup order within one directory (pytest 8 has no pytest.toml and no native [tool.pytest])
+CANDIDATES = ("pytest.toml", ".pytest.toml", "pytest.ini", ".pytest.ini", "pyproject.toml", "tox.ini", "setup.cfg")
+CONFIG_OPTIONS = ("-c", "--config-file", "--rootdir", "-o", "--override-ini", "--pyargs", "--inifile")
+_STOP = object()  # pytest would use this file but it cannot be read here: no note, and no other file either
 
 
-def _words(value: object) -> list[str]:
+def _words(value: object) -> list[str] | None:
     if isinstance(value, list):
-        return [str(v) for v in value if isinstance(v, (str, int, float))]
+        return [str(v) for v in value if isinstance(v, str)]
     if isinstance(value, str):
         try:
             return shlex.split(value)
         except ValueError:
             return value.split()
-    return []
+    return None
 
 
-def _read(path: Path) -> dict[str, list[str]] | None:
-    """The [pytest] settings of one candidate file, or None when it is not pytest's configuration file."""
+def _read(path: Path):
+    """The settings of one candidate: a dict when pytest would use the file, None when pytest would look further,
+    _STOP when pytest would use it but it cannot be read safely here."""
     try:
-        if not path.is_file() or path.is_symlink() or path.stat().st_size > MAX_CONFIG_BYTES:
+        if path.is_symlink():
+            return _STOP if path.exists() else None
+        if not path.is_file():
             return None
+        if path.stat().st_size > MAX_CONFIG_BYTES:
+            return _STOP
         text = path.read_text("utf-8", errors="replace")
     except OSError:
         return None
     name = path.name
-    section: dict | None = None
-    if name.endswith(".toml"):
-        try:
+    try:
+        if name.endswith(".toml"):
             data = tomllib.loads(text)
-        except (tomllib.TOMLDecodeError, ValueError):
-            return None
-        if name == "pyproject.toml":
-            tool = data.get("tool", {}).get("pytest") if isinstance(data.get("tool"), dict) else None
-            if not isinstance(tool, dict):
-                return None
-            section = tool.get("ini_options") if isinstance(tool.get("ini_options"), dict) else tool
+            if name == "pyproject.toml":
+                tool = data.get("tool")
+                pytest_table = tool.get("pytest") if isinstance(tool, dict) else None
+                if not isinstance(pytest_table, dict):
+                    return None
+                if isinstance(pytest_table.get("ini_options"), dict):
+                    section = pytest_table["ini_options"]
+                else:
+                    section = {k: v for k, v in pytest_table.items() if k != "ini_options"}
+                    if not section:
+                        return None  # an empty [tool.pytest]: pytest looks further
+            else:  # pytest.toml / .pytest.toml: always the file; settings under [pytest]
+                section = data.get("pytest") if isinstance(data.get("pytest"), dict) else {}
         else:
-            section = data.get("pytest") if isinstance(data.get("pytest"), dict) else data
-    else:
-        parser = configparser.RawConfigParser(strict=False, interpolation=None)
-        try:
+            parser = configparser.RawConfigParser(strict=False, interpolation=None, default_section="\0none")
+            parser.optionxform = str  # type: ignore[assignment,method-assign]  # pytest's keys are case-sensitive
             parser.read_string(text, source=name)
-        except configparser.Error:
-            return None
-        key = "tool:pytest" if name == "setup.cfg" else "pytest"
-        if not parser.has_section(key):
-            return None if name in {"tox.ini", "setup.cfg"} else {}  # pytest.ini is the file even when empty
-        section = dict(parser.items(key))
-    return {k: _words(section.get(k)) for k in ("norecursedirs", "testpaths") if section.get(k) is not None}
+            key = "tool:pytest" if name == "setup.cfg" else "pytest"
+            if not parser.has_section(key):
+                return None if name in {"tox.ini", "setup.cfg"} else {}  # pytest.ini is the file even when empty
+            section = dict(parser.items(key))
+    except (tomllib.TOMLDecodeError, configparser.Error, ValueError, RecursionError):
+        return _STOP  # pytest itself would stop with an error here
+    patterns = _words(section.get("norecursedirs")) if "norecursedirs" in section else []
+    if patterns is None or len(patterns) > MAX_PATTERNS:
+        return _STOP
+    other = sorted(k for k in section if k in {"testpaths", "python_files", "addopts", "collect_ignore"})
+    return {"norecursedirs": patterns, "other": other}
 
 
-def find_config(root: Path, start: str = "") -> tuple[str, dict[str, list[str]]] | None:
-    """(repo-relative config file, settings) as pytest would pick it from `start` upward, inside the repository."""
+def find_config(root: Path, start: str = ""):
+    """(repo-relative config file, settings) as pytest would pick it from `start` upward, inside the repository;
+    None when there is none or it cannot be read safely."""
     root = root.resolve()
     cur = (root / start).resolve() if start else root
     if cur != root and root not in cur.parents:
-        cur = root
+        return None
     while True:
         for name in CANDIDATES:
-            if (cur / name).is_symlink():
-                return None  # pytest would follow it; this reader does not, and naming another file would mislead
             found = _read(cur / name)
+            if found is _STOP:
+                return None
             if found is not None:
                 return (cur / name).relative_to(root).as_posix(), found
         if cur == root:
@@ -97,29 +117,41 @@ def _fnmatch_ex(pattern: str, path: PurePosixPath) -> bool:
     return fnmatch.fnmatch(str(path), pattern if pattern.startswith("/") else "*/" + pattern)
 
 
-def skipped_by_config(root: Path, test_files: list[str], start: str = "") -> tuple[str, dict[str, list[str]]]:
-    """(config file, {reason: [repo-relative files]}) for name-matched test files a full pytest run would not
-    collect: under a `norecursedirs` directory, or outside every `testpaths` entry. Empty when nothing applies."""
+def _chooses_config(argv: list[str]) -> bool:
+    for tok in argv:
+        for opt in CONFIG_OPTIONS:
+            if tok == opt or tok.startswith(opt + "="):
+                return True
+            if opt in {"-c", "-o"} and tok.startswith(opt) and len(tok) > 2:  # -cfile, -okey=value
+                return True
+    return False
+
+
+def skipped_by_config(root: Path, test_files: list[str], start: str = "", argv: list[str] | None = None,
+                      paths: list[str] | None = None) -> tuple[str, list[str], dict[str, list[str]]]:
+    """(config file, other collection settings present, {"norecursedirs <pattern>": [files]}) for name-matched test
+    files a full pytest run would not reach because `norecursedirs` stops its recursion above them. Only directories
+    strictly below where pytest starts (the command's paths, else `start`) count: pytest never applies
+    `norecursedirs` to an initial path or its parents. Empty when the command chooses its own configuration."""
+    if _chooses_config(argv or []):
+        return "", [], {}
     found = find_config(root, start)
     if found is None:
-        return "", {}
+        return "", [], {}
     cfg_rel, settings = found
-    base = PurePosixPath(cfg_rel).parent
+    base = PurePosixPath(start) if start not in {"", "."} else PurePosixPath()
+    roots = [base / p for p in (paths or [])] or [base]
     skipped: dict[str, list[str]] = {}
     for rel in test_files:
         p = PurePosixPath(rel)
-        try:
-            inside = p.relative_to(base) if str(base) != "." else p
-        except ValueError:
+        top = next((r for r in roots if str(r) in {"", "."} or r in p.parents), None)
+        if top is None:
             continue
+        below = p.relative_to(top) if str(top) not in {"", "."} else p
         anchored = PurePosixPath("/") / p  # pytest matches absolute paths: anchor so "*/a/b" can match "a/b"
-        dirs = [anchored.parents[i] for i in range(len(inside.parts) - 1)]
-        for pat in settings.get("norecursedirs", []):
+        dirs = [anchored.parents[i] for i in range(len(below.parts) - 1)]  # strictly below the start
+        for pat in settings["norecursedirs"]:
             if any(_fnmatch_ex(pat, d) for d in dirs):
                 skipped.setdefault(f"norecursedirs {pat}", []).append(rel)
                 break
-        paths = settings.get("testpaths", [])
-        if paths and not any(inside == PurePosixPath(t) or fnmatch.fnmatch(str(inside), t.rstrip("/") + "/*")
-                             or PurePosixPath(t) in inside.parents for t in paths):
-            skipped.setdefault("outside testpaths " + " ".join(paths), []).append(rel)
-    return cfg_rel, skipped
+    return cfg_rel, settings["other"], skipped
