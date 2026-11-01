@@ -196,7 +196,7 @@ def _ws(tmp_path, files):
 def test_large_binary_change_outside_write_paths_detected(tmp_path):
     big = os.urandom(3_000_000)
     root, ws = _ws(tmp_path, {"src/a.py": b"x=1\n", "data/model.bin": big})
-    (ws / "data/model.bin").write_bytes(big[:-1] + b"\x01")
+    (ws / "data/model.bin").write_bytes(big[:-1] + bytes([big[-1] ^ 1]))  # always a real change (b"\x01" was not, 1 in 256)
     probs = adapters.validate_workspace_edits(root, ws, ["src/a.py"], set(), {"src/a.py", "data/model.bin"})
     assert any("unapproved path: data/model.bin" in p for p in probs), probs
 
