@@ -29,7 +29,7 @@ Updated 2026-10-31: 0.11.3 published (#21â€“#36); 0.11.4 in qualification (#40â€
 | 10 | Claude token-mode live check (needs the owner to create a `claude setup-token`) | C03 | blocked (owner) |
 | 11 | Linux Claude runs: bwrap mounts `/proc` and, in dedicated-config mode, the config dir read-write; check whether Claude Code's file tools (Read/Glob/Grep under `--restricted --safe-mode`) can read `/proc/self/environ` or the credentials file, and deny both if so. On macOS the file-only model cannot read its environment | C03, C18 | todo (needs a Linux host) |
 | 12 | Credentials inside a run were mis-stated in 0.10.0 (Codex `auth.json`, Bob settings, env keys) | C18 | done (#39): corrected changelog; disclosed on the security and providers pages. Next: consider a broker or file-only mode for Bob and env keys |
-| 13 | Seatbelt's `localhost` filter also matches local interface addresses: the OpenCode adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (found by the review of #45) | C18 | todo: restrict binds and connections to 127.0.0.1/::1, with harmless probes as tests |
+| 13 | Seatbelt's `localhost` filter also matches local interface addresses: the OpenCode adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (found by the review of #45) | C18 | disclosed (#46): seatbelt accepts only `*` or `localhost` and `localhost` matches the host's own addresses (measured on a CI macOS runner); not fixable in seatbelt; security page states the residual risk |
 | 14 | ACP conformance kit for agents without an adapter (C05) | C05 | done (#45): handshake only; Gemini CLI conforms, OpenCode needs network |
 
 Decided 2026-10-31:
