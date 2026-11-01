@@ -318,12 +318,13 @@
    "observations": [
     "Pages run 41036040819 deployed 2026-10-30T09:48Z; all 20 sitemap URLs 200 over HTTPS, real 404; served HTML shows repo-ai-cli 0.10.0 from a verified PyPI read; provider matrix and Evidence Lab rendered from data files",
     "an independent site review's findings (overstated statuses, stale provider text, a false capture date, unscoped method text) were corrected in a82f54d before merge",
-    "local QA re-run on the corrected content before a82f54d was committed: 0 broken links, 0 axe violations (21 pages x 2 themes x 2 widths), 0 third-party requests"
+    "local QA re-run on the corrected content before a82f54d was committed: 0 broken links, 0 axe violations (21 pages x 2 themes x 2 widths), 0 third-party requests",
+    "2026-11-01 probes from a GitHub runner, not the development host (site-probe workflow; scripts/site_probe.py). Run 41302859155: all 20 sitemap URLs HTTPS and 200, an unknown path 404, the home page in the sitemap and showing 0.11.5 (= release-facts.json), 0 third-party URLs referenced in the HTML of the 20 pages or in the site's 5 stylesheets (JS-time requests not covered by the probe); Lighthouse 12.2.1 on 6 main pages (home, docs, quickstart, verify, evidence, changelog), mobile and desktop: performance, accessibility, best practices and SEO 100 in all 12 reports, CLS <= 0.001, and the Lighthouse network logs show requests only to hxxtsxxh.github.io (and data: URIs). An earlier run (41301931754, narrower probe) scored the home page 95 for performance on mobile (TBT 232 ms), so scores vary between runs"
    ],
    "limits": [
-    "live pages checked from the development host only; Lighthouse not run"
+    "one Lighthouse run per page and form factor per probe, on one runner type (scores vary between runs); Lighthouse covers 6 of the 20 pages; the probe does not see requests made by JavaScript"
    ],
-   "next_action": "Lighthouse/performance pass and a probe from outside the development host"
+   "next_action": "keep the weekly site-probe green (it fails below performance 90 or any other category below 100)"
   },
   {
    "id": "C20",
