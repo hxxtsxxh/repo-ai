@@ -105,23 +105,6 @@
    "docs": []
   },
   {
-   "id": "gemini",
-   "name": "Gemini CLI",
-   "executables": [
-    "gemini"
-   ],
-   "upstream": "HEADLESS_CLI",
-   "repo_ai": "BLOCKED",
-   "basis": "observed",
-   "note": "Adapter exists; the tested account was rejected (exit 41). Needs GEMINI_API_KEY.",
-   "account": "Google account or API key",
-   "local_model": false,
-   "acp": false,
-   "docs": [
-    "https://github.com/google-gemini/gemini-cli"
-   ]
-  },
-  {
    "id": "qwen-code",
    "name": "Qwen Code",
    "executables": [

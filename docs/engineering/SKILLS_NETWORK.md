@@ -146,12 +146,10 @@ dependencies). `registry_objects()` lists `provider_adapter` (the five provider 
   |---|---|---|
   | `claude-code` | `.claude/skills/<name>/` | `INSTALL_TARGET` (the existing portfolio target) |
   | `codex` | `.agents/skills/<name>/` | `CAPABILITY_EXPORT_ONLY` |
-  | `gemini-cli` | `.gemini/skills/<name>/` | `CAPABILITY_EXPORT_ONLY` |
   | `antigravity` | `.agents/skills/<name>/` | `CAPABILITY_EXPORT_ONLY` |
   | `ibm-bob` | `.bob/skills/<name>/` | `CAPABILITY_EXPORT_ONLY` |
 
   - Codex: codex-cli 0.165.0 binary strings name `.agents/skills` as a repository skills root.
-  - Gemini CLI: the bundled docs of gemini-cli 0.65.0.
   - Antigravity: agy binary strings (`{workspace}/.agents/skills/{skill_name}/SKILL.md`).
   - IBM Bob: repo-ai's own Bob notes (`bobsetup.py`).
   - These paths come from local inspection only: no login, no model call. **No host was observed
@@ -221,10 +219,10 @@ dependencies). `registry_objects()` lists `provider_adapter` (the five provider 
 ## 3. Not done, or not verified
 
 - **Host loading.** Nothing shows that any host loads a skill from these directories at runtime. This
-  includes Claude Code for this change: it was not re-observed. Codex, Gemini CLI, Antigravity and Bob
-  remain `CAPABILITY_EXPORT_ONLY`. The `.agents/skills` and `.gemini/skills` precedence in Gemini CLI
-  was not exercised.
-- **User-level directories.** Personal skill directories (`~/.codex/skills`, `~/.gemini/skills`) are
+  includes Claude Code for this change: it was not re-observed. Codex, Antigravity and Bob
+  remain `CAPABILITY_EXPORT_ONLY`. (A `gemini-cli` host existed until Gemini CLI was superseded by
+  Antigravity; it was removed.)
+- **User-level directories.** Personal skill directories (`~/.codex/skills`) are
   deliberately not targets: repo-ai writes only inside the project.
 - **Discovery tuning.** The failed discovery and plugin validations are unchanged. No matcher or rule
   was tuned, and no new corpus exists.

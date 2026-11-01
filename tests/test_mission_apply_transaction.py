@@ -1,6 +1,8 @@
 """Adversarial source-write boundary tests; verification is injected, Git is real."""
 from __future__ import annotations
 
+import json
+
 import hashlib
 from pathlib import Path
 
@@ -311,3 +313,44 @@ def test_failed_rollback_keeps_receipt_and_never_overwrites_foreign_bytes(prepar
     with pytest.raises(ValueError, match='conflict'):
         runtime.undo_mission(root, state['id'])
     assert (root / 'allowed.py').read_text() == 'user edit made meanwhile\n'
+
+
+@pytest.mark.parametrize("reported", [
+    {"auth_mode": "token_env", "auth_env_vars": ["CLAUDE_CODE_OAUTH_TOKEN"]},
+    {"auth_mode": "sk-ant-oat01-not-a-mode", "auth_env_vars": ["sk-ant-oat01-not-a-name"]},
+    {"auth_mode": "token_env", "auth_env_vars": ["CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat01-not-a-name"]},
+])
+def test_the_claude_auth_mode_reaches_the_mission_record(tmp_path, monkeypatch, reported):
+    """The adapter reports how a live Claude run authenticated (a mode and variable NAMES); the mission record keeps
+    exactly those, from an allowlist: anything else the adapter returned is dropped, and no credential value from the
+    environment can reach the record."""
+    from types import SimpleNamespace
+    from test_mission_runtime import bug as bug_fixture
+    from repo_ai.providers import adapters
+    sentinel = "sentinel-credential-value-7f3a"
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", sentinel)
+    root = bug_fixture.__wrapped__(tmp_path)
+    planned = runtime.plan(root, 'repair charge.py', agent='claude', write_paths=['charge.py'],
+                           execute_local=True, allow_live=True)
+    import sys
+
+    def provider(*args, **kwargs):
+        (args[2] / 'charge.py').write_text('def charge(amount, retries):\n    return amount\n')
+        return {'stage': 'READY', 'verification_label': 'LIVE_READY', 'reasons': [], 'cost_usd': 0.01,
+                'cost_status': 'OBSERVED', **reported}
+    monkeypatch.setattr(adapters, 'run_provider', provider)
+    monkeypatch.setattr(verification, 'observe', lambda *a, **k: {'complete': True, 'ran': 1, 'failed': 0})
+    monkeypatch.setattr(verification, 'compare', lambda *a, **k: ('PASS', []))
+    monkeypatch.setattr(runtime, 'get_executor', lambda *a, **k: SimpleNamespace())
+    monkeypatch.setattr(runtime, 'release', lambda *a, **k: None)
+    monkeypatch.setattr(runtime.engine, 'run_plan', lambda *a, **k: {
+        'verdict': 'selected-and-full-suite-passed', 'source_tree': {'unchanged': True}})
+    monkeypatch.setattr(runtime.evidence, 'environment_check', lambda *a, **k: ('unchanged', ''))
+    result = runtime.execute(root, planned, None, provider_executable=Path(sys.executable), allow_live=True)
+    if reported["auth_mode"] == "token_env":
+        assert result['provider'].get('auth_mode') == 'token_env', result['provider']
+        assert result['provider'].get('auth_env_vars') == ['CLAUDE_CODE_OAUTH_TOKEN']  # off-list names dropped
+    else:
+        assert 'auth_mode' not in result['provider'] and 'auth_env_vars' not in result['provider']
+    assert 'sk-ant' not in json.dumps(result)
+    assert sentinel not in json.dumps(result)
