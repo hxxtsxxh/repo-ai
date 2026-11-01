@@ -46,7 +46,7 @@ Each step needs its own flag. Nothing is implied.
 | `--max-seconds N` | a wall-clock bound |
 | `--apply` | apply the candidate to your working tree after a fresh PASS (otherwise use `repo-ai apply` later) |
 
-`--agent` chooses the provider: `auto`, `none`, `replay`, `codex`, `claude`, `gemini`, `bob` or `agy`. `auto` routes
+`--agent` chooses the provider: `auto`, `none`, `replay`, `codex`, `claude`, `bob`, `agy`, `opencode` or `opencode-acp`. `auto` routes
 deterministically and returns `SELECTED`, `NOT_AUTHORIZED` or `NO_AGENT`; it never falls back to an unusable
 provider. See [Providers](/repo-ai/docs/providers/) for which ones actually work.
 
@@ -145,12 +145,11 @@ repo-ai agents authorize bob --prefer
 repo-ai agents revoke bob
 ```
 
-`repo-ai agents list` on a machine with all five CLIs installed:
+`repo-ai agents list` on a machine with these four CLIs installed:
 
 ```text
 codex: PLANNING_ONLY | version not probed | auth UNKNOWN
 claude: PLANNING_ONLY | version not probed | auth UNKNOWN
-gemini: PLANNING_ONLY | version not probed | auth UNKNOWN
 bob: PLANNING_ONLY | version not probed | auth UNKNOWN
 agy: PLANNING_ONLY | version not probed | auth UNKNOWN
 No model was invoked. Installed executable does not establish authenticated runnable availability.

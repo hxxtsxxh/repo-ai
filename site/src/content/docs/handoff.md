@@ -18,7 +18,7 @@ repo-ai do --from-handoff capsule.json --agent bob --allow-live-provider \
   --allow-write charge.py --max-cost-usd 0.25 --run          # continue
 ```
 
-`--to` accepts `none`, `replay`, `codex`, `claude`, `gemini`, `bob` or `agy`. `--format text|json` controls the
+`--to` accepts `none`, `replay`, `codex`, `claude`, `bob`, `agy`, `opencode` or `opencode-acp`. `--format text|json` controls the
 export format.
 
 ## What a capsule is, and is not

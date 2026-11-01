@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- A mission record now says how a live Claude run authenticated: `provider.auth_mode` (`token_env` or
+  `dedicated_config`) and `provider.auth_env_vars` (the variable names found, such as `CLAUDE_CODE_OAUTH_TOKEN`;
+  never a value).
+- Removed: the `gemini` provider and the `gemini-cli` skill-export host. Gemini CLI was superseded by Antigravity,
+  which repo-ai supports as `agy` (its `~/.gemini` state paths stay protected). `--agent gemini` and
+  `--host gemini-cli` are no longer accepted. A skill an earlier version exported to `.gemini/skills` can still be
+  disabled or uninstalled byte-exactly; enabling or rolling it back is refused with the command that moves it
+  (`repo-ai skills install <name> --host <host>`), instead of moving it to `.claude/skills` silently.
 - Faster `verify --run` (measured on GitHub's ubuntu and macOS runners with `scripts/profile_verify.py`, a
   40-test project with its own virtualenv; medians of 7, one run per platform, runners not identical; Windows
   not measured): the two source-tree snapshots that check a run left the working tree alone built a `pathlib`
