@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Docs: the shipped capability catalog cited three research files that are not in the public repository (as
-  evidence references in `capabilities show --json`, and in the catalog's note); each now says it is in the private development history.
+  evidence and review references in `capabilities show --json`, and in the catalog's note); each now says it is in the private development history.
 - Faster (measured on an Apple Silicon Mac, medians of 7 to 9 runs on a small pytest project; not a re-run of
   speed-v1): every repo-ai command parsed its arguments by importing the mission runtime and every provider
   adapter, about 80 ms before doing anything. They now load only in the commands that use them. Agent hooks
