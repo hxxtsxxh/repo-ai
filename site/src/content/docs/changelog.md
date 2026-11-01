@@ -7,17 +7,19 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
 
 ## 0.11.7
 
-- **Faster** `verify --run`: the two source-tree snapshots no longer build a path object per file (a virtualenv
-  made that most of verify's own time). Measured on GitHub's ubuntu runner: comment-only change 0.34 → 0.23 s,
+- **Faster** `verify --run`: the two source-tree snapshots no longer build a path object per file (under the
+  profiler, most of a comment-only run's time, virtualenv included). Measured on GitHub's ubuntu runner: comment-only change 0.34 → 0.23 s,
   behaviour change 0.55 → 0.49 s, although that run's native suite was 32% slower. verify is still slower than a
   project's own suite (speed-v1 not re-run). Windows not measured.
 - **Removed** the `gemini` provider and the `gemini-cli` skill host (Gemini CLI was superseded by Antigravity, `agy`).
   A saved `gemini` authorization is ignored; skills exported to `.gemini/skills` can still be removed byte-exactly.
 - **Added** mission records say how a live Claude run authenticated (`provider.auth_mode`, variable names only).
-- **Fixed** repo-ai's git commands could let git start background maintenance in a repository it was copying.
+- **Fixed** repo-ai's mission and eval-lab git commands could let git start background maintenance in a repository
+  it was copying.
 - **Evaluation** a preregistered trial (one fixture project, one model, 48 runs): with a project-conventions skill
-  installed by repo-ai, Claude followed every written convention; without it, about a third. Higher on 8 of 8 tasks
-  (p = 0.0039, one-sided). The skill's rules are by construction ones the code does not show, the control had no
+  installed by repo-ai, Claude's changes passed every convention check; without it, about a third. Higher on 8 of 8 tasks
+  (p = 0.0039, one-sided). 9 of the skill's 14 rules are by construction ones the code does not show and some checks reuse
+  the skill's own worked examples, so much of the gap is built into the design; the control had no
   conventions text at all, and it says nothing about third-party skills in general.
 - **Evaluation** the Claude provider ran live on Linux once (bubblewrap, a subscription token): PASS; a Read outside
   the workspace was refused.
