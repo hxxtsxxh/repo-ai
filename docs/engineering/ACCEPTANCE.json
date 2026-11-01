@@ -283,12 +283,13 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "Windows CI unit suites green (py3.10/3.13) on every PR; release smoke on a fresh windows-latest runner (install, quickstart, init)"
+    "Windows CI unit suites green (py3.10/3.13) on every PR; release smoke on a fresh windows-latest runner (install, quickstart, init)",
+    "2026-11-01: the Windows jobs run on every PR and dispatched run (e.g. #58-#61 all green on windows-latest py3.10 and py3.13); 0.11.5 release smoke passed on windows-latest (release run 41297242379)"
    ],
    "limits": [
     "missions unsupported on Windows (no host sandbox); refused, never degraded"
    ],
-   "next_action": "public CI is free now: run Windows jobs"
+   "next_action": "keep the Windows CI jobs (py3.10, py3.13) required; missions stay refused on Windows until a Windows sandbox exists"
   },
   {
    "id": "C18",
