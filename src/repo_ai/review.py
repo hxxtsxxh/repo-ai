@@ -24,6 +24,8 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from . import gitbin
+
 MIGRATION_RE = re.compile(r"(^|/)(migrations?|alembic|db/migrate|flyway|liquibase)(/|$)", re.I)
 CI_RE = re.compile(r"(^|/)(\.github/workflows|\.gitlab-ci|Jenkinsfile|\.circleci|azure-pipelines)",
                    re.I)
@@ -53,7 +55,7 @@ class Passport:
 
 def _git(root: Path, *args: str) -> str:
     try:
-        return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True,
+        return subprocess.run([gitbin.git(), *args], cwd=root, capture_output=True, text=True,
                               encoding="utf-8", errors="replace", timeout=60, check=False).stdout
     except (OSError, subprocess.SubprocessError):
         return ""
@@ -124,7 +126,7 @@ def _git_plain(root: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     # (GIT_EXTERNAL_DIFF, GIT_DIFF_OPTS, GIT_CONFIG_*) reaches git.
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env["LC_ALL"] = "C"
-    argv = ["git", "-c", "core.quotepath=off", "-c", "color.ui=never", "-c", "diff.noprefix=false",
+    argv = [gitbin.git(), "-c", "core.quotepath=off", "-c", "color.ui=never", "-c", "diff.noprefix=false",
             "-c", "diff.mnemonicPrefix=false", "-c", "diff.relative=false", "-c", "diff.external=",
             "-c", "diff.interHunkContext=0", "--literal-pathspecs",
             "--no-optional-locks", *args]

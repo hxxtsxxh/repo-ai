@@ -38,6 +38,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from . import gitbin
+
 SCHEMA_VERSION = 1
 REQUIRED_TASK_KEYS = ("id", "base", "language", "category", "difficulty", "prompt", "setup",
                       "solution", "gold_files", "hidden", "commands")
@@ -219,7 +221,7 @@ _GIT_ENV = {"GIT_AUTHOR_NAME": "eval", "GIT_AUTHOR_EMAIL": "eval@example.invalid
 
 
 def _git(ws: Path, *args: str) -> None:
-    subprocess.run(["git", "-c", "core.autocrlf=false", "-c", "commit.gpgsign=false", *args],
+    subprocess.run([gitbin.git(), "-c", "core.autocrlf=false", "-c", "commit.gpgsign=false", *args],
                    cwd=ws, check=True, timeout=60, env={**os.environ, **_GIT_ENV},
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 

@@ -31,6 +31,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .. import gitbin
 from .. import __version__
 
 SCHEMA = "repo-ai.proof-evidence/1"
@@ -88,7 +89,7 @@ def cap_conditions(root: Path, change, python: str, host_python: bool) -> list[s
         return out
 
     def git(*args: str) -> str:
-        res = subprocess.run(["git", *args], cwd=root, capture_output=True, timeout=60, check=False,
+        res = subprocess.run([gitbin.git(), *args], cwd=root, capture_output=True, timeout=60, check=False,
                              stdin=subprocess.DEVNULL)
         return res.stdout.decode("utf-8", "replace")
     if (root / ".gitmodules").is_file() or any(line.startswith("160000 ") for line in git("ls-files", "-s").splitlines()):
@@ -251,9 +252,9 @@ def engine_identity() -> dict[str, Any]:
     code)."""
     out: dict[str, Any] = {"version": __version__}
     pkg = Path(__file__).resolve().parents[1]
-    res = subprocess.run(["git", "-C", str(pkg), "rev-parse", "--verify", "--quiet", "HEAD"], capture_output=True,
+    res = subprocess.run([gitbin.git(), "-C", str(pkg), "rev-parse", "--verify", "--quiet", "HEAD"], capture_output=True,
                          text=True, timeout=20, check=False, stdin=subprocess.DEVNULL)
-    top = subprocess.run(["git", "-C", str(pkg), "rev-parse", "--show-toplevel"], capture_output=True, text=True,
+    top = subprocess.run([gitbin.git(), "-C", str(pkg), "rev-parse", "--show-toplevel"], capture_output=True, text=True,
                          timeout=20, check=False, stdin=subprocess.DEVNULL).stdout.strip()
     if res.returncode == 0 and top and (Path(top) / "src" / "repo_ai").resolve() == pkg:
         out["commit"] = res.stdout.strip()
