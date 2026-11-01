@@ -86,7 +86,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "OpenCode against a local, loopback-only model endpoint (Ollama), account-free. On the published 0.10.0 wheel (2026-10-30) with qwen3:8b: one attempt refused (broken edit), one PASS of the visible tests that a hidden case failed (the model dropped a docstring requirement no test pinned); on development builds 1 of 4 passed. repo-ai refused every broken candidate. Deny-by-default tools, network to loopback only.",
+        "observed": "OpenCode against a local, loopback-only model endpoint (Ollama), account-free. On the published 0.10.0 wheel (2026-10-30) with qwen3:8b: one attempt refused (broken edit), one PASS of the visible tests that a hidden case failed (the model dropped a docstring requirement no test pinned); on development builds 1 of 4 passed. repo-ai refused every broken candidate. Deny-by-default tools, network to loopback only. Network note (measured 2026-10-31): no other host is reachable, but on macOS seatbelt's loopback rule also admits the machine's own network addresses and lets the agent listen on every interface.",
         "verified_on": "2026-10-30",
         "version": "2.2.1 with qwen3:8b via Ollama 0.40",
         "sample": "7 attempts across builds",
@@ -103,7 +103,7 @@
       "label": "EXECUTION",
       "execution": {
         "status": "EXECUTION",
-        "observed": "OpenCode driven over the Agent Client Protocol (`opencode acp`) under exactly the opencode isolation: seatbelt, scratch HOME, deny-by-default inline config, loopback-only network. The ACP client stays outside the sandbox and serves file reads and writes only within the run's paths. Any protocol problem, refusal, timeout or stop reason other than end_turn fails the run, and OpenCode's own edit is still checked. Live $0 on a development build (2026-10-31, qwen3:8b): PASS on a scratch fixture in 60 s.",
+        "observed": "OpenCode driven over the Agent Client Protocol (`opencode acp`) under exactly the opencode isolation: seatbelt, scratch HOME, deny-by-default inline config, loopback-only network. The ACP client stays outside the sandbox and serves file reads and writes only within the run's paths. Any protocol problem, refusal, timeout or stop reason other than end_turn fails the run, and OpenCode's own edit is still checked. Live $0 on a development build (2026-10-31, qwen3:8b): PASS on a scratch fixture in 60 s. Network note (measured 2026-10-31): no other host is reachable, but on macOS seatbelt's loopback rule also admits the machine's own network addresses and lets the agent listen on every interface.",
         "verified_on": "2026-10-31",
         "version": "2.2.1 with qwen3:8b via Ollama",
         "sample": "n = 1",

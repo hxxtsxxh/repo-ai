@@ -296,10 +296,10 @@
     "two independent adversarial reviews of provider isolation: 1 high + 3 medium + others, then 3 + 4 more; all fixed or disclosed (Codex token exposure, reads outside HOME)",
     "credential copying removed (Claude files, whole ~/.gemini)",
     "2026-10-31 independent review of the ACP conformance kit found: the probe sandbox (agents doctor) lacked (deny lsopen)(deny appleevent-send) on macOS (escape with network via `open`), fixed; seatbelt's 'localhost' network filter also matches local interface addresses, so the OpenCode live adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (open item)",
-    "2026-10-31 measured on a CI macOS runner (benchmarks/seatbelt-loopback): seatbelt hosts are only * or localhost; localhost matches the host's own LAN address and wildcard binds succeed under every candidate rule; the OpenCode loopback limitation is disclosed on the security page"
+    "2026-10-31 measured with a deny-all control on a CI macOS runner (benchmarks/seatbelt-loopback, run 41256165553): OpenCode's loopback rule denies other LAN hosts and the internet, but admits the host's own LAN address and a wildcard listen; an outbound-only rule denies all listening; seatbelt cannot name 127.0.0.1; disclosed"
    ],
    "limits": [],
-   "next_action": "review of the final release diff"
+   "next_action": "test OpenCode under an outbound-only rule (its HOME-read denial is already tested in test_provider_opencode.py); review of the final release diff"
   },
   {
    "id": "C19",

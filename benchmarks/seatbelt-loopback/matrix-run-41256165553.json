@@ -1,0 +1,47 @@
+{
+ "own_address": "192.168.64.18",
+ "gateway": "192.168.64.1",
+ "control: deny network* only": {
+  "bind 0.0.0.0": "PermissionError:[Errno 1] Operation not permitted",
+  "bind 127.0.0.1": "PermissionError:[Errno 1] Operation not permitted",
+  "connect 127.0.0.1": "PermissionError:[Errno 1] Operation not permitted",
+  "connect own LAN address": "PermissionError:[Errno 1] Operation not permitted",
+  "connect another LAN host (gateway, port 9)": "PermissionError:[Errno 1] Operation not permitted",
+  "connect 1.1.1.1:443": "PermissionError:[Errno 1] Operation not permitted"
+ },
+ "outbound-only localhost (no inbound, no bind)": {
+  "bind 0.0.0.0": "PermissionError:[Errno 1] Operation not permitted",
+  "bind 127.0.0.1": "PermissionError:[Errno 1] Operation not permitted",
+  "connect 127.0.0.1": "ok",
+  "connect own LAN address": "ok",
+  "connect another LAN host (gateway, port 9)": "PermissionError:[Errno 1] Operation not permitted",
+  "connect 1.1.1.1:443": "PermissionError:[Errno 1] Operation not permitted"
+ },
+ "current (localhost)": {
+  "bind 0.0.0.0": "ok",
+  "bind 127.0.0.1": "ok",
+  "connect 127.0.0.1": "ok",
+  "connect own LAN address": "ok",
+  "connect another LAN host (gateway, port 9)": "PermissionError:[Errno 1] Operation not permitted",
+  "connect 1.1.1.1:443": "PermissionError:[Errno 1] Operation not permitted"
+ },
+ "ip-literal 127.0.0.1": {
+  "error": "sandbox-exec: host must be * or localhost in network address\n\nBacktrace: \n<input string>:1:67:\n\t(remote ip \"127.0.0.1:*\")\n\n"
+ },
+ "localhost, no bind rule": {
+  "bind 0.0.0.0": "ok",
+  "bind 127.0.0.1": "ok",
+  "connect 127.0.0.1": "ok",
+  "connect own LAN address": "ok",
+  "connect another LAN host (gateway, port 9)": "PermissionError:[Errno 1] Operation not permitted",
+  "connect 1.1.1.1:443": "PermissionError:[Errno 1] Operation not permitted"
+ },
+ "localhost + deny bind *": {
+  "bind 0.0.0.0": "ok",
+  "bind 127.0.0.1": "ok",
+  "connect 127.0.0.1": "ok",
+  "connect own LAN address": "ok",
+  "connect another LAN host (gateway, port 9)": "PermissionError:[Errno 1] Operation not permitted",
+  "connect 1.1.1.1:443": "PermissionError:[Errno 1] Operation not permitted"
+ }
+}

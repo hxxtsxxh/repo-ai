@@ -100,7 +100,7 @@ PASS. A candidate that deletes a docstring or comment stating a requirement is n
 | Claude Code | live, verified changes on small tasks (macOS) | its own login, never copied: `repo-ai agents setup claude`; file tools only; each run first checks, at no cost, that the session loads nothing else; hard USD cap |
 | OpenAI Codex CLI | live, verified changes on small tasks | runs under repo-ai's outer sandbox; cost UNKNOWN under subscription; its login token is readable by a model with shell access (disclosed) |
 | Antigravity `agy` | live on macOS only | cost UNKNOWN under subscription |
-| OpenCode + a local model | live on macOS, account-free, $0 (`repo-ai agents setup opencode`) | loopback-only network, deny-by-default tools; small local models often fail (1 of 4 passed) and repo-ai refuses those runs |
+| OpenCode + a local model | live on macOS, account-free, $0 (`repo-ai agents setup opencode`) | loopback-only network (on macOS it also admits the machine's own addresses and listening on every interface; see the security page), deny-by-default tools; small local models often fail (1 of 4 passed) and repo-ai refuses those runs |
 | IBM Bob | live, verified changes on small tasks (earlier release) | hard USD cap supported |
 | Gemini CLI | rejected for the tested account; needs `GEMINI_API_KEY` | |
 

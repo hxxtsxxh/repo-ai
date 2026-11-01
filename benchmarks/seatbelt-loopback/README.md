@@ -1,19 +1,29 @@
-# Seatbelt cannot keep a process to 127.0.0.1 only (queue 13)
+# What seatbelt's loopback rule allows (queue 13)
 
 `probe.py` runs harmless socket operations under candidate seatbelt profiles on a GitHub macOS runner
-(`.github/workflows/diag-seatbelt.yml`, triggered only by `diag/seatbelt-**` pushes). Result,
-[run 41255805325](https://github.com/hxxtsxxh/repo-ai/actions/runs/41255805325),
-[matrix-run-41255805325.json](matrix-run-41255805325.json):
+(`.github/workflows/diag-seatbelt.yml`, triggered only by `diag/seatbelt-**` pushes). Measurement with controls:
+[run 41256165553](https://github.com/hxxtsxxh/repo-ai/actions/runs/41256165553),
+[matrix-run-41256165553.json](matrix-run-41256165553.json) (an earlier run without controls:
+[matrix-run-41255805325.json](matrix-run-41255805325.json)).
 
-| rules after `(deny network*)` | bind 0.0.0.0 | bind 127.0.0.1 | connect 127.0.0.1 | connect own LAN address |
-|---|---|---|---|---|
-| `localhost` outbound, inbound and bind (OpenCode's rule) | ok | ok | ok | ok |
-| `127.0.0.1` literal | profile rejected: "host must be * or localhost" | | | |
-| `localhost` outbound and inbound, no bind rule | ok | ok | ok | ok |
-| as above plus `deny network-bind *` then `allow … localhost` | ok | ok | ok | ok |
+| rules after `(deny network*)` | bind 0.0.0.0 | bind 127.0.0.1 | connect 127.0.0.1 | connect own LAN address | connect gateway | connect 1.1.1.1 |
+|---|---|---|---|---|---|---|
+| none (control) | denied | denied | denied | denied | denied | denied |
+| outbound `localhost` only | denied | denied | ok | ok | denied | denied |
+| outbound, inbound and bind `localhost` (OpenCode's rule) | ok | ok | ok | ok | denied | denied |
+| outbound and inbound `localhost`, no bind rule | ok | ok | ok | ok | denied | denied |
+| as OpenCode's plus `deny bind *` then `allow bind localhost` | ok | ok | ok | ok | denied | denied |
+| `127.0.0.1` literal | profile rejected: "host must be * or localhost" | | | | | |
 
-Seatbelt accepts only `*` or `localhost` as a host, and `localhost` also matches the machine's own interface
-addresses; a wildcard bind is not prevented. So the OpenCode provider's "loopback only" network on macOS means: no
-other host can be **reached**, but the agent can **listen on every interface** (reachable from the local network) and
-connect to services bound to the host's own non-loopback addresses. This is disclosed as a residual risk; it is not
-fixable inside seatbelt.
+"Denied" is `PermissionError` (EPERM), a sandbox denial, not a refused connection.
+
+**What follows:**
+- Filtering is active (the control denies everything), and OpenCode's rule reaches no other host: neither another
+  machine on the local network (the gateway) nor the internet.
+- `localhost` also matches the machine's own non-loopback address, even in an outbound-only rule: a sandboxed process
+  can reach services bound to the host's own addresses. Seatbelt cannot express 127.0.0.1 alone.
+- An inbound `localhost` rule permits a wildcard bind (listening on every interface); a later deny cannot narrow it.
+- An outbound-only rule denies all listening. OpenCode's rule could become outbound-only only if OpenCode works
+  without listening; its ACP mode runs its own local server, and plain `opencode run` was not tested that way
+  (queued).
+- Not measured: whether another machine can reach a wildcard listener (the macOS firewall may apply); IPv6.

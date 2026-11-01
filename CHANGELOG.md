@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Security (disclosed, measured): on macOS the OpenCode providers' "loopback only" network reaches no other host,
+  but seatbelt's `localhost` rule also admits the machine's own network addresses, and its inbound rule lets the
+  agent listen on every interface. Seatbelt cannot name 127.0.0.1 alone. The security and providers pages say so;
+  `benchmarks/seatbelt-loopback/` holds the probe and results. Earlier "loopback-only" wording (0.10.0, 0.11.3) is
+  qualified by this.
 - Added: `repo-ai agents conformance --acp-executable PATH [--acp-arg ARG]`, a conformance kit for Agent Client
   Protocol agents repo-ai has no adapter for. It runs only the `initialize` handshake (no session, no model call) in
   the network-denied probe sandbox, refuses repository-owned executables, sweeps every process the agent started, and
