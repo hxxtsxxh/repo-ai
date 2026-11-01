@@ -81,3 +81,9 @@ invoked) showed that Claude Code 2.1.316 lists **19 built-in skills** and **3 bu
 when its init event lists a skill outside the built-in set (control) or outside the built-in set plus the installed
 skill (skill arm), a plugin whose source is not `@builtin`, any MCP server, or a tool beyond the list above. The
 built-in skills are present in both arms alike. Nothing else changes.
+
+## Amendment 2 (2026-11-01, after 1 of 48 runs, before any grading)
+
+The first run cost $0.104 (Sonnet, 10 turns), about twice the planned average, so the $4.00 ceiling would stop the
+trial near run 37 and leave tasks without both arms. To complete the preregistered 48 runs, the ceiling is raised to
+**$6.00** (still within the owner's $20 budget). No run had been graded and no outcome was known; nothing else changes.
