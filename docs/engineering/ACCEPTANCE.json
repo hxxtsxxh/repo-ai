@@ -115,14 +115,15 @@
   {
    "id": "C07",
    "title": "Skill Radar",
-   "status": "EXPERIMENTAL",
+   "status": "NEGATIVE_RESULT",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "local vetting + honest NO_RECOMMENDATION-style output observed (fixture skill: 'do not install, matches no gap')",
-    "2026-11-01 capability-fresh-v1 (preregistered, 60 tasks by an independent author, matcher unchanged): top-3 recall 0.69 (gate 0.80) and 2 constraint-forbidden recommendations (gate 0): FAILED; correct abstention 19/20, precision 0.68. Both forbidden items came from constraints stated in prose the matcher did not detect"
+    "2026-11-01 capability-fresh-v1 (preregistered, 60 tasks by an independent author, matcher unchanged): top-3 recall 0.69 (gate 0.80) and 2 constraint-forbidden recommendations (gate 0): FAILED; correct abstention 19/20, precision 0.68. Both forbidden items came from constraints stated in prose the matcher did not detect",
+    "2026-11-01 status NEGATIVE_RESULT: the deterministic recommender failed its recall gate on two independent fresh corpora (0.385 on 120 tasks, 0.69 on 60) and its constraint gate on both; tuning stopped. Online radar (network discovery) is not re-validated"
    ],
    "limits": [
     "top-3 recall below the 0.80 gate on two fresh corpora (0.385 on 120 tasks, 0.69 on 60)",
