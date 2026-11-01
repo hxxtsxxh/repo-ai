@@ -1,9 +1,28 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.11.5, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.11.6, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.11.6
+
+- **Faster** every command builds its argument parser without loading the mission runtime or the provider
+  adapters (about 80 ms). On one Apple Silicon Mac, Claude hooks took about half as long (`prompt`, `post-edit`,
+  `stop` about 150 ms → 67–81 ms; `session-start` 324 → 205 ms, partly the macOS git change below; not a re-run of
+  speed-v1); not measured on Linux or Windows, where only this saving applies.
+- **Faster on macOS** repo-ai runs the selected developer directory's git directly instead of Apple's `/usr/bin/git`
+  stub, which looks it up on every call (35 ms against 17 ms per git command there). Another git first on PATH,
+  or anything unusual, runs as before.
+- **Added** when verify matches pytest tests by name, its plan names test files under the project's `norecursedirs`:
+  a targeted run passes them to pytest, which runs them anyway, while a full run does not reach them, so the two
+  can disagree. A note only; nothing is removed.
+- **Evaluation** speed-v1 run 3 (a replication stated before the run): verify is still **not** faster than the native
+  suite (2.23×, slower on 30 of 30; run 2: 1.84×, 24 of 30). Without the differently measured more-itertools
+  changes the runs agree (2.61× and 2.64×); absolute times are not compared (different runner CPU). Exit codes agreed
+  with the native suite on 23 of 30 changes (run 2: 16); the more-itertools and humanize disagreements are gone,
+  consistent with earlier fixes but not isolated by the runs.
+- **Docs** the shipped capability catalog marks the research files that are not in the public repository.
 
 ## 0.11.5
 
