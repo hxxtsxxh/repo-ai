@@ -125,8 +125,12 @@ def _chooses_config(argv: list[str]) -> bool:
                 return True
             if opt in {"-c", "-o"} and tok.startswith(opt) and len(tok) > 2:  # -cfile, -okey=value
                 return True
-        if tok.startswith("-") and not tok.startswith("--") and ("c" in tok[1:] or "o" in tok[1:]):
-            return True  # a cluster of short flags such as -qc FILE: conservatively, no note
+        if tok.startswith("-") and not tok.startswith("--"):
+            for letter in tok[1:]:  # a cluster of short flags such as -qc FILE
+                if letter in "co":
+                    return True
+                if letter in "kmpWrn":  # takes a value: the rest of the token is that value
+                    break
     return False
 
 
@@ -160,7 +164,9 @@ def skipped_by_config(root: Path, test_files: list[str], start: str = "", argv: 
     cfg_dir = PurePosixPath(cfg_rel).parent
     if not paths and (cfg_dir == base or (str(cfg_dir) == "." and str(base) in {"", "."})):
         for entry in settings["testpaths"]:
-            if any(ch in entry for ch in "*?[") or entry.startswith("/"):
+            if any(ch in entry for ch in "*?["):
+                return "", [], {}  # a glob entry's starting points are not computed here: no note
+            if entry.startswith("/"):
                 continue
             target = PurePosixPath("/") / (cfg_dir / entry if str(cfg_dir) != "." else PurePosixPath(entry))
             protected |= {target, *target.parents}
