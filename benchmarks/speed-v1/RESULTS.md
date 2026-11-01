@@ -132,5 +132,33 @@ the CPU all changed, so this is not a controlled test of those fixes.
   install; verify and native ran the same environment, so the comparison stands, but the install is incomplete.
 
 Follow-up 1: its symptoms are gone for more-itertools (exit codes; the full suite seen passing once) and humanize
-f772e59b; marshmallow 2fc8207d's verdict flip stays open. Follow-up 2 shipped in 0.11.4 (not measured here).
+f772e59b; marshmallow 2fc8207d's verdict difference is explained in the addendum below (why the strategy differed is not recorded). Follow-up 2 shipped in 0.11.4 (not measured here).
 Follow-up 3 stays open: the Linux overhead could not be compared across these runs.
+
+## Addendum (2026-11-01): marshmallow 2fc8207d's two verdicts
+
+**Recorded, identical in run 2 and run 3:**
+- Run order: 5c136b11 first (cold `full`, exit 0, full suite passed), then 2fc8207d cold, reuse and `--rerun`.
+- 2fc8207d cold: strategy `targeted`, exit 1, `failing (all failures pre-existing at the base)`. Pre-existing
+  failures are `tests/mypy_test_cases/test_class_registry.py` and `test_validation_error.py`, and
+  `tests/mypy_test_cases/test_schema.py` is `no_tests`.
+- 2fc8207d `--rerun`: strategy `full`, exit 0, `selected-and-full-suite-passed`, all three files `no_tests`, 1,117
+  passed.
+- marshmallow 4.0.0's `[tool.pytest.ini_options]` has
+  `norecursedirs = ".git .ropeproject .tox docs env venv tests/mypy_test_cases"`.
+
+**Inferred** (the harness records neither the argv nor the strategy chooser's reason):
+- A targeted run passes the selected files to pytest by path. pytest's `norecursedirs` applies when it recurses into
+  directories, so it collects explicitly named files inside one; its code matches a pattern containing a separator
+  against the path, which is why the full run skipped `tests/mypy_test_cases`.
+- So the verdict depended on which strategy ran: the targeted run reached files the project's own collection
+  excludes, and the full run did not. Why the strategy differed between the cold run and `--rerun` is not recorded.
+  Both choices are timing-driven (`verify/strategy.py` `decide` compares estimated targeted and full-suite times),
+  and the cold run updated verify's timing records before the `--rerun`, but the exact inputs are unknown. One
+  thing is clear from the code: the two failing files cannot have gained durations from the cold run, because
+  failing runs record none.
+
+This is the documented limit that files are matched by name until `repo-ai verify --record` has captured pytest's
+own collection; verify deliberately never removes a test file on a static reading of pytest's configuration. It is
+not a new defect. Queued: a note that names such files (QUEUE row 16), and recording `strategy.reason` and the argv
+in the harness.
