@@ -1,12 +1,111 @@
 # Omniprovider mission — report
 
-Status: **0.10.0 publicly shipped and verified (2026-10-30)**; the mission continues (see [QUEUE.md](QUEUE.md)). Release
-facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider mission (kept
-outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
+Status: **0.11.8 publicly shipped and verified (2026-11-02)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
+mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
-[SKILLS_NETWORK.md](SKILLS_NETWORK.md), [evidence/](evidence/).
+[SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
-## What changed for a developer
+## Current state (2026-11-02)
+
+### Release 0.11.8 (verified after publication)
+
+| What | Value |
+|---|---|
+| Tag | `v0.11.8` (annotated) at `5662506e589bb93bbf43f20c6db212d2dc5dee12`, merge of #85; pushed by the agent with the owner's authorization for this release |
+| Contents | #78–#86: the C18 security review of 0.11.3–0.11.7 (probe sandbox hides Linux host socket directories; macOS probe denies preference writes, launchd jobs and every Mach lookup but user and group lookups; licence-file vetting scope; coding-lab host git reads a pre-run copy of `.git`; TOML and pattern guards; workflow tokens), consumed handoff capsules (#82), and the medium finding of the release-level review (#86) |
+| Qualification | #85 green incl. the dispatched full CI with the macOS suite at `30afeac`; an independent release-level review (nothing blocking; its medium finding fixed in #86 before the tag) |
+| Release workflow | run 41396702501: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
+| PyPI | <https://pypi.org/project/repo-ai-cli/0.11.8/>: wheel `967e659016454f9da1b8d37ddbd2f5d8fa59b592a910892d22f7bfe40a57ba8c`, sdist `d46d99aac42a2d87d2cffea27bacee414ea076884f94904dea21beb21e212b21`; identical to the GitHub release assets and to a local clean build; the wheel rebuilt from the sdist is identical; `SHA256SUMS` OK; SLSA provenance verified for both (release.yml at `refs/tags/v0.11.8`, `5662506`) |
+| Website | <https://hxxtsxxh.github.io/repo-ai/>, Pages run for main `9f3904d` (2026-11-02T07:40Z); checked 2026-11-02T10:00Z: all 20 sitemap URLs 200 over HTTPS, a real 404 for a missing page, the served pages name 0.11.8 and the site changelog has a 0.11.8 section |
+| Clean install | macOS, fresh virtualenv from the default index: `repo-ai 0.11.8`, `init`, a comment-only change gave NOTHING TO RUN. The same run found that a missing test runner was headlined "NO NEW FAILURES" (exit 1); fixed on main (#89) |
+
+### Releases since 0.11.2
+
+| Release | Date | Tag at | Wheel | Notes |
+|---|---|---|---|---|
+| 0.11.3 | 2026-10-31 | `7750279` | `b11ff58f…` | Codex credential broker, ACP agents, honest mission evidence |
+| 0.11.4 | — | (`991d9c6`, never tagged) | — | qualified, tag push refused by the session's permissions; folded into 0.11.5 |
+| 0.11.5 | 2026-11-01 | `abc81dc` | `1203e843…` | `agents doctor` sandbox fix, ACP conformance kit, real-project journeys |
+| 0.11.6 | 2026-11-01 | `9edf537` | `c56e61e5…` | faster hooks and commands, a pytest collection note |
+| 0.11.7 | 2026-11-01 | `34cb2e9` | `6a70b4b7…` | faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed |
+| 0.11.8 | 2026-11-02 | `5662506` | `967e6590…` | security review fixes (above) |
+
+0.11.5–0.11.8 were each checked after publication the same way (PyPI = GitHub release = local build, `SHA256SUMS`,
+attestation, clean install); 0.11.3: PyPI = GitHub release = local build, attestation, smoke (`SHA256SUMS` not
+recorded). Details per release in ACCEPTANCE.json C20.
+
+**On main, not released** (after 0.11.8): #87 workspace git without host-global configuration and no persisted
+checkout tokens; #89 a missing test runner is NOT VERIFIED; #90 probe hidden directories by real path; #91 handoff
+snapshot; the coverage review fixes (C11) and the comparison page (C22) when merged. A 0.11.9 tag needs the owner's
+authorization.
+
+### Providers (changes since 0.10.0)
+
+- Claude Code ran live on **Linux** (bubblewrap, `token_env`, Claude Code 2.1.316): a toy journey PASS,
+  `LIVE_CANDIDATE_VERIFIED` (n = 1, a toy task; the `/proc` refusal rests on the model's report;
+  [evidence](evidence/LINUX-CLAUDE-2026-11-01.md)). The exported token was later removed by the owner, so no live
+  Claude run under repo-ai's isolation is possible until a credential is provided (C13).
+- **Gemini CLI removed** (0.11.7): superseded by Antigravity (`agy`). Its `~/.gemini` state paths stay protected.
+- OpenCode also runs through its ACP mode (`opencode-acp`); any ACP agent can be checked with `agents conformance`
+  (handshake only, sandboxed).
+- Codex: an opt-in credential broker on macOS (`REPO_AI_CODEX_BROKER=1`) keeps the token out of the model's reach;
+  without it (and off macOS) the token stays readable by the model (disclosed).
+
+### Security (0.11.3–0.11.8)
+
+Two independent reviews of the release diffs (0.11.3–0.11.7, then 0.11.8) found 2 + 1 medium and 5 + 8 low issues.
+Every medium is fixed.
+- **Fixed in 0.11.8:** both mediums of the first review (probe sandbox), the five first-review lows (licence-file
+  vetting, a quadratic dup2 check, a TOML crash, an unbounded pytestcfg pattern, checkout tokens in three workflows),
+  coding-lab host git over a pre-run copy of `.git`, and the second review's medium (integrity `git show` on the
+  agent-writable `.git`) and L1 (#86).
+- **Fixed on main, unreleased:** L3 (#90), L5 (#91), L7 and part of L6 (#87: no host-global git configuration,
+  `persist-credentials: false` everywhere).
+- **Still open and disclosed:** L2 (a resolve-to-bind race in the Linux probe), L4, the rest of L6 (QUEUE row 19);
+  probe reads are not restricted; Linux unix sockets outside the hidden directories; macOS signals and IOKit; the
+  OpenCode adapter's loopback rule admits a wildcard listen and the host's own LAN address (QUEUE row 13).
+
+### Evaluation (no forced positives)
+
+| Question | Result |
+|---|---|
+| Does `verify` give false assurance? | held-out-7: **0 in 127 failing states**, 0 false alarms, tree unchanged 234/234 (five projects, containers, build `903984a`) |
+| Is `verify --run` faster than the native suite? | **NEGATIVE**: speed-v1 1.84× (preregistered), then 2.23×, 2.00×, 1.96×; exit codes agree with the native suite on 24 of 30 in runs 4–5 (16 and 23 earlier; the rest are pyjwt, which needs the network the sandbox denies) |
+| Does repo-ai improve a coding agent? | **NOT_YET_DEMONSTRATED** (Option A: 92% plain, 90% / 88% repo-ai; abc studies at ceiling) |
+| Does an installed skill help? | one conventions skill on one fixture project: **SUPPORTED with design limits** (8 of 8 tasks, p = 0.0039; c10-confirm-v1) |
+| Does the deterministic skill recommender find the right capability? | **NEGATIVE** (recall 0.385 and 0.69 on two fresh corpora, constraint gate failed on both; tuning stopped) |
+| Does skill vetting block harmful skills on unseen data? | **FAILED** (skill-vet-fresh-v1: SAFE_AUTO would have auto-installed 8 of 30 harmful prose-only skills, and 6 of 10 harmful script skills were rated eligible; fixed, not confirmed on fresh data) |
+| Does verify mislead on real commits? | journey-offline-v2: no false assurance on 7 real fixes (5 flagged as a regression, 2 refused; a small sample, upper bound about 35%); the fix confirmed on 3 of 6; journey-offline-v1 INCONCLUSIVE |
+| Claude context effect | not re-run (the only public split was tuned on; decision recorded, C15) |
+
+### Spend
+
+Live spend this cycle: **$3.2921 of the owner's $20** ([LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md)); Claude
+cost is notional on a subscription token. CI on the public repository is free.
+
+### Gates
+
+PASS: C01, C02, C03, C20. PASS_WITH_LIMITS: C04, C09, C10, C17, C19. PASS_AT_0.9.0: C23. EXPERIMENTAL: C05, C06, C07,
+C08, C11, C12, C13, C18, C21, C22. NEGATIVE_RESULT: C16. NEGATIVE_RESULT_HISTORICAL: C15. NOT_YET_DEMONSTRATED: C14.
+IN_PROGRESS: C24.
+
+### Not proven, and what would prove it
+
+- **Agent benefit (C14, C15):** blinded human authors and new held-out tasks.
+- **Skill-vetting on an unseen corpus (C08):** a person-written v2 corpus; an agent-authored one was stopped by a
+  safety classifier and is not retried.
+- **Claude as a handoff target (C13):** a Claude credential for isolated runs.
+- **Live third-party projects (C21):** the live provider journey within the remaining live budget; third-party code
+  needs the owner's explicit approval or runs on CI (EXPERIMENTS.md). The Claude token used so far was removed.
+- **Tournament on behaviourally different candidates (C12), routing over real host states (C06):** live calls.
+- **Requirement coverage (C11):** an independent review found it partly met; its fixes are in #94 (open). Proposed
+  next: a declaration frozen with the mission and requirement-to-code links.
+- **Speed (C16):** the fixed cost on small suites; steadier strategy inputs.
+
+## The 0.10.0 cycle (2026-10-30)
+
+### What changed for a developer
 
 - **Claude Code is a real repo-ai provider** (was blocked): `repo-ai agents setup claude`, then
   `repo-ai do … --agent claude --run --allow-live-provider`. Its own login, nothing copied; file tools only; every run
@@ -20,7 +119,7 @@ outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](
 - **Fewer ways to be hurt**: no provider credential is copied into a sandbox; every process a provider run starts is
   killed before verification; `open`/Apple events and stray unix sockets are denied.
 
-## Provider matrix (macOS, 2026-10-30)
+### Provider matrix (macOS, 2026-10-30)
 
 | Provider | Version | Discovered | Authenticated | Isolated execution | Live candidate | Verified (hidden oracle) | Cost |
 |---|---|---|---|---|---|---|---|
@@ -31,7 +130,7 @@ outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](
 | IBM Bob | 2.0.9 | yes | not re-checked | yes | earlier pre-release | earlier | provider-reported |
 | Gemini CLI | 0.65.0 | yes | **no** (exit 41) | — | — | — | BLOCKED |
 
-## Security findings this cycle (all fixed unless stated)
+### Security findings this cycle (all fixed unless stated)
 
 Credential copying (Claude files, whole `~/.gemini` incl. another agent's history); read rules able to expose all
 of HOME; a config-dir override able to write `~/.zshrc`; reachable unix sockets and DNS; setsid'd survivors and
@@ -40,7 +139,7 @@ probed per run); a committed lockfile able to make uninstall delete a user file;
 provider change from the scope check. **Disclosed, not fixed:** Codex's token is readable by a model with shell
 access (dedicated login recommended); reads outside HOME (`/tmp`) stay open.
 
-## Evaluation (no forced positives)
+### Evaluation (no forced positives)
 
 - Comparative lift over a standalone agent: **NOT_YET_DEMONSTRATED** (abc-v1..v4 at ceiling; Option A 92/90/88%).
 - Skill benefit: **NOT_YET_DEMONSTRATED** (a paired run shows an installed skill's instruction is followed; no
@@ -50,7 +149,7 @@ access (dedicated login recommended); reads outside HOME (`/tmp`) stay open.
   [designs/MISSION-REAL-SUITES.md](designs/MISSION-REAL-SUITES.md); part 1 implemented on a branch under review).
 - Speed: on a tiny suite `verify --run` ≈ 0.5 s fixed + 2× native; held-out overhead unchanged (1.44–2.31×).
 
-## Spend
+### Spend
 
 Live calls under the owner's 2026-10-30 authorization (25 calls / $5): see [EXPERIMENTS.md](EXPERIMENTS.md).
 Claude stream cost is notional on a Max subscription; Codex/agy/Gemini UNKNOWN; OpenCode $0. CI on the public
