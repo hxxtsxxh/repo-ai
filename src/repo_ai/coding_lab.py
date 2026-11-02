@@ -645,6 +645,37 @@ def pass_fraction(output: str, ok: bool) -> float:
 # --------------------------------------------------------------------------
 # one run
 # --------------------------------------------------------------------------
+def _anchored(directory: str, patterns: list[str]) -> list[str]:
+    """A `.gitignore` in `directory` (relative to the root, "" for the root), rewritten for an excludes file read at the
+    root: a pattern without an inner slash matches at any depth below its directory, one with a slash only from it."""
+    if not directory:
+        return [p for p in patterns if p.strip() and not p.startswith("#")]
+    out = []
+    for raw in patterns:
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        neg = raw.startswith("!")
+        p = raw[1:] if neg else raw
+        anchored = "/" in p.rstrip("/")
+        out.append(("!" if neg else "") + f"/{directory}/" + (p.lstrip("/") if anchored else "**/" + p))
+    return out
+
+
+def _base_excludes(git: list[str], env: dict[str, str], out: Path) -> Path:
+    """One excludes file from the `.gitignore` files of the base commit (read from the copy of .git taken before the
+    run), so an ignore file the agent writes or edits cannot hide the files it adds from the untracked count."""
+    listed = subprocess.run([*git, "ls-tree", "-r", "-z", "--name-only", "HEAD"], capture_output=True, text=True,
+                            check=False, timeout=60, env=env).stdout.split("\0")
+    lines: list[str] = []
+    for rel in sorted(r for r in listed if r == ".gitignore" or r.endswith("/.gitignore")):
+        shown = subprocess.run([*git, "cat-file", "blob", f"HEAD:{rel}"], capture_output=True, text=True,
+                               check=False, timeout=60, env=env, errors="replace")
+        if shown.returncode == 0:
+            lines += _anchored(rel.rpartition("/")[0], shown.stdout.splitlines())
+    out.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+    return out
+
+
 def _workspace_changes(ws: Path, pristine_git: Path) -> tuple[list[str], list[str]]:
     """(changed tracked files, untracked files) in `ws`. Never with the workspace's own .git, which the agent could
     have written (a clean filter in its config runs on `git diff`): with the copy taken before the run, and with no
@@ -655,10 +686,17 @@ def _workspace_changes(ws: Path, pristine_git: Path) -> tuple[list[str], list[st
     # configured globally on the host (git-lfs, for one), which `git diff` would run on the agent's files
     with tempfile.TemporaryDirectory(prefix="repo-ai-git-home-") as home:
         env = gitbin.no_user_config_env(home)
-        changed = subprocess.run([gitbin.git(), *quiet, "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
-                                 text=True, check=False, timeout=60, env=env).stdout.split()
-        untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "--others", "--exclude-standard"], cwd=ws,
-                                   capture_output=True, text=True, check=False, timeout=60, env=env).stdout.split()
+        changed = [c for c in subprocess.run([gitbin.git(), *quiet, "diff", "-z", "--name-only", "HEAD"], cwd=ws,
+                                             capture_output=True, text=True, check=False, timeout=60,
+                                             env=env).stdout.split("\0") if c]
+        # not --exclude-standard, which reads the .gitignore files in the workspace: the agent can write those
+        excludes = _base_excludes([gitbin.git(), *quiet], env, Path(home) / "base-excludes")
+        info = pristine_git / "info" / "exclude"
+        extra = ["--exclude-from", str(info)] if info.is_file() else []
+        untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "-z", "--others", "--exclude-from",
+                                    str(excludes), *extra], cwd=ws, capture_output=True, text=True, check=False,
+                                   timeout=60, env=env).stdout.split("\0")
+        untracked = [u for u in untracked if u]
     return changed, untracked
 
 
