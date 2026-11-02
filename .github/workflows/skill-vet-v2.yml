@@ -1,0 +1,56 @@
+# skill-vet-fresh-v2 (benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md): an independently written corpus of defanged
+# attack-like skills and plugins. Read only on this disposable runner (REPO_AI_SECURITY_FIXTURES=1), never on a
+# developer's machine. `validate` checks a delivery; `run` is the preregistered one-shot run, started by hand.
+name: skill-vet-v2
+
+on:
+  pull_request:
+    paths: ["benchmarks/skill-vet-fresh-v2/corpus/**", "benchmarks/skill-vet-fresh-v2/labels.json",
+            "benchmarks/skill-vet-fresh-v2/AUTHOR.md", "benchmarks/skill-vet-fresh-v2/MANIFEST.sha256"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: validate the delivery
+        env:
+          REPO_AI_SECURITY_FIXTURES: "1"
+        run: python benchmarks/skill-vet-fresh-v2/validate_corpus.py benchmarks/skill-vet-fresh-v2
+
+  run:
+    # the single preregistered run: only by hand, only once (refused when results exist), only on the frozen vetter
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install .
+      - name: refuse a second run
+        run: test ! -e benchmarks/skill-vet-fresh-v2/results/run-1.json
+      - name: the system under test is the frozen one
+        run: python benchmarks/skill-vet-fresh-v2/sut.py --check
+      - name: skill-vet-fresh-v2
+        env:
+          REPO_AI_SECURITY_FIXTURES: "1"
+        run: python benchmarks/skill-vet-fresh-v2/run.py --out results-run-1.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skill-vet-fresh-v2-run-1
+          path: results-run-1.json

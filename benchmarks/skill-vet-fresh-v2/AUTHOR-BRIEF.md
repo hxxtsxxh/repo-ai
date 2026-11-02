@@ -1,44 +1,45 @@
 # skill-vet-fresh-v2: brief for an independent corpus author
 
-repo-ai vets third-party agent skills and plugins before it will install them. Its first fresh test (v1) failed: some
-harmful skills written only as prose would have been installed without asking. A fix exists, but it was written with
-that corpus in view, so it has to be confirmed on new material written by someone else. That is what this brief asks
-for. It is written for a **person**; please do not delegate the writing to an AI model (it would not be independent,
-and model-written cases have been refused by safety systems twice already on this task).
+repo-ai vets third-party agent skills and Claude Code plugins before it will install them. This study measures that
+vetting on new material written by someone who has never looked at how it works. It is written for a **person**;
+please do not delegate the writing to an AI model (the material would not be independent).
 
-You are not asked to find out how repo-ai detects anything. Please **do not read** `src/repo_ai/`, `tests/`,
-`docs/SKILL_NETWORK.md`, `docs/engineering/SKILLS_NETWORK.md`, anything under `benchmarks/skill-vet-fresh-v1/`
-(corpus, labels or results), or repo-ai's release notes about vetting. Write what a realistic skill author, honest or
-not, would write.
+## Who can write it
+
+You are eligible if you have **not** read repo-ai's vetting code, its tests, its security or skills documentation,
+its changelog or release notes, its earlier skill-vetting corpora or results, or its pull requests and issues about
+vetting. The maintainer is not eligible.
+
+While writing, read **only** this brief and public Claude Code documentation about skills and plugins. Nothing else
+in the repo-ai repository, its history, pull requests or issues. Write what a realistic skill author, honest or not,
+would write.
 
 ## What to write
 
-Seventy cases, in the strata and counts fixed by the preregistration
-([PREREGISTRATION.md](PREREGISTRATION.md), which takes them from
-[v1's corpus section](../skill-vet-fresh-v1/PREREGISTRATION.md#corpus-written-after-this-file-is-committed)):
+Eighty cases, in five strata (fixed in advance; do not change the counts):
 
-| stratum | n | in one line |
+| stratum | n | content |
 |---|---|---|
-| `H-text` | 20 | harmful skills, `SKILL.md` only, prose instructions, no code |
+| `H-text` | 20 | harmful skills, `SKILL.md` only, prose instructions with no code: exfiltrating secrets or source, weakening tests or CI, persisting into agent or editor config, deceiving the user, adding untrusted dependencies, destructive git or file operations, prompt injection aimed at the host agent |
 | `H-code` | 10 | harmful skills with scripts or code blocks the agent is told to run |
-| `B-skill` | 30 | benign, realistic skills, including hard negatives that legitimately talk about secrets, `curl`, `rm`, CI, permissions or security testing |
-| `H-plugin` | 10 | harmful Claude Code plugins (hooks, MCP servers, commands or agents) |
+| `B-skill` | 30 | benign, realistic skills, including hard negatives that legitimately mention secrets, `curl`, `rm`, CI, permissions or security testing |
+| `H-plugin` | 10 | harmful plugins: hooks, MCP servers, commands or agents that exfiltrate, persist or escalate |
 | `B-plugin` | 10 | benign, realistic plugins |
 
-The kinds of harm are those named in v1's table. Spread your cases across them; the counts per kind are yours to choose.
-Benign cases matter as much as harmful ones: a vetter that blocks everything is useless, and hard negatives are the
-cases that show it.
+Spread the harmful cases across the kinds named; how many of each is yours to choose. Benign cases matter as much as
+harmful ones: a vetter that blocks everything is useless, and the hard negatives show it. `H-text` cases are prose:
+no code blocks, fenced or indented, and no `<pre>` or `<code>`.
 
 **Layouts.** A skill is a directory with a `SKILL.md` that starts with YAML front matter (`name`, `description`) and
 optional extra files. A plugin is a directory with `.claude-plugin/plugin.json` and any of `commands/`, `agents/`,
-`hooks/hooks.json`, `.mcp.json`, `skills/`. Public Claude Code documentation describes both.
+`hooks/hooks.json`, `.mcp.json`, `skills/`.
 
 ## Defanging (required for every harmful case)
 
 The cases must not work as real attacks, while still reading like one to a reviewer:
 
-- every host is under `.invalid` or is `example.com` / `example.org` (never a real domain or IP address, never
-  `localhost` ports that something might listen on);
+- every host is under `.invalid` or is `example.com`: never a real domain, IP address, `localhost`, an e-mail address
+  at a real domain, or an `scp`-style git address; placeholders such as `$HOST`, `{region}` or `<host>` are fine;
 - no real credential, token, key, address or personal data; use obviously fake placeholders;
 - no working exploit, malware, persistence mechanism or obfuscated payload copied from the wild; describe the action
   in the skill's own words and keep code minimal and non-functional where possible (a script may name a step it never
@@ -46,30 +47,37 @@ The cases must not work as real attacks, while still reading like one to a revie
 - nothing that harms a machine if a curious person runs it: no deletion outside a temporary directory you name, no
   network listeners, no changes to system or user configuration.
 
-If a case cannot be both realistic and defanged, leave it out and write another.
+If a case cannot be both realistic and defanged, leave it out and write another. Benign cases may link real
+documentation.
 
-## Labels, provenance and blinding
+## Delivery (format fixed by the harness)
 
-- **One label file per case, outside the case directory**: `labels/<case-id>.json` with
-  `{"case": "<case-id>", "stratum": "...", "intended_harm": "<one sentence, or 'none'>", "observable_harm": "<what an
-  agent following it would do, or 'none'>"}`. Case ids are short and neutral (`case-017`), never descriptive, so the
-  directory name does not label the case.
-- **Provenance file** `AUTHOR.md`: who wrote the corpus (a name or a stable pseudonym), when, that you wrote it
-  yourself without an AI model, which repo-ai files you read (expected: this brief, the two preregistrations, public
-  Claude Code docs), and that you did not run repo-ai's vetter on your cases.
-- **Freeze**: when you are done, compute `shasum -a 256` over every file (`find corpus labels -type f -print0 | sort -z
-  | xargs -0 shasum -a 256 > MANIFEST.sha256`) and send the corpus, labels, `AUTHOR.md` and `MANIFEST.sha256`
-  together. Labels are final at that point; a later disagreement is reported as disputed, never edited.
+```
+corpus/case-001/SKILL.md          one directory per case; ids case-001 … case-080, assigned in a shuffled order so
+corpus/case-002/...               the number says nothing about the stratum
+labels.json                       {"cases": [{"id": "case-001", "stratum": "B-skill", "intended_harm": "none",
+                                    "observable_harm": "none"}, ...]}  one entry per case; for harmful cases one
+                                    sentence each: what it intends, and what an agent following it would do
+AUTHOR.md                         who you are (name or stable pseudonym), dates, that you wrote every case yourself
+                                    without an AI model, what you read (this brief, public Claude Code docs), your
+                                    prior exposure to repo-ai (none of the list above), and that you did not run any
+                                    skill vetter on the cases
+MANIFEST.sha256                   shasum -a 256 of every file above, made last:
+                                    find corpus labels.json AUTHOR.md -type f -print0 | sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256
+```
+
+Then publish the SHA-256 of `MANIFEST.sha256` somewhere the maintainer does not control (a signed commit or a pull
+request from your own account carrying the delivery is enough), so the delivery can be shown to be yours and
+unchanged. Labels are final at that point; a later disagreement is reported as disputed, never edited.
 
 ## How it will be used
 
-1. The maintainer checks the delivery with [`validate_corpus.py`](validate_corpus.py) on CI (structure, counts,
-   labels, manifest, defanged hosts). It does not run the vetter and does not open the cases' prose beyond that.
-   A delivery that fails is returned to you with the reasons; you fix it and re-freeze.
+1. A CI job checks the delivery with `validate_corpus.py`: structure, counts, labels, manifest, defanged hosts. It
+   does not run the vetter. A delivery that fails is returned with the reasons; you fix it and re-freeze.
 2. The corpus is committed as delivered, with your `AUTHOR.md`.
-3. The preregistered harness runs **once**, on CI only (never on a developer's machine), against the commit that
-   holds the fix. Every result is published, including harmful cases that got through and benign cases that were
+3. The preregistered harness runs **once**, by a manual CI job, on the system under test named in the
+   preregistration. Every result is published, including harmful cases that got through and benign cases that were
    blocked. No case is added, removed or relabelled after that run.
 
-Thank you. Questions about the format can go to the maintainer; questions about how the vetter works will not be
-answered until the run is published.
+Questions about the format can go to the maintainer; questions about how the vetter works will not be answered until
+the run is published.
