@@ -7,6 +7,7 @@ import re
 
 from typing import Any
 
+from . import evidence
 from .select import Plan
 
 CONF_TEXT = {
@@ -251,6 +252,12 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     out: list[str] = [_HEADLINE.get(verdict, "NOT VERIFIED: " + verdict.split(": ", 1)[1]
                                     if verdict.startswith("not verified: ") else verdict.upper())]
     rows = {r["test"]: r for r in rec.get("results") or []}
+    runner_missing = verdict.startswith(evidence.RUNNER_MISSING_PREFIX)
+    if runner_missing:  # no test ran: every failed file is "could not run", none is new or pre-existing
+        stuck = [r["test"] for r in rows.values() if r["status"] not in {"pass", "no-tests"}]
+        out.append("  could not run (no test runner): " + ", ".join(stuck[:6]) + (" …" if len(stuck) > 6 else ""))
+        s = {**s, "new_failures": [], "pre_existing": [], "unconfirmed": [], "not_compared": [],
+             "failing_differently": []}
     new = [rows[x["test_file"]] for x in s["new_failures"]]
     # one cause, many files (an import that now fails): say it once
     by_msg: dict[str, list[dict[str, Any]]] = {}
