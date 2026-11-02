@@ -164,3 +164,67 @@ def test_not_discriminating_with_a_missing_baseline_names_the_test():
     detail = out['requirements'][0]['detail']
     assert out['requirements'][0]['status'] == 'NOT_DISCRIMINATING' and 'no baseline observation' in detail
     assert 't::b' in detail and ': .' not in detail
+
+
+# C11 review (2026-11-02): false greens and unnoted obligations
+NEG = decl(req('reject negative amounts', ['tests/test_a.py::test_neg']))
+B = {'tests/test_a.py::tests/test_a.py::test_neg': 'fail'}
+C = {'tests/test_a.py::tests/test_a.py::test_neg': 'pass'}
+
+
+@pytest.mark.parametrize('freshness,verdict,label', [('stale', 'PASS', 'UNVERIFIED_STALE'),
+                                                     ('fresh', 'FAIL', 'UNVERIFIED_INCONCLUSIVE'),
+                                                     ('fresh', 'BLOCKED', 'UNVERIFIED_INCONCLUSIVE')])
+def test_rows_are_not_verified_when_the_run_is_stale_or_not_a_pass(freshness, verdict, label):
+    out = cov.assess(NEG, B, C, verdict=verdict, freshness=freshness)
+    row = out['requirements'][0]
+    assert row['status'] == label and row['observed_status'] == 'VERIFIED_FAIL_TO_PASS'
+    assert 'VERIFIED_FAIL_TO_PASS' not in out['counts'] and out['follow_up_test_needed'] == ['reject negative amounts']
+
+
+def test_changed_code_no_test_ran_is_an_obligation():
+    ex = {'assurance': 'PARTIAL', 'changed_lines': 3, 'unexercised': ['src/bank.py:41', 'src/audit.py:10'],
+          'unexercised_count': 2}
+    out = cov.assess(NEG, B, C, verdict='PASS', freshness='fresh', exercise=ex)
+    assert out['headline'] == 'ACCEPTANCE_PARTIAL' and out['changed_code']['assurance'] == 'PARTIAL'
+    assert any('src/bank.py:41' in o for o in out['other_obligations'])
+    assert 'Not covered by any requirement: changed code no frozen test ran' in cov.render(out)
+    full = cov.assess(NEG, B, C, verdict='PASS', freshness='fresh', exercise={'assurance': 'FULL', 'changed_lines': 3})
+    assert full['headline'] == 'ACCEPTANCE_MAPPED_ALL' and full['other_obligations'] == []
+    unknown = cov.assess(NEG, B, C, verdict='PASS', freshness='fresh', exercise={'assurance': 'NOT_RECORDED'})
+    assert unknown['headline'] == 'ACCEPTANCE_PARTIAL' and 'not measured' in unknown['other_obligations'][0]
+
+
+def test_pre_existing_failures_of_a_scoped_mission_are_named():
+    out = cov.assess(NEG, B, C, verdict='PASS', freshness='fresh', exercise={'assurance': 'FULL'},
+                     pre_existing=['tests/test_b.py::tests/test_b.py::test_limit'])
+    assert out['headline'] == 'ACCEPTANCE_PARTIAL'
+    assert out['other_obligations'] == ['failures accepted as pre-existing in this scoped mission: '
+                                        'tests/test_b.py::test_limit']
+
+
+def test_a_bare_name_matched_to_another_file_is_flagged():
+    d = decl(req('new parser keeps old results', ['test_parse'], 'preserve'))
+    both = {'tests/test_new_parser.py::<module skipped>': 'skip', 'tests/test_legacy.py::tests/test_legacy.py::test_parse': 'pass'}
+    row = cov.assess(d, both, both, verdict='PASS', freshness='fresh')['requirements'][0]
+    assert row['observed'][0]['matched'] == 'suffix'
+    assert 'matched by name, check it is the intended test: test_parse -> tests/test_legacy.py::test_parse' in row['detail']
+
+
+def test_one_test_for_several_requirements_is_flagged():
+    d = decl(req('reject negative', ['t::neg']), req('reject over limit', ['t::neg']))
+    out = cov.assess(d, {'t::neg': 'fail'}, {'t::neg': 'pass'}, verdict='PASS', freshness='fresh')
+    assert out['shared_tests'] == {'t::neg': ['reject negative', 'reject over limit']}
+    assert 'One test, 2 requirements: t::neg' in cov.render(out)
+
+
+def test_a_failure_is_not_hidden_by_a_skipped_neighbour():
+    d = decl(req('deposit unchanged', ['t::a', 't::b'], 'preserve'))
+    out = cov.assess(d, {'t::a': 'skip', 't::b': 'pass'}, {'t::a': 'skip', 't::b': 'fail'}, verdict='FAIL', freshness='fresh')
+    assert out['requirements'][0]['status'] == 'FAILING'
+
+
+def test_the_canonical_file_and_test_form_is_not_flagged():
+    """Review of #94: `tests/test_a.py::test_neg` names `tests/test_a.py::tests/test_a.py::test_neg` exactly."""
+    row = cov.assess(NEG, B, C, verdict='PASS', freshness='fresh', exercise={'assurance': 'FULL'})['requirements'][0]
+    assert row['observed'][0]['matched'] == 'exact' and 'matched by name' not in row['detail']
