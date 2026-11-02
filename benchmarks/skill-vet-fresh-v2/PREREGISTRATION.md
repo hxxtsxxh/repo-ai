@@ -31,3 +31,12 @@ The owner asked the agent to build the corpus. The agent's briefing of an author
 (the second stop on this task); following the rule above it was not retried, reworded or handed to another agent,
 and the partly launched author wrote nothing. The unblock is unchanged: a person-written corpus, or an external,
 legitimately published benchmark, run once on CI (attack-like fixtures are never written on the development host).
+
+## Status (2026-11-02): ready for an independent person
+
+[AUTHOR-BRIEF.md](AUTHOR-BRIEF.md) is the brief for a person who writes the corpus (not a model): the strata and
+counts above, the layouts, defanging, neutral case ids, labels outside the cases, an `AUTHOR.md` provenance statement
+and a frozen `MANIFEST.sha256`. It names no detection rule and no example of harm. [validate_corpus.py](validate_corpus.py)
+checks a delivery on CI before it is committed (structure, counts, labels, manifest, defanged hosts; it never runs the
+vetter). The protocol, gates and harness are unchanged; the author is a person instead of the agent named above.
+Nothing in this directory was written as a case, and no case will be written by the maintainer's agent.
