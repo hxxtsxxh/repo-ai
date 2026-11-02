@@ -106,15 +106,26 @@ def _probe_env(scratch: Path) -> dict[str, str]:
 def _sandbox_prefix(scratch: Path) -> list[str] | None:
     """No supported network-denying boundary means no executable probe."""
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
-        # `open` (LaunchServices) and Apple events would start a program outside this sandbox, with the network
-        profile = ("(version 1)(allow default)(deny lsopen)(deny appleevent-send)(deny network*)(deny file-write*)"
+        # `open` (LaunchServices), Apple events and launchd jobs would start a program outside this sandbox, with the
+        # network and outside the sweep; cfprefsd writes preferences outside the scratch directory on the caller's
+        # behalf; the pasteboard is another user's data channel
+        profile = ("(version 1)(allow default)(deny lsopen)(deny appleevent-send)(deny job-creation)"
+                   "(deny user-preference-write)(deny mach-lookup (global-name \"com.apple.pasteboard.1\"))"
+                   "(deny network*)(deny file-write*)"
                    f"(allow file-write* (subpath {json.dumps(str(scratch.resolve()))}))")
         return ["/usr/bin/sandbox-exec", "-p", profile]
     if sys.platform.startswith("linux"):
         bwrap = shutil.which("bwrap", path=os.defpath)
         if bwrap:
-            return [bwrap, "--unshare-net", "--unshare-pid", "--die-with-parent", "--new-session", "--ro-bind", "/", "/",
-                    "--bind", str(scratch), str(scratch), "--proc", "/proc", "--dev", "/dev", "--"]
+            # `--unshare-net` cuts abstract unix sockets, not path-based ones: hide the directories where host sockets
+            # live (D-Bus and the systemd user manager under /run, X11 and agents under /tmp, docker under /var/run)
+            # before the scratch directory is bound back in
+            hidden = ["--tmpfs", "/tmp", "--tmpfs", "/run"]
+            if Path("/var/run").is_dir() and not Path("/var/run").is_symlink():
+                hidden += ["--tmpfs", "/var/run"]
+            return [bwrap, "--unshare-net", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--die-with-parent",
+                    "--new-session", "--ro-bind", "/", "/", *hidden, "--bind", str(scratch), str(scratch),
+                    "--proc", "/proc", "--dev", "/dev", "--"]
     return None
 
 

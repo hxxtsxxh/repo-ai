@@ -97,9 +97,15 @@ def test_the_probe_sandbox_denies_launchservices_and_isolates_processes(tmp_path
     if prefix is None:
         pytest.skip("no sandbox on this host")
     if prefix[0] == "/usr/bin/sandbox-exec":  # `open` would start a program outside the sandbox, with the network
-        assert "(deny lsopen)" in prefix[2] and "(deny appleevent-send)" in prefix[2]
+        for rule in ("(deny lsopen)", "(deny appleevent-send)", "(deny job-creation)", "(deny user-preference-write)",
+                     'com.apple.pasteboard.1'):
+            assert rule in prefix[2], rule
     else:
-        assert "--unshare-pid" in prefix and "--unshare-net" in prefix
+        assert {"--unshare-pid", "--unshare-net", "--unshare-ipc", "--unshare-uts"} <= set(prefix)
+        # host unix sockets live under /tmp and /run: hidden before the scratch directory is bound back in
+        tmpfs = [prefix[i + 1] for i, a in enumerate(prefix) if a == "--tmpfs"]
+        assert {"/tmp", "/run"} <= set(tmpfs)
+        assert prefix.index("--bind") > max(i for i, a in enumerate(prefix) if a == "--tmpfs")
 
 
 class _FakeClient:
@@ -156,3 +162,27 @@ def test_format_characters_are_stripped_and_unconfirmed_cleanup_is_not_a_pass(tm
     monkeypatch.setattr(adapters, "_reap_provider_run", lambda marker: ["provider cleanup not confirmed: x"])
     res = adapters.acp_conformance(str(exe), [], repo)
     assert res["verdict"] == "CLEANUP_UNCONFIRMED" and res["cleanup_problems"]
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="bubblewrap probe (Linux)")
+def test_a_host_unix_socket_under_tmp_is_not_reachable_from_the_linux_probe(tmp_path):
+    """Path-based unix sockets ignore the network namespace; the probe hides /tmp and /run, where they live."""
+    import socket
+    import tempfile
+    prefix = discovery._sandbox_prefix(tmp_path)
+    if prefix is None:
+        pytest.skip("no bubblewrap on this host")
+    host_dir = Path(tempfile.mkdtemp(prefix="rai-host-sock-", dir="/tmp"))
+    path = host_dir / "s"
+    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    srv.bind(str(path))
+    srv.listen(1)
+    try:
+        code = ("import socket,sys\ns=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)\n"
+                f"try:\n s.connect({str(path)!r})\n print('reached')\nexcept OSError as e:\n print('blocked', type(e).__name__)")
+        out = subprocess.run([*prefix, sys.executable, "-I", "-c", code], capture_output=True, text=True, timeout=60)
+        assert "blocked" in out.stdout and "reached" not in out.stdout, (out.stdout, out.stderr[-400:])
+    finally:
+        srv.close()
+        path.unlink(missing_ok=True)
+        host_dir.rmdir()
