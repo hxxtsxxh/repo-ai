@@ -24,6 +24,8 @@ jobs:
           - {slug: more-itertools/more-itertools, ref: v10.7.0, commit: 146113bb, deps: "-e . pytest"}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

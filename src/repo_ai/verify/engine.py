@@ -173,7 +173,7 @@ def _apply_collection(root: Path, runner: TestRunner, files: list[str], tmap) ->
         try:
             cfg, other, skipped = skipped_by_config(root, runner.test_files(files), runner.cwd,
                                                     argv=[*runner.full, *runner.options], paths=runner.paths)
-        except (OSError, ValueError, RecursionError):
+        except (OSError, ValueError, RecursionError, MemoryError, OverflowError):
             cfg, other, skipped = "", [], {}
         if skipped:
             listed = sorted({f for fs in skipped.values() for f in fs})

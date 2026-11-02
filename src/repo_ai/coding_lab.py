@@ -696,9 +696,11 @@ def run_one(task: Task, base: Base, suite: Path, arm: Arm, opts: LabOptions, roo
         row["tool_calls"] = sum(metrics["tool_uses"].values())
         row["first_edit_s"] = _first_edit_s(lines)
         row["repo_ai_context_tokens_est"] = evals._flight_tokens(ws) if arm.uses_repo_ai else 0
-        changed = subprocess.run([gitbin.git(), "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
+        # the agent could write this workspace's .git/config: no fsmonitor or hook command runs on the host
+        quiet = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=" + os.devnull]
+        changed = subprocess.run([gitbin.git(), *quiet, "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
                                  text=True, check=False, timeout=60).stdout.split()
-        untracked = subprocess.run([gitbin.git(), "ls-files", "--others", "--exclude-standard"], cwd=ws,
+        untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "--others", "--exclude-standard"], cwd=ws,
                                    capture_output=True, text=True, check=False,
                                    timeout=60).stdout.split()
         # Running the code (tests, an import) leaves untracked bytecode and tool
