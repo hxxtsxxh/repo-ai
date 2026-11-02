@@ -69,6 +69,7 @@ def test_correct_arm_beats_a_plausible_wrong_arm(bug, tmp_path):
     assert (bug / 'charge.py').read_text().count('retries + 1') == 1, 'source must stay untouched'
     assert report['applied_to_source'] is False
     assert status(bug, report['id'])['effective_verdict'] == 'PASS'
+    assert f"repo-ai apply {by['codex']['id']}" in report['next_step'] and report['differences'] is None
 
 
 def test_two_distinct_passing_candidates_abstain(bug, tmp_path):
@@ -345,3 +346,29 @@ def test_no_same_code_claim_for_created_files_unknown_bases_or_coding_cookies(tm
     assert sl._post_images(repo, 'HEAD', _diff_for(repo, 'x = 2\n'), ['a.py']) is None  # not a commit id
     assert sl._post_images(repo, '--output=/tmp/x', _diff_for(repo, 'x = 2\n'), ['a.py']) is None
     assert sl.code_fingerprint({'a.py': b'# -*- coding: latin-1 -*-\nx = "\xe9"\n'}) is None
+
+
+# C12: source differences that cannot change behaviour, versus differences the frozen tests do not decide
+GOOD_REFORMATTED = 'def charge(amount,  retries):   # the fix\n    return (amount)\n'
+
+
+def test_candidates_differing_only_in_formatting_still_abstain_and_are_reported_as_the_same_code(bug, tmp_path):
+    exes = {'claude': fake(tmp_path, 'claude', {'charge.py': GOOD}),
+            'codex': fake(tmp_path, 'codex', {'charge.py': GOOD_REFORMATTED})}
+    report = run(bug, exes)
+    assert report['winner'] is None  # the predeclared rule: only byte-identical passing diffs are one candidate
+    assert [p['difference'] for p in report['differences']['pairs']] == ['COSMETIC']
+    assert 'same code' in report['next_step'] and 'repo-ai shortlist' in report['next_step']
+
+
+def test_substantively_different_passing_candidates_abstain_and_name_where_they_differ(bug, tmp_path):
+    exes = {'claude': fake(tmp_path, 'claude', {'charge.py': GOOD}),
+            'codex': fake(tmp_path, 'codex', {'charge.py': 'def charge(amount, retries):\n    return amount * 1\n'})}
+    report = run(bug, exes)
+    assert report['winner'] is None
+    [pair] = report['differences']['pairs']
+    assert pair['difference'] == 'SUBSTANTIVE' and pair['where'] == ['charge.py:charge']
+    assert 'charge.py:charge' in report['next_step'] and 'write a test' in report['next_step']
+    from repo_ai.mission.tournament import render_comparison
+    shown = render_comparison(report)
+    assert 'SUBSTANTIVE: charge.py:charge' in shown and 'Next: ' in shown

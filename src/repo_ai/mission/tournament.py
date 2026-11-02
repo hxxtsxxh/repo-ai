@@ -201,6 +201,12 @@ def render_comparison(report: dict[str, Any]) -> str:
             lines.append(f"      reason: {quote(reason)}")
     for reason in report.get('freshness_reasons', []):
         lines.append('Invalidation: ' + quote(reason))
+    for pair in (report.get('differences') or {}).get('pairs', []):
+        a, b = pair['candidates']
+        where = (': ' + ', '.join(pair['where'][:4])) if pair['difference'] == 'SUBSTANTIVE' and pair['where'] else ''
+        lines.append(f"Difference {a} vs {b}: {pair['difference']}{where}")
+    if report.get('next_step'):
+        lines.append('Next: ' + report['next_step'])
     if report.get('winner') or any(c.get('verdict') == 'PASS' for c in report.get('candidates', [])):
         lines.append('PASS means the frozen tests passed; task correctness is CLAIM_UNVERIFIED (see repo-ai why ID).')
     lines.append('No model self-voting or patch blending; winner is never auto-applied to source.')

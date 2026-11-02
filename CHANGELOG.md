@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Live tournaments (`do --tournament`): when several distinct candidates pass, the comparison now says how they
+  differ, by parsing them (nothing is run): `COSMETIC` (same files, each identical or the same Python syntax tree) or
+  `SUBSTANTIVE` with the differing definitions named (`charge.py:charge`). Every comparison carries a `next_step`
+  (apply the winner after review; pick either of the same code via `shortlist`; or write a test at the named
+  definitions). The decision rule is unchanged: distinct passing candidates still abstain.
+
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
 - `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.

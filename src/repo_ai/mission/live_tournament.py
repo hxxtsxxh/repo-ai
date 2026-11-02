@@ -156,6 +156,7 @@ def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: 
             if row['id'] in col.passed:
                 col.passed.remove(row['id'])
     _collapse_equivalent(col)
+    differences = _differences(root, frozen['head'], col) if len(col.passed) > 1 else None
     if len(col.passed) > 1:
         abstain.append('several distinct passing candidates and no predeclared objective tie-breaker')
     return finalize(
@@ -164,7 +165,8 @@ def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: 
         extra={'tournament': SCHEMA, 'providers': tplan['providers'],
                'cost_usd_observed': round(spent, 6), 'cost_unknown_for': unknown_cost,
                'cost_semantics': 'UNKNOWN for providers without reported cost; the observed sum excludes them',
-               'bounds': tplan['bounds']},
+               'bounds': tplan['bounds'], 'differences': differences,
+               'next_step': _next_step(col, differences, abstain)},
         limitations=[
             'Winner means the only distinct candidate whose frozen-test observation passed; not a correctness claim',
             'Candidates were generated independently from one frozen commit; no patch blending, no model self-voting',
@@ -185,6 +187,34 @@ def _collapse_equivalent(col: Collector) -> None:
             row['reasons'] = [*row['reasons'], 'byte-identical to an earlier passing candidate']
             if row['id'] in col.passed:
                 col.passed.remove(row['id'])
+
+
+def _differences(root: Path, base: str, col: Collector) -> dict[str, Any]:
+    """How the distinct passing candidates differ: only in formatting or comments (the same Python syntax tree in every
+    file) or substantively, with the definitions named. The decision rule is unchanged: they still abstain."""
+    from .difference import compare
+    return compare(root, base, {r['id']: (status(root, r['id']).get('diff') or '') for r in col.rows
+                                if r['id'] in col.passed})
+
+
+def _next_step(col: Collector, differences: dict[str, Any] | None, abstain: list[str]) -> str:
+    """What the developer can do next, from the comparison alone (never a correctness claim)."""
+    passed = list(col.passed)
+    if len(passed) == 1 and not abstain:
+        return (f'review the winner\'s diff (`repo-ai mission status {passed[0]}`), then `repo-ai apply {passed[0]}`, '
+                'which verifies it again on your checkout')
+    if len(passed) > 1 and differences and len(differences.get('groups', [])) == 1:
+        return (f'the {len(passed)} passing candidates are the same code: they differ only in formatting or comments '
+                f'(the same Python syntax tree), so choosing either changes no behaviour; `repo-ai shortlist '
+                'COMPARISON_ID` lists them, then `repo-ai apply ID` verifies the one you choose on your checkout')
+    if len(passed) > 1:
+        where = sorted({w for p in (differences or {}).get('pairs', []) if p['difference'] == 'SUBSTANTIVE'
+                        for w in p['where']})
+        shown = ', '.join(where[:4]) + (f' and {len(where) - 4} more' if len(where) > 4 else '')
+        return (f'the frozen tests pass on {len(passed)} candidates that differ in {shown or "their changes"}, so they '
+                'do not decide between them: write a test that pins the intended behaviour there, then run the '
+                'tournament again; or review each diff (`repo-ai mission status ID`) and apply the one you choose')
+    return 'no candidate passed the frozen tests: read each arm\'s reasons (`repo-ai mission status ID`) before retrying'
 
 
 __all__ = ['SCHEMA', 'plan_tournament', 'run_tournament']
