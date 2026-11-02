@@ -133,8 +133,23 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
     return outcomes, list(dict.fromkeys(reasons))
 
 
+def container_layout(root: Path, runner: TestRunner, files: list[str], preference: str) -> None:
+    """In a container the project is not installed (the image holds its dependencies only), so a src-layout
+    project's tests import it through `PYTHONPATH=src`, the rule `verify` applies (`commands._src_layout`). On the
+    host the project's editable install is used, as before."""
+    if preference in execute.CONTAINER_BACKENDS and runner.kind in {"pytest", "unittest"}:
+        from ..verify.commands import _src_layout
+        _src_layout(root, runner, files)
+
+
+def environment(contract: dict) -> tuple[str, str]:
+    """(sandbox preference, image): the frozen test environment of a stored mission contract (`do --sandbox/--image`);
+    older contracts: auto, none."""
+    return str(contract.get("sandbox") or "auto"), str(contract.get("image") or "")
+
+
 def observe(root: Path, command: str, timeout_s: float = 60,
-            sandbox_preference: str = "auto", project_root: Path | None = None) -> dict:
+            sandbox_preference: str = "auto", project_root: Path | None = None, image: str = "") -> dict:
     """Run one fresh, complete suite in a disposable, network-denied sandbox.
 
     Invalid input, unavailable environments and incomplete execution produce an
@@ -159,6 +174,7 @@ def observe(root: Path, command: str, timeout_s: float = 60,
         root = root.resolve(strict=True)
         runner = _runner(command)
         listing = isolate.worktree_files(root)
+        container_layout(root, runner, listing[0], sandbox_preference)
         files = runner.test_files(listing[0], root)
         if not files:
             raise ValueError("no supported test files were discovered")
@@ -169,7 +185,7 @@ def observe(root: Path, command: str, timeout_s: float = 60,
                               "runner": cache.runner_identity(runner),
                               "test_inputs": _test_inputs(root, listing[0], files)}
         executor = execute.get_executor(root, sandbox_preference, runner.language, timeout_s=timeout_s,
-                                        interpreter_root=project_root)
+                                        interpreter_root=project_root, image=image)
         identity = {"backend": executor.backend.name, "language": runner.language,
                     "interpreter": executor.node if runner.kind == "node" else executor.python,
                     "network": False}

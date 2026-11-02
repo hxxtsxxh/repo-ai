@@ -111,7 +111,7 @@ def analyze_futures(
     if rehearse:
         if mission_state is None or not mission_state.get('diff'):
             raise ValueError('futures --rehearse requires a mission ID with a recorded candidate diff')
-        from .verification import observe
+        from .verification import environment, observe
         base_head = mission_state['source']['head']
         cmd = mission_state['contract']['acceptance'][0]
         diff_text = mission_state['diff']
@@ -124,7 +124,8 @@ def analyze_futures(
                 git(ws.path, 'apply', str(patch_file))
             finally:
                 patch_file.unlink(missing_ok=True)
-            obs = observe(ws.path, cmd, timeout_s=60.0, project_root=root)
+            preference, image = environment(mission_state.get('contract') or {})
+            obs = observe(ws.path, cmd, timeout_s=60.0, project_root=root, sandbox_preference=preference, image=image)
             reran_tests = True
             # skipped tests must be exactly the baseline's: a diff that makes the failing test skip is not a pass
             base_outcomes = (mission_state.get('baseline') or {}).get('outcomes') or {}
