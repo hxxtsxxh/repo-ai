@@ -77,3 +77,10 @@ def test_the_report_lists_every_file_as_could_not_run():
     assert lines[0].startswith("NOT VERIFIED: the test runner could not start")
     assert "could not run (no test runner): tests/test_a.py, tests/test_new.py" in text
     assert "NEW" not in text and "already failing at the base" not in text
+
+
+def test_a_file_that_passed_in_the_same_run_means_the_runner_started():
+    """Review round 2 of #89: a new file importing a missing local helper, next to a passing file."""
+    rows = [_row("tests/test_new.py", "ModuleNotFoundError: No module named 'pytest_helpers'", baseline="absent"),
+            {"test": "tests/test_ok.py", "status": "pass", "baseline": "pass", "output_tail": ""}]
+    assert evidence.verdict(rows, None, 2, False) == "regression"
