@@ -219,6 +219,10 @@ def cmd_do(args) -> int:
             )
         elif allow_live and value['contract']['provider'] in LIVE_PROVIDERS:
             value = execute(root, value, None, allow_live=True)
+        elif allow_live and args.agent == 'auto' and value.get('provider_route'):
+            route = value['provider_route']
+            raise ValueError(f"no provider can run this mission ({route['outcome']}): {route['why']}. "
+                             'See `repo-ai agents route --allow-live-provider` for each provider\'s reasons')
         else:
             raise ValueError(
                 'live provider execution requires --allow-live-provider (or use --agent replay --replay FILE for simulated execution)'
