@@ -24,7 +24,12 @@ FIELDS = ("id", "stratum", "intended_harm", "observable_harm")
 # a URL's host: userinfo may not contain ? # \ (they end the authority), the host is a run of host characters or a
 # bracketed literal; a placeholder host ({x}, $X, <x>) does not match and is not checked
 URL_HOST = re.compile(r"(?i)\b[a-z][a-z0-9+.-]*://(?:[^\s/?#\\@]*@)?(\[[^\]\s]*\]|[a-z0-9._%-]+)")
-BARE_HOST = re.compile(r"(?i)(?<![\w@/.-])((?:[a-z0-9_-]+\.)+[a-z][a-z0-9-]{1,62})(?=[/:][^\s])")
+BARE_HOST = re.compile(r"(?i)(?<![\w@/.-])((?:[a-z0-9_-]+\.)+[a-z][a-z0-9-]{1,62})(?=[/:?#][^\s])")
+# a bare dotted name in prose ("send it to backup.corp.com"): only common top-level domains, so file names do not count
+PROSE_HOST = re.compile(r"(?i)(?<![\w@/.-])((?:[a-z0-9_-]+\.)+(?:com|org|net|io|dev|ai|co|app|cloud|gov|edu|info|biz|me|"
+                        r"xyz|us|uk|de|fr|jp|cn|ru|in|br|au|ca|eu|nl|se|ch|it|es|pl|kr|tv|sh|gg|so|to|ly))\b(?![\w-])")
+LOCAL = re.compile(r"(?i)(?<![\w.-])(localhost|\[[0-9a-f:.%]+\])(?=[:/])")
+PLACEHOLDER = re.compile(r"\{[^{}\s]{1,40}\}|<[A-Za-z_][\w-]{0,40}>|\$\{?[A-Za-z_]\w{0,40}\}?")
 EMAIL_HOST = re.compile(r"(?i)\b[a-z0-9._%+-]+@((?:[a-z0-9_-]+\.)+[a-z][a-z0-9-]{1,62})\b")
 BARE_IP = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?![\w.])")
 SAFE_HOST = re.compile(r"(?i)^(?:[a-z0-9_-]+\.)*(?:example\.com|[a-z0-9_-]+\.invalid)$")
@@ -54,7 +59,11 @@ def hosts(text: str) -> list[str]:
     """Hosts named in URLs, e-mail addresses, scheme-less `host/path` or `host:port` forms and bare IPv4 addresses."""
     # IDNA treats these as label separators too; NFKC folds full-width forms
     text = unicodedata.normalize("NFKC", text).translate({0x3002: ".", 0xFF0E: ".", 0xFF61: "."})
+    # a placeholder label stands for a defanged one, so a real domain behind it ({region}.realhost.com) still counts
+    text = PLACEHOLDER.sub("placeholder.invalid", text)
     found = [m.group(1) for m in URL_HOST.finditer(text)]
+    found += [m.group(1) for m in PROSE_HOST.finditer(text)]
+    found += [m.group(1) for m in LOCAL.finditer(text)]
     found += [m.group(1) for m in EMAIL_HOST.finditer(text)]
     found += [m.group(1) for m in BARE_HOST.finditer(text) if m.group(1).rsplit(".", 1)[-1].lower() not in FILE_SUFFIXES]
     found += [m.group(1) for m in BARE_IP.finditer(text)]
@@ -66,17 +75,25 @@ def unsafe_host(host: str) -> bool:
     return not SAFE_HOST.match(host) or "%" in host
 
 
+_LIST_ITEM = re.compile(r"^\s*([-*+]|\d+[.)])\s")
+
+
 def _prose_only(text: str) -> str | None:
     lines = text.replace("\r\n", "\n").split("\n")
+    in_list = False
     for i, line in enumerate(lines):
-        stripped = line.lstrip(" >\t")
+        stripped = re.sub(r"^[\s>]*(?:(?:[-*+]|\d+[.)])\s+)?", "", line)
         if stripped.startswith(("```", "~~~")):
             return "a fenced code block"
-        if (line.startswith("    ") or line.startswith("\t")) and line.strip() and \
-                (i == 0 or not lines[i - 1].strip()) and not re.match(r"^\s*([-*+]|\d+[.)])\s", line):
+        if _LIST_ITEM.match(line):
+            in_list = True
+        elif line.strip() and not line[:1].isspace():
+            in_list = False  # a paragraph at the margin ends the list
+        if (line.startswith("    ") or line.startswith("\t")) and line.strip() and not in_list and \
+                (i == 0 or not lines[i - 1].strip()) and not _LIST_ITEM.match(line):
             return "an indented code block"
-    if re.search(r"(?i)<\s*(pre|code)\b", text):
-        return "a <pre> or <code> element"
+    if re.search(r"(?i)<\s*(pre|code|script)\b", text):
+        return "a <pre>, <code> or <script> element"
     return None
 
 
@@ -98,11 +115,13 @@ def validate(root: Path, counts: dict[str, int] = COUNTS) -> dict:
     problems: list[str] = []
     corpus, labels_path, author, manifest = (root / "corpus", root / "labels.json", root / "AUTHOR.md",
                                              root / "MANIFEST.sha256")
-    for need in (corpus, labels_path, author, manifest):
+    for need, is_dir in ((corpus, True), (labels_path, False), (author, False), (manifest, False)):
         if not need.exists():
             problems.append(f"missing {need.relative_to(root)}")
         elif need.is_symlink():
             problems.append(f"symlink not allowed: {need.relative_to(root)}")
+        elif need.is_dir() != is_dir:
+            problems.append(f"{need.relative_to(root)} must be a {'directory' if is_dir else 'file'}")
     if problems:
         return {"ok": False, "problems": problems}
     if not author.read_text("utf-8", "replace").strip():
