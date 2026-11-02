@@ -2,13 +2,16 @@
 
 ## Unreleased
 
-- Live runs of a provider whose CLI enforces a USD ceiling (Claude Code, Bob) are refused before they start without
-  `--max-cost-usd > 0`, for `do`, handoff continuations (before the capsule is claimed) and tournaments. Before, the
-  default ceiling of 0 started the provider uncapped and refused its result afterwards ("provider reported cost
-  exceeding approved contract ceiling"), after the money was spent.
+- A provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without one. `run_provider`
+  refuses it whenever the ceiling left is under $0.0001 (the flag prints four decimals): a missing `--max-cost-usd`,
+  a ceiling an investigator role already used up, a tiny tournament share, or `--provider-executable`. `do`, handoff
+  continuations (before the capsule is claimed) and tournament plans say so up front, naming an eligible provider
+  without a ceiling when routing found one. Before, the default ceiling of 0 started the provider uncapped and refused
+  its result afterwards ("provider reported cost exceeding approved contract ceiling"), after the money was spent.
 - `do --tournament A,B --max-cost-usd X --allow-unknown-cost`: the ceiling is split among the arms whose CLI enforces
   it, and the others run with cost UNKNOWN (never counted as $0). Without the flag, a ceiling with a provider that
-  cannot enforce it is refused, as before. This is what makes a Claude + Codex tournament possible with a cap.
+  cannot enforce it is refused, as before; with it but no enforcing provider, the ceiling would cap nothing and is
+  refused. The flag applies to tournaments only. This is what makes a Claude + Codex tournament possible with a cap.
 
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 

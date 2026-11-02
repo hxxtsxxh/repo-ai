@@ -68,6 +68,9 @@ def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths:
         raise ValueError(f'max_seconds must allow at least {MIN_ARM_SECONDS:g}s per arm')
     enforcing = [n for n in names if contract_for(n).enforces_hard_usd_budget]
     unenforced = [n for n in names if n not in enforcing]
+    if max_cost_usd > 0 and allow_unknown_cost and not enforcing:
+        raise ValueError('none of these providers enforces a USD ceiling, so --max-cost-usd would cap nothing; omit it '
+                         '(their cost is UNKNOWN)')
     if max_cost_usd > 0 and unenforced and not allow_unknown_cost:
         raise ValueError(f"cannot enforce a USD ceiling for: {', '.join(unenforced)} (cost would be UNKNOWN); "
                          'omit --max-cost-usd, choose providers with a hard budget flag, or pass --allow-unknown-cost '

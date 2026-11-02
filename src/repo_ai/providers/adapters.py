@@ -1033,6 +1033,9 @@ def _acp_run_result(provider: str, run: AcpResult, *, resolved: Path, identity: 
     }
 
 
+MIN_CEILING_USD = 0.0001  # the ceiling flags carry four decimals; below this they would print as 0
+
+
 def run_provider(
     provider: str,
     root: Path,
@@ -1066,6 +1069,16 @@ def run_provider(
     contract = contract_for(provider)
     if not simulated and max_cost_usd > 0 and not contract.enforces_hard_usd_budget:
         raise ValueError(f"{provider} does not enforce a hard USD CLI budget flag; execution blocked")
+    if not simulated and contract.enforces_hard_usd_budget and max_cost_usd < MIN_CEILING_USD:
+        # the CLI would run uncapped (no ceiling flag below this precision) and its result be refused afterwards,
+        # after the spend: every caller (mission, role, tournament arm, continuation) stops here instead
+        return {
+            "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+            "returncode": -1, "capture_status": "no_cost_ceiling", "identity_sha256": None, "cost_usd": 0.0,
+            "cost_status": "OBSERVED", "events": {},
+            "reasons": [f"{provider} enforces a USD ceiling and none remains (cost ceiling exhausted or not given: "
+                        f"{max_cost_usd:.4f}); nothing was started"],
+        }
 
     exe_str = str(executable) if executable is not None else shutil.which(executable_name(provider))
     if not exe_str:

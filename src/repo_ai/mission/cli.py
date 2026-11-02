@@ -172,6 +172,8 @@ def cmd_do(args) -> int:
 
     if not args.task:
         raise ValueError('supply an outcome, --from-handoff FILE, or --resume ID')
+    if getattr(args, 'allow_unknown_cost', False) and not getattr(args, 'tournament', None):
+        raise ValueError('--allow-unknown-cost applies to --tournament only')
     allow_live = bool(getattr(args, 'allow_live_provider', False))
     if getattr(args, 'tournament', None):
         return _cmd_live_tournament(args, root, allow_live)
@@ -211,7 +213,7 @@ def cmd_do(args) -> int:
                 allow_live=allow_live,
             )
         elif allow_live and value['contract']['provider'] in LIVE_PROVIDERS:
-            _require_ceiling(value['contract']['provider'], args.max_cost_usd)
+            _require_ceiling(value['contract']['provider'], args.max_cost_usd, value.get('provider_route'))
             value = execute(root, value, None, allow_live=True)
         else:
             raise ValueError(
@@ -238,13 +240,17 @@ def cmd_do(args) -> int:
     return 0 if not args.run or value.get('effective_verdict', value.get('verdict')) == 'PASS' else 2
 
 
-def _require_ceiling(provider: str, max_cost_usd: float) -> None:
+def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = None) -> None:
     """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorises no spend,
-    and an uncapped run would spend first and be refused afterwards."""
-    from ..providers.adapters import contract_for
-    if contract_for(provider).enforces_hard_usd_budget and max_cost_usd <= 0:
-        raise ValueError(f'{provider} enforces a USD ceiling: give --max-cost-usd > 0 (the default 0 authorises no '
-                         'spend; without a ceiling the run would start uncapped and its result be refused afterwards)')
+    and an uncapped run would spend first and be refused afterwards (`run_provider` also stops it)."""
+    from ..providers.adapters import MIN_CEILING_USD, contract_for
+    if contract_for(provider).enforces_hard_usd_budget and max_cost_usd < MIN_CEILING_USD:
+        others = [r['provider'] for r in (route or {}).get('considered', [])
+                  if r.get('eligible') and not r.get('hard_usd_budget') and r['provider'] != provider]
+        hint = f", or choose a provider whose cost is UNKNOWN instead (--agent {others[0]})" if others else ''
+        raise ValueError(f'{provider} enforces a USD ceiling: give --max-cost-usd > 0{hint} (the default 0 '
+                         'authorises no spend; without a ceiling the run would start uncapped and its result be '
+                         'refused afterwards)')
 
 
 def _cmd_live_tournament(args, root: Path, allow_live: bool) -> int:
