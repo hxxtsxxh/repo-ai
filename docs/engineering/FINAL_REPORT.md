@@ -1,6 +1,6 @@
 # Omniprovider mission — report
 
-Status: **0.11.8 publicly shipped and verified (2026-11-02)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.11.9 publicly shipped and verified (2026-11-02)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
@@ -30,15 +30,19 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 | 0.11.6 | 2026-11-01 | `9edf537` | `c56e61e5…` | faster hooks and commands, a pytest collection note |
 | 0.11.7 | 2026-11-01 | `34cb2e9` | `6a70b4b7…` | faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed |
 | 0.11.8 | 2026-11-02 | `5662506` | `967e6590…` | security review fixes (above) |
+| 0.11.9 | 2026-11-02 | `26f3988` | `ca3bc35f…` | a missing test runner is NOT VERIFIED; `do --requirements`; coverage review fixes; workspace git without host configuration; probe hidden directories by real path |
 
-0.11.5–0.11.8 were each checked after publication the same way (PyPI = GitHub release = local build, `SHA256SUMS`,
+0.11.5–0.11.9 were each checked after publication the same way (PyPI = GitHub release = local build, `SHA256SUMS`,
 attestation, clean install); 0.11.3: PyPI = GitHub release = local build, attestation, smoke (`SHA256SUMS` not
 recorded). Details per release in ACCEPTANCE.json C20.
 
-**On main, not released** (after 0.11.8): #87 workspace git without host-global configuration and no persisted
-checkout tokens; #89 a missing test runner is NOT VERIFIED; #90 probe hidden directories by real path; #91 handoff
-snapshot; the coverage review fixes (C11) and the comparison page (C22) when merged. A 0.11.9 tag needs the owner's
-authorization.
+**0.11.9** (tag `v0.11.9` at `26f3988e763b2b9721180322007fa4a180dd9862`, release run 41487187744, pushed with the
+owner's authorization) shipped everything that was on main after 0.11.8: #87, #89, #90, #91, #94, #96, plus the
+fixes from its own release-level review. Verified after publication: PyPI wheel
+`ca3bc35fa442db4d1ab971be37012ac5df65c2b4d18ab28f943c0549db0cec4d`, sdist
+`2dddc5255e424ff314506bed8f54554389ec8564f78c8b8666ea8d5ae34e488c`, identical to the GitHub assets and a local clean
+build (the wheel rebuilt from the sdist too), `SHA256SUMS` OK, SLSA provenance for both; a clean install from PyPI
+with pytest absent reported NOT VERIFIED, the 0.11.8 smoke finding fixed.
 
 ### Providers (changes since 0.10.0)
 
@@ -60,7 +64,7 @@ Every medium is fixed.
   vetting, a quadratic dup2 check, a TOML crash, an unbounded pytestcfg pattern, checkout tokens in three workflows),
   coding-lab host git over a pre-run copy of `.git`, and the second review's medium (integrity `git show` on the
   agent-writable `.git`) and L1 (#86).
-- **Fixed on main, unreleased:** L3 (#90), L5 (#91), L7 and part of L6 (#87: no host-global git configuration,
+- **Fixed in 0.11.9:** L3 (#90), L5 (#91), L7 and part of L6 (#87: no host-global git configuration,
   `persist-credentials: false` everywhere).
 - **Still open and disclosed:** L2 (a resolve-to-bind race in the Linux probe), L4, the rest of L6 (QUEUE row 19);
   probe reads are not restricted; Linux unix sockets outside the hidden directories; macOS signals and IOKit; the
@@ -99,8 +103,8 @@ IN_PROGRESS: C24.
 - **Live third-party projects (C21):** the live provider journey within the remaining live budget; third-party code
   needs the owner's explicit approval or runs on CI (EXPERIMENTS.md). The Claude token used so far was removed.
 - **Tournament on behaviourally different candidates (C12), routing over real host states (C06):** live calls.
-- **Requirement coverage (C11):** an independent review found it partly met; its fixes are in #94 (open). Proposed
-  next: a declaration frozen with the mission and requirement-to-code links.
+- **Requirement coverage (C11):** an independent review found it partly met; its fixes (#94) and a declaration frozen
+  with the mission (#96) shipped in 0.11.9. Next: requirement-by-requirement links to the changed code.
 - **Speed (C16):** the fixed cost on small suites; steadier strategy inputs.
 
 ## The 0.10.0 cycle (2026-10-30)
