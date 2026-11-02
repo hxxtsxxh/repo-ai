@@ -1,12 +1,14 @@
 """tournament-live-v1 harness (PREREGISTRATION.md): live Codex-vs-Claude tournaments on the abc-v5 calibration
-tasks, each arm graded by abc-v5's sealed hidden oracle inside a podman container (model-written code never runs on
-the host). At most 8 provider sessions in total, counted in a ledger at a fixed path under HOME; a task with a started
+tasks, each arm graded by abc-v5's sealed hidden oracle inside a podman container (the grader never runs model-written
+code on the host; repo-ai's own verification and the providers run in repo-ai's host sandbox). At most 8 provider sessions in total, counted in a ledger at a fixed path under HOME; a task with a started
 tournament is never run again, whatever --work is.
 
     python run.py --work DIR [--only cal-py-backoff] [--dry-run]
 
 The repo-ai checkout this file lives in and DIR must both be under HOME (the provider sandboxes cannot read HOME on
-macOS, and the hidden tests live in the checkout). --dry-run runs the plan-only preflight and starts no provider.
+macOS, and the hidden tests live in the checkout). --dry-run runs the preflight (plan-only tournament, grader
+container on every reference and a decoy) and starts no provider. A run killed hard leaves the lock file
+(LEDGER.lock); remove it by hand after checking no run is active.
 """
 from __future__ import annotations
 
@@ -33,7 +35,7 @@ PROVIDERS = "codex,claude"
 CLAUDE_CAP = "1.50"  # the only provider here that enforces a ceiling gets all of it
 MAX_SESSIONS = 8
 LEDGER = Path.home() / ".local" / "share" / "repo-ai-studies" / "tournament-live-v1.jsonl"
-GRADER_IMAGE = "localhost/tl1-grader:1"  # python:3.12-slim (pinned) + Debian nodejs + pytest
+GRADER_IMAGE = "localhost/tl1-grader:1"  # built from ./Containerfile: python:3.12-slim (digest-pinned), Debian nodejs, pytest
 LABELS = ("CORRECT", "FALSE_GREEN", "FAIL")
 
 
@@ -64,11 +66,14 @@ def repo_ai(*args: str, cwd: Path, timeout: float = 3600) -> dict:
     try:
         out, err = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:  # stop repo-ai and everything it started, then record; never retried
-        os.killpg(proc.pid, signal.SIGTERM)
         try:
+            os.killpg(proc.pid, signal.SIGTERM)
             out, err = proc.communicate(timeout=30)
-        except subprocess.TimeoutExpired:
-            os.killpg(proc.pid, signal.SIGKILL)
+        except (subprocess.TimeoutExpired, ProcessLookupError):
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             out, err = proc.communicate()
         return {"argv": list(args), "exit": None, "timed_out": True, "record": None, "stderr": (err or "")[-2000:]}
     try:
@@ -93,9 +98,22 @@ def tournament_argv(task: dict, run: bool) -> list[str]:
             "--max-seconds", "1200", "--json", *[a for w in task["write_paths"] for a in ("--allow-write", w)]]
 
 
+def grader_image() -> str | None:
+    """The grader image's id, built from ./Containerfile when missing (network only while building)."""
+    shown = subprocess.run(["podman", "image", "inspect", "--format", "{{.Id}}", GRADER_IMAGE], capture_output=True,
+                           text=True)
+    if shown.returncode != 0:
+        subprocess.run(["podman", "build", "-q", "-t", GRADER_IMAGE, "-f", str(HERE / "Containerfile"), str(HERE)],
+                       capture_output=True, text=True, timeout=1800)
+        shown = subprocess.run(["podman", "image", "inspect", "--format", "{{.Id}}", GRADER_IMAGE],
+                               capture_output=True, text=True)
+    return shown.stdout.strip() if shown.returncode == 0 else None
+
+
 def preflight(work: Path, log: Log) -> bool:
-    """Plan only (no provider starts): the build has --allow-unknown-cost, both providers are eligible, and the cap
-    splits as preregistered."""
+    """No provider starts. The build has --allow-unknown-cost (plan-only tournament: both providers eligible, the cap
+    splits as preregistered) and the difference classification; the grader container grades every task's reference
+    CORRECT and its first semantic decoy FALSE_GREEN."""
     task = G.load_task(TASKS[0])
     with tempfile.TemporaryDirectory(prefix="tl1-preflight-", dir=work) as tmp:
         repo = Path(tmp) / "repo"
@@ -104,9 +122,22 @@ def preflight(work: Path, log: Log) -> bool:
     plan = res["record"] or {}
     split = (plan.get("bounds") or {}).get("per_arm_cost_usd_by_provider")
     eligible = {k: v.get("eligible") for k, v in (plan.get("readiness") or {}).items()}
-    ok = split == {"claude": 1.5, "codex": 0.0} and eligible == {"claude": True, "codex": True}
-    log("all", "preflight", ok=ok, split=split, eligible=eligible, exit=res["exit"],
-        stderr=res["stderr"] if not ok else "")
+    has_difference = (ROOT / "src" / "repo_ai" / "mission" / "difference.py").is_file()
+    image = grader_image()
+    controls = {}
+    if image:
+        for task_id in TASKS:
+            cands = G.load_candidates(task_id)
+            decoy = next((n for n in cands if n.startswith("decoy-")), None)
+            controls[task_id] = {name: grade_in_container(task_id, G.candidate_files(task_id, name))["label"]
+                                 for name in ("reference", decoy) if name}
+    graded_ok = bool(image) and all(c.get("reference") == "CORRECT" and all(v == "FALSE_GREEN" for k, v in c.items()
+                                                                           if k != "reference")
+                                    for c in controls.values()) and len(controls) == len(TASKS)
+    ok = (split == {"claude": 1.5, "codex": 0.0} and eligible == {"claude": True, "codex": True} and has_difference
+          and graded_ok)
+    log("all", "preflight", ok=ok, split=split, eligible=eligible, difference_classification=has_difference,
+        grader_image=image, grader_controls=controls, exit=res["exit"], stderr=res["stderr"] if not ok else "")
     return ok
 
 
@@ -120,7 +151,8 @@ def grade_in_container(task_id: str, files: dict[str, str]) -> dict:
         code = ("import json, sys\nfrom pathlib import Path\nsys.path.insert(0, '/r/benchmarks/abc-v5')\n"
                 "import grade as G\ng = G.grade(sys.argv[1], Path('/c'))\n"
                 "print(json.dumps({'label': g.get('label'), 'reason': g.get('reason')}))\n")
-        proc = subprocess.run(["podman", "run", "--rm", "--network=none", "--read-only", "--tmpfs", "/tmp",
+        proc = subprocess.run(["podman", "run", "--rm", "--timeout", "880", "--network=none", "--read-only",
+                               "--tmpfs", "/tmp",
                                "--cap-drop=all", "--security-opt", "no-new-privileges", "--pids-limit", "512",
                                "--memory", "2g", "-e", "HOME=/tmp", "-e", "PYTHONDONTWRITEBYTECODE=1",
                                "-v", f"{ROOT}:/r:ro", "-v", f"{cand}:/c:ro", GRADER_IMAGE, "python", "-c", code,
@@ -175,9 +207,6 @@ def run(work: Path, tasks: list[str], dry: bool, log: Log) -> None:
         if not report or not ids:
             log(task_id, "stopped", why="no comparison or no candidate was recorded; stopping before the next task")
             break
-        if "differences" not in report or "next_step" not in report:
-            log(task_id, "stopped", why="the build lacks the difference classification; stopping")
-            break
         reference = {k: v for k, v in G.candidate_files(task_id, "reference").items() if k in task["write_paths"]}
         grades = {}
         for cand in report["candidates"]:
@@ -193,6 +222,9 @@ def run(work: Path, tasks: list[str], dry: bool, log: Log) -> None:
             grades[cand["id"]] = {"provider": cand.get("provider"), "verdict": cand.get("verdict"),
                                   "label": graded.get("label"), "reason": graded.get("reason"),
                                   "equals_reference": (files == reference) if files is not None else None}
+        if any(g["label"] == "HARNESS_ERROR" for g in grades.values()):
+            log(task_id, "graded", grades=grades, stopped="a grade failed in the harness; stopping before the next task")
+            break
         winner = report.get("winner")
         passed = [c["id"] for c in report["candidates"] if c.get("verdict") == "PASS"]
         distinct = {c.get("diff_sha256") for c in report["candidates"] if c.get("verdict") == "PASS"}
@@ -204,7 +236,8 @@ def run(work: Path, tasks: list[str], dry: bool, log: Log) -> None:
         log(task_id, "graded", grades=grades, winner=winner,
             t1_arbitrary_winner=bool(winner) and not (winner in passed and len(distinct) == 1),
             t2_next_step_matches=bool(step) and ((f"repo-ai apply {winner}" in step) if winner
-                                                 else not step.startswith("review the winner")),
+                                                 else not step.startswith("review the winner")
+                                                 and not any(f"repo-ai apply {i}" in step for i in ids)),
             next_step=step, t3_violations=t3,
             t3_unlabelled_pairs=[p["candidates"] for p in pairs if p not in labelled],
             t4_winner_label=grades.get(winner, {}).get("label") if winner else None,
@@ -222,7 +255,8 @@ def run(work: Path, tasks: list[str], dry: bool, log: Log) -> None:
         t2_mismatched_next_steps=sum(1 for r in graded if not r["t2_next_step_matches"]),
         t3_violations=sum(len(r["t3_violations"]) for r in graded),
         claude_cost_observed=round(sum(float(c["cost_usd"]) for c in claude if c.get("cost_usd") is not None), 4),
-        claude_arms_cost_unknown=sum(1 for c in claude if c.get("cost_usd") is None), codex_cost="UNKNOWN")
+        claude_arms_cost_unknown=sum(1 for c in claude if c.get("id") and c.get("cost_usd") is None),
+        codex_cost="UNKNOWN")
 
 
 def main() -> int:

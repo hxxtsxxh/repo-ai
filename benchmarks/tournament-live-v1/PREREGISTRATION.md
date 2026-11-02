@@ -19,18 +19,20 @@ there; using them here does not change that.
 
 ## Run
 
-From a clone of main under HOME, after #104 and #105 are merged: a plan-only preflight first (no provider starts) must
-show the cap split `{"claude": 1.5, "codex": 0.0}` and both providers eligible. Then per task: a fresh repository of
+From a clone of main under HOME, after #104 and #105 are merged: a preflight first (no provider starts) must show the
+cap split `{"claude": 1.5, "codex": 0.0}`, both providers eligible and the difference classification present, and the
+grader container must grade every task's reference CORRECT and its first semantic decoy FALSE_GREEN. Then per task: a fresh repository of
 the frozen base (abc-v5's `materialize_w`: repo plus acceptance tests; no `repo-ai init`, which would change the base),
 and `repo-ai do PROMPT --tournament codex,claude --run --allow-live-provider --max-cost-usd 1.50 --allow-unknown-cost
 --test-command CMD --max-seconds 1200 --allow-write <write paths> --json` (sequential arms, about 600 s each).
 Codex runs first: its cost is UNKNOWN and never adds to the observed spend, so Claude's arm always gets its whole
 $1.50, which Claude Code's own flag enforces (checked between turns, so a last turn can overshoot it). Each arm's
 candidate diff is applied to a clone of the frozen base and graded by abc-v5's `grade.py` (hidden view) **inside a
-podman container without network** (python:3.12-slim pinned, Debian nodejs, pytest): model-written code never runs on
-the host. `repo-ai shortlist` runs after each abstention. A ledger at a fixed path under HOME counts sessions and
+podman container without network** (built from `Containerfile`: python:3.12-slim pinned by digest, Debian nodejs,
+pytest; its image id is recorded): the grader never runs model-written code on the host (repo-ai's own verification
+and the providers run in repo-ai's host sandbox, as in any mission). `repo-ai shortlist` runs after each abstention. A ledger at a fixed path under HOME counts sessions and
 started tasks across invocations; a lock prevents two runs at once; the harness stops at the first tournament that
-records no comparison or no candidate, and when the report lacks `differences`/`next_step`.
+records no comparison or no candidate, or where a grade fails in the harness.
 
 **Calls:** 4 tournaments x 2 arms = **8 provider sessions** (4 Claude, 4 Codex), plus repo-ai's isolation probe per
 Claude arm (a model name Claude Code rejects before any API request). **Upper bound:** Claude $6.00 (4 x $1.50,
