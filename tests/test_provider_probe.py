@@ -1,6 +1,7 @@
 """Provider discovery never equates installed binaries with runnable agents."""
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -224,29 +225,38 @@ def test_probe_creates_isolated_config_directories_before_invocation(
 def test_linux_probe_hides_socket_dirs_and_binds_back_only_the_programs_own_paths(
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Review of #78: hiding /tmp also hid an agent installed there (NO_HANDSHAKE). Its file and directory are bound
-    back read-only after the tmpfs mounts; a hidden directory itself never is."""
+    back read-only after the tmpfs mounts; a hidden directory itself never is, nor a directory holding a socket, and
+    hidden directories inside a bound-back one are hidden again."""
     monkeypatch.setattr(d.sys, "platform", "linux")
     monkeypatch.setattr(d.shutil, "which", lambda name, path=None: "/usr/bin/bwrap")
-    monkeypatch.setattr(d, "_hidden_dirs", lambda: ["/tmp", "/run", "/home/u/.ssh"])
+    monkeypatch.setattr(d, "_hidden_dirs", lambda: ["/tmp", "/run", "/tmp/home/.ssh"])
     monkeypatch.setattr(d.Path, "resolve", lambda self, strict=False: self)
+    monkeypatch.setattr(d.os.path, "isdir", lambda p: not str(p).endswith("agent"))
+    monkeypatch.setattr(d, "_has_socket", lambda p: p == "/run/user/1000")
     scratch = Path("/tmp/repo-ai-provider-probe-x")
-    prefix = d._sandbox_prefix(scratch, [Path("/tmp/a/agent"), Path("/tmp/a"), Path("/tmp/b"), Path("/tmp"),
-                                         Path("/usr/bin"), Path("/run/media/u/bin"), Path("/tmp/a")])
+    prefix = d._sandbox_prefix(scratch, [Path("/tmp/a/agent"), Path("/tmp/a"), Path("/tmp"), Path("/usr/bin"),
+                                         Path("/tmp/home"), Path("/run/user/1000"), Path("/run/user/1000/agent"),
+                                         Path("/tmp/a")])
     assert prefix is not None
-    tmpfs = [prefix[i + 1] for i, a in enumerate(prefix) if a == "--tmpfs"]
-    assert tmpfs == ["/tmp", "/run", "/home/u/.ssh"]
-    ro = [prefix[i + 1] for i, a in enumerate(prefix) if a == "--ro-bind"]
-    assert ro == ["/", "/tmp/a/agent", "/tmp/a", "/tmp/b", "/run/media/u/bin"]  # not /tmp, not /usr/bin, no repeat
-    last_tmpfs = max(i for i, a in enumerate(prefix) if a == "--tmpfs")
-    first_back = prefix.index("/tmp/a/agent")
-    assert last_tmpfs < first_back < prefix.index("--bind")
-    assert prefix[prefix.index("--bind") + 1] == str(scratch)
+    pairs = [(a, prefix[i + 1]) for i, a in enumerate(prefix) if a in ("--tmpfs", "--ro-bind", "--bind")]
+    assert pairs == [("--ro-bind", "/"), ("--tmpfs", "/tmp"), ("--tmpfs", "/run"), ("--tmpfs", "/tmp/home/.ssh"),
+                     ("--ro-bind", "/tmp/a"), ("--ro-bind", "/tmp/home"),  # not /tmp, /usr/bin or /run/user/1000
+                     ("--tmpfs", "/tmp/home/.ssh"),  # hidden again inside the bound-back home
+                     ("--ro-bind", "/tmp/a/agent"), ("--ro-bind", "/run/user/1000/agent"),
+                     ("--bind", str(scratch))]
 
 
 def test_hidden_dirs_are_real_directories_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     home = tmp_path / "home"
     (home / ".ssh").mkdir(parents=True)
     (home / ".gnupg").symlink_to(home / ".ssh")
-    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(d, "_homes", lambda: [str(home)])
     monkeypatch.setattr(d, "_HIDDEN_ROOTS", (str(tmp_path / "missing"),))
     assert d._hidden_dirs() == [str(home / ".ssh")]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX accounts")
+def test_homes_include_the_account_home_when_home_points_elsewhere(tmp_path, monkeypatch):
+    import pwd
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert d._homes() == list(dict.fromkeys([str(tmp_path), pwd.getpwuid(os.getuid()).pw_dir]))

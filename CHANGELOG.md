@@ -7,8 +7,11 @@
   `--unshare-net` does not cover path-based sockets) and, on macOS, write preferences outside its scratch directory
   through cfprefsd and use the pasteboard (found by an independent security review of 0.11.3–0.11.7). Linux now hides
   `/tmp`, `/run`, `/var/tmp`, a real `/var/run`, WSLg's `/mnt/wslg`, LXD's and Incus's directories and
-  `~/.ssh`, `~/.gnupg`, `~/.1password` and `~/.docker`, binds the probed program's own file and directory (and its
-  node runtime's) back read-only, so an agent installed under `/tmp` still runs, and unshares IPC and UTS. macOS
+  `~/.ssh`, `~/.gnupg`, `~/.1password` and `~/.docker` (for `$HOME` and the account's home), and unshares IPC and
+  UTS. The probed program's own file and directory (and its node runtime's) are bound back read-only, never a
+  directory holding a socket, with hidden directories inside them hidden again: a single-file agent under `/tmp`, or
+  one whose files all sit in its own directory, still runs; one that needs other files there (an npm package's
+  `node_modules`, a virtualenv) is not run (NO_HANDSHAKE). macOS
   denies preference writes, the pasteboard and, as defence in depth, launchd job creation (launchd already refused
   `launchctl submit` from a sandboxed caller on Darwin 25.5). Still open and disclosed: reads are not restricted;
   unix sockets elsewhere on Linux (other files in your home directory, other `/var/lib` services) stay reachable; on

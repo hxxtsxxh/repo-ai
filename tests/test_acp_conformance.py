@@ -110,13 +110,15 @@ def test_the_probe_sandbox_denies_launchservices_and_isolates_processes(tmp_path
 
 @pytest.mark.skipif(not sys.platform.startswith("linux"), reason="bubblewrap probe (Linux)")
 @needs_sandbox
-def test_an_agent_directly_in_tmp_still_runs_in_the_linux_probe(repo):
+def test_an_agent_directly_in_tmp_still_runs_in_the_linux_probe(tmp_path, repo):
     """Review of #78: the probe hides /tmp; an agent there is bound back as a file (not the whole of /tmp)."""
-    import secrets
-    folder = Path("/tmp")
-    exe = fake_agent(folder, expect=["acp"])
-    target = folder / f"rai-agent-{secrets.token_hex(4)}"
-    exe.rename(target)
+    import tempfile
+    exe = fake_agent(tmp_path / "bins", expect=["acp"])
+    fd, name = tempfile.mkstemp(prefix="rai-agent-", dir="/tmp")  # a new random name, created exclusively
+    target = Path(name)
+    with os.fdopen(fd, "wb") as out:
+        out.write(exe.read_bytes())
+    target.chmod(0o755)
     try:
         res = adapters.acp_conformance(str(target), ["acp"], repo)
         assert res["verdict"] == "HANDSHAKE_CONFORMANT", res

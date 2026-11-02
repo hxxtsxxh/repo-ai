@@ -112,11 +112,29 @@ _HIDDEN_ROOTS = ("/tmp", "/run", "/var/run", "/var/tmp", "/mnt/wslg", "/var/lib/
 _HIDDEN_HOME = (".ssh", ".gnupg", ".1password", ".docker")
 
 
+def _homes() -> list[str]:
+    homes = [os.path.expanduser("~")]  # $HOME, and the account's home when HOME points elsewhere (sudo -E)
+    try:
+        import pwd
+        homes.append(pwd.getpwuid(os.getuid()).pw_dir)
+    except (ImportError, KeyError, OSError):
+        pass
+    return [h for h in dict.fromkeys(homes) if h not in {"", "/", "~"}]
+
+
 def _hidden_dirs() -> list[str]:
-    home = os.path.expanduser("~")
-    candidates = [*_HIDDEN_ROOTS, *(os.path.join(home, d) for d in _HIDDEN_HOME if home not in {"", "/", "~"})]
+    candidates = [*_HIDDEN_ROOTS, *(os.path.join(h, d) for h in _homes() for d in _HIDDEN_HOME)]
     # a tmpfs needs a real directory; a symlink such as /var/run -> /run is covered by its target
-    return [d for d in candidates if os.path.isdir(d) and not os.path.islink(d)]
+    return [d for d in dict.fromkeys(candidates) if os.path.isdir(d) and not os.path.islink(d)]
+
+
+def _has_socket(directory: str) -> bool:
+    """A unix socket directly inside `directory` (a runtime directory such as /run/user/<uid>): never bound back."""
+    try:
+        with os.scandir(directory) as entries:
+            return any(e.is_socket() for e in entries)
+    except OSError:
+        return True
 
 
 def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -> list[str] | None:
@@ -138,14 +156,19 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
         if bwrap:
             # host socket directories are hidden first; the program's own directories are bound back read-only (an
             # agent under /tmp still runs), then the scratch directory, writable
+            # order: hidden directories; the program's directories (none holding a socket); hidden directories inside
+            # those again (a bind brings back the host's whole subtree); the program's files; the scratch directory
             dirs = _hidden_dirs()
             hidden = [a for d in dirs for a in ("--tmpfs", d)]
-            shown: list[str] = []
-            for p in dict.fromkeys(str(Path(x).resolve()) for x in expose):
-                if p not in dirs and any(p.startswith(d.rstrip("/") + "/") for d in dirs):
-                    shown += ["--ro-bind", p, p]
+            under = [p for p in dict.fromkeys(str(Path(x).resolve()) for x in expose)
+                     if p not in dirs and any(p.startswith(d.rstrip("/") + "/") for d in dirs)]
+            shown_dirs = [p for p in under if os.path.isdir(p) and not _has_socket(p)]
+            shown_files = [p for p in under if not os.path.isdir(p)]
+            again = [d for d in dirs if any(d.startswith(p.rstrip("/") + "/") for p in shown_dirs)]
+            back = [*(a for p in shown_dirs for a in ("--ro-bind", p, p)), *(a for d in again for a in ("--tmpfs", d)),
+                    *(a for p in shown_files for a in ("--ro-bind", p, p))]
             return [bwrap, "--unshare-net", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--die-with-parent",
-                    "--new-session", "--ro-bind", "/", "/", *hidden, *shown, "--bind", str(scratch), str(scratch),
+                    "--new-session", "--ro-bind", "/", "/", *hidden, *back, "--bind", str(scratch), str(scratch),
                     "--proc", "/proc", "--dev", "/dev", "--"]
     return None
 
