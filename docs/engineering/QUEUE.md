@@ -1,6 +1,6 @@
 # Work queue (living; top = next)
 
-Updated 2026-11-02: 0.11.7 published (#68–#75); C18 release review findings fixed (#78, #79); C13 Claude target blocked on auth; 0.11.8 published (with #86); after it the 0.11.8 record (#88), release-review follow-ups (#87, #90, #91) and the missing-runner verdict (#89).
+Updated 2026-11-02: 0.11.7 published (#68–#75); C18 release review findings fixed (#78, #79); C13 Claude target blocked on auth; 0.11.8 published (with #86); after it the 0.11.8 record (#88), release-review follow-ups (#87, #90, #91) and the missing-runner verdict (#89); 0.11.9 published (#87–#97, tag at 26f3988).
 
 | # | Item | Gate | State |
 |---|---|---|---|
