@@ -340,3 +340,12 @@ def test_has_socket_finds_a_nested_unix_socket():
 def test_never_hidden(path, never, monkeypatch):
     monkeypatch.setattr(d, "_homes", lambda: ["/home/u"])
     assert d._never_hidden(path) is never
+
+
+def test_a_home_under_a_hidden_root_does_not_unhide_it(tmp_path, monkeypatch):
+    """Review round 2 of #90: HOME=/tmp/ci (containers, CI) kept /tmp hidden."""
+    root = tmp_path.resolve() / "tmp"
+    (root / "ci" / ".ssh").mkdir(parents=True)
+    monkeypatch.setattr(d, "_HIDDEN_ROOTS", (str(root),))
+    monkeypatch.setattr(d, "_homes", lambda: [str(root / "ci")])
+    assert str(root) in d._hidden_dirs()
