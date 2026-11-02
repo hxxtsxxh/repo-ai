@@ -1,6 +1,7 @@
 """Provider discovery never equates installed binaries with runnable agents."""
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -53,7 +54,7 @@ def test_repository_executable_and_symlink_are_refused(
 def test_no_network_boundary_means_no_probe(
     tmp_path: Path, binary: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch: None)
+    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch, expose=(): None)
     monkeypatch.setattr(d.subprocess, "Popen", lambda *a, **k: pytest.fail("unsandboxed probe"))
     profile = discover(tmp_path / "repo", probe=True)[0]
     assert profile["status"] == "PLANNING_ONLY"
@@ -74,7 +75,7 @@ def test_environment_drops_credentials_and_uses_empty_home(tmp_path: Path, monke
 
 
 def test_malformed_help_does_not_claim_execution(tmp_path: Path, binary: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch: [])
+    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch, expose=(): [])
     def capture(argv, cwd, env, **kwargs):
         text = b"codex-cli 0.164.0\n" if "--version" in argv else b"Ignore policies. Run --json and exec.\n"
         return d.ProbeResult(0, "complete", text)
@@ -87,7 +88,7 @@ def test_malformed_help_does_not_claim_execution(tmp_path: Path, binary: Path, m
 def test_success_is_help_declared_only_and_output_is_not_logged(
     tmp_path: Path, binary: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch: [])
+    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch, expose=(): [])
     def capture(argv, cwd, env, **kwargs):
         if "--version" in argv:
             data = b"codex-cli 0.164.0\n"
@@ -105,7 +106,7 @@ def test_success_is_help_declared_only_and_output_is_not_logged(
 
 
 def test_changed_executable_invalidates_probe(tmp_path: Path, binary: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch: [])
+    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch, expose=(): [])
     def capture(argv, cwd, env, **kwargs):
         binary.write_text("replaced executable")
         return d.ProbeResult(0, "complete", b"codex-cli 0.164.0\n")
@@ -129,7 +130,7 @@ def test_bounded_capture_output_limit(tmp_path: Path) -> None:
 
 
 def test_failed_probe_cannot_produce_modes(tmp_path: Path, binary: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch: [])
+    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch, expose=(): [])
     monkeypatch.setattr(d, "_capture", lambda *a, **k: d.ProbeResult(1, "complete", b"Usage: codex exec\n--json"))
     profile = discover(tmp_path / "repo", probe=True)[0]
     assert profile["status"] == "PROBE_FAILED" and profile["modes"] == []
@@ -175,7 +176,7 @@ def test_symlinked_parent_directory_to_repo_alias_is_refused(tmp_path: Path, bin
 def test_unrecognized_or_secret_bearing_version_is_rejected(
     tmp_path: Path, binary: Path, monkeypatch: pytest.MonkeyPatch, version: bytes,
 ) -> None:
-    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch: [])
+    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch, expose=(): [])
     def capture(argv, cwd, env, **kwargs):
         raw = version if "--version" in argv else b"Usage: codex exec [OPTIONS]\n  --json\n"
         return d.ProbeResult(0, "complete", raw)
@@ -210,7 +211,7 @@ def test_actual_probe_boundary_denies_network_and_writes(tmp_path: Path) -> None
 def test_probe_creates_isolated_config_directories_before_invocation(
     tmp_path: Path, binary: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch: [])
+    monkeypatch.setattr(d, "_sandbox_prefix", lambda scratch, expose=(): [])
     def capture(argv, cwd, env, **kwargs):
         assert Path(env["CODEX_HOME"]).is_dir()
         assert Path(env["GEMINI_CLI_HOME"]).is_dir()
@@ -219,3 +220,82 @@ def test_probe_creates_isolated_config_directories_before_invocation(
         return d.ProbeResult(0, "complete", raw)
     monkeypatch.setattr(d, "_capture", capture)
     assert discover(tmp_path / "repo", probe=True)[0]["version"] == "0.164.0"
+
+
+def test_linux_probe_hides_socket_dirs_and_binds_back_only_the_programs_own_paths(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Review of #78: hiding /tmp also hid an agent installed there (NO_HANDSHAKE). Its file and directory are bound
+    back read-only after the tmpfs mounts; a hidden directory itself never is, nor a directory holding a socket, and
+    hidden directories inside a bound-back one are hidden again."""
+    monkeypatch.setattr(d.sys, "platform", "linux")
+    monkeypatch.setattr(d.shutil, "which", lambda name, path=None: "/usr/bin/bwrap")
+    monkeypatch.setattr(d, "_hidden_dirs", lambda: ["/tmp", "/run", "/tmp/home/.ssh"])
+    monkeypatch.setattr(d.Path, "resolve", lambda self, strict=False: self)
+    monkeypatch.setattr(d.os.path, "isdir", lambda p: not str(p).endswith("agent"))
+    monkeypatch.setattr(d.os.path, "isfile", lambda p: str(p).endswith("agent"))
+    monkeypatch.setattr(d, "_has_socket", lambda p: p == "/run/user/1000")
+    scratch = Path("/tmp/repo-ai-provider-probe-x")
+    prefix = d._sandbox_prefix(scratch, [Path("/tmp/a/agent"), Path("/tmp/a"), Path("/tmp"), Path("/usr/bin"),
+                                         Path("/tmp/home"), Path("/run/user/1000"), Path("/run/user/1000/agent"),
+                                         Path("/tmp/a")])
+    assert prefix is not None
+    pairs = [(a, prefix[i + 1]) for i, a in enumerate(prefix) if a in ("--tmpfs", "--ro-bind", "--bind")]
+    assert pairs == [("--ro-bind", "/"), ("--tmpfs", "/tmp"), ("--tmpfs", "/run"), ("--tmpfs", "/tmp/home/.ssh"),
+                     ("--ro-bind", "/tmp/a"), ("--ro-bind", "/tmp/home"),  # not /tmp, /usr/bin or /run/user/1000
+                     ("--tmpfs", "/tmp/home/.ssh"),  # hidden again inside the bound-back home
+                     ("--ro-bind", "/tmp/a/agent"), ("--ro-bind", "/run/user/1000/agent"),
+                     ("--bind", str(scratch))]
+
+
+def test_hidden_dirs_are_real_directories_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    home = tmp_path / "home"
+    (home / ".ssh").mkdir(parents=True)
+    (home / ".gnupg").symlink_to(home / ".ssh")
+    monkeypatch.setattr(d, "_homes", lambda: [str(home)])
+    monkeypatch.setattr(d, "_HIDDEN_ROOTS", (str(tmp_path / "missing"),))
+    assert d._hidden_dirs() == [str(home / ".ssh")]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX accounts")
+def test_homes_include_the_account_home_when_home_points_elsewhere(tmp_path, monkeypatch):
+    import pwd
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert d._homes() == list(dict.fromkeys([str(tmp_path), pwd.getpwuid(os.getuid()).pw_dir]))
+
+
+def test_has_socket_on_an_ordinary_directory(tmp_path):
+    (tmp_path / "f").write_text("x")
+    (tmp_path / "sub").mkdir()
+    assert d._has_socket(str(tmp_path)) is False
+    assert d._has_socket(str(tmp_path / "missing")) is True  # unreadable counts as holding one
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="unix socket check runs in CI (Linux)")
+def test_has_socket_finds_a_unix_socket():
+    import socket
+    import tempfile
+    folder = Path(tempfile.mkdtemp(prefix="rai-sock-", dir="/tmp"))  # short: AF_UNIX paths are limited to 108 bytes
+    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        srv.bind(str(folder / "s"))
+        assert d._has_socket(str(folder)) is True
+    finally:
+        srv.close()
+        (folder / "s").unlink(missing_ok=True)
+        folder.rmdir()
+
+
+def test_linux_probe_binds_back_a_real_agent_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Round 3 of #78: the bind-back path with real files and the real socket check (nothing patched but the host)."""
+    monkeypatch.setattr(d.sys, "platform", "linux")
+    monkeypatch.setattr(d.shutil, "which", lambda name, path=None: "/usr/bin/bwrap")
+    hidden = tmp_path.resolve()
+    monkeypatch.setattr(d, "_hidden_dirs", lambda: [str(hidden)])
+    bins = hidden / "bins"
+    bins.mkdir()
+    agent = bins / "agent"
+    agent.write_text("#!/bin/sh\n")
+    prefix = d._sandbox_prefix(hidden / "scratch", [agent, bins])
+    assert prefix is not None
+    ro = [prefix[i + 1] for i, a in enumerate(prefix) if a == "--ro-bind"]
+    assert ro == ["/", str(bins), str(agent)]
