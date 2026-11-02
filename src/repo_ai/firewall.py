@@ -459,13 +459,32 @@ _SHELL = re.compile(r"(?i)/bin/(ba|z|k)?sh\b|\bpty\.spawn\s*\(|\bsubprocess\.\w+
 MAX_SCAN_LINE = 2_000  # longer lines are cut for these patterns (a SKILL.md line over 2,000 is already a surface)
 
 
+_LICENCE_NAMES = {"LICENSE", "COPYING", "NOTICE"}
+_RUN_NAME = re.compile(r"(?i)(?:\b(?:ba|z|k|da)?sh|\bpython[0-9.]*|\bnode|\bsource|\bexec|\beval|^\.|\s\.)\s+(?:\./)?"
+                       r"(LICENSE|COPYING|NOTICE)\b|\./(LICENSE|COPYING|NOTICE)\b", re.M)
+
+
+def run_names(skill_md: str) -> frozenset[str]:
+    """Licence or notice names that SKILL.md hands to an interpreter or runs (`bash NOTICE`, `./LICENSE`)."""
+    return frozenset((m.group(1) or m.group(2)).upper() for m in _RUN_NAME.finditer(skill_md))
+
+
+def _licence_doc(path: str, text: str, run: frozenset[str] = frozenset()) -> bool:
+    """A licence or notice file read as documentation: only at the skill's root, never a script (a shebang) and never
+    one SKILL.md runs, so `scripts/notice`, a `#!` NOTICE and `bash LICENSE` keep the code rules."""
+    p = PurePosixPath(path)
+    name = p.name.upper()
+    return len(p.parts) == 1 and name in _LICENCE_NAMES and name not in run and not text.startswith("#!")
+
+
 def code_risks(code: str) -> list[tuple[str, str, str]]:
     """(category, rule, evidence) for whole-program behaviour that no single line shows. Evidence is redacted."""
     out = []
     code = "\n".join(line.strip()[:MAX_SCAN_LINE] for line in code.splitlines())
     sockets = {m.group(1) or m.group(2) or m.group(3) for m in _SOCKET_VAR.finditer(code)}
-    if _SHELL.search(code) and any(re.search(r"\bdup2\s*\(\s*" + re.escape(v) + r"\.fileno\(\)", code)
-                                   for v in sockets):
+    # one pass for the duplicated descriptors (a search per socket name was quadratic on large files)
+    duplicated = set(re.findall(r"\bdup2\s*\(\s*(\w+)\.fileno\(\)", code)) if sockets else set()
+    if _SHELL.search(code) and sockets & duplicated:
         out.append(("remote-exec", "reverse-shell", "a socket is connected, duplicated onto stdio and given a shell"))
     src, send = _SECRET_SOURCE.search(code), _NETWORK_SEND.search(code)
     if src and send:
@@ -761,9 +780,10 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
 
     # 2./3. instructions and code, line by line
     hosts: dict[str, str] = {}
+    run = run_names(texts.get("SKILL.md", ""))
     for path, text in texts.items():
         # licence and notice files are installed with an inert skill, so their text is read as documentation
-        is_doc = path.endswith((".md", ".txt")) or PurePosixPath(path).name.upper() in {"LICENSE", "COPYING", "NOTICE"}
+        is_doc = path.endswith((".md", ".txt")) or _licence_doc(path, text, run)
         ext = PurePosixPath(path).suffix.lower()
         # one leading byte-order mark is an encoding signature, not hidden text
         # (editors and Anthropic's own docx skill write it); any other is flagged
@@ -783,7 +803,7 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
         if is_doc:
             for rule, at, snip in instruction_risks(text):
                 findings.append(Finding("high", "suspected", "instruction-risk", rule, path, at, snip))
-        contexts = line_contexts(path, text)
+        contexts = line_contexts(path, text, run)
         raw_lines = text.splitlines()
         code = "\n".join(ln for ln, c in zip(raw_lines, contexts, strict=False) if c == "code")
         for category, rule, evidence in code_risks(code):
@@ -934,15 +954,14 @@ def _magic_ok(ext: str, data: bytes) -> bool:
     return data.startswith(_MAGIC.get(ext, (b"",)))
 
 
-def line_contexts(path: str, text: str) -> list[str]:
+def line_contexts(path: str, text: str, run: frozenset[str] = frozenset()) -> list[str]:
     """`code` | `comment` | `prose` | `inline` per line. Markdown is prose,
     except fenced or indented blocks (code) and sentences quoting inline code
     (inline: full severity, but "never run `x`" still counts as a warning);
     scripts are code except comments."""
     lines = text.splitlines()
     ext = PurePosixPath(path).suffix.lower()
-    if ext in {".md", ".txt", ".markdown", ".rst"} or PurePosixPath(path).name.upper() in {"LICENSE", "COPYING",
-                                                                                        "NOTICE"}:
+    if ext in {".md", ".txt", ".markdown", ".rst"} or _licence_doc(path, text, run):
         out = []
         fence = None
         for line in lines:

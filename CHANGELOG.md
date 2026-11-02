@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- Security review of v0.11.3...v0.11.7 (C18), low findings:
+  - The skill vetter reads `LICENSE`, `COPYING` and `NOTICE` as documentation only at the skill's root, and not when
+    the file starts with `#!` or SKILL.md runs it (`bash NOTICE`, `./LICENSE`). Before, a file with one of those names
+    in any directory (`scripts/notice`) skipped the code rules.
+  - The check for a socket duplicated onto stdio makes one pass over the file instead of one search per socket name,
+    which was quadratic on large files.
+  - `verify` no longer crashes when `pyproject.toml` gives `tool`, `tool.setuptools_scm` or a `tool.hatch` table a
+    non-table value (valid TOML) or nests deeply enough to stop the parser; no version file is declared then.
+  - The `norecursedirs` note is skipped for a pattern over 256 characters, and a memory or overflow error while
+    reading the configuration gives no note instead of an error.
+  - The coding lab's `git diff` and `git ls-files` in an agent's workspace run with `core.fsmonitor=false` and no
+    hooks, since the agent could have written that workspace's `.git/config`.
+  - The diagnose, journey and speed workflows no longer keep the checkout token in `.git/config`.
+
 ## 0.11.7 — faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed
 
 - A mission record now says how a live Claude run authenticated: `provider.auth_mode` (`token_env` or
