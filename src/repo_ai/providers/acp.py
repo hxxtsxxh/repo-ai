@@ -119,8 +119,10 @@ class AcpClient:
     """One ACP agent process, driven to answer one prompt."""
 
     def __init__(self, argv: list[str], workspace: Path, *, allowed_writes: list[str], env: Mapping[str, str] | None = None,
-                 cwd: Path | None = None, log: Callable[[str], None] = lambda _: None):
+                 cwd: Path | None = None, log: Callable[[str], None] = lambda _: None,
+                 pass_fds: tuple[int, ...] = ()):
         self.argv = list(argv)
+        self.pass_fds = tuple(pass_fds)  # descriptors a probe sandbox binds (`discovery.pinned_fds`)
         self.workspace = workspace.resolve()
         self.allowed = {str(PurePosixPath(w)) for w in allowed_writes}
         # never the user's whole environment (it may hold credentials); a provider passes what the agent needs
@@ -357,7 +359,8 @@ class AcpClient:
         if os.name != "posix":  # non-blocking pipes, select on pipes, O_NOFOLLOW openat walks, process groups
             raise AcpError("the ACP client runs on POSIX hosts only (macOS, Linux), as repo-ai missions do")
         self.proc = subprocess.Popen(self.argv, cwd=self.cwd, env=self.env, stdin=subprocess.PIPE,
-                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True,
+                                     pass_fds=self.pass_fds)
         assert self.proc.stdin is not None
         os.set_blocking(self.proc.stdin.fileno(), False)
         self._err_stop = threading.Event()  # per process: a client started again drains its new agent's stderr too
