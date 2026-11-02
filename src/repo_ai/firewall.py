@@ -490,10 +490,14 @@ def _prose_line(line: str) -> bool:
     s = line.strip()
     if not s:
         return True
-    spaces = s.count(" ") / len(s)
     punct = sum(c in _CODE_PUNCT for c in s) / len(s)
+    if punct >= 0.01:
+        return False
+    # scripts written without spaces between words (Chinese, Japanese, Thai): mostly letters outside ASCII
+    if sum(c.isalpha() and ord(c) > 0x2E7F for c in s) / len(s) >= 0.5:
+        return True
     words = s.split()
-    return spaces >= 0.08 and punct < 0.01 and sum(map(len, words)) / len(words) <= 15
+    return s.count(" ") / len(s) >= 0.08 and sum(map(len, words)) / len(words) <= 15
 
 
 def code_risks(code: str) -> list[tuple[str, str, str]]:
