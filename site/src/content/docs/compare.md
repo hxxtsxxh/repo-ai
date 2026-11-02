@@ -30,7 +30,8 @@ runs. The scope and the projects it does not cover are on [Evaluation & methodol
   30, and 2.23×, 2.00× and 1.96× in three later runs, slower on 30, 30 and 28 of 30. It does not save time on small
   suites. A profile on a generated 40-test project traced most of the fixed cost to source-tree snapshots and git
   calls, since reduced; the speed-v1 projects themselves have not been profiled.
-  ([Evaluation](/repo-ai/docs/evaluation/); [speed-v1 results](https://github.com/hxxtsxxh/repo-ai/blob/main/benchmarks/speed-v1/RESULTS.md))
+  ([Evaluation](/repo-ai/docs/evaluation/); [speed-v1 results](https://github.com/hxxtsxxh/repo-ai/blob/main/benchmarks/speed-v1/RESULTS.md);
+  [changelog](/repo-ai/docs/changelog/))
 - **Fewer runners.** Jest, Vitest and Mocha are not supported for selection (full suite only). unittest and
   TypeScript have no held-out qualification. ([Status matrix](/repo-ai/docs/status/))
 - **It runs in the project's environment.** If the project's test runner is not installed where verify runs the
