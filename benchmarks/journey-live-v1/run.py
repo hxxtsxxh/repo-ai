@@ -1,9 +1,13 @@
 """journey-live-v1 harness (PREREGISTRATION.md). Host: git, podman CLI and the repo-ai executable only; project code
 runs only in podman containers. Stages:
 
-    python run.py prep  --work DIR                      # clones, frozen tests, images, native checks (no model)
-    python run.py run   --work DIR --repo-ai PATH       # onboarding, live missions, oracle, apply/undo, recovery
-    python run.py prep|run ... --only humanize           # one defect
+    python run.py prep     --work DIR                   # clones, frozen tests, images, native checks (no model)
+    python run.py control  --work DIR --repo-ai PATH    # positive control: upstream fix as a replay (no model)
+    python run.py run      --work DIR --repo-ai PATH    # onboarding, live missions, L1, oracle, apply/undo
+    python run.py recovery --work DIR --repo-ai PATH    # failure recovery (no model), after every live mission
+
+DIR must be one the provider sandbox cannot read (under HOME on macOS): the clones hold upstream history and the
+records. Sessions are counted from DIR/records.jsonl (`live-mission-start`), so a rerun never repeats one.
 
 Every step is appended to DIR/records.jsonl; nothing is retried after a model call.
 """
@@ -129,7 +133,8 @@ def podman_test(image: str, tree: Path, args: list[str], *, version_file: str | 
             outcomes[m.group(2)] = m.group(1)
     for node in subfailed:
         outcomes[node] = "FAILED"
-    return {"exit": proc.returncode, "outcomes": outcomes, "failed": sorted(t for t, o in outcomes.items()
+    errors = sorted({m.group(1) for m in re.finditer(r"^ERROR (\S+\.py)(?: - .*)?$", out, re.M)})
+    return {"exit": proc.returncode, "outcomes": outcomes, "collection_errors": errors, "failed": sorted(t for t, o in outcomes.items()
                                                                           if o in ("FAILED", "ERROR")),
             "tail": text(proc.stdout, 1500)}
 
@@ -179,6 +184,7 @@ def prep(work: Path, names: list[str], log: Log) -> None:
             sh([*GIT, "checkout", "-q", d["fix"], "--", *[f for f in files if f not in tests]], repo, check=True)
             sh([*GIT, "commit", "-qm", "upstream fix (reference, not given to the agent)"], repo, check=True)
             upstream = sh([*GIT, "rev-parse", "HEAD"], repo, check=True).stdout.decode().strip()
+            sh([*GIT, "update-ref", "refs/journey/upstream", upstream], repo, check=True)
             sh([*GIT, "reset", "-q", "--hard", frozen], repo, check=True)
             fix_run = podman_test(tag, export(repo, upstream, t / "fix"), [], version_file=d.get("version_file"))
         newly = sorted(set(base_run["failed"]) - set(fix_run["failed"]))
@@ -197,21 +203,31 @@ def last(work: Path, name: str, step: str) -> dict:
     return found[-1]
 
 
-def tree_state(repo: Path) -> dict:
-    """Every file under the checkout except .git, by sha256: tracked and untracked alike."""
+STATE_DIR = ".repo-ai"  # repo-ai's own records (missions, receipts): written by apply and undo by design
+
+
+def tree_state(repo: Path, *, state: bool = False) -> dict:
+    """Every file under the checkout except .git, by sha256 and mode: tracked and untracked alike. repo-ai's state
+    directory is reported separately (`state=True`), since apply and undo record themselves there."""
     out = {}
     for p in sorted(repo.rglob("*")):
         rel = p.relative_to(repo).as_posix()
         if rel == ".git" or rel.startswith(".git/") or not p.is_file() or p.is_symlink():
             continue
-        out[rel] = hashlib.sha256(p.read_bytes()).hexdigest()
+        if (rel == STATE_DIR or rel.startswith(STATE_DIR + "/")) != state:
+            continue
+        out[rel] = f"{hashlib.sha256(p.read_bytes()).hexdigest()} {oct(p.stat().st_mode & 0o777)}"
     return out
 
 
 def repo_ai(exe: str, repo: Path, *args: str, timeout: float = 1800) -> dict:
     env = {k: v for k, v in os.environ.items() if k not in ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY",
                                                             "AI_AGENT", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
-    proc = sh([exe, *args], repo, timeout=timeout, env=env)
+    try:
+        proc = sh([exe, *args], repo, timeout=timeout, env=env)
+    except subprocess.TimeoutExpired as exc:  # recorded, never retried
+        return {"argv": ["repo-ai", *args], "exit": None, "record": None, "timed_out": True,
+                "stdout": text(exc.stdout or b""), "stderr": text(exc.stderr or b"", 3000)}
     try:
         record = json.loads(proc.stdout)
     except json.JSONDecodeError:
@@ -220,55 +236,133 @@ def repo_ai(exe: str, repo: Path, *args: str, timeout: float = 1800) -> dict:
             "stdout": None if record is not None else text(proc.stdout), "stderr": text(proc.stderr, 3000)}
 
 
-def run(work: Path, names: list[str], exe: str, log: Log, sessions_left: int) -> None:
+def rows(work: Path) -> list[dict]:
+    path = work / "records.jsonl"
+    return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+
+def checked_build(exe: str, log: Log) -> str:
+    """The repo-ai under test must have `do --sandbox/--image`; refuse before any session otherwise."""
+    version = sh([exe, "--version"], check=True).stdout.decode().strip()
+    shown = sh([exe, "do", "--help"]).stdout.decode()
+    if "--sandbox" not in shown or "--image" not in shown:
+        raise SystemExit(f"{version} has no `do --sandbox/--image`; nothing was run")
+    log("all", "build", version=version)
+    return version
+
+
+def prepare_checkout(work: Path, name: str, d: dict, log: Log) -> Path:
+    repo = work / name / "repo"
+    sh([*GIT, "checkout", "-q", "journey"], repo, check=True)
+    sh([*GIT, "clean", "-fdxq"], repo, check=True)
+    if d.get("version_file"):  # hatch-vcs generates it at build time; the clone has none (it is gitignored)
+        (repo / d["version_file"]).write_text('__version__ = version = "0.0.0"\n'
+                                              '__version_tuple__ = version_tuple = (0, 0, 0)\n')
+        log(name, "version-stub", path=d["version_file"],
+            ignored=sh([*GIT, "check-ignore", "-q", d["version_file"]], repo).returncode == 0)
+    return repo
+
+
+def control(work: Path, names: list[str], exe: str, log: Log) -> None:
+    """Positive control through repo-ai's own podman backend, no model: the upstream fix as an explicit replay
+    proposal must PASS. Run in a separate clone (its replay never sits in the live checkout or its records)."""
+    checked_build(exe, log)
     for name in names:
         d = DEFECTS[name]
-        check = last(work, name, "native-check")
-        image = last(work, name, "image")
-        if not check["qualifies"] or not image.get("ok") or image.get("project_installed"):
-            log(name, "skipped", why="did not qualify in prep (no model call)")
+        check, image = last(work, name, "native-check"), last(work, name, "image")
+        ctl = work / name / "control"
+        shutil.rmtree(ctl, ignore_errors=True)
+        sh([*GIT, "clone", "-q", "--no-hardlinks", str(work / name / "repo"), str(ctl), "-b", "journey"], check=True)
+        sh([*GIT, "fetch", "-q", str(work / name / "repo"), check["upstream_ref"]], ctl, check=True)
+        if d.get("version_file"):
+            (ctl / d["version_file"]).write_text('__version__ = version = "0.0.0"\n'
+                                                 '__version_tuple__ = version_tuple = (0, 0, 0)\n')
+        repo_ai(exe, ctl, "init", "--agent", "none")
+        sh([*GIT, "add", "-A"], ctl, check=True)
+        sh([*GIT, "commit", "-qm", "repo-ai init", "--allow-empty"], ctl, check=True)
+        edits = []
+        for target in d["write"]:
+            before = sh([*GIT, "show", f"HEAD:{target}"], ctl, check=True).stdout
+            after = sh([*GIT, "show", f"{check['upstream_ref']}:{target}"], ctl, check=True).stdout.decode()
+            edits.append({"path": target, "before_sha256": hashlib.sha256(before).hexdigest(), "after": after})
+        with tempfile.TemporaryDirectory(prefix="journey-control-") as tmp:
+            replay = Path(tmp) / "replay.json"
+            replay.write_text(json.dumps({"schema": "repo-ai.replay/1", "label": "explicit simulated proposal: "
+                                          "upstream fix (positive control)", "edits": edits}))
+            argv = ["do", d["task"], "--agent", "replay", "--replay", str(replay), "--run",
+                    *[a for w in d["write"] for a in ("--allow-write", w)], "--sandbox", "podman", "--image",
+                    image["tag"], "--json", "--max-seconds", "900"]
+            for test in check.get("expect_fix") or []:
+                argv += ["--expect-fix", test]
+            res = repo_ai(exe, ctl, *argv, timeout=2400)
+        rec = res["record"] or {}
+        verdict = rec.get("effective_verdict", rec.get("verdict"))
+        log(name, "control", **res, verdict=verdict, ok=verdict in ("PASS", "PASS_WITH_PRE_EXISTING_FAILURES"))
+        shutil.rmtree(ctl, ignore_errors=True)
+
+
+def run(work: Path, names: list[str], exe: str, log: Log) -> None:
+    version = checked_build(exe, log)
+    for name in names:
+        d = DEFECTS[name]
+        history = rows(work)
+        started = [r for r in history if r["step"] == "live-mission-start"]
+        if any(r["defect"] == name for r in started):
+            log(name, "skipped", why="a live session was already started for this defect (never repeated)")
             continue
-        repo = work / name / "repo"
-        sh([*GIT, "checkout", "-q", "journey"], repo, check=True)
-        sh([*GIT, "clean", "-fdxq"], repo, check=True)
+        if len(started) >= 4:
+            log(name, "skipped", why="the 4 approved Claude sessions are used")
+            continue
+        check, image = last(work, name, "native-check"), last(work, name, "image")
+        controls = [r for r in history if r["defect"] == name and r["step"] == "control"]
+        if not check["qualifies"] or not image.get("ok") or image.get("project_installed") or \
+                not (controls and controls[-1].get("ok")):
+            log(name, "skipped", why="did not qualify, or the positive control did not pass (no model call)")
+            continue
+        repo = prepare_checkout(work, name, d, log)
         tag = image["tag"]
         sb = ["--sandbox", "podman", "--image", tag]
         init = repo_ai(exe, repo, "init", "--agent", "none")
         sh([*GIT, "add", "-A"], repo, check=True)
         sh([*GIT, "commit", "-qm", "repo-ai init", "--allow-empty"], repo, check=True)
         log(name, "onboarding-init", **init)
-        log(name, "onboarding-verify", **repo_ai(exe, repo, "verify", "--run", *sb, "--json"))
-        if sessions_left <= 0:
-            log(name, "skipped", why="no Claude session left in the approved budget")
-            continue
+        log(name, "onboarding-verify", **repo_ai(exe, repo, "verify", "--run", "--base", d["base"], *sb, "--json"))
         argv = ["do", d["task"], "--agent", "claude", "--allow-live-provider", "--max-cost-usd", MAX_COST, "--run",
                 *[a for w in d["write"] for a in ("--allow-write", w)], *sb, "--json", "--max-seconds", "900"]
         for test in check.get("expect_fix") or []:
             argv += ["--expect-fix", test]
-        sessions_left -= 1
+        log(name, "live-mission-start", build=version, session_number=len(started) + 1)
         mission = repo_ai(exe, repo, *argv, timeout=2400)
-        log(name, "live-mission", **mission)
         rec = mission["record"] or {}
+        prov = rec.get("provider") or {}
+        log(name, "live-mission", **mission, cost_usd=prov.get("cost_usd"), cost_status=prov.get("cost_status"))
         mid, verdict = rec.get("id"), rec.get("effective_verdict", rec.get("verdict"))
         diff = rec.get("diff") or ""
         if mid and diff:
-            oracle(work, name, d, repo, check, diff, tag, log)
+            oracle(work, name, d, repo, check, diff, tag, verdict, log)
         if mid and verdict in ("PASS", "PASS_WITH_PRE_EXISTING_FAILURES"):
-            before = tree_state(repo)
+            before, state_before = tree_state(repo), tree_state(repo, state=True)
             applied = repo_ai(exe, repo, "apply", mid, "--json")
             after_apply = tree_state(repo)
             undone = repo_ai(exe, repo, "undo", mid, "--json")
-            after_undo = tree_state(repo)
-            log(name, "apply-undo", apply=applied, undo=undone,
+            after_undo, state_after = tree_state(repo), tree_state(repo, state=True)
+            ok = applied["exit"] == 0 and bool((applied["record"] or {}).get("applied_to_source"))
+            log(name, "apply-undo", apply=applied, undo=undone, apply_ok=ok,
                 applied_changed=sorted(k for k in set(before) | set(after_apply) if before.get(k) != after_apply.get(k)),
-                undo_identical=after_undo == before,
-                undo_differences=sorted(k for k in set(before) | set(after_undo) if before.get(k) != after_undo.get(k)))
-    log("all", "sessions", left=sessions_left)
+                undo_identical=after_undo == before if ok else None,
+                undo_differences=sorted(k for k in set(before) | set(after_undo) if before.get(k) != after_undo.get(k)),
+                state_files_changed=sorted(k for k in set(state_before) | set(state_after)
+                                           if state_before.get(k) != state_after.get(k)))
+    spent = [r for r in rows(work) if r["step"] == "live-mission"]
+    log("all", "sessions", started=len([r for r in rows(work) if r["step"] == "live-mission-start"]),
+        reported_cost_usd=round(sum(float(r.get("cost_usd") or 0) for r in spent), 4),
+        cost_statuses=sorted({str(r.get("cost_status")) for r in spent}))
 
 
-def oracle(work: Path, name: str, d: dict, repo: Path, check: dict, diff: str, tag: str, log: Log) -> None:
-    """Hidden upstream-differential oracle: the fix's test files as of the release, on base+upstream and on
-    base+candidate, natively in the container."""
+def oracle(work: Path, name: str, d: dict, repo: Path, check: dict, diff: str, tag: str, verdict: str | None,
+           log: Log) -> None:
+    """L1: the candidate on the frozen tests, natively in the container. Then the hidden upstream-differential
+    oracle: the fix's test files as of the release, on base+upstream and on base+candidate."""
     tests = last(work, name, "frozen-tests")["test_files"]
     with tempfile.TemporaryDirectory(prefix="journey-oracle-", dir=work) as tmp:
         t = Path(tmp)
@@ -276,66 +370,85 @@ def oracle(work: Path, name: str, d: dict, repo: Path, check: dict, diff: str, t
         cand = export(repo, "journey", t / "candidate")
         patch = t / "candidate.patch"
         patch.write_text(diff if diff.endswith("\n") else diff + "\n")
-        applied = sh(["git", "apply", str(patch)], cand)
-        if applied.returncode != 0:
-            applied = sh(["patch", "-p1", "-i", str(patch)], cand)
+        applied = sh(["git", "apply", str(patch)], cand, stdin=b"")
         if applied.returncode != 0:
             log(name, "oracle", ok=False, why="candidate diff did not apply to an export", stderr=text(applied.stderr))
             return
+        frozen = podman_test(tag, cand, [], version_file=d.get("version_file"))
+        still = sorted(set(check["fixed_by_upstream"]) & set(frozen["failed"]))
+        new = sorted(set(frozen["failed"]) - set(check["fix_failed"]))
+        log(name, "native-frozen", candidate_exit=frozen["exit"], frozen_still_failing=still,
+            new_failures_vs_upstream=new, l1_violation=verdict in ("PASS", "PASS_WITH_PRE_EXISTING_FAILURES")
+            and bool(still or new), tail=frozen["tail"])
+        missing = []
         for tree in (ref, cand):
             for f in tests:
                 blob = sh([*GIT, "show", f"{d['release']}:{f}"], repo)
                 if blob.returncode == 0:
                     (tree / f).parent.mkdir(parents=True, exist_ok=True)
                     (tree / f).write_bytes(blob.stdout)
+                elif f not in missing:
+                    missing.append(f)
         a = podman_test(tag, ref, tests, version_file=d.get("version_file"))
         b = podman_test(tag, cand, tests, version_file=d.get("version_file"))
     differ = sorted(k for k in a["outcomes"] if a["outcomes"][k] == "PASSED" and b["outcomes"].get(k) != "PASSED")
-    log(name, "oracle", ok=True, upstream_exit=a["exit"], candidate_exit=b["exit"],
-        upstream_failed=a["failed"], candidate_failed=b["failed"], behavioural_differences=differ,
-        compared=len(a["outcomes"]))
+    log(name, "oracle", ok=True, release=d["release"], missing_at_release=missing, upstream_exit=a["exit"],
+        candidate_exit=b["exit"], upstream_failed=a["failed"], candidate_failed=b["failed"],
+        behavioural_differences=differ, compared=len(a["outcomes"]), upstream_tail=a["tail"][-600:],
+        candidate_tail=b["tail"][-600:])
 
 
 def recovery(work: Path, exe: str, log: Log) -> None:
-    """Failure recovery without a model: a replay mission whose image has no pytest must not pass."""
+    """Failure recovery without a model: a replay mission whose image has no pytest must not pass. Only after every
+    live session, so the upstream fix it carries is never on disk while an agent runs."""
+    started = {r["defect"] for r in rows(work) if r["step"] == "live-mission-start"}
+    if not set(DEFECTS) <= started:
+        raise SystemExit("recovery runs after the live missions: " + ", ".join(sorted(set(DEFECTS) - started)))
+    checked_build(exe, log)
     name = "humanize"
-    repo = work / name / "repo"
+    d = DEFECTS[name]
     pinned = last(work, "all", "base-image")["image"]
     sh(["podman", "tag", pinned, "localhost/journey-no-pytest:1"], check=True)
-    sh([*GIT, "checkout", "-q", "journey"], repo, check=True)
+    repo = prepare_checkout(work, name, d, log)
+    sh([*GIT, "reset", "-q", "--hard", "HEAD"], repo, check=True)
     upstream = last(work, name, "native-check")["upstream_ref"]
-    target = DEFECTS[name]["write"][0]
+    target = d["write"][0]
     before = sh([*GIT, "show", f"HEAD:{target}"], repo, check=True).stdout
     after = sh([*GIT, "show", f"{upstream}:{target}"], repo, check=True).stdout.decode()
-    replay = work / "recovery-replay.json"
-    replay.write_text(json.dumps({"schema": "repo-ai.replay/1", "label": "explicit simulated proposal: upstream fix",
-                                  "edits": [{"path": target, "before_sha256": hashlib.sha256(before).hexdigest(),
-                                             "after": after}]}))
-    res = repo_ai(exe, repo, "do", DEFECTS[name]["task"], "--agent", "replay", "--replay", str(replay), "--run",
-                  "--allow-write", target, "--sandbox", "podman", "--image", "localhost/journey-no-pytest:1", "--json")
+    with tempfile.TemporaryDirectory(prefix="journey-recovery-") as tmp:
+        replay = Path(tmp) / "replay.json"
+        replay.write_text(json.dumps({"schema": "repo-ai.replay/1", "label": "explicit simulated proposal: upstream "
+                                      "fix", "edits": [{"path": target, "before_sha256": hashlib.sha256(before)
+                                                        .hexdigest(), "after": after}]}))
+        res = repo_ai(exe, repo, "do", d["task"], "--agent", "replay", "--replay", str(replay), "--run",
+                      "--allow-write", target, "--sandbox", "podman", "--image", "localhost/journey-no-pytest:1",
+                      "--json")
     rec = res["record"] or {}
-    log(name, "failure-recovery", **res, verdict=rec.get("effective_verdict", rec.get("verdict")))
+    log(name, "failure-recovery", **res, verdict=rec.get("effective_verdict", rec.get("verdict")),
+        reasons=rec.get("reasons"), recovery=rec.get("recovery"))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["prep", "run", "recovery"])
+    ap.add_argument("stage", choices=["prep", "control", "run", "recovery"])
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--repo-ai", dest="exe")
     ap.add_argument("--only", action="append")
-    ap.add_argument("--sessions", type=int, default=4, help="Claude sessions left in the approved budget")
     args = ap.parse_args()
     args.work.mkdir(parents=True, exist_ok=True)
     log = Log(args.work)
     names = args.only or list(DEFECTS)
     if args.stage == "prep":
         prep(args.work, names, log)
-    elif args.stage == "run":
+    else:
         if not args.exe:
             raise SystemExit("--repo-ai PATH is required")
-        run(args.work, names, args.exe, log, min(args.sessions, 4))
-    else:
-        recovery(args.work, args.exe, log)
+        if args.stage == "control":
+            control(args.work, names, args.exe, log)
+        elif args.stage == "run":
+            run(args.work, names, args.exe, log)
+        else:
+            recovery(args.work, args.exe, log)
     return 0
 
 
