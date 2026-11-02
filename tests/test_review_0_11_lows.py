@@ -106,4 +106,4 @@ def test_a_licence_with_one_long_paragraph_is_not_an_overlong_code_line(tmp_path
     dest, files, prior = firewall.quarantine_local(skill, skill.name)
     report = firewall.inspect(dest, files, {"id": "local/long-licence", "name": skill.name, "path": skill.name},
                               {}, prior)
-    assert not [f.rule for f in report.findings if f.path == rel and f.severity in ("high", "critical")]
+    assert not [f.rule for f in report.findings if f.file == rel and f.severity in ("high", "critical")]
