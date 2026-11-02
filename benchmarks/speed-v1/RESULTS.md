@@ -208,3 +208,57 @@ where runs 2 and 3 chose `targeted` (exit 1), the strategy mechanism the addendu
 change between runs, through the strategy choice; the C16 limit about 2fc8207d stands, though it did not reproduce
 in run 4. No false
 assurance (0 of 4 failing native suites, all humanize configuration or collection crashes: little power).
+
+## Run 5: replication with strategy reasons and commands recorded (Amendment 5)
+
+Stated before the run in [Amendment 5](PREREGISTRATION.md). GitHub Actions run
+[41374239895](https://github.com/hxxtsxxh/repo-ai/actions/runs/41374239895), commit cc140c1 (main after #78 and #79,
+plus the harness change and the amendment), `ubuntu-latest` on an AMD EPYC 9V45 (the CPU model of runs 2 and 4), Python
+3.12, bwrap. Raw: [results/run-5.json](results/run-5.json). Spend: $0. Run 2 remains the speed-v1 result; the runs are
+not pooled.
+
+| | run 2 (9V45) | run 3 (9V74) | run 4 (9V45) | run 5 (9V45) |
+|---|---|---|---|---|
+| verify --run (cold) / native, geometric mean | 1.84× | 2.23× | 2.00× | **1.96×** |
+| slower than the native suite | 24 of 30 | 30 of 30 | 30 of 30 | **28 of 30** |
+| same, more-itertools excluded (24 changes) | 2.64× | 2.61× | 2.26× | **2.27×** |
+| overhead, median | +0.63 s | +0.82 s | +0.38 s | **+0.32 s** |
+| re-verifying an unchanged state, median (max) | 0.20 s (0.88) | 0.21 s (1.01) | 0.16 s (0.69) | 0.15 s (0.70) |
+| exit code agrees with the native suite | 16 of 30 | 23 of 30 | 24 of 30 | **24 of 30** |
+| verify passed where the native suite failed | 0 of 5 | 0 of 4 | 0 of 4 | 0 of 4 |
+
+**Question 3 (speed and agreement): by the reading rule verify is not faster than the native suite** (1.96×, slower on
+28 of 30; the two faster changes are more-itertools dab9518f and fc5773f4, by 0.06–0.16 s). Agreement 24 of 30, the
+same 6 pyjwt disagreements as run 4: `failing (all failures pre-existing at the base)`, now recorded as
+`sandbox_network_suspected: tests/test_jwks_client.py` on every one.
+
+**Question 1 (why strategies shifted).** Nine changes ran a different cold strategy across runs 2–4 (more-itertools 6,
+marshmallow 2fc8207d, itsdangerous c2300185, humanize 9528daf5). Every run-5 reason names the input that decided it:
+- of the nine, more-itertools e7331924 (its project's first change) had no per-file durations and ran `targeted`.
+  When the full suite is not required, a missing measurement means `targeted`; in run 5 that reason appears on 9 cold
+  calls, 4 of them a project's first change (pyjwt's later changes and itsdangerous's second also lacked durations);
+  a change that requires the full suite runs `full` regardless (marshmallow 5c136b11);
+- the other eight compared two estimates, and those were close: more-itertools selection ~1.3 s against a measured
+  full suite of 1.8 s (`targeted`); marshmallow full 1.33 s against selection ~1.18 s, itsdangerous c2300185 0.73 s
+  against ~0.56 s and humanize 9528daf5 0.85 s against ~0.79 s (`full`: with `strategy.py`'s 0.25 s tie margin,
+  for example 1.33 ≤ 1.18 + 0.25).
+
+**Recorded within run 5:** the cold and `--rerun` calls on one state chose different strategies on 4 of 30 changes,
+each after the cold call had added timings or a full-suite record: humanize f772e59b (targeted → full, full suite estimated at 0.8 s),
+humanize 9528daf5 (full → targeted: the full suite's result could not be attributed to files), more-itertools
+e7331924 (targeted → full, 1.4 s against 1.3 s) and itsdangerous 4712ab6f (targeted → full, 0.7 s against 0.6 s). So
+the same runner chooses differently between two calls on the same state once the recorded inputs change, the pattern of 2fc8207d
+in runs 2 and 3. That the earlier cross-run flips happened this way remains inferred: runs 2–4 did not record their
+estimates. One reason's wording was wrong ("no a full-suite time yet"); fixed in #83.
+
+**Question 2 (marshmallow 2fc8207d).** The cold and `--rerun` calls each chose `full` and ran the same command,
+`PYTHONPATH=src python -m pytest` (exit 0, `selected-and-full-suite-passed`; the three `tests/mypy_test_cases/` files
+listed as `no_tests`); the reuse call reported the cold call's record (`reused: true`). The `targeted` path that gave
+exit 1 in runs 2 and 3 did not occur, so the addendum's inference about its command is still not checked by a
+recorded argv. Why it went `full`: the measured full suite (1.33 s) was within the 0.25 s tie margin of the
+selection (~1.18 s).
+
+**Limits.** One run. Not pooled. Estimates come from the same run's timings, so the same runner can choose
+differently between calls (above). For reuse calls the new fields describe the earlier run whose record was reused.
+`commands` holds the per-file result rows' display commands; a full suite run's command is in `full_suite.command`
+(so a `full`-only call can list no `commands`), and the base-comparison runs are not recorded.
