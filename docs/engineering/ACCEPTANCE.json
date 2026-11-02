@@ -428,7 +428,8 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "docs/engineering/FINAL_REPORT.md filled with verified 0.10.0 release facts"
+    "docs/engineering/FINAL_REPORT.md filled with verified 0.10.0 release facts",
+    "2026-11-02 FINAL_REPORT.md brought up to 0.11.8: release facts re-read from PyPI and GitHub, the live site checked (20/20 sitemap URLs 200, real 404, 0.11.8 served), releases since 0.11.2, providers, security, evaluation, spend, gate statuses and what would prove each open item"
    ],
    "limits": [],
    "next_action": "FINAL_REPORT.md at the end"
