@@ -471,6 +471,15 @@ def _licence_doc(path: str, text: str, *, executed: bool = False) -> bool:
             and not text.lstrip("\ufeff").startswith("#!"))
 
 
+def _windows(line: str) -> list[str]:
+    """A licence file's line for the code checks: whole, or in overlapping windows of MAX_SCAN_LINE characters, so text
+    past the cut is still read (licence paragraphs are often one unwrapped line, so no overlong-line finding)."""
+    if len(line) <= MAX_SCAN_LINE:
+        return [line]
+    step = MAX_SCAN_LINE // 2
+    return [line[i:i + MAX_SCAN_LINE] for i in range(0, len(line) - step, step)]
+
+
 def code_risks(code: str) -> list[tuple[str, str, str]]:
     """(category, rule, evidence) for whole-program behaviour that no single line shows. Evidence is redacted."""
     out = []
@@ -778,7 +787,8 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
         # licence and notice files are installed with an inert skill, so their text is read as documentation; the
         # instruction and injection checks apply to every licence-named file, and the code rules to the root ones
         licence = _licence_doc(path, text)
-        is_doc = path.endswith((".md", ".txt")) or licence or PurePosixPath(path).name.upper() in _LICENCE_NAMES
+        licence_named = PurePosixPath(path).name.upper() in _LICENCE_NAMES
+        is_doc = path.endswith((".md", ".txt")) or licence or licence_named
         ext = PurePosixPath(path).suffix.lower()
         # one leading byte-order mark is an encoding signature, not hidden text
         # (editors and Anthropic's own docx skill write it); any other is flagged
@@ -800,7 +810,8 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                 findings.append(Finding("high", "suspected", "instruction-risk", rule, path, at, snip))
         contexts = line_contexts(path, text)
         raw_lines = text.splitlines()
-        code = "\n".join(ln for ln, c in zip(raw_lines, contexts, strict=False) if c == "code" or licence)
+        code = "\n".join(w for ln, c in zip(raw_lines, contexts, strict=False) if c == "code" or licence
+                         for w in (_windows(ln.strip()) if licence_named else [ln]))
         for category, rule, evidence in code_risks(code):
             sev = "critical" if rule == "reverse-shell" else "high"
             findings.append(Finding(sev, "suspected", category, rule, path, 0, evidence))
@@ -823,13 +834,15 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                     severity = {"critical": "high", "high": "medium", "medium": "low"}.get(severity, "info")
                     kind = "suspected"
                 findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
-            if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE and ext not in ASSET_EXT and ext != ".json":
+            if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE and ext not in ASSET_EXT and ext != ".json" \
+                    and not licence_named:
                 findings.append(Finding("high", "suspected", "obfuscation", "overlong-code-line", path, lineno,
                                         f"{len(logical.strip())} characters on one line (only the first "
                                         f"{MAX_SCAN_LINE} are read for behaviour)"))
             if ctx == "code" or licence:
+                segments = _windows(logical.strip()) if licence_named else [logical.strip()[:MAX_SCAN_LINE]]
                 for severity, kind, category, rule, pattern in _CODE_RULES:
-                    if pattern.search(logical.strip()[:MAX_SCAN_LINE]):
+                    if any(pattern.search(seg) for seg in segments):
                         findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
             if (is_doc or ctx == "comment") and _INJECTION.search(line):
                 findings.append(Finding("high", "confirmed", "prompt-injection", "injection-phrase",

@@ -8,7 +8,9 @@
     code rules (whole-program checks and the per-line code rules) apply to it as well, since a skill can run any of its
     files. The instruction and injection checks apply to every licence-named file. The plugin vetter never reads a file
     that a hook, command or installer runs as documentation. A licence file below the root is now checked as code,
-    which is stricter for plugins too.
+    which is stricter for plugins too. The code checks read a licence file's long lines in overlapping windows
+    instead of cutting them at 2,000 characters, so an unwrapped paragraph is neither cut nor flagged as an overlong
+    line.
   - The check for a socket duplicated onto stdio makes one pass over the file instead of one search per socket name,
     which was quadratic on large files.
   - `verify` no longer crashes when `pyproject.toml` gives `tool`, `tool.setuptools_scm` or a `tool.hatch` table a
