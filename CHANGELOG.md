@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Security: the probe sandbox of `agents doctor` and `agents conformance` let a probed program reach the host's
+  unix sockets on Linux (D-Bus and the systemd user manager, X11, docker, ssh/gpg agents; `--unshare-net` does not
+  cover path-based sockets) and, on macOS, create launchd jobs or write preferences outside its scratch directory
+  (found by an independent security review of 0.11.3–0.11.7). Linux now hides `/tmp` and `/run` (and a real
+  `/var/run`) and unshares IPC and UTS; macOS denies job creation, preference writes and the pasteboard. Reads stay
+  unrestricted and other macOS system services stay reachable (disclosed). Live provider sandboxes are unchanged.
+
 ## 0.11.7 — faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed
 
 - A mission record now says how a live Claude run authenticated: `provider.auth_mode` (`token_env` or

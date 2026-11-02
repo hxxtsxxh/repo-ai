@@ -49,8 +49,11 @@ repo-ai agents conformance --acp-executable /absolute/path/to/agent --acp-arg ac
 For an [Agent Client Protocol](https://agentclientprotocol.com) agent repo-ai has no adapter for, this checks whether
 the executable you name answers `initialize` with ACP 1, and records who it says it is and what it advertises. It
 runs only that handshake, in the probe sandbox `agents doctor` uses: no session, no model call, no network, no
-LaunchServices or Apple events, writes only to a scratch directory, every process it starts swept afterwards, and
-never a repository-owned executable. Agent-supplied text is stripped of terminal escapes and bounded. Verdicts:
+LaunchServices, Apple events or launchd jobs and no preference writes on macOS, the host's `/tmp` and `/run` (where
+unix sockets such as D-Bus, X11 and ssh-agent live) hidden on Linux, file writes only to a scratch directory, every
+process it starts swept afterwards, and never a repository-owned executable. Reads are not restricted, and on macOS
+other system services (Mach lookups) remain reachable apart from the pasteboard, so do not probe software you would
+not run as yourself. Agent-supplied text is stripped of terminal escapes and bounded. Verdicts:
 `HANDSHAKE_CONFORMANT`, `NOT_ACP` (it answered, not with ACP 1), `NO_HANDSHAKE` (it exited or stayed silent; what it
 printed is shown, redacted), `REFUSED`, `NO_SANDBOX`. Passing says the agent speaks the protocol. It does not make it
 an execution provider: that needs an adapter with its own isolation and conformance tests, and every such agent stays
