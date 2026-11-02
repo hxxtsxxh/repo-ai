@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Security: the probe sandbox of `agents doctor`, `agents conformance` and the Claude preflight let a probed
+  program reach the host's unix sockets on Linux (D-Bus and the systemd user manager, X11, docker, ssh-agent;
+  `--unshare-net` does not cover path-based sockets) and, on macOS, write preferences outside its scratch directory
+  through cfprefsd and use the pasteboard (found by an independent security review of 0.11.3–0.11.7). Linux now hides
+  `/tmp`, `/run`, `/var/tmp`, a real `/var/run`, WSLg's `/mnt/wslg`, LXD's and Incus's directories and
+  `~/.ssh`, `~/.gnupg`, `~/.1password` and `~/.docker` (for `$HOME` and the account's home), and unshares IPC and
+  UTS. The probed program's own file and directory (and its node runtime's) are bound back read-only, never a
+  directory holding a socket, with hidden directories inside them hidden again: a single-file agent under `/tmp`, or
+  one whose files all sit in its own directory, still runs; one that needs other files there (an npm package's
+  `node_modules`, a virtualenv) is not run (NO_HANDSHAKE). macOS
+  denies preference writes, the pasteboard and, as defence in depth, launchd job creation (launchd already refused
+  `launchctl submit` from a sandboxed caller on Darwin 25.5). Still open and disclosed: reads are not restricted;
+  unix sockets elsewhere on Linux (other files in your home directory, other `/var/lib` services) stay reachable; on
+  macOS other system services (Mach lookups) stay reachable. Live provider sandboxes are unchanged.
 - Security review of v0.11.3...v0.11.7 (C18), low findings:
   - The skill vetter read a `LICENSE`, `COPYING` or `NOTICE` file in any directory (`scripts/notice`) as
     documentation, which skipped the code rules. Now only a root one without a `#!` line is read that way, and the
