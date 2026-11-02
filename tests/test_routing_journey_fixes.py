@@ -3,6 +3,8 @@ cooling down after a rate limit is refused before it starts, and a crashed provi
 limit because its cost is unknown. Offline; no provider process starts."""
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from repo_ai.mission import runtime
@@ -61,6 +63,7 @@ def test_a_malformed_cooldown_is_ignored(shop):  # noqa: F811
     assert 'unreadable' in runtime.cooldown_until(shop, 'claude')
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='missions are refused on Windows (no host sandbox)')
 def test_a_continuation_to_a_cooling_provider_is_refused_and_the_capsule_stays_usable(shop, tmp_path,  # noqa: F811
                                                                                        monkeypatch):
     import json
