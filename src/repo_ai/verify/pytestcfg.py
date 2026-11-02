@@ -26,6 +26,7 @@ except ModuleNotFoundError:  # pragma: no cover - 3.10
 
 MAX_CONFIG_BYTES = 1_000_000
 MAX_PATTERNS = 256
+MAX_PATTERN_CHARS = 256  # a longer pattern compiles to a needlessly large regex in the host process
 # pytest 9's lookup order within one directory (pytest 8 has no pytest.toml and no native [tool.pytest])
 CANDIDATES = ("pytest.toml", ".pytest.toml", "pytest.ini", ".pytest.ini", "pyproject.toml", "tox.ini", "setup.cfg")
 CONFIG_OPTIONS = ("-c", "--config-file", "--rootdir", "-o", "--override-ini", "--pyargs", "--inifile")
@@ -84,7 +85,7 @@ def _read(path: Path):
     except (tomllib.TOMLDecodeError, configparser.Error, ValueError, RecursionError):
         return _STOP  # pytest itself would stop with an error here
     patterns = _words(section.get("norecursedirs")) if "norecursedirs" in section else []
-    if patterns is None or len(patterns) > MAX_PATTERNS:
+    if patterns is None or len(patterns) > MAX_PATTERNS or any(len(p) > MAX_PATTERN_CHARS for p in patterns):
         return _STOP
     other = sorted(k for k in section if k in {"testpaths", "python_files", "addopts", "collect_ignore"})
     testpaths = _words(section.get("testpaths")) or []

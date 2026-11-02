@@ -521,7 +521,7 @@ def _line_kinds(path: str, text: str) -> list[str]:
     """`code`, `comment` or `string` per line of an executable file. A block
     comment that closes mid-line is code after the `*/`; lines inside a
     Python triple-quoted string or a JS template literal are string data."""
-    kinds = line_contexts(path, text)
+    kinds = line_contexts(path, text, executed=True)  # only called for files a hook, command or installer runs
     lines = text.splitlines()
     ext = PurePosixPath(path).suffix.lower()
     quote = ""

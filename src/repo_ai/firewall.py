@@ -459,13 +459,35 @@ _SHELL = re.compile(r"(?i)/bin/(ba|z|k)?sh\b|\bpty\.spawn\s*\(|\bsubprocess\.\w+
 MAX_SCAN_LINE = 2_000  # longer lines are cut for these patterns (a SKILL.md line over 2,000 is already a surface)
 
 
+_LICENCE_NAMES = {"LICENSE", "COPYING", "NOTICE"}
+
+
+def _licence_doc(path: str, text: str, *, executed: bool = False) -> bool:
+    """A licence or notice file whose lines are read as documentation (described commands one level lower): only at
+    the skill's root, never a script (a shebang, after a byte-order mark) and never a file known to be executed.
+    `inspect` still applies the code rules to it, since a skill can run any of its files by a route no text shows."""
+    p = PurePosixPath(path)
+    return (not executed and len(p.parts) == 1 and p.name.upper() in _LICENCE_NAMES
+            and not text.lstrip("\ufeff").startswith("#!"))
+
+
+def _windows(line: str) -> list[str]:
+    """A licence file's line for the code checks: whole, or in overlapping windows of MAX_SCAN_LINE characters, so text
+    past the cut is still read (licence paragraphs are often one unwrapped line, so no overlong-line finding)."""
+    if len(line) <= MAX_SCAN_LINE:
+        return [line]
+    step = MAX_SCAN_LINE // 2
+    return [line[i:i + MAX_SCAN_LINE] for i in range(0, len(line) - step, step)]
+
+
 def code_risks(code: str) -> list[tuple[str, str, str]]:
     """(category, rule, evidence) for whole-program behaviour that no single line shows. Evidence is redacted."""
     out = []
     code = "\n".join(line.strip()[:MAX_SCAN_LINE] for line in code.splitlines())
     sockets = {m.group(1) or m.group(2) or m.group(3) for m in _SOCKET_VAR.finditer(code)}
-    if _SHELL.search(code) and any(re.search(r"\bdup2\s*\(\s*" + re.escape(v) + r"\.fileno\(\)", code)
-                                   for v in sockets):
+    # one pass for the duplicated descriptors (a search per socket name was quadratic on large files)
+    duplicated = set(re.findall(r"\bdup2\s*\(\s*(\w+)\.fileno\(\)", code)) if sockets else set()
+    if _SHELL.search(code) and sockets & duplicated:
         out.append(("remote-exec", "reverse-shell", "a socket is connected, duplicated onto stdio and given a shell"))
     src, send = _SECRET_SOURCE.search(code), _NETWORK_SEND.search(code)
     if src and send:
@@ -762,8 +784,11 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
     # 2./3. instructions and code, line by line
     hosts: dict[str, str] = {}
     for path, text in texts.items():
-        # licence and notice files are installed with an inert skill, so their text is read as documentation
-        is_doc = path.endswith((".md", ".txt")) or PurePosixPath(path).name.upper() in {"LICENSE", "COPYING", "NOTICE"}
+        # licence and notice files are installed with an inert skill, so their text is read as documentation; the
+        # instruction and injection checks apply to every licence-named file, and the code rules to the root ones
+        licence = _licence_doc(path, text)
+        licence_named = PurePosixPath(path).name.upper() in _LICENCE_NAMES
+        is_doc = path.endswith((".md", ".txt")) or licence or licence_named
         ext = PurePosixPath(path).suffix.lower()
         # one leading byte-order mark is an encoding signature, not hidden text
         # (editors and Anthropic's own docx skill write it); any other is flagged
@@ -785,7 +810,8 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                 findings.append(Finding("high", "suspected", "instruction-risk", rule, path, at, snip))
         contexts = line_contexts(path, text)
         raw_lines = text.splitlines()
-        code = "\n".join(ln for ln, c in zip(raw_lines, contexts, strict=False) if c == "code")
+        code = "\n".join(w for ln, c in zip(raw_lines, contexts, strict=False) if c == "code" or licence
+                         for w in (_windows(ln.strip()) if licence_named else [ln]))
         for category, rule, evidence in code_risks(code):
             sev = "critical" if rule == "reverse-shell" else "high"
             findings.append(Finding(sev, "suspected", category, rule, path, 0, evidence))
@@ -808,13 +834,15 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                     severity = {"critical": "high", "high": "medium", "medium": "low"}.get(severity, "info")
                     kind = "suspected"
                 findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
-            if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE and ext not in ASSET_EXT and ext != ".json":
+            if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE and ext not in ASSET_EXT and ext != ".json" \
+                    and not licence_named:
                 findings.append(Finding("high", "suspected", "obfuscation", "overlong-code-line", path, lineno,
                                         f"{len(logical.strip())} characters on one line (only the first "
                                         f"{MAX_SCAN_LINE} are read for behaviour)"))
-            if ctx == "code":
+            if ctx == "code" or licence:
+                segments = _windows(logical.strip()) if licence_named else [logical.strip()[:MAX_SCAN_LINE]]
                 for severity, kind, category, rule, pattern in _CODE_RULES:
-                    if pattern.search(logical.strip()[:MAX_SCAN_LINE]):
+                    if any(pattern.search(seg) for seg in segments):
                         findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
             if (is_doc or ctx == "comment") and _INJECTION.search(line):
                 findings.append(Finding("high", "confirmed", "prompt-injection", "injection-phrase",
@@ -934,15 +962,14 @@ def _magic_ok(ext: str, data: bytes) -> bool:
     return data.startswith(_MAGIC.get(ext, (b"",)))
 
 
-def line_contexts(path: str, text: str) -> list[str]:
+def line_contexts(path: str, text: str, *, executed: bool = False) -> list[str]:
     """`code` | `comment` | `prose` | `inline` per line. Markdown is prose,
     except fenced or indented blocks (code) and sentences quoting inline code
     (inline: full severity, but "never run `x`" still counts as a warning);
     scripts are code except comments."""
     lines = text.splitlines()
     ext = PurePosixPath(path).suffix.lower()
-    if ext in {".md", ".txt", ".markdown", ".rst"} or PurePosixPath(path).name.upper() in {"LICENSE", "COPYING",
-                                                                                        "NOTICE"}:
+    if ext in {".md", ".txt", ".markdown", ".rst"} or _licence_doc(path, text, executed=executed):
         out = []
         fence = None
         for line in lines:
