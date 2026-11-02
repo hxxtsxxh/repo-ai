@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `repo-ai do --sandbox {auto,seatbelt,bwrap,podman,docker} [--image REF]`: choose where a mission runs the project's
+  tests. With podman or docker, `--image` (required) names a local image with the project's dependencies (never
+  pulled), and a src-layout project's tests import it through `PYTHONPATH=src`, as `verify` already did. The choice
+  is frozen with the mission contract: the baseline, the candidate, the regression run, `apply`'s post-apply
+  verification and `futures --rehearse` use it, a handoff continuation inherits it, and `--resume` or a continuation
+  given a different one is refused; live tournaments pass it to every arm. The change-exercise measurement stays
+  `UNMEASURED` in a container. This covers repo-ai's own test runs only: the coding agent still runs on the host in
+  its provider sandbox (Codex has a shell there; Claude Code in the isolated mode has file tools only). Before,
+  missions always chose `auto` (the host sandbox first, then a container with the default image). Contracts without
+  the options keep their digests.
 - Routing (found by routing-journey-v1, C06):
   - An explicitly chosen live provider that hit a quota or rate limit recently is refused before it starts ("cooling
     down until …"), instead of being called again into the same limit; automatic routing already skipped it. A
