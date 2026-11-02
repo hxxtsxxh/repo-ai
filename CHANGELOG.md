@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.8 — probe sandbox hardening, security review fixes, consumed handoff capsules
 
 - `repo-ai handoff --verify` on a mission whose continuation has already started now says so ("capsule already used:
   a continuation was already started from this mission (child mission …); one continuation per mission", with
@@ -47,6 +47,15 @@
     the run (with no fsmonitor and no hooks). The agent could have written the workspace's own `.git/config`, and a
     clean filter defined there would have run on the host during `git diff`.
   - The diagnose, journey and speed workflows no longer keep the checkout token in `.git/config`.
+
+- Evaluation: speed-v1 run 5 (`benchmarks/speed-v1/`, Amendment 5) records why verify chose each strategy and what it
+  ran. 1.96× the native suite (geometric mean of 30 cold runs), slower on 28 of 30, so verify is still not faster
+  than the projects' own suites; exit codes agree on 24 of 30 (the 6 pyjwt disagreements are a test that needs the
+  network the sandbox denies, now flagged `sandbox_network_suspected`). The strategy turns on missing measurements
+  and on close timing estimates from the same run: within run 5, two calls on one state chose differently on 4 of 30
+  changes. One strategy reason read "no a full-suite time yet"; fixed.
+- Evaluation record: the C13 Claude-as-handoff-target attempt stopped before any model call because no Claude
+  credential was available for isolated runs (`docs/engineering/evidence/C13-CLAUDE-HANDOFF-2026-11-01.md`).
 
 ## 0.11.7 — faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed
 
