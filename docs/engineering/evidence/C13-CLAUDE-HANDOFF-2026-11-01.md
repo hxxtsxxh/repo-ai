@@ -29,7 +29,7 @@ The fixture is a two-bug toy repository: `money.py`, where `add` returns `a - b`
      baseline 2 of 2 failing), the constraint "target provider adaptation: claude (requires local verification
      before completion)" and disclosure `LOCAL_ONLY; …`.
    - `--verify` printed VALID (fresh) at the time; that console output was not kept. What the records show: the
-     continuation, which refuses an invalid or stale capsule (`mission/runtime.py`, `continue_from`), names it by
+     continuation, which refuses an invalid or stale capsule (`mission/runtime.py`, `continue_from_handoff`), names it by
      sha256 `1e3dcdd1…` and keeps its three fresh facts.
    - Re-verified afterwards with 0.11.7: **INVALID (stale)**, "stored mission changed since capsule export". The
      continuation had written `continuation_started` into the source mission's record, which the capsule's snapshot
@@ -45,8 +45,8 @@ The fixture is a two-bug toy repository: `money.py`, where `add` returns `a - b`
      `capture_status not_authenticated`, stage BLOCKED, verification label `LIVE_FAILED`, returncode -1,
      `cost_usd` 0.0 (`cost_status` UNKNOWN).
    - Verdict BLOCKED, recovery category `provider_unavailable`. The reason recorded: "claude not authenticated for
-     isolated execution: no dedicated Claude login for repo-ai; run once: CLAUDE_CONFIG_DIR=<home>/.local/share/
-     repo-ai/claude-provider claude auth login".
+     isolated execution: no dedicated Claude login for repo-ai; run once:
+     `CLAUDE_CONFIG_DIR=<home>/.local/share/repo-ai/claude-provider claude auth login`".
 
 ## What this shows and does not show
 
