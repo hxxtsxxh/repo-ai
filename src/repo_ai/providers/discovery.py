@@ -132,7 +132,7 @@ def _has_socket(directory: str) -> bool:
     """A unix socket directly inside `directory` (a runtime directory such as /run/user/<uid>): never bound back."""
     try:
         with os.scandir(directory) as entries:
-            return any(e.is_socket() for e in entries)
+            return any(stat.S_ISSOCK(e.stat(follow_symlinks=False).st_mode) for e in entries)
     except OSError:
         return True
 
@@ -163,7 +163,7 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
             under = [p for p in dict.fromkeys(str(Path(x).resolve()) for x in expose)
                      if p not in dirs and any(p.startswith(d.rstrip("/") + "/") for d in dirs)]
             shown_dirs = [p for p in under if os.path.isdir(p) and not _has_socket(p)]
-            shown_files = [p for p in under if not os.path.isdir(p)]
+            shown_files = [p for p in under if os.path.isfile(p)]  # regular files only (never a socket)
             again = [d for d in dirs if any(d.startswith(p.rstrip("/") + "/") for p in shown_dirs)]
             back = [*(a for p in shown_dirs for a in ("--ro-bind", p, p)), *(a for d in again for a in ("--tmpfs", d)),
                     *(a for p in shown_files for a in ("--ro-bind", p, p))]
