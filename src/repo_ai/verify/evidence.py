@@ -66,6 +66,23 @@ def is_passing(verdict: object) -> bool:
 NOT_VERIFIED_UNLINKED = "not verified: no test is linked to the behavioural change (nothing was selected)"
 NOT_VERIFIED_FULL_NOT_RUN = "not verified: the full suite is required for this change and could not be run"
 
+# The test runner itself is missing from the environment verify ran in: every test fails the same way at the base
+# and with the change, which said "no new failures (all pre-existing)" although no test ran (found by the 0.11.8
+# smoke install: pytest absent from the interpreter).
+_RUNNER_MISSING = re.compile(
+    r"No module named '?(pytest_\w+|_pytest|pytest)'?(?![\w.])"  # not a submodule such as _pytest.compat
+    r"|^(?:(?:/bin/)?(?:ba|z|da)?sh: (?:\d+: )?)?(pytest|jest|vitest|mocha|ava): (?:command )?not found\s*$"
+    r"|^Error: Cannot find module '(jest|vitest|mocha|ava)'", re.M)
+
+
+RUNNER_MISSING_PREFIX = "not verified: the test runner could not start"
+
+
+def runner_missing(output: str) -> str | None:
+    """The runner a test process could not start, from its output, or None."""
+    m = _RUNNER_MISSING.search(output or "")
+    return next((g for g in m.groups() if g), None) if m else None
+
 
 def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected: int,
             full_required: bool, behavioural: bool = True, incomplete: str = "") -> str:
@@ -82,6 +99,20 @@ def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected
     if incomplete:
         results = [r for r in results if not r.get("deadline")]
     failed = [r for r in results if r["status"] not in {"pass", "no-tests"}]
+    full_out = [(full.get("output_tail") or "")] if full is not None and full.get("status") not in {
+        "pass", "not-run", None} else []
+    outputs = [r.get("output_tail") or "" for r in failed] + full_out
+    missing = {runner_missing(o) for o in outputs}
+    # a file that passed at the base ran in this same environment, so its runner did start: a failure now is the
+    # change's (a project's own `pytest_foo` package broken, a deleted helper), never "no runner"
+    # (and a file or full suite that passed in this run proves the same)
+    ran = (any(r.get("baseline") == "pass" for r in failed) or any(r["status"] == "pass" for r in results)
+           or (full is not None and full.get("status") == "pass"))
+    if outputs and None not in missing and not ran:
+        # no test ran at all: not a regression, not pre-existing, not a pass
+        names = ", ".join(sorted(str(m) for m in missing))
+        return (f"{RUNNER_MISSING_PREFIX} in the environment verify used ({names} is not installed there); "
+                "install it in the project's environment and run again")
     new = [r for r in failed if r.get("baseline") in {"pass", "absent"} or r.get("new_failing_tests")]
     confirmed = [r for r in new if r.get("confirmed", True)]
     uncompared = [r for r in failed if r.get("baseline") not in {"pass", "absent", "fail"}]
