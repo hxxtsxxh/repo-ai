@@ -20,8 +20,14 @@
   `node_modules`, a virtualenv) is not run (NO_HANDSHAKE). macOS
   denies preference writes, the pasteboard and, as defence in depth, launchd job creation (launchd already refused
   `launchctl submit` from a sandboxed caller on Darwin 25.5). Still open and disclosed: reads are not restricted;
-  unix sockets elsewhere on Linux (other files in your home directory, other `/var/lib` services) stay reachable; on
-  macOS other system services (Mach lookups) stay reachable. Live provider sandboxes are unchanged.
+  unix sockets elsewhere on Linux (other files in your home directory, other `/var/lib` services) stay reachable.
+  Live provider sandboxes are unchanged.
+- Security: the macOS probe sandbox now denies Mach lookups by default (the pasteboard, the keychain through
+  securityd, cfprefsd, the window server, login items, notifications, DNS), allowing only user and group lookups
+  through opendirectoryd, and denies registering a Mach name. With every lookup denied, the `--version` and `--help`
+  output of codex, claude, bob, agy, opencode and opencode-acp was byte-identical to the unrestricted profile's, and
+  again with this profile (Darwin 25.5, measured locally). Still allowed and disclosed: signals to the user's other
+  processes and IOKit access.
 - Security review of v0.11.3...v0.11.7 (C18), low findings:
   - The skill vetter read a `LICENSE`, `COPYING` or `NOTICE` file in any directory (`scripts/notice`) as
     documentation, which skipped the code rules. Now only a root one without a `#!` line is read that way, and the
