@@ -211,6 +211,7 @@ def cmd_do(args) -> int:
                 allow_live=allow_live,
             )
         elif allow_live and value['contract']['provider'] in LIVE_PROVIDERS:
+            _require_ceiling(value['contract']['provider'], args.max_cost_usd)
             value = execute(root, value, None, allow_live=True)
         else:
             raise ValueError(
@@ -237,12 +238,22 @@ def cmd_do(args) -> int:
     return 0 if not args.run or value.get('effective_verdict', value.get('verdict')) == 'PASS' else 2
 
 
+def _require_ceiling(provider: str, max_cost_usd: float) -> None:
+    """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorises no spend,
+    and an uncapped run would spend first and be refused afterwards."""
+    from ..providers.adapters import contract_for
+    if contract_for(provider).enforces_hard_usd_budget and max_cost_usd <= 0:
+        raise ValueError(f'{provider} enforces a USD ceiling: give --max-cost-usd > 0 (the default 0 authorises no '
+                         'spend; without a ceiling the run would start uncapped and its result be refused afterwards)')
+
+
 def _cmd_live_tournament(args, root: Path, allow_live: bool) -> int:
     from .live_tournament import plan_tournament, run_tournament
     if args.candidate or args.replay or getattr(args, 'provider_executable', None) or args.apply:
         raise ValueError('--tournament is incompatible with --candidate, --replay, --provider-executable and --apply')
     providers = [p for p in args.tournament.split(',') if p]
     options = dict(write_paths=args.allow_write, max_cost_usd=args.max_cost_usd,
+                   allow_unknown_cost=bool(getattr(args, 'allow_unknown_cost', False)),
                    max_seconds=max(args.max_seconds, 600.0) if args.max_seconds == 120 else args.max_seconds,
                    command=args.test_command)
     if not args.run:
@@ -667,6 +678,9 @@ def register(sub, common) -> None:
     p.add_argument('--tournament', metavar='A,B[,C]', help='live tournament: independent candidates from 2-3 providers; abstains unless exactly one distinct candidate passes')
     p.add_argument('--allow-write', action='append', default=[], metavar='PATH', help='allow one source path in the isolated candidate')
     p.add_argument('--max-cost-usd', type=float, default=0, help='explicit cost ceiling; default zero; replay requires zero')
+    p.add_argument('--allow-unknown-cost', action='store_true',
+                   help='--tournament with --max-cost-usd: cap the providers that enforce a USD ceiling and run the '
+                        'others with cost UNKNOWN (never counted as $0)')
     p.add_argument('--max-parallel', type=int, default=1, help='ceiling 1–4; P0 executes one writer sequentially')
     p.add_argument('--max-seconds', type=float, default=120, help='wall-clock limit per provider run (default: %(default)s)')
     p.add_argument('--test-command', choices=['python -m pytest', 'node --test'], default='python -m pytest')
