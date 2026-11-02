@@ -199,7 +199,7 @@ jobs:
 
   sandbox-bwrap-fd:
     # the probe sandbox's descriptor binds (`--ro-bind-fd`, bubblewrap 0.10+): the runner's bubblewrap is older, so
-    # v0.11.0 is built from its tag (commit printed) and replaces it for this job only
+    # v0.11.0 is built from its tag (commit checked) and replaces it for this job only
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -213,7 +213,7 @@ jobs:
         run: |
           sudo apt-get update -q && sudo apt-get install -y -q meson ninja-build libcap-dev pkg-config
           git clone -q --depth 1 --branch v0.11.0 https://github.com/containers/bubblewrap.git "$RUNNER_TEMP/bwrap"
-          git -C "$RUNNER_TEMP/bwrap" rev-parse HEAD
+          test "$(git -C "$RUNNER_TEMP/bwrap" rev-parse HEAD)" = 9ca3b05ec787acfb4b17bed37db5719fa777834f
           meson setup "$RUNNER_TEMP/bwrap/build" "$RUNNER_TEMP/bwrap"
           ninja -C "$RUNNER_TEMP/bwrap/build" bwrap
           sudo install -m 0755 "$RUNNER_TEMP/bwrap/build/bwrap" /usr/bin/bwrap

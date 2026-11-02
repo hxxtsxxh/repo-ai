@@ -14,7 +14,7 @@ from repo_ai import coding_lab, firewall
 from repo_ai.providers import discovery as d
 
 GIT = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t", "-c", "maintenance.auto=false",
-       "-c", "gc.auto=0", "-c", "core.autocrlf=false"]  # Windows runners' system config converts line endings  # no background maintenance racing the copy of .git
+       "-c", "gc.auto=0", "-c", "core.autocrlf=false"]  # no background maintenance; no line-ending conversion
 
 
 # --- L4: a minified one-line file named LICENSE below the skill's root -------------------------------------------
