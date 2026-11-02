@@ -27,7 +27,7 @@ from ..security import redact_text, source_contains_secret
 from . import claude_auth, codex_broker, opencode_cfg
 from .acp import AcpClient, AcpResult
 from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _capture, _identity, _inside, _probe_env, _repo_owned,
-                        _sandbox_prefix, executable_name)
+                        _sandbox_prefix, executable_name, pinned_fds)
 
 STAGES = (
     "NOT_INSTALLED",
@@ -949,7 +949,8 @@ def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: 
         # the repository), nothing else
         extra = [str(raw.parent), *(str(d) for d in node_dir)]
         env["PATH"] = os.pathsep.join([*dict.fromkeys(extra), env["PATH"]])
-        client = AcpClient([*prefix, str(resolved), *args], scratch / "work", allowed_writes=[], env=env)
+        client = AcpClient([*prefix, str(resolved), *args], scratch / "work", allowed_writes=[], env=env,
+                           pass_fds=pinned_fds(prefix))
         try:
             out = client.probe(timeout_s)
         finally:
@@ -1550,7 +1551,8 @@ def _claude_preflight(executable: Path, plan: claude_auth.ClaudeAuthPlan) -> tup
             return "no_sandbox", ["no supported execution sandbox on this host"]
         env = _probe_env(scratch)
         env["PATH"] = os.pathsep.join([*(str(r.parent) for r in _node_roots()), env["PATH"]])
-        result = _capture([*prefix, str(executable), "--help"], scratch, env, timeout=20.0, max_timeout=30.0)
+        result = _capture([*prefix, str(executable), "--help"], scratch, env, timeout=20.0, max_timeout=30.0,
+                          pass_fds=pinned_fds(prefix))
     if result.status != "complete" or result.returncode != 0:
         return "help_probe_failed", ["claude --help failed; isolation flags could not be confirmed"]
     missing = claude_auth.missing_flags(result.output.decode("utf-8", "replace"))
