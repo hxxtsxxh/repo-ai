@@ -71,7 +71,7 @@ Every medium is fixed.
 | Question | Result |
 |---|---|
 | Does `verify` give false assurance? | held-out-7: **0 in 127 failing states**, 0 false alarms, tree unchanged 234/234 (five projects, containers, build `903984a`) |
-| Is `verify --run` faster than the native suite? | **NEGATIVE**: speed-v1 1.84× (preregistered), then 2.23×, 2.00×, 1.96×; exit codes agree with the native suite on 24 of 30 (pyjwt needs the network the sandbox denies) |
+| Is `verify --run` faster than the native suite? | **NEGATIVE**: speed-v1 1.84× (preregistered), then 2.23×, 2.00×, 1.96×; exit codes agree with the native suite on 24 of 30 in runs 4–5 (16 and 23 earlier; the rest are pyjwt, which needs the network the sandbox denies) |
 | Does repo-ai improve a coding agent? | **NOT_YET_DEMONSTRATED** (Option A: 92% plain, 90% / 88% repo-ai; abc studies at ceiling) |
 | Does an installed skill help? | one conventions skill on one fixture project: **SUPPORTED with design limits** (8 of 8 tasks, p = 0.0039; c10-confirm-v1) |
 | Does the deterministic skill recommender find the right capability? | **NEGATIVE** (recall 0.385 and 0.69 on two fresh corpora, constraint gate failed on both; tuning stopped) |
@@ -96,9 +96,8 @@ IN_PROGRESS: C24.
 - **Skill-vetting on an unseen corpus (C08):** a person-written v2 corpus; an agent-authored one was stopped by a
   safety classifier and is not retried.
 - **Claude as a handoff target (C13):** a Claude credential for isolated runs.
-- **Live third-party projects (C21):** the live provider journey, which needs a provider credential (the Claude token
-  was removed) within the remaining live budget, with third-party code run off this machine (CI, or the owner's
-  podman approval).
+- **Live third-party projects (C21):** the live provider journey within the remaining live budget; third-party code
+  needs the owner's explicit approval or runs on CI (EXPERIMENTS.md). The Claude token used so far was removed.
 - **Tournament on behaviourally different candidates (C12), routing over real host states (C06):** live calls.
 - **Requirement coverage (C11):** an independent review found it partly met; its fixes are in #94 (open). Proposed
   next: a declaration frozen with the mission and requirement-to-code links.
