@@ -66,8 +66,9 @@ MANIFEST.sha256                   shasum -a 256 of every file above, made last:
                                     find corpus labels.json AUTHOR.md -type f -print0 | sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256
 ```
 
-Then publish the SHA-256 of `MANIFEST.sha256` somewhere the maintainer does not control (a signed commit or a pull
-request from your own account carrying the delivery is enough), so the delivery can be shown to be yours and
+Deliver it as a pull request from your own account against the branch `skill-vet-v2/delivery`, adding files under
+`benchmarks/skill-vet-fresh-v2/` only, and publish the SHA-256 of `MANIFEST.sha256` somewhere the maintainer does not
+control (the pull request itself is enough), so the delivery can be shown to be yours and
 unchanged. Labels are final at that point; a later disagreement is reported as disputed, never edited.
 
 ## How it will be used
