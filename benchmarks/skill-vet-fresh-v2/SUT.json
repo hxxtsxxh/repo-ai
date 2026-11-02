@@ -1,9 +1,0 @@
-{
- "objects": {
-  "benchmarks/skill-vet-fresh-v2/constraints.txt": "a21f56e2b222d2184e0003eb515c3f630be6cd34",
-  "benchmarks/skill-vet-fresh-v2/run.py": "6a55e6d182a19e51810c48ca54bb29df77a78322",
-  "benchmarks/skill-vet-fresh-v2/validate_corpus.py": "905dd6b436d3e2919605c52b6ea0daac6914035f",
-  "pyproject.toml": "125913b0d63b85b693495605fb8a7e229c861790",
-  "src/repo_ai": "bf6746856541b96a75ed5de864fd2d7a30e8ccb1"
- }
-}
