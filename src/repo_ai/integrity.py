@@ -32,6 +32,7 @@ import os
 import secrets
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -134,8 +135,9 @@ def _git_show(ws: Path, rel: str, git_dir: Path | None = None) -> str:
     argv = [gitbin.git(), *where, "-c", "core.fsmonitor=false", "-c", "core.hooksPath=" + os.devnull,
             "show", f"HEAD:{rel}"]
     try:
-        out = subprocess.run(argv, cwd=ws, capture_output=True, text=True, check=False, timeout=30,
-                             env={**os.environ, "GIT_NO_LAZY_FETCH": "1"})
+        with tempfile.TemporaryDirectory(prefix="repo-ai-git-home-") as home:
+            out = subprocess.run(argv, cwd=ws, capture_output=True, text=True, check=False, timeout=30,
+                                 env=gitbin.no_user_config_env(home))
     except (OSError, subprocess.SubprocessError):
         return ""
     return out.stdout if out.returncode == 0 else ""
