@@ -18,8 +18,9 @@ import sys
 import tempfile
 import threading
 import time
+import weakref
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from ..provider_names import PROVIDERS  # re-exported: defined where argument parsing can import it cheaply
@@ -154,27 +155,92 @@ def _hidden_dirs() -> list[str]:
     return list(dict.fromkeys(found))
 
 
-def _has_socket(directory: str, limit: int = 2000) -> bool:
+_DIR_READ = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+
+
+def _has_socket(directory: str, limit: int = 2000, *, fd: int | None = None) -> bool:
     """A unix socket anywhere under `directory` (a bind brings back the host's whole subtree, such as
-    /run/user/<uid>/bus under /run/user): never bound back. Symlinks are not followed (they resolve inside the
-    sandbox, where hidden targets stay hidden). More than `limit` entries, or one that cannot be read, counts as a
-    socket: the directory is then not bound back, only the program's own file."""
-    stack, seen = [directory], 0
+    /run/user/<uid>/bus under /run/user): never bound back. With `fd` (from `_pin`), the directory that descriptor
+    holds is the one walked. Symlinks are not followed (they resolve inside the sandbox, where hidden targets stay
+    hidden). More than `limit` entries, or one that cannot be read, counts as a socket: the directory is then not
+    bound back, only the program's own file."""
+    seen = 0
     try:
-        while stack:
-            with os.scandir(stack.pop()) as entries:
-                for e in entries:
-                    seen += 1
-                    if seen > limit:
-                        return True
-                    mode = e.stat(follow_symlinks=False).st_mode
-                    if stat.S_ISSOCK(mode):
-                        return True
-                    if stat.S_ISDIR(mode):
-                        stack.append(e.path)
+        top = os.open(".", _DIR_READ, dir_fd=fd) if fd is not None else os.open(directory, _DIR_READ)
     except OSError:
         return True
+    stack = [""]  # paths relative to the top directory's descriptor
+    try:
+        while stack:
+            rel = stack.pop()
+            here = os.open(rel, _DIR_READ, dir_fd=top) if rel else os.dup(top)
+            try:
+                with os.scandir(here) as entries:
+                    for e in entries:
+                        seen += 1
+                        if seen > limit:
+                            return True
+                        mode = e.stat(follow_symlinks=False).st_mode
+                        if stat.S_ISSOCK(mode):
+                            return True
+                        if stat.S_ISDIR(mode):
+                            stack.append(f"{rel}/{e.name}" if rel else e.name)
+            finally:
+                os.close(here)
+    except OSError:
+        return True
+    finally:
+        os.close(top)
     return False
+
+
+# O_PATH on Linux: a descriptor that names a file without reading it (a directory the user may only search, an
+# executable without read permission); elsewhere (the tests on macOS) a read-only open
+_PIN = getattr(os, "O_PATH", os.O_RDONLY) | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+
+
+def _pin(path: str) -> int | None:
+    """A descriptor for `path` (absolute and already resolved), opened one component at a time without following a
+    symlink. None when a component is a symlink (swapped in since the path was resolved), is missing, or the path
+    ends at something other than a directory or a regular file. The probe binds this descriptor, never the path
+    again: what bubblewrap binds is what was resolved and checked."""
+    parts = PurePosixPath(path).parts
+    if not parts or parts[0] != "/" or ".." in parts:
+        return None
+    fd: int | None = None
+    try:
+        fd = os.open("/", _PIN | os.O_DIRECTORY)
+        for part in parts[1:]:
+            nxt = os.open(part, _PIN, dir_fd=fd)
+            os.close(fd)
+            fd = nxt
+            if stat.S_ISLNK(os.fstat(fd).st_mode):
+                raise OSError("symlink")
+        mode = os.fstat(fd).st_mode
+        if not (stat.S_ISDIR(mode) or stat.S_ISREG(mode)):
+            raise OSError("not a directory or a regular file")
+        return fd
+    except OSError:
+        if fd is not None:
+            os.close(fd)
+        return None
+
+
+def _close_all(fds: tuple[int, ...]) -> None:
+    for fd in fds:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+
+class _PinnedPrefix(list):  # type: ignore[type-arg]
+    """A bubblewrap prefix that binds descriptors this process holds (`/proc/<pid>/fd/<n>`): they stay open for as
+    long as the prefix is referenced and close with it. Keep the prefix while the probed program starts."""
+
+    def __init__(self, argv: list[str], fds: list[int]) -> None:
+        super().__init__(argv)
+        self._finalizer = weakref.finalize(self, _close_all, tuple(fds))
 
 
 # The only Mach service a probed program may look up on macOS: user and group lookups through opendirectoryd
@@ -208,18 +274,32 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
             # agent under /tmp still runs), then the scratch directory, writable
             # order: hidden directories; the program's directories (none holding a socket); hidden directories inside
             # those again (a bind brings back the host's whole subtree); the program's files; the scratch directory
+            # each path bound back is pinned first (`_pin`: opened without following a symlink) and bound by that
+            # descriptor: a directory swapped for a symlink after it was resolved is not bound at all, and the
+            # directory checked for sockets is the one bound
             dirs = _hidden_dirs()
             hidden = [a for d in dirs for a in ("--tmpfs", d)]
             under = [p for p in dict.fromkeys(str(Path(x).resolve()) for x in expose)
                      if p not in dirs and any(p.startswith(d.rstrip("/") + "/") for d in dirs)]
-            shown_dirs = [p for p in under if os.path.isdir(p) and not _has_socket(p)]
-            shown_files = [p for p in under if os.path.isfile(p)]  # regular files only (never a socket)
+            pinned = {p: fd for p in under if (fd := _pin(p)) is not None}
+            try:
+                kinds = {p: os.fstat(fd).st_mode for p, fd in pinned.items()}
+            except OSError:
+                _close_all(tuple(pinned.values()))
+                return None
+            shown_dirs = [p for p in pinned if stat.S_ISDIR(kinds[p]) and not _has_socket(p, fd=pinned[p])]
+            shown_files = [p for p in pinned if stat.S_ISREG(kinds[p])]  # regular files only (never a socket)
+            unused = tuple(fd for p, fd in pinned.items() if p not in shown_dirs and p not in shown_files)
+            _close_all(unused)
+            source = {p: f"/proc/{os.getpid()}/fd/{pinned[p]}" for p in (*shown_dirs, *shown_files)}
             again = [d for d in dirs if any(d.startswith(p.rstrip("/") + "/") for p in shown_dirs)]
-            back = [*(a for p in shown_dirs for a in ("--ro-bind", p, p)), *(a for d in again for a in ("--tmpfs", d)),
-                    *(a for p in shown_files for a in ("--ro-bind", p, p))]
-            return [bwrap, "--unshare-net", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--die-with-parent",
-                    "--new-session", "--ro-bind", "/", "/", *hidden, *back, "--bind", str(scratch), str(scratch),
-                    "--proc", "/proc", "--dev", "/dev", "--"]
+            back = [*(a for p in shown_dirs for a in ("--ro-bind", source[p], p)),
+                    *(a for d in again for a in ("--tmpfs", d)),
+                    *(a for p in shown_files for a in ("--ro-bind", source[p], p))]
+            return _PinnedPrefix(
+                [bwrap, "--unshare-net", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--die-with-parent",
+                 "--new-session", "--ro-bind", "/", "/", *hidden, *back, "--bind", str(scratch), str(scratch),
+                 "--proc", "/proc", "--dev", "/dev", "--"], [pinned[p] for p in source])
     return None
 
 

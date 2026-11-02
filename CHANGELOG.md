@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- Security (queue row 19, the open lows from the 0.11.8 release review):
+  - Linux probe sandbox: each directory or file bound back from a hidden directory is opened one path component at
+    a time without following a symlink, checked for sockets through that descriptor, and bound by it
+    (`/proc/<pid>/fd/<n>`). A path swapped for a symlink after it was resolved is no longer bound at all (the probed
+    program then does not run). Any process of the same user can still add files, sockets included, inside a
+    directory after it was checked; that is unchanged.
+  - Skill firewall: a file named LICENSE, COPYING or NOTICE below the skill's root whose overlong line does not read
+    as prose (a minified script, one long token) gets the `overlong-code-line` finding again. An unwrapped licence
+    paragraph still does not. Its content was, and is, scanned in overlapping windows.
+  - Coding lab: the untracked-file count (a metric; grading uses a copy) is taken against the base commit's own
+    `.gitignore` files, read from the copy of `.git` taken before the run. A `.gitignore` the agent writes or edits no
+    longer hides the files it adds.
+
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
 - `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.

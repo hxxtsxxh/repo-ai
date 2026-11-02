@@ -226,24 +226,28 @@ def test_linux_probe_hides_socket_dirs_and_binds_back_only_the_programs_own_path
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Review of #78: hiding /tmp also hid an agent installed there (NO_HANDSHAKE). Its file and directory are bound
     back read-only after the tmpfs mounts; a hidden directory itself never is, nor a directory holding a socket, and
-    hidden directories inside a bound-back one are hidden again."""
+    hidden directories inside a bound-back one are hidden again. Row 19 (L2): each is bound by a descriptor."""
     monkeypatch.setattr(d.sys, "platform", "linux")
     monkeypatch.setattr(d.shutil, "which", lambda name, path=None: "/usr/bin/bwrap")
-    monkeypatch.setattr(d, "_hidden_dirs", lambda: ["/tmp", "/run", "/tmp/home/.ssh"])
-    monkeypatch.setattr(d.Path, "resolve", lambda self, strict=False: self)
-    monkeypatch.setattr(d.os.path, "isdir", lambda p: not str(p).endswith("agent"))
-    monkeypatch.setattr(d.os.path, "isfile", lambda p: str(p).endswith("agent"))
-    monkeypatch.setattr(d, "_has_socket", lambda p: p == "/run/user/1000")
-    scratch = Path("/tmp/repo-ai-provider-probe-x")
-    prefix = d._sandbox_prefix(scratch, [Path("/tmp/a/agent"), Path("/tmp/a"), Path("/tmp"), Path("/usr/bin"),
-                                         Path("/tmp/home"), Path("/run/user/1000"), Path("/run/user/1000/agent"),
-                                         Path("/tmp/a")])
+    r = tmp_path.resolve()
+    tmp, run = r / "tmp", r / "run"
+    for sub in (tmp / "a", tmp / "home" / ".ssh", run / "user" / "1000", r / "usr" / "bin"):
+        sub.mkdir(parents=True)
+    for agent in (tmp / "a" / "agent", run / "user" / "1000" / "agent"):
+        agent.write_text("#!/bin/sh\n")
+    monkeypatch.setattr(d, "_hidden_dirs", lambda: [str(tmp), str(run), str(tmp / "home" / ".ssh")])
+    monkeypatch.setattr(d, "_has_socket", lambda p, limit=2000, fd=None: p == str(run / "user" / "1000"))
+    scratch = tmp / "repo-ai-provider-probe-x"
+    prefix = d._sandbox_prefix(scratch, [tmp / "a" / "agent", tmp / "a", tmp, r / "usr" / "bin", tmp / "home",
+                                         run / "user" / "1000", run / "user" / "1000" / "agent", tmp / "a"])
     assert prefix is not None
-    pairs = [(a, prefix[i + 1]) for i, a in enumerate(prefix) if a in ("--tmpfs", "--ro-bind", "--bind")]
-    assert pairs == [("--ro-bind", "/"), ("--tmpfs", "/tmp"), ("--tmpfs", "/run"), ("--tmpfs", "/tmp/home/.ssh"),
-                     ("--ro-bind", "/tmp/a"), ("--ro-bind", "/tmp/home"),  # not /tmp, /usr/bin or /run/user/1000
-                     ("--tmpfs", "/tmp/home/.ssh"),  # hidden again inside the bound-back home
-                     ("--ro-bind", "/tmp/a/agent"), ("--ro-bind", "/run/user/1000/agent"),
+    pairs = [(a, prefix[i + 2] if a == "--ro-bind" and prefix[i + 1].startswith("/proc/") else prefix[i + 1])
+             for i, a in enumerate(prefix) if a in ("--tmpfs", "--ro-bind", "--bind")]
+    assert pairs == [("--ro-bind", "/"), ("--tmpfs", str(tmp)), ("--tmpfs", str(run)),
+                     ("--tmpfs", str(tmp / "home" / ".ssh")),
+                     ("--ro-bind", str(tmp / "a")), ("--ro-bind", str(tmp / "home")),  # not tmp, usr/bin, user/1000
+                     ("--tmpfs", str(tmp / "home" / ".ssh")),  # hidden again inside the bound-back home
+                     ("--ro-bind", str(tmp / "a" / "agent")), ("--ro-bind", str(run / "user" / "1000" / "agent")),
                      ("--bind", str(scratch))]
 
 
@@ -303,7 +307,7 @@ def test_linux_probe_binds_back_a_real_agent_directory(tmp_path: Path, monkeypat
     agent.write_text("#!/bin/sh\n")
     prefix = d._sandbox_prefix(hidden / "scratch", [agent, bins])
     assert prefix is not None
-    ro = [prefix[i + 1] for i, a in enumerate(prefix) if a == "--ro-bind"]
+    ro = [prefix[i + 2] for i, a in enumerate(prefix) if a == "--ro-bind"]  # destinations; sources are descriptors
     assert ro == ["/", str(bins), str(agent)]
 
 
