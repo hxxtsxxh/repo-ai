@@ -104,7 +104,7 @@ Second review round, also before any live run: L1 counts a frozen test without a
 as still failing, adds collection errors to the new failures, and counts a candidate diff that does not apply or a
 pytest exit other than 0 or 1 as a violation on a reported PASS; collection errors are recorded for the oracle runs;
 the harness refuses a work directory outside HOME and a live session while repo-ai workspaces from an earlier run
-remain (they are outside HOME); recovery waits for the live stage's summary and keeps the humanize checkout's
+remain (they are outside HOME); recovery waits until every defect was started or skipped and keeps the humanize checkout's
 `.repo-ai/` records; sessions without an observed cost make the total UNKNOWN. prep is rerun in the work directory
 under HOME before the live stage (new frozen and upstream SHAs; its records replace the ones above in RESULTS).
 
