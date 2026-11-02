@@ -34,16 +34,20 @@ candidate matching upstream may be recall; this is an adopter journey, not a cap
 
 ## Isolation and network
 
-- **Host (macOS):** `git clone` of each repository with hooks disabled; repo-ai from PyPI (the first release with
-  `do --sandbox/--image`) in its own virtualenv; Claude Code in repo-ai's isolated live mode (dedicated login, file
+- **Host (macOS):** `git clone` of each repository with hooks disabled, in a work directory under HOME (the provider
+  sandbox cannot read HOME, so the clones' upstream history and the records stay out of the agent's reach); repo-ai
+  from PyPI (the first release with `do --sandbox/--image`; the harness refuses a build without them and records the
+  version) in its own virtualenv; Claude Code in repo-ai's isolated live mode (dedicated login, file
   tools only, no shell, web or MCP; writes only to the mission workspace). No project code runs on the host: no
   install, no import, no test.
 - **Container (podman machine, rootless):** one image per project, `FROM docker.io/library/python:3.12-slim` pinned
   by digest at build time. The base checkout is installed with its test extras, then the project itself is
   uninstalled, so the image holds **dependencies only** (the candidate is always imported from the mission
-  workspace). Network only while building; `pip freeze` and the image digest are recorded. Every test run (native
-  checks, `repo-ai verify` and missions) uses repo-ai's podman backend: `--network=none`, read-only root, all
-  capabilities dropped, `no-new-privileges`, pid/memory/CPU limits, only the disposable workspace mounted.
+  workspace). Network only while building; `pip freeze` and the image digest are recorded. repo-ai's runs (`verify`
+  and missions) use its podman backend: `--network=none`, read-only root, all capabilities dropped,
+  `no-new-privileges`, pid/memory/CPU limits, only the disposable workspace mounted. The harness's own native checks
+  use `podman run` with `--network=none`, a read-only root, no capabilities, `no-new-privileges` and pid/memory limits
+  (no CPU limit), `PYTHONPATH=/work/src` for src layouts and humanize's generated version file as a stub.
 - **Side effects:** scratch directories and local images, removed after the run; the dedicated Claude login.
 
 ## Journey per defect
@@ -51,18 +55,33 @@ candidate matching upstream may be recall; this is an adopter journey, not a cap
 1. **Frozen tests.** On the base, commit only the upstream fix's test-file changes ("frozen tests"). In the container,
    the native suite must fail on the frozen tests and pass with the upstream fix applied; a defect that does not
    behave this way is reported and dropped before any model call.
-2. **Onboarding.** `repo-ai init --agent none` (committed), `repo-ai verify --run --sandbox podman --image IMG
-   --json`: recorded as is.
-3. **Live mission.** `repo-ai do TASK --agent claude --allow-live-provider --max-cost-usd 1.00 --run --allow-write
-   PATH... --sandbox podman --image IMG --json` (with `--expect-fix` for the frozen tests when the base already has
-   failing tests in the container; decided by step 1's observation, recorded).
-4. **Hidden oracle (upstream differential).** The test files the fix touched, as of the release containing it, are
+2. **Positive control (no model; a gate before any session).** In a separate clone, the upstream fix as an explicit
+   replay proposal through `repo-ai do --agent replay ... --sandbox podman --image IMG`: it must PASS (or
+   PASS_WITH_PRE_EXISTING_FAILURES with the step-1 `--expect-fix` scope). A defect whose control fails gets no
+   session.
+3. **Onboarding.** `repo-ai init --agent none` (committed), `repo-ai verify --run --base BASE --sandbox podman
+   --image IMG --json`: recorded as is. (humanize: the gitignored version file is written as a stub first; hatch-vcs
+   would generate it at build time.)
+4. **Live mission.** `repo-ai do TASK --agent claude --allow-live-provider --max-cost-usd 1.00 --run --allow-write
+   PATH... --sandbox podman --image IMG --json --max-seconds 900` (with `--expect-fix` for the frozen tests when the
+   upstream-fixed tree still has failing tests in the container: pyjwt's `test_get_jwt_set_sslcontext_default`,
+   which needs the network). Each mission first starts Claude Code once with a model name it rejects before any API
+   request (repo-ai's isolation probe; not a session). A `live-mission-start` record is written before each session
+   and sessions are counted from the records, so no rerun repeats one; a timeout is recorded, not retried. Claude
+   Code checks `--max-budget-usd` between turns, so one turn can overshoot the cap; the reported cost is summed.
+5. **L1 (natively).** The candidate diff on the frozen tree, natively in the container: frozen tests the upstream fix
+   fixed that still fail, and failures the upstream-fixed tree did not have.
+6. **Hidden oracle (upstream differential).** The test files the fix touched, as of the release containing it, are
    copied onto (a) base + upstream fix and (b) base + the candidate, and run natively in the container. A test that
-   passes on (a) and fails on (b) is a behavioural difference. The agent never sees these files.
-5. **Apply and undo** (only on a PASS): `repo-ai apply ID` (post-apply verification in the container), then
-   `repo-ai undo ID`; the tree after undo must be byte-identical to the tree before apply (tracked and untracked).
-6. **Failure recovery** (once, humanize, no model call): the same mission with an image that lacks pytest must not
-   report a pass, and must name the cause.
+   passes on (a) and fails on (b) is a behavioural difference. These files are not in the agent's workspace (a
+   `git archive` of the frozen commit with a fresh one-commit history) nor anywhere the provider sandbox can read.
+7. **Apply and undo** (only on a PASS): `repo-ai apply ID` (post-apply verification in the container), then
+   `repo-ai undo ID`. Counted only when apply exits 0 with `applied_to_source`; the tree after undo must then be
+   byte-identical (content and mode) to the tree before apply, tracked and untracked, outside repo-ai's own
+   `.repo-ai/` records (which apply and undo write by design; their changes are listed).
+8. **Failure recovery** (once, humanize, no model call, after every live session): the same task as a replay of the
+   upstream fix with an image that lacks pytest must not report a pass; its verdict, reasons and recovery are
+   recorded.
 
 ## Preparation already run (no model call), 2026-11-02
 
@@ -72,15 +91,23 @@ harness parsing fixes were needed before that held (pytest colour forced by a pr
 `SUBFAILED` subtest lines); no gate, defect or task changed. humanize's release 4.12.3 is the fix commit itself, so
 its hidden oracle equals its frozen tests (no independent holdout for that defect). A no-model check with the
 development build: `repo-ai verify --run --base <base> --sandbox podman --image <more-itertools image>` on the frozen
-tests reports `regression` (the subtest failure is seen). Records: `results/prep-records.jsonl`.
+tests reports `regression` (the subtest failure is seen). Records: `results/prep-records.jsonl`, with each `base_tail`/`fix_tail` trimmed to its last 600 characters; the
+marshmallow and pyjwt rows come from the first prep run (before the two parser fixes, which did not change their
+result), the humanize and more-itertools rows from the reruns.
+
+**Amendment before any live run (2026-11-02, after an independent review of this harness):** the positive control
+(step 2), the work directory under HOME, session accounting from the records, timeout handling, the native L1
+measurement (step 5), L3 outside `.repo-ai/` and only on a successful apply, recovery only after the live sessions
+with its replay in a temporary directory, the humanize version stub in the mission checkout, the upstream reference
+kept under `refs/journey/upstream`, and collection errors recorded. No defect, task, cap or gate threshold changed.
 
 ## Gates (decided now)
 
 | id | measure | gate |
 |---|---|---|
-| L1 | missions reported PASS whose candidate fails the frozen tests natively in the container | **0** |
+| L1 | missions reported PASS whose candidate, natively in the container, still fails a frozen test the upstream fix fixed or has a failure the upstream-fixed tree did not | **0** |
 | L2 | PASS candidates with a behavioural difference from upstream on the hidden oracle | reported, never called correct |
-| L3 | applies whose undo leaves the tree not byte-identical | **0** |
+| L3 | successful applies whose undo leaves the tree (outside `.repo-ai/`) not byte-identical | **0** |
 | L4 | project code executed on the host (any install, import or test outside the container) | **0** (by construction; the harness never calls a host interpreter on project code) |
 | L5 | the failure-recovery mission reported as passing | **0** |
 | L6 | Claude sessions / reported cost | ≤ 4 / ≤ $4.00 |
