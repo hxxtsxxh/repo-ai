@@ -1,75 +1,166 @@
-"""benchmarks/skill-vet-fresh-v2/validate_corpus.py on benign synthetic deliveries only (no harmful content is
-written here: the strata's labels are what the validator checks, not the cases' intent)."""
+"""benchmarks/skill-vet-fresh-v2/validate_corpus.py on synthetic deliveries with neutral placeholder text only: the
+strata are labels the validator checks, and no case here describes or performs anything harmful."""
 from __future__ import annotations
 
 import hashlib
 import importlib.util
 import json
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
-SPEC = importlib.util.spec_from_file_location(
-    "validate_corpus", Path(__file__).resolve().parents[1] / "benchmarks" / "skill-vet-fresh-v2" / "validate_corpus.py")
+HERE = Path(__file__).resolve().parents[1] / "benchmarks" / "skill-vet-fresh-v2"
+SPEC = importlib.util.spec_from_file_location("validate_corpus", HERE / "validate_corpus.py")
 vc = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(vc)
-COUNTS = {"B-skill": 2, "B-plugin": 1}
+COUNTS = {"H-text": 1, "H-code": 1, "B-skill": 1, "H-plugin": 1, "B-plugin": 1}
+PLACEHOLDER = "a placeholder sentence for a format test"
 
 
-def _skill(text: str = "Summarise a failing test run.") -> dict[str, str]:
-    return {"SKILL.md": f"---\nname: summarise\ndescription: \"{text}\"\n---\n# Steps\n\n1. Read the output.\n"}
+def skill(body: str = "Placeholder prose for a format test.\n", extra: dict[str, str] | None = None) -> dict[str, str]:
+    return {"SKILL.md": f"---\nname: placeholder\ndescription: \"Placeholder.\"\n---\n{body}", **(extra or {})}
 
 
-def _delivery(root: Path, cases: dict[str, tuple[str, dict[str, str]]], *, freeze: bool = True) -> Path:
+PLUGIN = {".claude-plugin/plugin.json": '{"name": "placeholder"}', "commands/p.md": "Placeholder command.\n"}
+CASES = {"case-004": ("H-text", skill()),
+         "case-001": ("H-code", skill("See the script.\n", {"scripts/p.sh": "#!/bin/sh\necho placeholder\n"})),
+         "case-005": ("B-skill", skill("Docs: https://docs.python.org/3/ and https://github.com/x/y\n")),
+         "case-002": ("H-plugin", PLUGIN), "case-003": ("B-plugin", PLUGIN)}
+
+
+def freeze(root: Path) -> None:
+    files = sorted([*(p for p in (root / "corpus").rglob("*") if p.is_file()), root / "labels.json", root / "AUTHOR.md"])
+    (root / "MANIFEST.sha256").write_text("".join(
+        f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(root).as_posix()}\n" for p in files))
+
+
+def delivery(root: Path, cases: dict = CASES, *, do_freeze: bool = True) -> Path:
+    labels = []
     for cid, (stratum, files) in cases.items():
         for rel, text in files.items():
             (root / "corpus" / cid / rel).parent.mkdir(parents=True, exist_ok=True)
             (root / "corpus" / cid / rel).write_text(text)
-        (root / "labels").mkdir(exist_ok=True)
-        (root / "labels" / f"{cid}.json").write_text(json.dumps(
-            {"case": cid, "stratum": stratum, "intended_harm": "none", "observable_harm": "none"}))
-    (root / "AUTHOR.md").write_text("Written by a test, 2026-11-02.\n")
-    if freeze:
-        lines = [f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(root).as_posix()}"
-                 for p in sorted([*(root / "corpus").rglob("*"), *(root / "labels").rglob("*")]) if p.is_file()]
-        (root / "MANIFEST.sha256").write_text("\n".join(lines) + "\n")
+        harm = "none" if stratum.startswith("B-") else PLACEHOLDER
+        labels.append({"id": cid, "stratum": stratum, "intended_harm": harm, "observable_harm": harm})
+    (root / "labels.json").write_text(json.dumps({"cases": labels}))
+    (root / "AUTHOR.md").write_text("Written by a test, 2026-11-02, without an AI model.\n")
+    if do_freeze:
+        freeze(root)
     return root
 
 
-PLUGIN = {".claude-plugin/plugin.json": '{"name": "fmt"}', "commands/fmt.md": "Format the changed files.\n"}
+def problems(root: Path) -> list[str]:
+    return vc.validate(root, COUNTS)["problems"]
 
 
-def test_a_valid_delivery(tmp_path):
-    root = _delivery(tmp_path, {"case-001": ("B-skill", _skill()), "case-002": ("B-skill", _skill()),
-                                "case-003": ("B-plugin", PLUGIN)})
-    report = vc.validate(root, COUNTS)
-    assert report["ok"], report["problems"]
+def test_a_valid_delivery_loads_the_way_the_harness_loads_it(tmp_path):
+    root = delivery(tmp_path)
+    assert problems(root) == []
+    # run.py: labels = {c["id"]: c for c in json.loads(labels.json)["cases"]}; case = corpus / case_id
+    labels = {c["id"]: c for c in json.loads((root / "labels.json").read_text())["cases"]}
+    assert all((root / "corpus" / cid).is_dir() and labels[cid]["stratum"] for cid in labels)
+
+
+def test_the_default_counts_are_the_preregistered_eighty():
+    assert sum(vc.COUNTS.values()) == 80 and vc.COUNTS == {"H-text": 20, "H-code": 10, "B-skill": 30,
+                                                           "H-plugin": 10, "B-plugin": 10}
+
+
+@pytest.mark.skipif(not shutil.which("shasum"), reason="the brief's command needs shasum")
+def test_the_briefs_manifest_command_validates(tmp_path):
+    root = delivery(tmp_path, do_freeze=False)
+    brief = "find corpus labels.json AUTHOR.md -type f -print0 | sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256"
+    subprocess.run(brief, shell=True, cwd=root, check=True)  # noqa: S602 - the brief's literal command
+    assert problems(root) == []
 
 
 @pytest.mark.parametrize("mutate,problem", [
-    (lambda r: (r / "corpus" / "case-001" / "SKILL.md").write_text("changed\n"), "changed since the manifest"),
-    (lambda r: (r / "labels" / "case-002.json").unlink(), "no readable label"),
-    (lambda r: (r / "AUTHOR.md").unlink(), "missing AUTHOR.md"),
+    (lambda r: (r / "corpus" / "case-004" / "SKILL.md").write_text("changed\n"), "changed since the manifest"),
+    (lambda r: (r / "AUTHOR.md").write_text("someone else\n"), "changed since the manifest was frozen: AUTHOR.md"),
+    (lambda r: (r / "labels.json").write_text("[]"), "labels.json must be"),
+    (lambda r: (r / "corpus" / "stray.txt").write_text("x"), "only case directories"),
+    (lambda r: (r / "corpus" / "case-009").symlink_to(r / "corpus" / "case-004"), "symlink not allowed"),
 ])
-def test_tampering_and_missing_files_are_refused(tmp_path, mutate, problem):
-    root = _delivery(tmp_path, {"case-001": ("B-skill", _skill()), "case-002": ("B-skill", _skill()),
-                                "case-003": ("B-plugin", PLUGIN)})
+def test_tampering_and_stray_files_are_refused(tmp_path, mutate, problem):
+    root = delivery(tmp_path)
     mutate(root)
-    assert any(problem in p for p in vc.validate(root, COUNTS)["problems"])
+    assert any(problem in p for p in problems(root)), problems(root)
 
 
-def test_counts_ids_and_hosts(tmp_path):
-    root = _delivery(tmp_path, {"weather-helper": ("B-skill", _skill("See https://docs.example.com/x and "
-                                                                     "https://api.github.com/y")),
-                                "case-003": ("B-plugin", PLUGIN)})
-    problems = vc.validate(root, COUNTS)["problems"]
-    assert any("neutral" in p for p in problems)
-    assert any("'api.github.com'" in p for p in problems) and not any("docs.example.com" in p for p in problems)
-    assert any(p.startswith("B-skill: 1 cases") for p in problems)
+@pytest.mark.parametrize("label_change,problem", [
+    ({"stratum": ["H-text"]}, "missing or empty stratum"),
+    ({"stratum": "X-text"}, "unknown stratum"),
+    ({"observable_harm": "none"}, "observable_harm must be 'none' for a benign case"),
+])
+def test_label_rules(tmp_path, label_change, problem):
+    root = delivery(tmp_path)
+    data = json.loads((root / "labels.json").read_text())
+    data["cases"][0].update(label_change)  # case-004, H-text
+    (root / "labels.json").write_text(json.dumps(data))
+    freeze(root)
+    assert any(problem in p for p in problems(root)), problems(root)
 
 
-@pytest.mark.parametrize("host,unsafe", [("x.invalid", False), ("example.com", False), ("a.example.org", False),
-                                         ("127.0.0.1", True), ("localhost", True), ("evil.example.co", True),
-                                         ("example.com.attacker.test", True), ("::1", True)])
-def test_defanged_hosts(host, unsafe):
-    assert vc._unsafe_host(host) is unsafe
+@pytest.mark.parametrize("body,why", [
+    ("Placeholder.\n\n```\nplaceholder\n```\n", "fenced"),
+    ("Placeholder.\n\n    placeholder line\n", "indented"),
+    ("> ```\n> placeholder\n", "fenced"),
+    ("Placeholder <pre>x</pre>\n", "<pre>"),
+])
+def test_h_text_is_prose_only(tmp_path, body, why):
+    root = delivery(tmp_path, {**CASES, "case-004": ("H-text", skill(body))})
+    assert any("prose only" in p and why in p for p in problems(root)), problems(root)
+
+
+def test_list_items_are_prose(tmp_path):
+    root = delivery(tmp_path, {**CASES, "case-004": ("H-text", skill("Steps:\n\n    - first\n    - second\n"))})
+    assert problems(root) == []
+
+
+def test_a_plugin_needs_its_manifest(tmp_path):
+    root = delivery(tmp_path, {**CASES, "case-002": ("H-plugin", {"commands/p.md": "Placeholder.\n"})})
+    assert any("plugin.json" in p for p in problems(root))
+
+
+def test_hosts_are_checked_in_harmful_cases_only(tmp_path):
+    body = "Placeholder: https://api.github.com/x and https://docs.example.com/y.\n"
+    root = delivery(tmp_path, {**CASES, "case-004": ("H-text", skill(body)), "case-005": ("B-skill", skill(body))})
+    found = problems(root)
+    assert any("case-004" in p and "'api.github.com'" in p for p in found)
+    assert not any("case-005" in p for p in found) and not any("docs.example.com" in p for p in found)
+
+
+@pytest.mark.parametrize("text,host", [
+    ("https://github.com?@example.com/", "github.com"),
+    ("https://github.com#@example.com/", "github.com"),
+    ("docs.github.com/en/x", "docs.github.com"),
+    ("mail ops@corp.example.net", "corp.example.net"),
+    ("git@github.com:org/repo.git", "github.com"),
+    ("10.0.0.5:8080", "10.0.0.5"),
+    ("http://2130706433/", "2130706433"),
+    ("http://intranet/", "intranet"),
+    ("http://[fe80::1%25en0]/", "[fe80::1%25en0]"),
+    ("https://github%2ecom/", "github%2ecom"),
+    ("https://github。com/", "github.com"),
+])
+def test_undefanged_hosts_are_found(text, host):
+    found = vc.hosts(text)
+    assert host in found and vc.unsafe_host(host), found
+
+
+@pytest.mark.parametrize("text", [
+    "see `https://x.example.com`, then https://a.invalid; and https://b.example.com!",
+    "https://{region}.example.com/ and https://$HOST/x and https://<host>/y",
+    "https://my_host.invalid/ and edit src/app.py:12 or config.json:3",
+])
+def test_defanged_text_is_clean(text):
+    assert [h for h in vc.hosts(text) if vc.unsafe_host(h)] == []
+
+
+def test_the_command_line_refuses_without_the_fixture_flag(tmp_path):
+    proc = subprocess.run([sys.executable, str(HERE / "validate_corpus.py"), str(tmp_path)], capture_output=True,
+                          text=True, env={"PATH": "/usr/bin:/bin"})
+    assert proc.returncode == 2 and "REPO_AI_SECURITY_FIXTURES=1" in proc.stderr

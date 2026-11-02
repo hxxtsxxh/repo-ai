@@ -32,11 +32,21 @@ The owner asked the agent to build the corpus. The agent's briefing of an author
 and the partly launched author wrote nothing. The unblock is unchanged: a person-written corpus, or an external,
 legitimately published benchmark, run once on CI (attack-like fixtures are never written on the development host).
 
-## Status (2026-11-02): ready for an independent person
+## Status (2026-11-02): ready for an independent person (deviations declared before any v2 case exists)
 
-[AUTHOR-BRIEF.md](AUTHOR-BRIEF.md) is the brief for a person who writes the corpus (not a model): the strata and
-counts above, the layouts, defanging, neutral case ids, labels outside the cases, an `AUTHOR.md` provenance statement
-and a frozen `MANIFEST.sha256`. It names no detection rule and no example of harm. [validate_corpus.py](validate_corpus.py)
-checks a delivery on CI before it is committed (structure, counts, labels, manifest, defanged hosts; it never runs the
-vetter). The protocol, gates and harness are unchanged; the author is a person instead of the agent named above.
+- **Author:** a person, not an agent ([AUTHOR-BRIEF.md](AUTHOR-BRIEF.md)). Eligibility: no prior exposure to repo-ai's
+  vetting code, tests, security or skills documentation, changelog, earlier corpora or results; the maintainer is not
+  eligible. While writing, the author reads only the brief and public Claude Code documentation. The brief carries
+  v1's corpus section (strata, counts, harm kinds, defanging) and the layouts, nothing about v1's outcome or the fix.
+- **Delivery:** the layout `run.py` loads (`labels.json` with `{"cases": [...]}`, `corpus/<id>/`), neutral ids,
+  `AUTHOR.md` (provenance and prior exposure) and a `MANIFEST.sha256` over all of them, whose own hash the author
+  publishes outside the maintainer's control. [validate_corpus.py](validate_corpus.py) checks a delivery on CI
+  (`skill-vet-v2` workflow, `validate` job): structure, counts, labels, manifest, defanged hosts in harmful cases
+  (`example.com` or `.invalid`, as v1). It never runs the vetter.
+- **System under test:** the preregistration said "the commit that adds this file" (`111d519`); the vetter has changed
+  since (later security fixes). It is frozen now instead, as the git blobs in [SUT.json](SUT.json) of the vetting
+  sources and the harness, recorded at this commit; the run job refuses if any differs (`sut.py --check`).
+- **Run:** once, by hand (`skill-vet-v2` workflow, `run` job, `workflow_dispatch`), refused when
+  `results/run-1.json` exists. Gates G1–G4 and reports R1–R4 unchanged.
+
 Nothing in this directory was written as a case, and no case will be written by the maintainer's agent.
