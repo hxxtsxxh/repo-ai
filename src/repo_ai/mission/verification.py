@@ -137,7 +137,7 @@ def container_layout(root: Path, runner: TestRunner, files: list[str], preferenc
     """In a container the project is not installed (the image holds its dependencies only), so a src-layout
     project's tests import it through `PYTHONPATH=src`, the rule `verify` applies (`commands._src_layout`). On the
     host the project's editable install is used, as before."""
-    if preference in execute.CONTAINER_BACKENDS:
+    if preference in execute.CONTAINER_BACKENDS and runner.kind in {"pytest", "unittest"}:
         from ..verify.commands import _src_layout
         _src_layout(root, runner, files)
 
