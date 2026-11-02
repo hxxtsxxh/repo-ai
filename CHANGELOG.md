@@ -3,17 +3,21 @@
 ## Unreleased
 
 - Security review of v0.11.3...v0.11.7 (C18), low findings:
-  - The skill vetter reads `LICENSE`, `COPYING` and `NOTICE` as documentation only at the skill's root, and not when
-    the file starts with `#!` or SKILL.md runs it (`bash NOTICE`, `./LICENSE`). Before, a file with one of those names
-    in any directory (`scripts/notice`) skipped the code rules.
+  - The skill vetter read a `LICENSE`, `COPYING` or `NOTICE` file in any directory (`scripts/notice`) as
+    documentation, which skipped the code rules. Now only a root one without a `#!` line is read that way, and the
+    code rules (whole-program checks and the per-line code rules) apply to it as well, since a skill can run any of its
+    files. The instruction and injection checks apply to every licence-named file. The plugin vetter never reads a file
+    that a hook, command or installer runs as documentation. A licence file below the root is now checked as code,
+    which is stricter for plugins too.
   - The check for a socket duplicated onto stdio makes one pass over the file instead of one search per socket name,
     which was quadratic on large files.
   - `verify` no longer crashes when `pyproject.toml` gives `tool`, `tool.setuptools_scm` or a `tool.hatch` table a
     non-table value (valid TOML) or nests deeply enough to stop the parser; no version file is declared then.
   - The `norecursedirs` note is skipped for a pattern over 256 characters, and a memory or overflow error while
     reading the configuration gives no note instead of an error.
-  - The coding lab's `git diff` and `git ls-files` in an agent's workspace run with `core.fsmonitor=false` and no
-    hooks, since the agent could have written that workspace's `.git/config`.
+  - The coding lab's `git diff` and `git ls-files` over an agent's workspace use a copy of its `.git` taken before
+    the run (with no fsmonitor and no hooks). The agent could have written the workspace's own `.git/config`, and a
+    clean filter defined there would have run on the host during `git diff`.
   - The diagnose, journey and speed workflows no longer keep the checkout token in `.git/config`.
 
 ## 0.11.7 — faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed

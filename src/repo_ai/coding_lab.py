@@ -645,14 +645,31 @@ def pass_fraction(output: str, ok: bool) -> float:
 # --------------------------------------------------------------------------
 # one run
 # --------------------------------------------------------------------------
+def _workspace_changes(ws: Path, pristine_git: Path) -> tuple[list[str], list[str]]:
+    """(changed tracked files, untracked files) in `ws`. Never with the workspace's own .git, which the agent could
+    have written (a clean filter in its config runs on `git diff`): with the copy taken before the run, and with no
+    fsmonitor or hook either."""
+    quiet = ["--git-dir", str(pristine_git), "--work-tree", str(ws), "-c", "core.fsmonitor=false",
+             "-c", "core.hooksPath=" + os.devnull]
+    changed = subprocess.run([gitbin.git(), *quiet, "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
+                             text=True, check=False, timeout=60).stdout.split()
+    untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "--others", "--exclude-standard"], cwd=ws,
+                               capture_output=True, text=True, check=False, timeout=60).stdout.split()
+    return changed, untracked
+
+
 def run_one(task: Task, base: Base, suite: Path, arm: Arm, opts: LabOptions, root: Path,
             budget: float, cancel: threading.Event) -> dict[str, Any]:
     ws = root / f"{task.id}-{arm.name}-{uuid.uuid4().hex[:6]}"
     row: dict[str, Any] = {"task": task.id, "arm": arm.name, "features": sorted(arm.features),
                            "category": task.category, "language": task.language,
                            "difficulty": task.difficulty, "fake": opts.fake}
+    pristine_git = root / f"git-{ws.name}"
     try:
         row["setup_s"] = float(_setup_workspace(task, suite, ws, arm) or 0)
+        # the agent can write its workspace's .git (config filters, hooks, fsmonitor): the host's git reads a copy
+        # taken before it ran, outside the workspace
+        shutil.copytree(ws / ".git", pristine_git, symlinks=True)
         # outside the workspace: the agent may read and write only its own workspace
         settings_file = root / f"settings-{uuid.uuid4().hex[:6]}.json"
         # earlier runs' workspace paths are denied: a process left behind by one
@@ -696,13 +713,7 @@ def run_one(task: Task, base: Base, suite: Path, arm: Arm, opts: LabOptions, roo
         row["tool_calls"] = sum(metrics["tool_uses"].values())
         row["first_edit_s"] = _first_edit_s(lines)
         row["repo_ai_context_tokens_est"] = evals._flight_tokens(ws) if arm.uses_repo_ai else 0
-        # the agent could write this workspace's .git/config: no fsmonitor or hook command runs on the host
-        quiet = ["-c", "core.fsmonitor=false", "-c", "core.hooksPath=" + os.devnull]
-        changed = subprocess.run([gitbin.git(), *quiet, "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
-                                 text=True, check=False, timeout=60).stdout.split()
-        untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "--others", "--exclude-standard"], cwd=ws,
-                                   capture_output=True, text=True, check=False,
-                                   timeout=60).stdout.split()
+        changed, untracked = _workspace_changes(ws, pristine_git)
         # Running the code (tests, an import) leaves untracked bytecode and tool
         # caches: execution artifacts, not edits. Tracked files are always edits.
         artifacts = sorted(p for p in set(untracked) - set(changed) if is_execution_artifact(p))
@@ -739,6 +750,7 @@ def run_one(task: Task, base: Base, suite: Path, arm: Arm, opts: LabOptions, roo
     except Exception as exc:  # noqa: BLE001 - a broken run is a result, not a crash
         row.update(error=f"{type(exc).__name__}: {exc}", success=False)
     finally:
+        shutil.rmtree(pristine_git, ignore_errors=True)
         if opts.keep_workspaces and ws.exists():
             # kept under the lab home, which every arm is denied: a later arm
             # can never read an earlier arm's solution
