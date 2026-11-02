@@ -142,8 +142,41 @@ def test_interrupted_continuation_is_claimed_before_execution(recorded, tmp_path
         r.continue_from_handoff(root, path)
     assert not r.verify_handoff(root, cap)['valid']
     path.write_text(json.dumps(r.handoff(root, state['id'], target_provider='bob')))
-    with pytest.raises(ValueError, match='already attempted'):
+    with pytest.raises(ValueError, match='already (attempted|started)'):
         r.continue_from_handoff(root, path)
+
+
+def test_a_used_capsule_says_it_was_consumed(recorded, tmp_path, monkeypatch):
+    """Re-verifying a capsule after its continuation started said only "stored mission changed since capsule export"
+    (found by the C13 Claude-target attempt, 2026-11-01), and a capsule exported after that verified as valid. Both
+    now say the mission's one continuation is used; any other change to the mission still gives the generic reason."""
+    root, store, state = recorded
+    cap = r.handoff(root, state['id'], target_provider='bob')
+    path = tmp_path / 'capsule.json'
+    path.write_text(json.dumps(cap))
+    monkeypatch.setattr(r, 'execute', lambda *a, **k: (_ for _ in ()).throw(RuntimeError('interrupted')))
+    with pytest.raises(RuntimeError):
+        r.continue_from_handoff(root, path)
+    ver = r.verify_handoff(root, cap)  # interrupted: the child id is not recorded yet
+    assert not ver['valid'] and ver['consumed'] is True and 'consumed_by' not in ver
+    assert any('child mission not recorded' in x for x in ver['reasons'])
+    assert 'stored mission changed since capsule export' not in ver['reasons']
+    later = r.handoff(root, state['id'], target_provider='bob')  # exported after the continuation started
+    assert not r.verify_handoff(root, later)['valid'] and r.verify_handoff(root, later)['consumed'] is True
+    saved = store.load(state['id'])
+    saved['continuation_started']['child_mission'] = 'c' * 24
+    store.save(saved)
+    ver = r.verify_handoff(root, cap)
+    assert ver['consumed_by'] == 'c' * 24 and any(x.startswith('capsule already used') for x in ver['reasons'])
+    saved['continuation_started']['child_mission'] = '\x1b[31mRED\nReason: VALID'  # never printed or returned
+    store.save(saved)
+    ver = r.verify_handoff(root, cap)
+    assert 'consumed_by' not in ver and not any('\x1b' in x or '\n' in x for x in ver['reasons'])
+    saved['continuation_started']['child_mission'] = 'c' * 24
+    saved['seconds_used'] += 1  # a further change is not hidden behind the consumed reason
+    store.save(saved)
+    ver = r.verify_handoff(root, cap)
+    assert 'stored mission changed since capsule export' in ver['reasons'] and ver['consumed'] is True
 
 
 def test_unknown_cost_survives_intermediate_offline_continuation(recorded, tmp_path, monkeypatch):

@@ -1395,8 +1395,22 @@ def verify_handoff(root: Path, capsule_data: dict[str, Any]) -> dict[str, Any]:
         stored = store.load(capsule.mission)
         if checksum not in stored.get('handoff_receipts', []):
             reasons.append('capsule has no matching trusted local export receipt')
+        started = stored.get('continuation_started')
+        if started:
+            # one continuation per mission, whenever the capsule was exported (before the continuation or after)
+            raw = started.get('child_mission') if isinstance(started, dict) else None
+            child = raw if isinstance(raw, str) and re.fullmatch(r'[0-9A-Za-z_-]{1,64}', raw) else None
+            response['consumed'] = True
+            if child:
+                response['consumed_by'] = child
+            reasons.append('capsule already used: a continuation was already started from this mission ('
+                           + (f'child mission {child}' if child else 'child mission not recorded')
+                           + '); one continuation per mission')
         if _handoff_snapshot(stored) != capsule.mission_snapshot_sha256:
-            reasons.append('stored mission changed since capsule export')
+            only_the_continuation = started and _handoff_snapshot(
+                {k: v for k, v in stored.items() if k != 'continuation_started'}) == capsule.mission_snapshot_sha256
+            if not only_the_continuation:  # anything else changed: said separately, never hidden by the above
+                reasons.append('stored mission changed since capsule export')
         state = status(root, capsule.mission)
         if digest(state.get('contract', {})) != capsule.contract:
             reasons.append('capsule contract digest does not match stored mission contract')
