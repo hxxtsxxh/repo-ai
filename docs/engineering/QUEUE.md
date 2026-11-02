@@ -1,6 +1,6 @@
 # Work queue (living; top = next)
 
-Updated 2026-11-01: 0.11.7 published (#68–#75); C18 release review findings fixed (#78, #79); C13 Claude target blocked on auth; 0.11.8 published.
+Updated 2026-11-02: 0.11.7 published (#68–#75); C18 release review findings fixed (#78, #79); C13 Claude target blocked on auth; 0.11.8 published.
 
 | # | Item | Gate | State |
 |---|---|---|---|
