@@ -280,11 +280,16 @@ def generated_version_files(root: Path) -> list[str]:
     except ModuleNotFoundError:  # Python 3.10
         import tomli as tomllib  # type: ignore[no-redef]
     try:
-        tool = tomllib.loads(text).get("tool") or {}
-    except (tomllib.TOMLDecodeError, AttributeError):
+        data = tomllib.loads(text)
+    except (tomllib.TOMLDecodeError, ValueError, RecursionError):
         return []
-    scm = tool.get("setuptools_scm") or {}
-    hatch_vcs = (((tool.get("hatch") or {}).get("build") or {}).get("hooks") or {}).get("vcs") or {}
+
+    def table(node: object, *keys: str) -> dict:
+        for key in keys:  # any non-table value on the way (valid TOML: `tool = "x"`) means nothing is declared
+            node = node.get(key) if isinstance(node, dict) else None
+        return node if isinstance(node, dict) else {}
+    scm = table(data, "tool", "setuptools_scm")
+    hatch_vcs = table(data, "tool", "hatch", "build", "hooks", "vcs")
     declared = [scm.get("version_file"), scm.get("write_to"), hatch_vcs.get("version-file")]
     out: list[str] = []
     for raw in declared:
