@@ -79,6 +79,7 @@ def test_coding_lab_reads_changes_with_the_git_dir_from_before_the_run(tmp_path)
 def test_these_workflows_do_not_persist_the_checkout_token(name):
     text = (WORKFLOWS / name).read_text()
     checkouts = re.findall(r"- uses: actions/checkout@[^\n]*\n((?: {8,}.*\n)*)", text)
+    assert len(checkouts) == text.count("actions/checkout@"), f"{name}: a checkout written another way"
     assert all("persist-credentials: false" in c for c in checkouts), name
 
 
@@ -129,3 +130,29 @@ def test_integrity_reads_the_hidden_tests_baseline_from_the_pre_run_git_copy(tmp
     subprocess.run([*git, "commit", "-qam", "agent"], cwd=ws, check=True)
     assert integrity._git_show(ws, "t.py") == "after\n"
     assert integrity._git_show(ws, "t.py", pristine) == "before\n"
+
+
+def test_coding_lab_git_ignores_the_hosts_user_git_config(tmp_path, monkeypatch):
+    """PR #87 review: a user-level setting (here a harmless excludes file that hides every new file) must not apply to
+    git over an agent's workspace, also on git older than 2.32, which reads $HOME/.gitconfig directly."""
+    import shutil
+    import subprocess
+
+    from repo_ai import coding_lab
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    (ws / "a.py").write_text("x = 1\n")
+    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t"]
+    subprocess.run([*git, "init", "-q"], cwd=ws, check=True)
+    subprocess.run([*git, "add", "-A"], cwd=ws, check=True)
+    subprocess.run([*git, "commit", "-qm", "base"], cwd=ws, check=True)
+    pristine = tmp_path / "git-copy"
+    shutil.copytree(ws / ".git", pristine, symlinks=True)
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / "exclude-all").write_text("*\n")
+    (home / ".gitconfig").write_text(f"[core]\n\texcludesFile = {(home / 'exclude-all').as_posix()}\n")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(home / ".gitconfig"))
+    (ws / "new.py").write_text("y = 1\n")
+    assert coding_lab._workspace_changes(ws, pristine)[1] == ["new.py"]
