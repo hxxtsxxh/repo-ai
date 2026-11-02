@@ -103,6 +103,9 @@ class IntentContract(Contract):
             raise ValueError('invalid image reference')
         if self.image and self.sandbox not in ('podman', 'docker'):
             raise ValueError('an image needs sandbox podman or docker')
+        if self.sandbox in ('podman', 'docker') and not self.image:
+            # the default images hold only the standard library: no test runner, no dependencies
+            raise ValueError('sandbox podman or docker needs --image: a local image with the project\'s dependencies')
         for test_id in self.expect_fix:
             file, sep, name = test_id.partition('::')
             if not sep or not name or len(test_id) > 1000:

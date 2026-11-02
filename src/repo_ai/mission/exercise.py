@@ -121,6 +121,7 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
     try:
         runner = verification._runner(command)
         listing = isolate.worktree_files(workspace)
+        verification.container_layout(workspace, runner, listing[0], sandbox_preference)
         executor = execute.get_executor(workspace, sandbox_preference, runner.language, timeout_s=timeout_s,
                                         interpreter_root=project_root, image=image)
         if executor.is_container:
