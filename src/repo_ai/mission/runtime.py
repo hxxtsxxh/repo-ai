@@ -1536,8 +1536,10 @@ def _continue_verified_handoff(
         from ..providers.adapters import contract_for
         if contract_for(target_agent).enforces_hard_usd_budget:
             # refused before the continuation is claimed: the capsule stays usable
-            raise ValueError(f'{target_agent} enforces a USD ceiling: give --max-cost-usd > 0 for the continuation '
-                             '(none remains from the original mission); the capsule is still unused')
+            raise ValueError(f'{target_agent} enforces a USD ceiling and no budget remains from the original mission: '
+                             + ('its live cost cannot establish one, so create a newly approved plan'
+                                if prior_live else 'give --max-cost-usd > 0 for the continuation')
+                             + '; the capsule is still unused')
 
     inherited_paths = list(orig_contract['write_paths'])
     added_paths = [p for p in dict.fromkeys(extra_write_paths or []) if p not in inherited_paths]
