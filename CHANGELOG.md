@@ -12,6 +12,23 @@
   it, and the others run with cost UNKNOWN (never counted as $0). Without the flag, a ceiling with a provider that
   cannot enforce it is refused, as before; with it but no enforcing provider, the ceiling would cap nothing and is
   refused. The flag applies to tournaments only. This is what makes a Claude + Codex tournament possible with a cap.
+- Security (queue row 19, the open lows from the 0.11.8 release review):
+  - Linux probe sandbox, with bubblewrap 0.10 or later (`--ro-bind-fd`): each directory or file bound back from a
+    hidden directory is opened one path component at a time without following a symlink, checked for sockets through
+    that descriptor, and bound by the descriptor itself. A path swapped for a symlink after it was resolved is not
+    bound (the probed program then does not run). With an older bubblewrap (Ubuntu 24.04 and 22.04 and Debian 12
+    ship 0.9, 0.6 and 0.8) the binds are by path, as before, and that race remains. Any process of the same user can
+    still add files, sockets included, inside a directory after it was checked.
+  - Skill firewall: a licence-named file (LICENSE, COPYING, NOTICE) read as code (below the skill's root, or a script)
+    whose overlong line does not read as prose (a minified script, one long token) gets the `overlong-code-line`
+    finding again. An unwrapped licence paragraph, in a language written with or without spaces, still does not.
+    Its content was, and is, scanned in overlapping windows.
+  - Coding lab: the untracked-file count (a metric; grading uses a copy) is taken against the base commit's own
+    `.gitignore` files, read from the copy of `.git` taken before the run and applied as git applies them (on an
+    untouched base it equals `git ls-files --others --exclude-standard`). A `.gitignore` the agent writes or edits no
+    longer hides the files it adds, a nested repository it creates is counted file by file, and a file name that is
+    not UTF-8 is counted instead of ending the run with an error. New files under paths the base already ignores
+    are still not counted.
 
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
