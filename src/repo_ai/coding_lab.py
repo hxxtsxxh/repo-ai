@@ -645,34 +645,92 @@ def pass_fraction(output: str, ok: bool) -> float:
 # --------------------------------------------------------------------------
 # one run
 # --------------------------------------------------------------------------
+def _strip_trailing_spaces(p: str) -> str:
+    """git drops trailing spaces unless the last one is escaped with a backslash."""
+    while p.endswith(" ") and not p.endswith("\\ "):
+        p = p[:-1]
+    return p
+
+
+def _glob_escape(text: str) -> str:
+    return "".join("\\" + c if c in "*?[\\" else c for c in text)
+
+
 def _anchored(directory: str, patterns: list[str]) -> list[str]:
     """A `.gitignore` in `directory` (relative to the root, "" for the root), rewritten for an excludes file read at the
-    root: a pattern without an inner slash matches at any depth below its directory, one with a slash only from it."""
-    if not directory:
-        return [p for p in patterns if p.strip() and not p.startswith("#")]
+    root: a pattern without an inner slash matches at any depth below its directory, one with a slash only from it.
+    Comments, blank lines and patterns that match nothing (a lone `!` or `/`) are dropped."""
     out = []
     for raw in patterns:
-        if not raw.strip() or raw.startswith("#"):
+        line = _strip_trailing_spaces(raw)
+        if not line.strip() or line.startswith("#"):
             continue
-        neg = raw.startswith("!")
-        p = raw[1:] if neg else raw
+        neg = line.startswith("!")
+        p = line[1:] if neg else line
+        if not p.strip("/"):
+            continue
+        if not directory:
+            out.append(line)
+            continue
         anchored = "/" in p.rstrip("/")
-        out.append(("!" if neg else "") + f"/{directory}/" + (p.lstrip("/") if anchored else "**/" + p))
+        out.append(("!" if neg else "") + f"/{_glob_escape(directory)}/" + (p.lstrip("/") if anchored else "**/" + p))
     return out
 
 
 def _base_excludes(git: list[str], env: dict[str, str], out: Path) -> Path:
     """One excludes file from the `.gitignore` files of the base commit (read from the copy of .git taken before the
-    run), so an ignore file the agent writes or edits cannot hide the files it adds from the untracked count."""
-    listed = subprocess.run([*git, "ls-tree", "-r", "-z", "--name-only", "HEAD"], capture_output=True, text=True,
-                            check=False, timeout=60, env=env).stdout.split("\0")
+    run), so an ignore file the agent writes or edits cannot hide the files it adds from the untracked count. Root
+    first, then deeper directories (a deeper file overrides its parents: later lines win); symlinks are skipped, as
+    git skips them."""
+    listed = subprocess.run([*git, "ls-tree", "-r", "-z", "HEAD"], capture_output=True, check=False, timeout=60,
+                            env=env).stdout.split(b"\0")
+    blobs: list[tuple[str, str]] = []
+    for entry in listed:
+        meta, _, name = entry.partition(b"\t")
+        rel = os.fsdecode(name)
+        fields = meta.split()
+        if len(fields) == 3 and fields[1] == b"blob" and fields[0] in (b"100644", b"100755") and (
+                rel == ".gitignore" or rel.endswith("/.gitignore")):
+            blobs.append((rel, fields[2].decode("ascii")))
+    blobs.sort(key=lambda b: (b[0].count("/"), b[0]))
     lines: list[str] = []
-    for rel in sorted(r for r in listed if r == ".gitignore" or r.endswith("/.gitignore")):
-        shown = subprocess.run([*git, "cat-file", "blob", f"HEAD:{rel}"], capture_output=True, text=True,
-                               check=False, timeout=60, env=env, errors="replace")
-        if shown.returncode == 0:
-            lines += _anchored(rel.rpartition("/")[0], shown.stdout.splitlines())
+    if blobs:
+        batch = subprocess.run([*git, "cat-file", "--batch"], input=b"".join(f"{sha}\n".encode() for _, sha in blobs),
+                               capture_output=True, check=False, timeout=60, env=env).stdout
+        at = 0
+        for rel, sha in blobs:
+            header_end = batch.index(b"\n", at)
+            header = batch[at:header_end].split()
+            if len(header) != 3 or header[0].decode("ascii", "replace") != sha or header[1] != b"blob":
+                lines = []  # unexpected output: no base patterns, so every untracked file is counted
+                break
+            size = int(header[2])
+            body = batch[header_end + 1:header_end + 1 + size]
+            at = header_end + 1 + size + 1
+            lines += _anchored(rel.rpartition("/")[0], body.decode("utf-8", "replace").splitlines())
     out.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+    return out
+
+
+def _nul_paths(raw: bytes) -> list[str]:
+    return [os.fsdecode(p) for p in raw.split(b"\0") if p]
+
+
+def _expand_dirs(ws: Path, entries: list[str]) -> list[str]:
+    """`git ls-files --others` shows a nested repository (a directory with its own .git) as one `dir/` entry; list the
+    files inside it instead (not its .git), so a nested `git init` cannot collapse an agent's new files into one."""
+    out: list[str] = []
+    for rel in entries:
+        if not rel.endswith("/"):
+            out.append(rel)
+            continue
+        base = ws / rel
+        for dirpath, dirnames, filenames in os.walk(base, followlinks=False):
+            dirnames[:] = [d for d in dirnames if d != ".git"]
+            here = Path(dirpath).relative_to(ws).as_posix()
+            out += [f"{here}/{f}" for f in filenames if f != ".git"]
+            if len(out) > 100_000:
+                break
     return out
 
 
@@ -686,17 +744,16 @@ def _workspace_changes(ws: Path, pristine_git: Path) -> tuple[list[str], list[st
     # configured globally on the host (git-lfs, for one), which `git diff` would run on the agent's files
     with tempfile.TemporaryDirectory(prefix="repo-ai-git-home-") as home:
         env = gitbin.no_user_config_env(home)
-        changed = [c for c in subprocess.run([gitbin.git(), *quiet, "diff", "-z", "--name-only", "HEAD"], cwd=ws,
-                                             capture_output=True, text=True, check=False, timeout=60,
-                                             env=env).stdout.split("\0") if c]
-        # not --exclude-standard, which reads the .gitignore files in the workspace: the agent can write those
-        excludes = _base_excludes([gitbin.git(), *quiet], env, Path(home) / "base-excludes")
+        changed = _nul_paths(subprocess.run([gitbin.git(), *quiet, "diff", "-z", "--name-only", "HEAD"], cwd=ws,
+                                            capture_output=True, check=False, timeout=60, env=env).stdout)
+        # not --exclude-standard, which reads the .gitignore files in the workspace: the agent can write those.
+        # info/exclude (from the pre-run copy) first: the .gitignore patterns take precedence over it
         info = pristine_git / "info" / "exclude"
-        extra = ["--exclude-from", str(info)] if info.is_file() else []
-        untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "-z", "--others", "--exclude-from",
-                                    str(excludes), *extra], cwd=ws, capture_output=True, text=True, check=False,
-                                   timeout=60, env=env).stdout.split("\0")
-        untracked = [u for u in untracked if u]
+        excludes = _base_excludes([gitbin.git(), *quiet], env, Path(home) / "base-excludes")
+        order = [*(["--exclude-from", str(info)] if info.is_file() else []), "--exclude-from", str(excludes)]
+        untracked = _expand_dirs(ws, _nul_paths(subprocess.run(
+            [gitbin.git(), *quiet, "ls-files", "-z", "--others", *order], cwd=ws, capture_output=True, check=False,
+            timeout=60, env=env).stdout))
     return changed, untracked
 
 

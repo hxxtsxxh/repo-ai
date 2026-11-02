@@ -5,6 +5,7 @@ establish authentication, entitlement, hard budget enforcement, or live support.
 """
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -155,36 +156,42 @@ def _hidden_dirs() -> list[str]:
     return list(dict.fromkeys(found))
 
 
-_DIR_READ = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+# getattr: Windows has neither flag (this module is imported there; the probe sandbox never runs there)
+_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_DIR_READ = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | _NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
 
 
 def _has_socket(directory: str, limit: int = 2000, *, fd: int | None = None) -> bool:
     """A unix socket anywhere under `directory` (a bind brings back the host's whole subtree, such as
     /run/user/<uid>/bus under /run/user): never bound back. With `fd` (from `_pin`), the directory that descriptor
     holds is the one walked. Symlinks are not followed (they resolve inside the sandbox, where hidden targets stay
-    hidden). More than `limit` entries, or one that cannot be read, counts as a socket: the directory is then not
-    bound back, only the program's own file."""
+    hidden), and a subdirectory that is no longer the one listed (device and inode) counts as a socket. More than
+    `limit` entries, or one that cannot be read, counts as a socket: the directory is then not bound back, only the
+    program's own file."""
     seen = 0
     try:
         top = os.open(".", _DIR_READ, dir_fd=fd) if fd is not None else os.open(directory, _DIR_READ)
     except OSError:
         return True
-    stack = [""]  # paths relative to the top directory's descriptor
+    stack: list[tuple[str, tuple[int, int] | None]] = [("", None)]  # relative to `top`, with the identity listed
     try:
         while stack:
-            rel = stack.pop()
+            rel, listed = stack.pop()
             here = os.open(rel, _DIR_READ, dir_fd=top) if rel else os.dup(top)
             try:
+                st = os.fstat(here)
+                if listed is not None and (st.st_dev, st.st_ino) != listed:
+                    return True  # swapped since it was listed: not the directory that would be bound
                 with os.scandir(here) as entries:
                     for e in entries:
                         seen += 1
                         if seen > limit:
                             return True
-                        mode = e.stat(follow_symlinks=False).st_mode
-                        if stat.S_ISSOCK(mode):
+                        est = e.stat(follow_symlinks=False)
+                        if stat.S_ISSOCK(est.st_mode):
                             return True
-                        if stat.S_ISDIR(mode):
-                            stack.append(f"{rel}/{e.name}" if rel else e.name)
+                        if stat.S_ISDIR(est.st_mode):
+                            stack.append((f"{rel}/{e.name}" if rel else e.name, (est.st_dev, est.st_ino)))
             finally:
                 os.close(here)
     except OSError:
@@ -196,20 +203,19 @@ def _has_socket(directory: str, limit: int = 2000, *, fd: int | None = None) -> 
 
 # O_PATH on Linux: a descriptor that names a file without reading it (a directory the user may only search, an
 # executable without read permission); elsewhere (the tests on macOS) a read-only open
-_PIN = getattr(os, "O_PATH", os.O_RDONLY) | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+_PIN = getattr(os, "O_PATH", os.O_RDONLY) | _NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
 
 
 def _pin(path: str) -> int | None:
     """A descriptor for `path` (absolute and already resolved), opened one component at a time without following a
     symlink. None when a component is a symlink (swapped in since the path was resolved), is missing, or the path
-    ends at something other than a directory or a regular file. The probe binds this descriptor, never the path
-    again: what bubblewrap binds is what was resolved and checked."""
+    ends at something other than a directory or a regular file."""
     parts = PurePosixPath(path).parts
-    if not parts or parts[0] != "/" or ".." in parts:
+    if not _NOFOLLOW or not parts or parts[0] != "/" or ".." in parts:
         return None
     fd: int | None = None
     try:
-        fd = os.open("/", _PIN | os.O_DIRECTORY)
+        fd = os.open("/", _PIN | getattr(os, "O_DIRECTORY", 0))
         for part in parts[1:]:
             nxt = os.open(part, _PIN, dir_fd=fd)
             os.close(fd)
@@ -234,13 +240,30 @@ def _close_all(fds: tuple[int, ...]) -> None:
             pass
 
 
+@functools.lru_cache(maxsize=4)
+def _bwrap_binds_fds(bwrap: str) -> bool:
+    """bubblewrap 0.8 and later bind an inherited descriptor (`--ro-bind-fd FD DEST`) without resolving a path."""
+    try:
+        shown = subprocess.run([bwrap, "--help"], capture_output=True, text=True, timeout=10, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return "--ro-bind-fd" in shown.stdout + shown.stderr
+
+
 class _PinnedPrefix(list):  # type: ignore[type-arg]
-    """A bubblewrap prefix that binds descriptors this process holds (`/proc/<pid>/fd/<n>`): they stay open for as
-    long as the prefix is referenced and close with it. Keep the prefix while the probed program starts."""
+    """A bubblewrap prefix that binds descriptors this process holds (`--ro-bind-fd`). They must reach bubblewrap
+    (`pass_fds`, see `pinned_fds`), stay open while the prefix is referenced, and close with it. bubblewrap closes
+    them before it runs the program."""
 
     def __init__(self, argv: list[str], fds: list[int]) -> None:
         super().__init__(argv)
-        self._finalizer = weakref.finalize(self, _close_all, tuple(fds))
+        self.fds = tuple(fds)
+        self._finalizer = weakref.finalize(self, _close_all, self.fds)
+
+
+def pinned_fds(prefix: list[str] | None) -> tuple[int, ...]:
+    """The descriptors a probe prefix binds; pass them to the process that runs bubblewrap (`pass_fds`)."""
+    return tuple(getattr(prefix, "fds", ()))
 
 
 # The only Mach service a probed program may look up on macOS: user and group lookups through opendirectoryd
@@ -274,13 +297,25 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
             # agent under /tmp still runs), then the scratch directory, writable
             # order: hidden directories; the program's directories (none holding a socket); hidden directories inside
             # those again (a bind brings back the host's whole subtree); the program's files; the scratch directory
-            # each path bound back is pinned first (`_pin`: opened without following a symlink) and bound by that
-            # descriptor: a directory swapped for a symlink after it was resolved is not bound at all, and the
-            # directory checked for sockets is the one bound
+            # with a bubblewrap that binds descriptors, each path bound back is pinned first (`_pin`: opened without
+            # following a symlink), checked for sockets through that descriptor and bound by it: a path swapped for
+            # a symlink after it was resolved is not bound, and the directory checked is the one bound. An older
+            # bubblewrap binds by path, as before (the resolve-to-bind race stays open there)
             dirs = _hidden_dirs()
             hidden = [a for d in dirs for a in ("--tmpfs", d)]
             under = [p for p in dict.fromkeys(str(Path(x).resolve()) for x in expose)
                      if p not in dirs and any(p.startswith(d.rstrip("/") + "/") for d in dirs)]
+            head = [bwrap, "--unshare-net", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--die-with-parent",
+                    "--new-session", "--ro-bind", "/", "/", *hidden]
+            tail = ["--bind", str(scratch), str(scratch), "--proc", "/proc", "--dev", "/dev", "--"]
+            if not under or not _bwrap_binds_fds(bwrap):
+                shown_dirs = [p for p in under if os.path.isdir(p) and not _has_socket(p)]
+                shown_files = [p for p in under if os.path.isfile(p)]  # regular files only (never a socket)
+                again = [d for d in dirs if any(d.startswith(p.rstrip("/") + "/") for p in shown_dirs)]
+                back = [*(a for p in shown_dirs for a in ("--ro-bind", p, p)),
+                        *(a for d in again for a in ("--tmpfs", d)),
+                        *(a for p in shown_files for a in ("--ro-bind", p, p))]
+                return [*head, *back, *tail]
             pinned = {p: fd for p in under if (fd := _pin(p)) is not None}
             try:
                 kinds = {p: os.fstat(fd).st_mode for p, fd in pinned.items()}
@@ -289,17 +324,12 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
                 return None
             shown_dirs = [p for p in pinned if stat.S_ISDIR(kinds[p]) and not _has_socket(p, fd=pinned[p])]
             shown_files = [p for p in pinned if stat.S_ISREG(kinds[p])]  # regular files only (never a socket)
-            unused = tuple(fd for p, fd in pinned.items() if p not in shown_dirs and p not in shown_files)
-            _close_all(unused)
-            source = {p: f"/proc/{os.getpid()}/fd/{pinned[p]}" for p in (*shown_dirs, *shown_files)}
+            _close_all(tuple(fd for p, fd in pinned.items() if p not in shown_dirs and p not in shown_files))
             again = [d for d in dirs if any(d.startswith(p.rstrip("/") + "/") for p in shown_dirs)]
-            back = [*(a for p in shown_dirs for a in ("--ro-bind", source[p], p)),
+            back = [*(a for p in shown_dirs for a in ("--ro-bind-fd", str(pinned[p]), p)),
                     *(a for d in again for a in ("--tmpfs", d)),
-                    *(a for p in shown_files for a in ("--ro-bind", source[p], p))]
-            return _PinnedPrefix(
-                [bwrap, "--unshare-net", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--die-with-parent",
-                 "--new-session", "--ro-bind", "/", "/", *hidden, *back, "--bind", str(scratch), str(scratch),
-                 "--proc", "/proc", "--dev", "/dev", "--"], [pinned[p] for p in source])
+                    *(a for p in shown_files for a in ("--ro-bind-fd", str(pinned[p]), p))]
+            return _PinnedPrefix([*head, *back, *tail], [pinned[p] for p in (*shown_dirs, *shown_files)])
     return None
 
 
@@ -315,7 +345,8 @@ def _stop(proc: subprocess.Popen[bytes]) -> None:
 
 def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
              timeout: float = 5.0, output_limit: int = MAX_OUTPUT,
-             separate_stderr: bool = False, max_timeout: float = 30.0) -> ProbeResult:
+             separate_stderr: bool = False, max_timeout: float = 30.0,
+             pass_fds: tuple[int, ...] = ()) -> ProbeResult:
     """Bound memory, elapsed time, and process-group lifetime without a shell."""
     if not 0 < timeout <= max_timeout or not 0 < max_timeout <= 900 or not 0 < output_limit <= MAX_OUTPUT * 4:
         raise ValueError("invalid probe bounds")
@@ -323,7 +354,7 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
         proc = subprocess.Popen(argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE if separate_stderr else subprocess.STDOUT,
-                                start_new_session=True)
+                                start_new_session=True, pass_fds=pass_fds)
     except OSError:
         return ProbeResult(-1, "unavailable", b"")
     output = bytearray()
@@ -497,7 +528,7 @@ def _one(provider: str, root: Path, probe: bool) -> dict[str, Any]:
                     ["acp", "--help"] if provider == "opencode-acp" else ["--help"]]
         results: list[ProbeResult] = []
         for args in commands:
-            result = _capture([*prefix, str(resolved), *args], scratch / "work", env)
+            result = _capture([*prefix, str(resolved), *args], scratch / "work", env, pass_fds=pinned_fds(prefix))
             results.append(result)
             profile["provenance"].append({"kind": "help_probe", "argv": [executable_name(provider), *args],
                                           "status": result.status, "returncode": result.returncode,

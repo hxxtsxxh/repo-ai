@@ -134,7 +134,7 @@ def test_an_agent_directly_in_tmp_still_runs_in_the_linux_probe(tmp_path, repo):
 class _FakeClient:
     seen: dict = {}
 
-    def __init__(self, argv, workspace, *, allowed_writes, env=None):
+    def __init__(self, argv, workspace, *, allowed_writes, env=None, **_):
         _FakeClient.seen = {"argv": argv, "env": dict(env or {})}
         self.result = type("R", (), {"stderr": b"\x1b]0;title\x07boom"})()
 
