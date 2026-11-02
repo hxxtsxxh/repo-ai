@@ -1,12 +1,17 @@
 # routing-journey-v1: results
 
 Protocol: [PREREGISTRATION.md](PREREGISTRATION.md), committed with the harness and the pilot's fixes at `66ecb5f`
-before this run. One run on 2026-11-02, macOS Darwin 25.5 arm64 (seatbelt), repo-ai from that commit. Spend: $0; no
+before this run. Runs on 2026-11-02, macOS Darwin 25.5 arm64 (seatbelt): run 1 with repo-ai at that commit, run 2 at `bf49f2a`. Spend: $0; no
 model was called; every provider process was a stand-in script. Raw: [results/run-1.jsonl](results/run-1.jsonl),
 evaluation: [results/run-1-evaluation.json](results/run-1-evaluation.json) (host paths replaced).
 
-**Gates: G1 27 of 27 expected decisions met; G2 0 silent fallbacks inside a run; G3 0 uncapped runs reporting an
-observed cost.**
+**Run 1 (preregistered checks): G1 27 of 27; G2 0 silent fallbacks inside a run; G3 0 uncapped runs reporting an
+observed cost.** An independent review then found those refusal checks too loose (amendment in the
+preregistration): re-evaluated under the stricter checks, run 1 meets **24 of 27**. Z1, U1 and Q2 were refused for
+the right cause but with a misleading message ("live provider execution requires --allow-live-provider", although it
+was given). **Run 2** (the amended harness on the fixed build, `bf49f2a`, results in `results/run-2*.json*`): **G1 27 of
+27, G2 0, G3 0**, with the refusals now saying "no provider can run this mission (NO_AGENT): …" and "cooling down
+until …".
 
 | scenario | what happened |
 |---|---|
@@ -21,11 +26,17 @@ observed cost.**
 | F1 fallback | the next `do --agent auto` ran Codex: PASS, cost `UNKNOWN` |
 | A1 explicit while cooling | refused before start: "claude hit a quota or rate limit recently and is cooling down until … UTC; another call would hit it again" |
 | C1 cooldown passed | Claude eligible and selected again |
-| X1 crash | BLOCKED, not rate-limited, cost `UNKNOWN`, recovery `contract_failure`; no cooldown recorded |
+| X1 crash | BLOCKED, not rate-limited, cost `UNKNOWN`, recovery `contract_failure` (both runs); no cooldown recorded |
 | P1 unsupported platform | `NO_AGENT`, both providers `ISOLATION_BLOCKED` |
 
-**Fixed by this study (pilot, before the counted run):** an explicitly chosen provider in a rate-limit cooldown was
-started again; a crashed provider under a USD ceiling was classified `budget_limit`. Both have failing-first tests.
+**Fixed by this study.** Pilot (before run 1): an explicitly chosen provider in a rate-limit cooldown was started
+again; a crashed provider under a USD ceiling was classified `budget_limit`. Review (before run 2): a continuation
+refused for a cooldown used up its capsule (now refused before the capsule is claimed); a cost overrun with a non-zero
+exit was no longer `budget_limit` (a reported overrun now always is); a malformed cooldown time crashed the refusal;
+the `NO_AGENT` refusal gave a misleading reason. All have tests (`tests/test_routing_journey_fixes.py`). One of the
+pilot's own tests did not stub the provider runner, so on this Mac it could start the installed `claude` with the
+test fixture's fake token in a scratch HOME (no credential of the owner's was in that environment, so it could not
+authenticate or bill); it now stubs the runner and asserts it was reached.
 
 **What this shows:** on one host, through the real CLI and records, routing chooses, refuses, cools down, falls back,
 recovers and expires as specified across zero, one and two installed providers, missing and unverified logins,
