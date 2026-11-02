@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `repo-ai handoff --verify` on a capsule whose continuation has already started now says so ("capsule already used:
+  a continuation was started from this mission (child mission …); one continuation per mission", and `consumed_by`
+  in the JSON) instead of only "stored mission changed since capsule export". A capsule is still valid for one
+  continuation only, and any other change to the mission still gives the generic reason.
 - Security: the probe sandbox of `agents doctor`, `agents conformance` and the Claude preflight let a probed
   program reach the host's unix sockets on Linux (D-Bus and the systemd user manager, X11, docker, ssh-agent;
   `--unshare-net` does not cover path-based sockets) and, on macOS, write preferences outside its scratch directory
