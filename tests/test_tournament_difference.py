@@ -66,3 +66,35 @@ def test_a_diff_that_does_not_apply_is_unknown(repo):
     assert bad != good
     [pair] = compare(root, head, {'a': good, 'b': bad})['pairs']
     assert pair['difference'] == 'UNKNOWN'
+
+
+def test_no_same_code_claim_when_the_scratch_dir_sits_inside_a_repository(repo, tmp_path, monkeypatch):
+    """The shortlist regression (adversarial review finding A), through compare: inside an enclosing checkout a
+    `git apply` that skipped every path made different code look identical."""
+    import tempfile
+    root, head = repo
+    outer = tmp_path / 'outer'
+    outer.mkdir()
+    subprocess.run(['git', 'init', '-q'], cwd=outer, check=True)
+    monkeypatch.setattr(tempfile, 'tempdir', str(outer))
+    a = diff(root, {'m.py': BASE.replace('return x + x', 'return x + 1')})
+    b = diff(root, {'m.py': BASE.replace('return x + x', 'raise SystemExit')})
+    [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
+    assert pair['difference'] == 'SUBSTANTIVE' and pair['where'] == ['m.py:f']
+
+
+def test_a_coding_cookie_is_never_cosmetic(repo):
+    root, head = repo
+    a = diff(root, {'m.py': '# coding: latin-1\n' + BASE})
+    b = diff(root, {'m.py': '# coding: cp1251\n' + BASE})
+    [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
+    assert pair['difference'] == 'SUBSTANTIVE'
+
+
+def test_a_file_too_deep_to_parse_is_compared_by_name_not_a_crash(repo):
+    root, head = repo
+    deep = 'X = ' + ' + '.join(['1'] * 5000) + '\n'
+    a = diff(root, {'m.py': BASE + deep})
+    b = diff(root, {'m.py': BASE + deep.replace('X =', 'Y =')})
+    [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
+    assert pair['difference'] in ('SUBSTANTIVE', 'UNKNOWN')

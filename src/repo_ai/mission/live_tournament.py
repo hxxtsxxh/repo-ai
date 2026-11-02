@@ -165,14 +165,14 @@ def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: 
         extra={'tournament': SCHEMA, 'providers': tplan['providers'],
                'cost_usd_observed': round(spent, 6), 'cost_unknown_for': unknown_cost,
                'cost_semantics': 'UNKNOWN for providers without reported cost; the observed sum excludes them',
-               'bounds': tplan['bounds'], 'differences': differences,
-               'next_step': _next_step(col, differences, abstain)},
+               'bounds': tplan['bounds'], 'differences': differences},
         limitations=[
             'Winner means the only distinct candidate whose frozen-test observation passed; not a correctness claim',
             'Candidates were generated independently from one frozen commit; no patch blending, no model self-voting',
             "Arms ran sequentially; a provider did not see another provider's output or any hidden grader",
             'Winner is never auto-applied; re-verify after repo-ai apply'],
-        abstain_reasons=abstain)
+        abstain_reasons=abstain,
+        next_step_for=lambda winner, cid: _next_step(winner, cid, col, differences))
 
 
 def _collapse_equivalent(col: Collector) -> None:
@@ -190,30 +190,43 @@ def _collapse_equivalent(col: Collector) -> None:
 
 
 def _differences(root: Path, base: str, col: Collector) -> dict[str, Any]:
-    """How the distinct passing candidates differ: only in formatting or comments (the same Python syntax tree in every
-    file) or substantively, with the definitions named. The decision rule is unchanged: they still abstain."""
+    """How the distinct passing candidates differ (difference.compare). The decision rule is unchanged: they still
+    abstain. A failure here never loses the comparison: it is recorded as UNKNOWN."""
     from .difference import compare
-    return compare(root, base, {r['id']: (status(root, r['id']).get('diff') or '') for r in col.rows
-                                if r['id'] in col.passed})
+    passing = [r['id'] for r in col.rows if r['id'] in col.passed]
+    try:
+        return compare(root, base, {cid: (status(root, cid).get('diff') or '') for cid in passing})
+    except Exception as exc:  # noqa: BLE001 - recorded, never raised after the arms have run
+        return {'pairs': [{'candidates': [a, b], 'difference': 'UNKNOWN', 'where': [type(exc).__name__]}
+                          for i, a in enumerate(passing) for b in passing[i + 1:]],
+                'groups': [[c] for c in passing], 'error': type(exc).__name__}
 
 
-def _next_step(col: Collector, differences: dict[str, Any] | None, abstain: list[str]) -> str:
-    """What the developer can do next, from the comparison alone (never a correctness claim)."""
+def _next_step(winner: str | None, comparison: str, col: Collector, differences: dict[str, Any] | None) -> str:
+    """What the developer can do next, from the decision actually made (never a correctness claim)."""
     passed = list(col.passed)
-    if len(passed) == 1 and not abstain:
-        return (f'review the winner\'s diff (`repo-ai mission status {passed[0]}`), then `repo-ai apply {passed[0]}`, '
-                'which verifies it again on your checkout')
-    if len(passed) > 1 and differences and len(differences.get('groups', [])) == 1:
-        return (f'the {len(passed)} passing candidates are the same code: they differ only in formatting or comments '
-                f'(the same Python syntax tree), so choosing either changes no behaviour; `repo-ai shortlist '
-                'COMPARISON_ID` lists them, then `repo-ai apply ID` verifies the one you choose on your checkout')
+    if winner:
+        return (f'review the winner\'s diff (`repo-ai mission status {winner}`), then `repo-ai apply {winner}`, which '
+                'verifies it again on your checkout')
+    if len(passed) == 1:
+        return (f'one candidate passed, but the comparison was not controlled (see its reasons): `repo-ai why '
+                f'{comparison}`; review `repo-ai mission status {passed[0]}` before applying anything')
     if len(passed) > 1:
-        where = sorted({w for p in (differences or {}).get('pairs', []) if p['difference'] == 'SUBSTANTIVE'
-                        for w in p['where']})
+        pairs = (differences or {}).get('pairs', [])
+        if any(p['difference'] == 'UNKNOWN' for p in pairs):
+            return (f'the frozen tests pass on {len(passed)} candidates and repo-ai could not compare their code (a '
+                    'candidate\'s files could not be rebuilt exactly): review each diff (`repo-ai mission status ID`) '
+                    f'or `repo-ai shortlist {comparison}`, and apply the one you choose')
+        if differences and len(differences.get('groups', [])) == 1:
+            return (f'the {len(passed)} passing candidates are the same code (identical files, or the same Python '
+                    'syntax tree: formatting and comments only), so choosing either changes nothing they compute '
+                    f'(except code that reads its own source or line numbers): `repo-ai shortlist {comparison}`, then '
+                    '`repo-ai apply ID` verifies the one you choose on your checkout')
+        where = sorted({w for p in pairs if p['difference'] == 'SUBSTANTIVE' for w in p['where']})
         shown = ', '.join(where[:4]) + (f' and {len(where) - 4} more' if len(where) > 4 else '')
         return (f'the frozen tests pass on {len(passed)} candidates that differ in {shown or "their changes"}, so they '
                 'do not decide between them: write a test that pins the intended behaviour there, then run the '
-                'tournament again; or review each diff (`repo-ai mission status ID`) and apply the one you choose')
+                f'tournament again; or `repo-ai shortlist {comparison}` and apply the one you choose after review')
     return 'no candidate passed the frozen tests: read each arm\'s reasons (`repo-ai mission status ID`) before retrying'
 
 

@@ -127,7 +127,8 @@ class Collector:
 
 def finalize(root: Path, planned: dict[str, Any], frozen: dict[str, Any], acceptance: str, col: Collector,
              expected: int, started: float, *, provider_label: str, extra: dict[str, Any],
-             limitations: list[str], abstain_reasons: list[str] | None = None) -> dict[str, Any]:
+             limitations: list[str], abstain_reasons: list[str] | None = None,
+             next_step_for: Any = None) -> dict[str, Any]:
     rows, passed = col.rows, col.passed
     contract = decode(planned['contract'])
     unchanged = identity(root)['fingerprint'] == frozen['fingerprint']
@@ -142,6 +143,8 @@ def finalize(root: Path, planned: dict[str, Any], frozen: dict[str, Any], accept
               'applied_to_source': False, 'limitations': limitations, **extra}
 
     comparison_id = digest({'acceptance': acceptance, 'candidates': rows})[:24]
+    if next_step_for is not None:  # from the decision actually made (winner or not), with the comparison's id
+        report['next_step'] = next_step_for(winner, comparison_id)
     store = Store(root)
     record = {'id': comparison_id, 'kind': 'comparison', 'repository': store.repository,
               'state': 'CREATED', 'events': [], 'source': frozen, 'contract': contract.to_json(),
