@@ -726,7 +726,7 @@ def run_one(task: Task, base: Base, suite: Path, arm: Arm, opts: LabOptions, roo
         # proof of access only; content similarity is a recorded diagnostic
         verdict = integrity.assess([line for _, line in lines],
                                    integrity.protected_paths(suite, task.dir, *suite_denied(suite)), canary,
-                                   canary_root, evals.hidden_materials(task), ws)
+                                   canary_root, evals.hidden_materials(task), ws, git_dir=pristine_git)
         row["contaminated"] = verdict["contaminated"]
         row["hidden_access_attempts"] = verdict["hidden_access_attempts"]
         row["hidden_content_match"] = verdict["hidden_content_match"]
