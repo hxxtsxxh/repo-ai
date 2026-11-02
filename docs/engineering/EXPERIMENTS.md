@@ -106,7 +106,46 @@ untracked difference in 7 of 7. One clone per project was reused (a deviation fr
 top-3 recall 0.69 (gate 0.80) and 2 constraint-forbidden recommendations (gate 0), both from prose constraints the
 matcher did not detect. Correct abstention 19 of 20; precision 0.68.
 
+## Routing end to end (C06), 2026-11-02, $0
+
+`benchmarks/routing-journey-v1` (preregistered at `66ecb5f` with the harness): the real CLI's routing, missions,
+cooldown and observation records with stand-in provider executables (no model call, no real credential) and
+controlled injections (expiry times, a changed binary, the platform name). 13 scenarios, 27 expected decisions.
+Run 1: 27/27 under the preregistered checks; an independent review found the refusal checks too loose (amendment):
+24/27 under the stricter checks (three refusals gave a misleading reason). Run 2 on the fixed build: **27/27**, no
+silent fallback inside a run, unknown cost never recorded as observed. Five routing defects fixed with tests (an
+explicit provider in cooldown called again; a continuation refused for a cooldown used up its capsule; a crash
+classified `budget_limit`; the `NO_AGENT` refusal's reason; malformed policy times). Limits: stand-ins, injections,
+macOS only. [RESULTS](../../benchmarks/routing-journey-v1/RESULTS.md).
+
+## Live adopter campaign (C21), preparation, 2026-11-02, $0
+
+`benchmarks/journey-live-v1` (preregistered; owner approved: 4 MIT upstream defects, project code only in podman, at
+most 4 Claude sessions at $1.00): `prep` built four dependencies-only images and confirmed in each container that
+the frozen tests fail at the base and pass with the upstream fix (humanize #250, marshmallow #2772, more-itertools
+#720, pyjwt 33022c2). A no-model check with the development build: `verify --run --sandbox podman --image` on the
+more-itertools frozen tests reports `regression` (it sees pytest 9's subtest failures). Two harness parsing fixes
+(forced colour, `SUBFAILED`) before qualification; no gate changed. The live stage waits for the release with
+`do --sandbox/--image` and the owner's dedicated Claude login.
+
+## Skill-vetting confirmation (C08), preparation, 2026-11-02, $0
+
+The v2 corpus remains unwritten by design: `AUTHOR-BRIEF.md` for an eligible person, `validate_corpus.py` (CI only;
+no vetter rule), the system under test frozen at `8f6ae0a` (`SUT.json`), a one-shot `skill-vet-v2` workflow. The
+preregistration is kept verbatim with the deviations appended.
+
+## Independent study (C14), offline, 2026-11-02, $0
+
+`benchmarks/abc-v5/selfcheck.py --quick` on main: 0 failing checks. Phase 1 needs independent human authors (S, M, F);
+phase 2 is not requested until phase 1 is reported ([STATUS](../../benchmarks/abc-v5/STATUS-2026-11-02.md)).
+
 ## Open experiment protocols (not run)
+
+- **journey-live-v1 (C21):** approved (4 sessions, $4.00); waits for 0.12.0 and the dedicated Claude login.
+- **tournament-live-v1 (C12):** approved (8 sessions: 4 Claude at $1.50, 4 Codex UNKNOWN); waits for the dedicated
+  Claude login. Preflight checks the cap split, both providers' eligibility and the containerised grader.
+- **C13 live handoff:** approved (1 Claude session, $0.50); waits for the dedicated Claude login
+  ([runbook](evidence/C13-LIVE-RUNBOOK-2026-11-02.md)).
 
 - **C03 Claude end-to-end journey**: `repo-ai do --agent claude --run --allow-live-provider --allow-write durations.py
   --max-cost-usd 0.50` on a fresh synthetic project; frozen visible tests (2/3 failing at base) and a hidden oracle of

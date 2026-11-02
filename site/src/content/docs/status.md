@@ -57,10 +57,11 @@ Condensed from `docs/STATUS.md` in the source tree, which remains the record whe
 |---|---|
 | `repo-ai do` offline plan, `why`, `why-test-failed`, `agents doctor` | usable; no model needed |
 | Live execution with IBM Bob, Codex CLI, agy (macOS) | works on small tasks; small n; Codex and agy cost `UNKNOWN` |
-| Claude Code as a mission provider | **experimental** from 0.10.0 (macOS live-verified, n = 1 journeys; own login, file tools only) |
-| Provider routing (`--agent auto`, `agents route`) | deterministic; does not check login or quota before a run |
+| Claude Code as a mission provider | **experimental** from 0.10.0 (macOS live-verified, n = 1 journeys; own login, file tools only); never started without a USD ceiling (`--max-cost-usd`) |
+| Provider routing (`--agent auto`, `agents route`) | deterministic; does not check login or quota before a run; end to end with stand-in providers (zero/one/two providers, missing and unverified logins, quota with and without a ceiling, fallback, cooldown, expiry, crash, unsupported platform): 27 of 27 expected decisions (routing-journey-v1) |
 | `apply` / `undo` | transactional; existing regular tracked files only |
-| Live tournament (`--tournament`) / replay comparison (`--candidate`) | experimental; abstains on several distinct passes |
+| `do --sandbox podman --image REF` (missions' tests in a local container) | experimental; frozen with the mission; the coding agent itself still runs on the host |
+| Live tournament (`--tournament`) / replay comparison (`--candidate`) | experimental; abstains on several distinct passes, and (live) says whether they differ only cosmetically or where they differ, with a next step; `--allow-unknown-cost` caps only the arms that enforce a ceiling |
 | `shortlist`, `coverage` | added in the 0.9.0 cycle; never correctness claims |
 | Handoff and `--from-handoff` | experimental; integrity, not authentication; small constructed demos |
 | `--role investigator` / `adversary` | experimental, advisory; same provider, so not independent review |

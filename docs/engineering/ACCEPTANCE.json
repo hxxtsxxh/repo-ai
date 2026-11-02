@@ -104,7 +104,7 @@
   {
    "id": "C06",
    "title": "Adaptive routing",
-   "status": "EXPERIMENTAL",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
    "code_sha": null,
    "test_run": null,
@@ -112,10 +112,15 @@
    "observations": [
     "route reports SETUP_REQUIRED (offline, no credential read) for Claude, OpenCode, Gemini",
     "2026-11-01 routing decisions measured over the per-provider state space (tests/test_provider_routing_matrix.py): 624 states (installed, sandboxed, setup, cooldown none/active/expired, each storable observation fresh/expired/other-binary, consent) x 4 (USD ceiling, per-run flag) = 2,496 decisions per provider, for one provider with an enforceable USD ceiling and one without; plus default selection order and the allowlist rule. Every decision matched the specification; no process started. Readiness labels checked per state against an oracle that restates the documented priority (it mirrors the code, so a priority wrong in both would pass); stage BLOCKED and preferred-list ordering (argument and policy) covered. Not covered: RUNTIME_UNSUPPORTED/UNKNOWN labels, providers other than claude/codex, argument-vs-policy precedence",
-    "2026-11-01 #56 closes the gaps named above: all seven providers, each alone, under macOS and Linux platform names (34,944 decisions; containability is an input, only the label depends on the platform name); UNKNOWN for a missing profile and a FAILED stage; RUNTIME_UNSUPPORTED checked against the adapter with bwrap present (positive control for the other four); argument > policy > default order"
+    "2026-11-01 #56 closes the gaps named above: all seven providers, each alone, under macOS and Linux platform names (34,944 decisions; containability is an input, only the label depends on the platform name); UNKNOWN for a missing profile and a FAILED stage; RUNTIME_UNSUPPORTED checked against the adapter with bwrap present (positive control for the other four); argument > policy > default order",
+    "2026-11-02 routing-journey-v1 (preregistered, benchmarks/routing-journey-v1): routing end to end through the real CLI with stand-in provider executables and controlled injections, no model call, no real credential: zero, one and two providers, a missing and an unverified login, exhausted quota with and without a USD ceiling, fallback, an explicit provider during cooldown, cooldown and readiness expiry, a changed binary, a provider crash, an unsupported platform. Run 1 27/27 under the preregistered checks (24/27 under the stricter amended checks: three refusals gave a misleading reason); run 2 on the fixed build 27/27, no silent fallback inside a run, unknown cost never observed. Fixed: an explicit provider in cooldown was called again; a continuation refused for a cooldown used up its capsule; a crash was classified budget_limit; the NO_AGENT refusal's reason; malformed policy times. Separately (#105) a ceiling-enforcing provider was started uncapped at the default $0 ceiling and refused afterwards: now never started without a usable ceiling (run_provider guard)"
    ],
-   "limits": [],
-   "next_action": "measure decisions on real host states over time (rate-limit cooldowns, stale observations) once live calls are budgeted"
+   "limits": [
+    "stand-in executables, not the real CLIs; expiries and the platform name injected; macOS only",
+    "entitlement covered by the 2026-11-01 routing matrix, not end to end",
+    "a configured but logged-out login is discovered only by a run (repo-ai reads no credential)"
+   ],
+   "next_action": "real host observations over time (an actual quota event, an expired login) once live calls are budgeted; entitlement (ACCOUNT_INELIGIBLE) end to end"
   },
   {
    "id": "C07",
@@ -147,13 +152,14 @@
    "observations": [
     "autonomy policy, five kinds, strict inert check; independent review: 10 findings fixed with regression tests",
     "2026-10-31 skill-vet-fresh-v1 (unseen, preregistered, 80 cases): G1 FAILED, SAFE_AUTO would auto-install 8 of 30 harmful (prose-only) skills; G2-G4 passed; 6 of 10 harmful script skills rated eligible. Fixed (prose instruction classes, script behaviour); diagnostic re-run 0 of 30, not a confirmation",
-    "2026-11-01: the owner asked the agent to build the v2 corpus; the agent's briefing of the author was stopped by a safety classifier (the second stop); per the earlier rule it was not retried or reworded, and the partly launched author wrote nothing"
+    "2026-11-01: the owner asked the agent to build the v2 corpus; the agent's briefing of the author was stopped by a safety classifier (the second stop); per the earlier rule it was not retried or reworded, and the partly launched author wrote nothing",
+    "2026-11-02: AUTHOR-BRIEF.md for an independent human author (eligibility, allowlist, strata and defanging from v1, delivery layout the harness loads, provenance and manifest) and validate_corpus.py (CI-only; no vetter rule); system under test frozen at 8f6ae0a (SUT.json: src/repo_ai tree, pyproject, harness, validator, pinned dependency); one-shot `skill-vet-v2` workflow; the preregistration kept verbatim with deviations appended. No case written by the agent"
    ],
    "limits": [
     "fix not confirmed: the v2 corpus author was stopped by a safety classifier (not worked around); needs a person-written corpus",
     "plugin vet fresh-validation failure (12 of 42 benign blocked) not re-measured on that corpus's design; this corpus blocked 0 of 10 benign plugins"
    ],
-   "next_action": "person-written v2 corpus (benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md), then one run"
+   "next_action": "an eligible person writes the corpus per AUTHOR-BRIEF.md and opens a pull request against skill-vet-v2/delivery; then one dispatched run"
   },
   {
    "id": "C09",
@@ -222,10 +228,11 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "live abstain + byte-identical tie at 0.9.0"
+    "live abstain + byte-identical tie at 0.9.0",
+    "2026-11-02: live comparisons classify how distinct passing candidates differ (IDENTICAL, COSMETIC = same Python syntax tree, SUBSTANTIVE with definitions named, UNKNOWN), rebuilt with shortlist's hardened reconstruction, and carry a next step taken from the decision; the abstention rule is unchanged. Tournaments can cap only the arms that enforce a ceiling (--allow-unknown-cost). tournament-live-v1 preregistered (owner approved 8 sessions); not run yet"
    ],
    "limits": [],
-   "next_action": "behaviourally different live tie"
+   "next_action": "run tournament-live-v1 once the owner's dedicated Claude login exists"
   },
   {
    "id": "C13",
@@ -237,10 +244,11 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "codex→agy live handoff PASS, hidden oracle 714/714 (0.9.0)",
-    "2026-11-01 Claude as handoff target, BLOCKED (auth): replay source mission FAIL/partial_progress (simulated, fixes 1 of 2) -> `handoff --to claude` capsule, accepted by `do --from-handoff --agent claude` (which refuses a stale one; a later re-verify reports stale because the continuation is recorded on the source) -> the continuation carried the partial diff (seed: test_add fixed, test_scale still failing) and stopped at the provider preflight with auth_mode none, recovery provider_unavailable, $0, no model call (docs/engineering/evidence/C13-CLAUDE-HANDOFF-2026-11-01.md)"
+    "2026-11-01 Claude as handoff target, BLOCKED (auth): replay source mission FAIL/partial_progress (simulated, fixes 1 of 2) -> `handoff --to claude` capsule, accepted by `do --from-handoff --agent claude` (which refuses a stale one; a later re-verify reports stale because the continuation is recorded on the source) -> the continuation carried the partial diff (seed: test_add fixed, test_scale still failing) and stopped at the provider preflight with auth_mode none, recovery provider_unavailable, $0, no model call (docs/engineering/evidence/C13-CLAUDE-HANDOFF-2026-11-01.md)",
+    "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet"
    ],
    "limits": [],
-   "next_action": "Claude as a handoff target, live: needs a Claude credential for isolated runs (none was available: auth_mode none)"
+   "next_action": "owner runs `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login`; then the approved preflight and one live session"
   },
   {
    "id": "C14",
@@ -251,10 +259,11 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "abc-v1..v4 at ceiling; abc-v5 calibration only"
+    "abc-v1..v4 at ceiling; abc-v5 calibration only",
+    "2026-11-02: abc-v5 selfcheck re-run on main, 0 failing checks; phase 1 needs independent human authors (S, M, F); phase 2 (144 calls, $150 proposed cap) not requested until phase 1 is reported (benchmarks/abc-v5/STATUS-2026-11-02.md)"
    ],
    "limits": [],
-   "next_action": "blinded authors + budget"
+   "next_action": "owner recruits three independent authors (S, M, F) for abc-v5 phase 1"
   },
   {
    "id": "C15",
@@ -327,10 +336,11 @@
     "2026-10-31 measured with a deny-all control on a CI macOS runner (benchmarks/seatbelt-loopback, run 41256165553): OpenCode's loopback rule denies other LAN hosts and the internet, but admits the host's own LAN address and a wildcard listen; an outbound-only rule denies all listening; seatbelt cannot name 127.0.0.1; disclosed",
     "2026-10-31 local check: OpenCode 2.2.1 `opencode run --standalone` in repo-ai's OpenCode sandbox with the inbound/bind rules removed (outbound-only), model at the closed port 127.0.0.1:9 (no model call), failed with 'Standalone server exited before reporting readiness', consistent with its server being unable to listen; no log kept. The inbound rule stays and the disclosed residual risk stands",
     "2026-11-01 independent security review of v0.11.3...v0.11.7 (the next action 'review of the final release diff'): 2 medium (M1: the Linux probe sandbox left host unix sockets reachable, since --unshare-net does not cover path-based sockets; M2: the macOS probe allowed preference writes through cfprefsd, and pasteboard access via mach-lookup; launchd job creation was also denied, as defence in depth, since launchd already refused `launchctl submit` from a sandboxed caller) and 5 low (isolate crash on non-table TOML values, an unbounded pytestcfg pattern, licence-named files read as documentation in any directory, a quadratic dup2 check, checkout tokens persisted in 3 workflows), plus coding-lab host git reading an agent-writable .git. Fixed (reviews by independent reviewer agents, not recorded on GitHub; rounds with fixes are named by their fix commits): the lows in #79 (three rounds, fix commits 404cc02, 3269abd, 3f6eedf, the last only a test-assertion nit; they found a clean-filter host-exec route with only -c overrides, so host git now uses a pre-run copy of .git); the mediums in #78 (four rounds: fix commits 80395e0, 5b01f66, e52812a for rounds 1-3; round 4 found nothing unresolved, and its report was not kept; they found that hiding /tmp hid agents installed there, bind-backs re-exposing nested socket dirs, and a crash in the socket check). Still open and disclosed: probe reads unrestricted; Linux sockets outside the hidden directories; other macOS Mach services",
-    "2026-11-02 release-level review of v0.11.7...release/0.11.8 (the gate's next action): nothing blocking; medium M1 (the coding lab's integrity `git show` used the agent-writable .git) and low L1 (probe socket check not recursive) fixed before the tag (#86); after 0.11.8, L3 (#90: hidden directories by real path, without un-hiding /tmp for a home under it), L5 (#91), L7 and part of L6 (#87: no host-global git config for workspace git calls, on any git version; persist-credentials off in every workflow) fixed; each PR reviewed by independent reviewer agents (not recorded on GitHub; rounds with fixes: #86 none, #87 8671723 plus two test-only commits found by CI, #90 ba931a7 and 0f4150a, #91 2005fb0; the final round of each found nothing unresolved, reports not kept); open: L2, L4, the rest of L6 (QUEUE row 19). The macOS probe's default-deny Mach lookups (#81) shipped in 0.11.8 (only opendirectoryd user and group lookups allowed), so 'other macOS Mach services' is no longer open; still allowed and disclosed: signals to the user's other processes and IOKit access"
+    "2026-11-02 release-level review of v0.11.7...release/0.11.8 (the gate's next action): nothing blocking; medium M1 (the coding lab's integrity `git show` used the agent-writable .git) and low L1 (probe socket check not recursive) fixed before the tag (#86); after 0.11.8, L3 (#90: hidden directories by real path, without un-hiding /tmp for a home under it), L5 (#91), L7 and part of L6 (#87: no host-global git config for workspace git calls, on any git version; persist-credentials off in every workflow) fixed; each PR reviewed by independent reviewer agents (not recorded on GitHub; rounds with fixes: #86 none, #87 8671723 plus two test-only commits found by CI, #90 ba931a7 and 0f4150a, #91 2005fb0; the final round of each found nothing unresolved, reports not kept); open: L2, L4, the rest of L6 (QUEUE row 19). The macOS probe's default-deny Mach lookups (#81) shipped in 0.11.8 (only opendirectoryd user and group lookups allowed), so 'other macOS Mach services' is no longer open; still allowed and disclosed: signals to the user's other processes and IOKit access",
+    "2026-11-02 queue row 19 closed (#99): descriptor-pinned probe binds with bubblewrap 0.10+ (--ro-bind-fd; path binds before), nested licence prose check, untracked count against the base commit's ignore files; three independent review rounds; CI job builds bubblewrap v0.11.0 (pinned commit) to exercise the descriptor path"
    ],
    "limits": [],
-   "next_action": "QUEUE row 19 (L2 resolve-to-bind race, L4, L6 untracked-count metric); seccomp or Landlock unix-socket scoping on Linux; a release review of the next tag"
+   "next_action": "seccomp or Landlock unix-socket scoping on Linux; `_execution_sandbox_prefix` install-root binds by path; a release review of 0.12.0"
   },
   {
    "id": "C19",
@@ -390,14 +400,15 @@
     "published 0.11.2 (2026-10-30T23:46Z): fresh first run on python-humanize, live Claude PASS [LIVE_CANDIDATE_VERIFIED], project venv, apply 739/0, undo exact",
     "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)",
     "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 (5 detected as regression, 2 refused; small sample, ~35% 95% bound); J2 fix 3/6 as selected-passed (pyjwt jwks tests pre-existing, likely network; more-itertools no trusted test command, likely an 'unknown' framework); J3 uninstall left no tracked or untracked difference 7/7; deviation: one clone per project, not fresh",
-    "2026-11-01 #51: `from unittest import TestCase` marks a unittest suite (more-itertools gap from journey-offline-v2 closed; confirmed on real commits by CI diagnose)"
+    "2026-11-01 #51: `from unittest import TestCase` marks a unittest suite (more-itertools gap from journey-offline-v2 closed; confirmed on real commits by CI diagnose)",
+    "2026-11-02: owner approved journey-live-v1 (4 MIT upstream defects, project code only in podman, at most 4 Claude sessions, $4.00); `do --sandbox podman --image` added so missions keep project code off the host; preregistration, harness and no-model preparation committed (all 4 defects qualify in their containers); a no-model check showed verify in podman sees pytest-9 subtest failures"
    ],
    "limits": [
     "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
     "two repositories; on the published build, one live run (Claude, python-humanize)"
    ],
-   "next_action": "live half (provider journey, needs a live-call budget)"
+   "next_action": "run journey-live-v1 from the 0.12.0 release once the owner's dedicated Claude login exists"
   },
   {
    "id": "C22",
@@ -438,7 +449,8 @@
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "docs/engineering/FINAL_REPORT.md filled with verified 0.10.0 release facts",
-    "2026-11-02 FINAL_REPORT.md brought up to 0.11.8: release facts re-read from PyPI and GitHub, the live site checked (20/20 sitemap URLs 200, real 404, 0.11.8 served), releases since 0.11.2, providers, security, evaluation, spend, gate statuses and what would prove each open item"
+    "2026-11-02 FINAL_REPORT.md brought up to 0.11.8: release facts re-read from PyPI and GitHub, the live site checked (20/20 sitemap URLs 200, real 404, 0.11.8 served), releases since 0.11.2, providers, security, evaluation, spend, gate statuses and what would prove each open item",
+    "2026-11-02: final report updated for the 0.12.0 work"
    ],
    "limits": [],
    "next_action": "FINAL_REPORT.md at the end"
