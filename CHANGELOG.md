@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
 - `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.
   `repo-ai coverage MISSION_ID` without `--requirements` assesses it and reports `declaration: FROZEN_WITH_MISSION`
@@ -17,7 +17,8 @@
     `ACCEPTANCE_PARTIAL`; before, `ACCEPTANCE_MAPPED_ALL` could stand next to them.
   - A declared test that matched only by its trailing name (not `file::test`) is flagged in its row; one test mapped to several
     requirements is listed under `shared_tests`; a failing mapped test is no longer reported as `NOT_OBSERVED`
-    because another mapped test was skipped.
+    because another mapped test was skipped, and a mapped test skipped on the candidate is now `NOT_OBSERVED`
+    (before: `FAILING` when it had passed at the base; both are unverified).
 - `handoff --verify`: a capsule exported after its mission's continuation started no longer also reports "stored
   mission changed since capsule export" once the child mission is recorded; the consumed reason says it. The
   continuation record is left out of the capsule's snapshot and checked on its own. Such a capsule exported by
@@ -25,13 +26,14 @@
 - Security: the Linux probe sandbox compares the directories it hides by their real paths. On systems where `/home`
   links to `/var/home` (ostree), a program inside a hidden home directory (such as `~/.docker/bin`) was not bound back,
   so its probe did not run; and a hidden directory that is itself a link (`~/.ssh -> elsewhere`) now hides its target.
-  A link that resolves to a system directory, into one, or to `/`, `/var`, `/home` or a home directory is never
-  hidden.
+  A link that resolves to a system directory, into one, or to `/`, `/var`, `/home` or a home directory, or to an
+  ancestor of those, is never hidden (so a credential-directory link into `/etc` or `/opt` stays visible).
 - Fixed: when the test runner is missing from the environment `verify` runs in (for example `No module named
   'pytest'`), every test fails the same way at the base and with the change, and verify said "NO NEW FAILURES: every
   failure also happens at the base". It now says "NOT VERIFIED: the test runner could not start … (pytest is not
-  installed there)" and lists the files as could not run. A run with a real failure as well, or with a file that
-  passed at the base (the runner started there), keeps its usual verdict.
+  installed there)" and lists the files as could not run. Only pytest itself, or a plugin pytest reports it could
+  not load at startup, counts (a project's `pytest_*` module failing to import is a test failure). A run with a real failure as well, a test reported failing by
+  name, or a file that passed at the base or in the run (the runner started), keeps its usual verdict.
   `repo-ai prove` and missions no longer count such a run as "no new failures". Found by the 0.11.8 smoke install.
 - Security: the coding lab's git calls over an agent's workspace ignore the host's user and system git
   configuration, so a `.gitattributes` the agent wrote cannot make `git diff` run a filter driver configured

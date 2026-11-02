@@ -36,7 +36,7 @@ runs. The scope and the projects it does not cover are on [Evaluation & methodol
   TypeScript have no held-out qualification. ([Status matrix](/repo-ai/docs/status/))
 - **It runs in the project's environment.** If the project's test runner is not installed where verify runs the
   tests, nothing is verified. 0.11.8 exits 1 but labels that run "NO NEW FAILURES … at the base" (and its `prove`
-  and `--expect-fix` missions counted it as no new failures); main, unreleased, says NOT VERIFIED.
+  and `--expect-fix` missions counted it as no new failures); 0.11.9 says NOT VERIFIED.
   ([changelog](https://github.com/hxxtsxxh/repo-ai/blob/main/CHANGELOG.md))
 - **Not shown to make agents better.** In a preregistered, blinded study (150 runs, 25 tasks) plain Claude scored 92%,
   and repo-ai's two context configurations 90% (Core) and 88% (Full). Every difference was inconclusive, and

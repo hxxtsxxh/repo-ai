@@ -8,7 +8,7 @@ observed for exactly those test IDs. Per requirement:
   VERIFIED_PRESERVED      kind=preserve: every mapped test passed at baseline and still passes
   NOT_DISCRIMINATING      kind=change but a mapped test already passed at baseline, so it could not have caught the bug
   FAILING                 a mapped test does not pass on the candidate
-  NOT_OBSERVED            a mapped test was skipped at baseline and candidate: it observed nothing
+  NOT_OBSERVED            a mapped test was skipped on the candidate: it observed nothing
   MISSING_TEST            a declared test ID was not collected (absent or ambiguous)
   UNMAPPED                no test declared: nothing observed supports this requirement
   UNVERIFIED_STALE / UNVERIFIED_INCONCLUSIVE
