@@ -8,6 +8,10 @@
   installed there)" and lists the files as could not run. A run with a real failure as well, or with a file that
   passed at the base (the runner started there), keeps its usual verdict.
   `repo-ai prove` and missions no longer count such a run as "no new failures". Found by the 0.11.8 smoke install.
+- Security: the coding lab's git calls over an agent's workspace ignore the host's user and system git
+  configuration, so a `.gitattributes` the agent wrote cannot make `git diff` run a filter driver configured
+  globally (git-lfs, for one); this holds on git older than 2.32 too (an empty HOME). Every workflow checkout now drops the token from `.git/config`
+  (`persist-credentials: false`; `ci.yml` and `diag-seatbelt.yml` were the last two); a test covers every workflow.
 
 ## 0.11.8 — probe sandbox hardening, security review fixes, consumed handoff capsules
 
