@@ -21,7 +21,7 @@
   through opendirectoryd, and denies registering a Mach name. With every lookup denied, the `--version` and `--help`
   output of codex, claude, bob, agy, opencode and opencode-acp was byte-identical to the unrestricted profile's, and
   again with this profile (Darwin 25.5, measured locally). Still allowed and disclosed: signals to the user's other
-  processes and IOKit reads.
+  processes and IOKit access.
 - Security review of v0.11.3...v0.11.7 (C18), low findings:
   - The skill vetter read a `LICENSE`, `COPYING` or `NOTICE` file in any directory (`scripts/notice`) as
     documentation, which skipped the code rules. Now only a root one without a `#!` line is read that way, and the
