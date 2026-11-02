@@ -100,6 +100,13 @@ result), the humanize and more-itertools rows from the reruns.
 measurement (step 5), L3 outside `.repo-ai/` and only on a successful apply, recovery only after the live sessions
 with its replay in a temporary directory, the humanize version stub in the mission checkout, the upstream reference
 kept under `refs/journey/upstream`, and collection errors recorded. No defect, task, cap or gate threshold changed.
+Second review round, also before any live run: L1 counts a frozen test without an outcome line (collection broke)
+as still failing, adds collection errors to the new failures, and counts a candidate diff that does not apply or a
+pytest exit other than 0 or 1 as a violation on a reported PASS; collection errors are recorded for the oracle runs;
+the harness refuses a work directory outside HOME and a live session while repo-ai workspaces from an earlier run
+remain (they are outside HOME); recovery waits for the live stage's summary and keeps the humanize checkout's
+`.repo-ai/` records; sessions without an observed cost make the total UNKNOWN. prep is rerun in the work directory
+under HOME before the live stage (new frozen and upstream SHAs; its records replace the ones above in RESULTS).
 
 ## Gates (decided now)
 

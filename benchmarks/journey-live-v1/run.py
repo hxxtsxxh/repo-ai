@@ -236,6 +236,13 @@ def repo_ai(exe: str, repo: Path, *args: str, timeout: float = 1800) -> dict:
             "stdout": None if record is not None else text(proc.stdout), "stderr": text(proc.stderr, 3000)}
 
 
+def leftover_workspaces() -> list[str]:
+    """repo-ai's disposable workspaces live outside HOME (readable by the provider sandbox); one left by a killed run
+    could hold an applied upstream fix."""
+    base = Path(os.environ.get("REPO_AI_WORKSPACES") or Path(tempfile.gettempdir()) / f"repo-ai-ws-{os.getuid()}")
+    return sorted(p.name for p in base.glob("*")) if base.is_dir() else []
+
+
 def rows(work: Path) -> list[dict]:
     path = work / "records.jsonl"
     return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
@@ -319,6 +326,11 @@ def run(work: Path, names: list[str], exe: str, log: Log) -> None:
                 not (controls and controls[-1].get("ok")):
             log(name, "skipped", why="did not qualify, or the positive control did not pass (no model call)")
             continue
+        leftovers = leftover_workspaces()
+        if leftovers:
+            log(name, "skipped", why="repo-ai workspaces left by an earlier run are readable outside HOME; remove "
+                                     "them first (no model call)", leftovers=len(leftovers))
+            continue
         repo = prepare_checkout(work, name, d, log)
         tag = image["tag"]
         sb = ["--sandbox", "podman", "--image", tag]
@@ -354,9 +366,13 @@ def run(work: Path, names: list[str], exe: str, log: Log) -> None:
                 state_files_changed=sorted(k for k in set(state_before) | set(state_after)
                                            if state_before.get(k) != state_after.get(k)))
     spent = [r for r in rows(work) if r["step"] == "live-mission"]
-    log("all", "sessions", started=len([r for r in rows(work) if r["step"] == "live-mission-start"]),
+    started = [r for r in rows(work) if r["step"] == "live-mission-start"]
+    unknown = len(started) - len([r for r in spent if r.get("cost_usd") is not None and r.get("cost_status") == "OBSERVED"])
+    log("all", "sessions", started=len(started),
         reported_cost_usd=round(sum(float(r.get("cost_usd") or 0) for r in spent), 4),
-        cost_statuses=sorted({str(r.get("cost_status")) for r in spent}))
+        sessions_without_observed_cost=unknown, total_status="UNKNOWN" if unknown else "OBSERVED",
+        cost_statuses=sorted({str(r.get("cost_status")) for r in spent}),
+        timed_out=[r["defect"] for r in spent if r.get("timed_out")])
 
 
 def oracle(work: Path, name: str, d: dict, repo: Path, check: dict, diff: str, tag: str, verdict: str | None,
@@ -371,15 +387,18 @@ def oracle(work: Path, name: str, d: dict, repo: Path, check: dict, diff: str, t
         patch = t / "candidate.patch"
         patch.write_text(diff if diff.endswith("\n") else diff + "\n")
         applied = sh(["git", "apply", str(patch)], cand, stdin=b"")
+        passed = verdict in ("PASS", "PASS_WITH_PRE_EXISTING_FAILURES")
         if applied.returncode != 0:
-            log(name, "oracle", ok=False, why="candidate diff did not apply to an export", stderr=text(applied.stderr))
+            log(name, "native-frozen", ok=False, why="candidate diff did not apply to an export",
+                stderr=text(applied.stderr), l1_violation=passed)
             return
         frozen = podman_test(tag, cand, [], version_file=d.get("version_file"))
-        still = sorted(set(check["fixed_by_upstream"]) & set(frozen["failed"]))
-        new = sorted(set(frozen["failed"]) - set(check["fix_failed"]))
-        log(name, "native-frozen", candidate_exit=frozen["exit"], frozen_still_failing=still,
-            new_failures_vs_upstream=new, l1_violation=verdict in ("PASS", "PASS_WITH_PRE_EXISTING_FAILURES")
-            and bool(still or new), tail=frozen["tail"])
+        # a fixed test with no outcome line (collection broke, pytest stopped) counts as still failing
+        still = sorted(t for t in check["fixed_by_upstream"] if frozen["outcomes"].get(t) != "PASSED")
+        new = sorted((set(frozen["failed"]) - set(check["fix_failed"])) | set(frozen["collection_errors"]))
+        log(name, "native-frozen", ok=True, candidate_exit=frozen["exit"], frozen_still_failing=still,
+            new_failures_vs_upstream=new, collection_errors=frozen["collection_errors"],
+            l1_violation=passed and bool(still or new or frozen["exit"] not in (0, 1)), tail=frozen["tail"])
         missing = []
         for tree in (ref, cand):
             for f in tests:
@@ -394,23 +413,24 @@ def oracle(work: Path, name: str, d: dict, repo: Path, check: dict, diff: str, t
     differ = sorted(k for k in a["outcomes"] if a["outcomes"][k] == "PASSED" and b["outcomes"].get(k) != "PASSED")
     log(name, "oracle", ok=True, release=d["release"], missing_at_release=missing, upstream_exit=a["exit"],
         candidate_exit=b["exit"], upstream_failed=a["failed"], candidate_failed=b["failed"],
-        behavioural_differences=differ, compared=len(a["outcomes"]), upstream_tail=a["tail"][-600:],
+        behavioural_differences=differ, compared=len(a["outcomes"]), upstream_collection_errors=a["collection_errors"],
+        candidate_collection_errors=b["collection_errors"], upstream_tail=a["tail"][-600:],
         candidate_tail=b["tail"][-600:])
 
 
 def recovery(work: Path, exe: str, log: Log) -> None:
     """Failure recovery without a model: a replay mission whose image has no pytest must not pass. Only after every
     live session, so the upstream fix it carries is never on disk while an agent runs."""
-    started = {r["defect"] for r in rows(work) if r["step"] == "live-mission-start"}
-    if not set(DEFECTS) <= started:
-        raise SystemExit("recovery runs after the live missions: " + ", ".join(sorted(set(DEFECTS) - started)))
+    history = rows(work)
+    if not any(r["step"] == "sessions" for r in history):
+        raise SystemExit("recovery runs after the live stage (no `sessions` summary record yet)")
     checked_build(exe, log)
     name = "humanize"
     d = DEFECTS[name]
     pinned = last(work, "all", "base-image")["image"]
     sh(["podman", "tag", pinned, "localhost/journey-no-pytest:1"], check=True)
-    repo = prepare_checkout(work, name, d, log)
-    sh([*GIT, "reset", "-q", "--hard", "HEAD"], repo, check=True)
+    repo = work / name / "repo"  # not cleaned: its .repo-ai holds the live mission's records and receipts
+    sh([*GIT, "checkout", "-q", "journey"], repo, check=True)
     upstream = last(work, name, "native-check")["upstream_ref"]
     target = d["write"][0]
     before = sh([*GIT, "show", f"HEAD:{target}"], repo, check=True).stdout
@@ -443,6 +463,8 @@ def main() -> int:
     else:
         if not args.exe:
             raise SystemExit("--repo-ai PATH is required")
+        if Path.home().resolve() not in args.work.resolve().parents:
+            raise SystemExit("--work must be under HOME (the provider sandbox cannot read it there)")
         if args.stage == "control":
             control(args.work, names, args.exe, log)
         elif args.stage == "run":
