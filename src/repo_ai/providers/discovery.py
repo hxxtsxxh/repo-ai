@@ -122,10 +122,36 @@ def _homes() -> list[str]:
     return [h for h in dict.fromkeys(homes) if h not in {"", "/", "~"}]
 
 
+# never hidden, nor anything inside them: the system's programs and libraries
+_SYSTEM_DIRS = ("/usr", "/bin", "/sbin", "/lib", "/lib32", "/lib64", "/libx32", "/etc", "/opt", "/nix", "/proc",
+                "/dev", "/sys", "/snap", "/gnu")
+
+
+def _system(d: str) -> bool:
+    """`/`, a system directory or one inside it (real paths too, so `/bin -> /usr/bin` counts)."""
+    system = {os.path.realpath(s) for s in _SYSTEM_DIRS} | set(_SYSTEM_DIRS)
+    return d == "/" or any(d == s or d.startswith(s.rstrip("/") + "/") for s in system)
+
+
+def _never_hidden(d: str) -> bool:
+    """For a home directory's linked entry (`~/.ssh -> …`): what its hiding would take from the probe, a system
+    directory, or `/var`, `/home`, a home directory or an ancestor of one. The fixed roots (/tmp, /run, …) are
+    hidden even when a home lies under them (HOME=/tmp in a container): the probe's HOME is its scratch directory."""
+    if _system(d):
+        return True
+    keep = {os.path.realpath(p) for p in ("/var", "/home", *_homes())} | {"/var", "/home", *_homes()}
+    return any(k == d or k.startswith(d.rstrip("/") + "/") for k in keep)
+
+
 def _hidden_dirs() -> list[str]:
-    candidates = [*_HIDDEN_ROOTS, *(os.path.join(h, d) for h in _homes() for d in _HIDDEN_HOME)]
-    # a tmpfs needs a real directory; a symlink such as /var/run -> /run is covered by its target
-    return [d for d in dict.fromkeys(candidates) if os.path.isdir(d) and not os.path.islink(d)]
+    """Real paths, so they compare with the resolved paths bound back (on ostree systems `/home` links to
+    `/var/home`) and a linked directory (`~/.ssh -> elsewhere`, `/var/run -> /run`) hides its target. A home entry
+    that resolves to a directory the probe needs (`_never_hidden`) is ignored."""
+    roots = (os.path.realpath(d) for d in _HIDDEN_ROOTS if os.path.isdir(d))
+    home = (os.path.realpath(p) for p in (os.path.join(h, d) for h in _homes() for d in _HIDDEN_HOME)
+            if os.path.isdir(p))
+    found = [d for d in roots if not _system(d)] + [d for d in home if not _never_hidden(d)]
+    return list(dict.fromkeys(found))
 
 
 def _has_socket(directory: str, limit: int = 2000) -> bool:

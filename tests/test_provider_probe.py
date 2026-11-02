@@ -247,13 +247,19 @@ def test_linux_probe_hides_socket_dirs_and_binds_back_only_the_programs_own_path
                      ("--bind", str(scratch))]
 
 
-def test_hidden_dirs_are_real_directories_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    home = tmp_path / "home"
-    (home / ".ssh").mkdir(parents=True)
-    (home / ".gnupg").symlink_to(home / ".ssh")
+def test_hidden_dirs_are_real_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Release review of 0.11.8 (L3): linked hidden directories hide their target, by its real path, once."""
+    real = tmp_path.resolve()
+    (real / "var-home" / "u" / ".ssh").mkdir(parents=True)
+    (real / "home").symlink_to(real / "var-home")  # an ostree-style /home -> /var/home
+    home = real / "home" / "u"
+    (real / "elsewhere").mkdir()
+    (home / ".gnupg").symlink_to(real / "elsewhere")  # a linked agent directory
+    (home / ".docker").symlink_to("/")  # resolves to a system directory: never hidden
+    (home / ".1password").symlink_to("/usr/bin")  # inside a system directory: never hidden (it holds env and sh)
     monkeypatch.setattr(d, "_homes", lambda: [str(home)])
     monkeypatch.setattr(d, "_HIDDEN_ROOTS", (str(tmp_path / "missing"),))
-    assert d._hidden_dirs() == [str(home / ".ssh")]
+    assert d._hidden_dirs() == [str(real / "var-home" / "u" / ".ssh"), str(real / "elsewhere")]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX accounts")
@@ -325,3 +331,21 @@ def test_has_socket_finds_a_nested_unix_socket():
         (folder / "u" / "s").unlink(missing_ok=True)
         (folder / "u").rmdir()
         folder.rmdir()
+
+
+@pytest.mark.parametrize("path,never", [
+    ("/", True), ("/usr", True), ("/usr/bin", True), ("/usr/local/bin", True), ("/etc", True), ("/nix/store", True),
+    ("/var", True), ("/home", True), ("/tmp", False), ("/run", False), ("/var/tmp", False), ("/var/lib/lxd", False),
+])
+def test_never_hidden(path, never, monkeypatch):
+    monkeypatch.setattr(d, "_homes", lambda: ["/home/u"])
+    assert d._never_hidden(path) is never
+
+
+def test_a_home_under_a_hidden_root_does_not_unhide_it(tmp_path, monkeypatch):
+    """Review round 2 of #90: HOME=/tmp/ci (containers, CI) kept /tmp hidden."""
+    root = tmp_path.resolve() / "tmp"
+    (root / "ci" / ".ssh").mkdir(parents=True)
+    monkeypatch.setattr(d, "_HIDDEN_ROOTS", (str(root),))
+    monkeypatch.setattr(d, "_homes", lambda: [str(root / "ci")])
+    assert str(root) in d._hidden_dirs()
