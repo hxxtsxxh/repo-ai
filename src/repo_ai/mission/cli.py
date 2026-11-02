@@ -138,6 +138,9 @@ def cmd_do(args) -> int:
                                                  or getattr(args, 'tournament', None) or not args.run):
         raise ValueError('--requirements is frozen with a new single mission run: it needs --run and is not '
                          'supported with --resume, --from-handoff or --tournament')
+    if args.resume and (getattr(args, 'sandbox', None) or getattr(args, 'image', None)):
+        raise ValueError('--resume uses the test environment frozen with the mission; --sandbox and --image are '
+                         'not accepted with it')
     if args.resume:
         args.id = args.resume
         args.action = 'resume'
@@ -158,6 +161,8 @@ def cmd_do(args) -> int:
             max_cost_usd=args.max_cost_usd if args.max_cost_usd > 0 else None,
             extra_write_paths=list(args.allow_write or []),
             expect_fix=list(getattr(args, 'expect_fix', None) or []),
+            sandbox=getattr(args, 'sandbox', None),
+            image=getattr(args, 'image', None),
         )
         if getattr(args, 'apply', False) and value.get('effective_verdict') == 'PASS':
             apply_res = apply_mission(root, value['id'])
@@ -682,7 +687,7 @@ def register(sub, common) -> None:
     p.add_argument('--requirements', metavar='FILE',
                    help='requirement -> test declaration (repo-ai.requirements/1) frozen with the mission before it runs '
                         '(needs --run); `repo-ai coverage ID` then assesses it and says it was declared before this run')
-    p.add_argument('--sandbox', default='auto', choices=['auto', 'seatbelt', 'bwrap', 'podman', 'docker'],
+    p.add_argument('--sandbox', default=None, choices=['auto', 'seatbelt', 'bwrap', 'podman', 'docker'],
                    help="where the project's tests run (frozen with the mission: baseline, candidate, regression, "
                         'post-apply verification and a continuation); auto: the host sandbox first')
     p.add_argument('--image', metavar='REF',

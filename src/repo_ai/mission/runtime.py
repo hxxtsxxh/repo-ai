@@ -843,6 +843,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 def regression() -> dict[str, Any]:
                     layout = resolve_layout(candidate, load_config(candidate))
                     vp, change = engine.build_plan(candidate, layout, command=contract.acceptance[0], use_runtime=False)
+                    from .verification import container_layout
+                    container_layout(candidate, vp.runner, engine.repo_files(candidate), contract.sandbox)
                     executor = get_executor(candidate, contract.sandbox, vp.runner.language, interpreter_root=root,
                                             image=contract.image)
                     try:
@@ -1446,6 +1448,8 @@ def continue_from_handoff(
     max_cost_usd: float | None = None,
     extra_write_paths: list[str] | None = None,
     expect_fix: list[str] | None = None,
+    sandbox: str | None = None,
+    image: str | None = None,
 ) -> dict[str, Any]:
     """Continue an interrupted or provider-blocked mission using a verified HandoffCapsule.
 
@@ -1472,14 +1476,15 @@ def continue_from_handoff(
             return _continue_verified_handoff(root, capsule_data, agent=agent, replay_path=replay_path,
                                               provider_executable=provider_executable,
                                               allow_live=allow_live, max_cost_usd=max_cost_usd,
-                                              extra_write_paths=extra_write_paths, expect_fix=expect_fix)
+                                              extra_write_paths=extra_write_paths, expect_fix=expect_fix,
+                                              sandbox=sandbox, image=image)
 
 
 def _continue_verified_handoff(
     root: Path, capsule_data: dict[str, Any], *, agent: str | None,
     replay_path: Path | None, provider_executable: Path | None,
     allow_live: bool, max_cost_usd: float | None, extra_write_paths: list[str] | None = None,
-    expect_fix: list[str] | None = None,
+    expect_fix: list[str] | None = None, sandbox: str | None = None, image: str | None = None,
 ) -> dict[str, Any]:
     ver = verify_handoff(root, capsule_data)
     if not ver['valid']:
@@ -1489,6 +1494,10 @@ def _continue_verified_handoff(
     if expect_fix and sorted(set(expect_fix)) != sorted(orig_contract.get('expect_fix') or []):
         raise ValueError('a continuation keeps the original --expect-fix scope exactly; '
                          f"it was {sorted(orig_contract.get('expect_fix') or []) or 'none'}")
+    frozen_env = (str(orig_contract.get('sandbox') or 'auto'), str(orig_contract.get('image') or ''))
+    if (sandbox is not None and sandbox != frozen_env[0]) or (image is not None and image != frozen_env[1]):
+        raise ValueError('a continuation keeps the test environment frozen with the original mission '
+                         f"(sandbox {frozen_env[0]}{', image ' + frozen_env[1] if frozen_env[1] else ''})")
     if orig.get('continuation_started'):
         raise ValueError('continuation already attempted; inspect recorded child or create a fresh approved plan')
     recovery = classify_recovery(orig)
