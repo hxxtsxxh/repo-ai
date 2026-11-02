@@ -112,3 +112,29 @@ Questions, stated before the run:
 
 Run 4 is reported next to runs 2 and 3, whatever it shows; the reading rule is applied to run 4 alone, and the runs
 are not pooled. Runner CPUs may differ between runs, so only ratios are compared. Spend: $0 (GitHub-hosted runner).
+
+## Amendment 5 (2026-11-01, before run 5; instrumentation, analysis unchanged)
+
+The harness now also records, for every `verify` call, what runs 2–4 could not explain:
+- the strategy chooser's reason and estimates (`strategy_detail`: reason, batches, targeted and full estimates and their
+  source);
+- the full-suite run's status, command, duration or not-run reason (`full_suite`);
+- the distinct test commands verify ran (`commands`, up to 10, and `command_count`);
+- `sandbox_network_suspected` from the summary.
+
+These fields are read from the record that `verify --json` prints under `evidence`; a missing field is recorded as
+missing, never inferred. Nothing measured or compared changes: projects, pinned refs, selection, timings, the reading
+rule and the Amendment 2 harness stay as they were.
+
+**Run 5** repeats run 4 on main at the commit this amendment lands on (after PRs #78 and #79; neither changes verify's
+strategy or timing paths, though #79 adds guards to isolate's version-file detection and the `norecursedirs` note).
+Questions, stated before the run:
+
+1. For every change whose cold strategy differed between runs 2, 3 and 4, what reason does run 5 record for its
+   strategy, and does it name the input that decided it (an estimate, its source, or a rule)?
+2. Do marshmallow 2fc8207d's cold and `--rerun` calls run different commands, as the run-2 addendum inferred, and
+   what command did each run?
+3. The cold ratio and exit-code agreement, reported next to runs 2–4 with the reading rule applied to run 5 alone; the
+   runs are not pooled.
+
+Run 5 is reported whatever it shows. Spend: $0 (GitHub-hosted runner).
