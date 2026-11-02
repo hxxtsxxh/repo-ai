@@ -137,13 +137,13 @@ def _has_socket(directory: str) -> bool:
         return True
 
 
-# The only Mach services a probed program may look up on macOS: the per-user temporary directory, user and group
-# lookups (getpwuid; the same facts /etc/passwd gives) and notifications. Everything else (the pasteboard, the
-# keychain through securityd, WindowServer, login items) is denied. Measured 2026-11-01 on Darwin 25.5: with every
-# lookup denied, the --version and --help output of codex, claude, bob, agy, opencode and opencode-acp was
-# byte-identical to the unrestricted profile's; Apple's python3 shim needs the temporary-directory helper.
-PROBE_MACH_ALLOW = ("com.apple.bsd.dirhelper", "com.apple.system.opendirectoryd.libinfo",
-                    "com.apple.system.DirectoryService.libinfo_v1", "com.apple.system.notification_center")
+# The only Mach service a probed program may look up on macOS: user and group lookups through opendirectoryd
+# (getpwuid; without it `id -un` prints a number and Python's pwd raises). Everything else is denied: the pasteboard,
+# the keychain through securityd, cfprefsd, WindowServer, login items, notifications (a channel to the user's other
+# programs), DNS. Registering a Mach name is denied too. Measured 2026-11-01 on Darwin 25.5: with every lookup denied,
+# the --version and --help output of codex, claude, bob, agy, opencode and opencode-acp was byte-identical to the
+# unrestricted profile's.
+PROBE_MACH_ALLOW = ("com.apple.system.opendirectoryd.libinfo",)
 
 
 def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -> list[str] | None:
@@ -157,7 +157,7 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
         # directory on the caller's behalf; system services are denied but for PROBE_MACH_ALLOW
         allow = "".join(f"(global-name {json.dumps(n)})" for n in PROBE_MACH_ALLOW)
         profile = ("(version 1)(allow default)(deny lsopen)(deny appleevent-send)(deny job-creation)"
-                   f"(deny user-preference-write)(deny mach-lookup)(allow mach-lookup {allow})"
+                   f"(deny user-preference-write)(deny mach-register)(deny mach-lookup)(allow mach-lookup {allow})"
                    "(deny network*)(deny file-write*)"
                    f"(allow file-write* (subpath {json.dumps(str(scratch.resolve()))}))")
         return ["/usr/bin/sandbox-exec", "-p", profile]
