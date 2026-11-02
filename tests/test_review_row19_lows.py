@@ -219,7 +219,7 @@ def test_a_path_swapped_after_resolution_is_not_bound(tmp_path, monkeypatch):
 
 
 def test_an_older_bubblewrap_binds_by_path_as_before(tmp_path, monkeypatch):
-    """No --ro-bind-fd (bubblewrap before 0.8): the path binds of 0.11.9, race not closed (recorded as residual)."""
+    """No --ro-bind-fd (bubblewrap before 0.10): the path binds of 0.11.9, race not closed (recorded as residual)."""
     _linux_bwrap(monkeypatch, fd_binds=False)
     hidden = tmp_path.resolve()
     monkeypatch.setattr(d, "_hidden_dirs", lambda: [str(hidden)])
@@ -278,7 +278,10 @@ def test_a_program_under_a_hidden_directory_runs_from_its_pinned_bind(tmp_path):
         scratch.mkdir()
         prefix = d._sandbox_prefix(scratch, [agent, folder])
         assert prefix is not None
-        assert "--ro-bind-fd" in prefix, prefix  # the CI runner's bubblewrap (0.9) binds descriptors
+        # descriptor binds with bubblewrap 0.10+ (the sandbox-bwrap-fd job builds 0.11.0); path binds before that
+        assert ("--ro-bind-fd" in prefix) == d._bwrap_binds_fds(prefix[0]), prefix
+        if os.environ.get("REPO_AI_EXPECT_BWRAP_FD") == "1":
+            assert "--ro-bind-fd" in prefix, prefix
         result = d._capture([*prefix, str(agent)], scratch, d._probe_env(scratch), pass_fds=d.pinned_fds(prefix))
         lines = result.output.decode().split()
         assert result.returncode == 0 and lines[-1] == "pinned-ok", result
