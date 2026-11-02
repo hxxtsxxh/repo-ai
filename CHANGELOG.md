@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Security: the coding lab's git calls over an agent's workspace ignore the host's user and system git
+  configuration, so a `.gitattributes` the agent wrote cannot make `git diff` run a filter driver configured
+  globally (git-lfs, for one); this holds on git older than 2.32 too (an empty HOME). Every workflow checkout now drops the token from `.git/config`
+  (`persist-credentials: false`; `ci.yml` and `diag-seatbelt.yml` were the last two); a test covers every workflow.
+
 ## 0.11.8 — probe sandbox hardening, security review fixes, consumed handoff capsules
 
 - Security (release review of 0.11.8): the coding lab's integrity check read a hidden test's baseline with

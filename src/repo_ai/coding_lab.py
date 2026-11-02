@@ -651,10 +651,14 @@ def _workspace_changes(ws: Path, pristine_git: Path) -> tuple[list[str], list[st
     fsmonitor or hook either."""
     quiet = ["--git-dir", str(pristine_git), "--work-tree", str(ws), "-c", "core.fsmonitor=false",
              "-c", "core.hooksPath=" + os.devnull]
-    changed = subprocess.run([gitbin.git(), *quiet, "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
-                             text=True, check=False, timeout=60).stdout.split()
-    untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "--others", "--exclude-standard"], cwd=ws,
-                               capture_output=True, text=True, check=False, timeout=60).stdout.split()
+    # no user or system git config either: a .gitattributes the agent wrote could otherwise name a filter driver
+    # configured globally on the host (git-lfs, for one), which `git diff` would run on the agent's files
+    with tempfile.TemporaryDirectory(prefix="repo-ai-git-home-") as home:
+        env = gitbin.no_user_config_env(home)
+        changed = subprocess.run([gitbin.git(), *quiet, "diff", "--name-only", "HEAD"], cwd=ws, capture_output=True,
+                                 text=True, check=False, timeout=60, env=env).stdout.split()
+        untracked = subprocess.run([gitbin.git(), *quiet, "ls-files", "--others", "--exclude-standard"], cwd=ws,
+                                   capture_output=True, text=True, check=False, timeout=60, env=env).stdout.split()
     return changed, untracked
 
 
