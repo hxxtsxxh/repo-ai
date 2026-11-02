@@ -23,17 +23,64 @@ def test_an_explicit_provider_that_is_cooling_down_is_refused_before_it_starts(s
     assert not started
 
 
-def test_a_cooldown_that_has_passed_does_not_refuse(shop):  # noqa: F811
+def test_a_cooldown_that_has_passed_does_not_refuse(shop, tmp_path, monkeypatch):  # noqa: F811
+    """run_provider is stubbed: no provider process (and never a real CLI) starts in this test."""
     import time
+    started = []
+
+    def stub(*a, **k):
+        started.append(True)
+        raise ValueError('stub provider: stop here')
+    monkeypatch.setattr('repo_ai.providers.adapters.run_provider', stub)
+    exe = tmp_path / 'bin' / 'claude'  # never run: run_provider is stubbed
+    exe.parent.mkdir()
+    exe.write_text('#!/bin/sh\nexit 0\n')
+    exe.chmod(0o755)
+    monkeypatch.setattr('repo_ai.mission.runtime.shutil.which', lambda name, *a, **k: str(exe))
     registry.note_rate_limited(shop, 'claude', now=time.time() - registry.COOLDOWN_SECONDS - 1)
     planned = runtime.plan(shop, 'Fix pricing', agent='claude', write_paths=['pricing.py'], execute_local=True,
                            allow_live=True, max_cost_usd=0.5)
     try:
         runtime.execute(shop, planned, None, allow_live=True)
-    except ValueError as exc:
+    except Exception as exc:  # noqa: BLE001 - whatever stops the run, it is past the cooldown check
         assert 'cooling down' not in str(exc)
-    except Exception:  # noqa: BLE001 - anything else past the cooldown check is not this test's concern
-        pass
+        stopped = str(exc)
+    else:
+        stopped = ''
+    assert started, f'the run stopped before reaching the provider: {stopped}'
+
+
+def test_a_malformed_cooldown_is_ignored(shop):  # noqa: F811
+    import json
+    path = registry.policy_path(shop)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('{"schema": "%s", "cooldown": {"claude": Infinity}}' % registry.POLICY_SCHEMA)
+    assert registry.load_policy(shop)['cooldown'] == {}
+    assert runtime.cooldown_until(shop, 'claude') is None
+    path.write_text(json.dumps({"schema": registry.POLICY_SCHEMA, "cooldown": {"claude": 1e300}}))
+    assert 'unreadable' in runtime.cooldown_until(shop, 'claude')
+
+
+def test_a_continuation_to_a_cooling_provider_is_refused_and_the_capsule_stays_usable(shop, tmp_path,  # noqa: F811
+                                                                                       monkeypatch):
+    import json
+
+    from repo_ai.mission.ledger import Store
+    from test_mission_partial_handoff import FIX_DISCOUNT, _provider
+    monkeypatch.setattr('repo_ai.providers.adapters.run_provider',
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError('no provider may start')))
+    planned = runtime.plan(shop, 'Make pricing.py compute percentage discounts and tax correctly', agent='claude',
+                           write_paths=['pricing.py'], execute_local=True)
+    monkeypatch.undo()
+    first = runtime.execute(shop, planned, None, provider_executable=_provider(tmp_path, 'claude', FIX_DISCOUNT))
+    capsule = tmp_path / 'capsule.json'
+    capsule.write_text(json.dumps(runtime.handoff(shop, first['id'], target_provider='claude')))
+    registry.note_rate_limited(shop, 'claude')
+    monkeypatch.setattr('repo_ai.providers.adapters.run_provider',
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError('no provider may start')))
+    with pytest.raises(ValueError, match='capsule is still unused'):
+        runtime.continue_from_handoff(shop, capsule, agent='claude', allow_live=True, max_cost_usd=0.5)
+    assert not Store(shop).load(first['id']).get('continuation_started')
 
 
 def _state(negative: str) -> dict:
@@ -45,6 +92,12 @@ def test_a_crashed_provider_is_not_a_budget_limit():
     crash = ('live session: no init event; provider process exited with code 139; provider output did not conform to '
              'structured JSONL event contract; provider did not report cost; unknown cost cannot satisfy hard USD budget')
     assert runtime.classify_recovery(_state(crash))['category'] != 'budget_limit'
+
+
+def test_a_cost_overrun_is_a_budget_limit_even_when_the_provider_exits_non_zero():
+    overrun = ('provider process exited with code 1; provider error event: budget exceeded; provider reported cost '
+               'exceeding approved contract ceiling')
+    assert runtime.classify_recovery(_state(overrun))['category'] == 'budget_limit'
 
 
 def test_a_genuine_cost_overrun_is_still_a_budget_limit():

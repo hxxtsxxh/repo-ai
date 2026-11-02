@@ -241,10 +241,11 @@ def _route(outcome, selected=None, **readiness):
 
 
 def _mission(verdict=None, provider=None, refused=False, rate_limited=None, cost_status=None, not_recovery=None,
-             recovery=None):
+             recovery=None, says=None):
     def check(r):
-        if refused:
-            return r["exit"] not in (0, None) and r.get("verdict") is None and not (r.get("provider") or {}).get("name")
+        if refused:  # refused with the stated reason, before any provider started (never a traceback)
+            return (r["exit"] == 1 and r.get("verdict") is None and not (r.get("provider") or {}).get("name")
+                    and says in (r.get("stderr") or "") and "Traceback" not in (r.get("stderr") or ""))
         p = r.get("provider") or {}
         return (r.get("verdict") == verdict and r.get("contract_provider") == provider and p.get("name") == provider
                 and (rate_limited is None or p.get("rate_limited") is rate_limited)
@@ -256,9 +257,9 @@ def _mission(verdict=None, provider=None, refused=False, rate_limited=None, cost
 
 EXPECT = {
     ("Z1-zero", "route"): _route("NO_AGENT", claude="NOT_INSTALLED", codex="NOT_INSTALLED"),
-    ("Z1-zero", "mission"): _mission(refused=True),
+    ("Z1-zero", "mission"): _mission(refused=True, says='no provider can run this mission (NO_AGENT)'),
     ("U1-unauthenticated", "route"): _route("NO_AGENT", claude="SETUP_REQUIRED"),
-    ("U1-unauthenticated", "mission"): _mission(refused=True),
+    ("U1-unauthenticated", "mission"): _mission(refused=True, says='no provider can run this mission (NO_AGENT)'),
     ("U2-configured-not-logged-in", "route"): _route("SELECTED", "claude", claude="INSTALLED_UNPROBED"),
     ("U2-configured-not-logged-in", "mission"): _mission("BLOCKED", "claude", recovery="provider_unavailable"),
     ("U2-configured-not-logged-in", "route-after-not-logged-in"): _route("NO_AGENT", claude="AUTHORIZED_BUT_UNREADY"),
@@ -276,11 +277,11 @@ EXPECT = {
     ("Q1-quota", "mission"): _mission("BLOCKED", "claude", rate_limited=True, recovery="provider_unavailable"),
     ("Q1-quota", "route-after-rate-limit"): _route("SELECTED", "codex", claude="USAGE_LIMITED"),
     ("Q2-ceiling-blocks-fallback", "route-with-usd-ceiling"): _route("NO_AGENT", claude="USAGE_LIMITED"),
-    ("Q2-ceiling-blocks-fallback", "mission"): _mission(refused=True),
+    ("Q2-ceiling-blocks-fallback", "mission"): _mission(refused=True, says='no provider can run this mission (NO_AGENT)'),
     ("F1-fallback", "mission"): _mission("PASS", "codex", cost_status="UNKNOWN"),
-    ("A1-explicit-while-cooling", "mission"): _mission(refused=True),
+    ("A1-explicit-while-cooling", "mission"): _mission(refused=True, says='is cooling down until'),
     ("C1-cooldown-expiry", "route-after-cooldown"): _route("SELECTED", "claude", claude="INSTALLED_UNPROBED"),
-    ("X1-failure", "mission"): _mission("BLOCKED", "claude", rate_limited=False, not_recovery="budget_limit"),
+    ("X1-failure", "mission"): _mission("BLOCKED", "claude", rate_limited=False, recovery="contract_failure"),
     ("X1-failure", "route-after-failure"): lambda r: _route("SELECTED", "claude")(r) and
         not r["providers"]["claude"]["cooling_down"],
     ("P1-unsupported-platform", "route-as-win32"): lambda r: r.get("outcome") == "NO_AGENT" and all(
