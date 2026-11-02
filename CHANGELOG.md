@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Security: the Linux probe sandbox compares the directories it hides by their real paths. On systems where `/home`
+  links to `/var/home` (ostree), a program inside a hidden home directory (such as `~/.docker/bin`) was not bound back,
+  so its probe did not run; and a hidden directory that is itself a link (`~/.ssh -> elsewhere`) now hides its target.
+  A link that resolves to a system directory, into one, or to `/`, `/var`, `/home` or a home directory is never
+  hidden.
 - Fixed: when the test runner is missing from the environment `verify` runs in (for example `No module named
   'pytest'`), every test fails the same way at the base and with the change, and verify said "NO NEW FAILURES: every
   failure also happens at the base". It now says "NOT VERIFIED: the test runner could not start … (pytest is not
