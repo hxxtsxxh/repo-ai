@@ -7,19 +7,23 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
 
 ## 0.11.8
 
-- **Security** the probe sandbox (`agents doctor`, `agents conformance`, the Claude preflight) no longer lets a probed
-  program reach the host's unix sockets on Linux (D-Bus, X11, docker, ssh-agent: their directories are hidden, the
-  program's own files bound back read-only), and on macOS denies preference writes, launchd jobs and every Mach
-  lookup but user and group lookups (no pasteboard, keychain, window server or notifications).
-- **Security** fixes from an independent review of 0.11.3–0.11.7: licence files are read as documentation only at a
-  skill's root and still get the code checks; the eval lab's git calls over an agent's workspace read a copy of `.git`
-  taken before the run; `verify` no longer crashes on unusual `pyproject.toml` values; workflows drop their checkout
-  token.
+- **Security** the probe sandbox (`agents doctor`, `agents conformance`, the Claude preflight) hides the host's
+  unix-socket directories on Linux (`/tmp`, `/run`, `/var/tmp`: D-Bus, X11, docker, ssh-agent). The program's own
+  files are bound back read-only, so an agent that needs other files there (an npm package's `node_modules`, a
+  virtualenv) is not run. On macOS it denies preference writes, launchd jobs and every Mach lookup but user and
+  group lookups (no pasteboard, keychain, window server or notifications). Still open and disclosed: reads are not
+  restricted, other unix sockets on Linux (elsewhere in your home directory, other `/var/lib` services) stay
+  reachable, and macOS still allows signals and IOKit.
+- **Security** fixes from an independent review of 0.11.3–0.11.7: a licence file is read as documentation only at a
+  skill's root without a `#!` line, and still gets the code checks; the coding lab's git calls over an agent's
+  workspace (and, after the 0.11.8 release review, its integrity check's `git show`) read a copy of `.git` taken
+  before the run; `verify` no longer crashes on unusual `pyproject.toml` values; the diagnose, journey and speed
+  workflows no longer keep the checkout token.
 - **Fixed** `handoff --verify` says when a capsule's one continuation has already been used (also for a capsule
   exported afterwards, which verified as valid before).
-- **Evaluation** speed-v1 run 5 recorded why verify chose each strategy: 1.96× the native suite, slower on 28 of 30,
-  so still not faster; close timing estimates decide the strategy, and two calls on one state chose differently on 4
-  of 30 changes.
+- **Evaluation** speed-v1 run 5 recorded why verify chose each strategy: verify took 1.96× the native suite's time
+  (geometric mean of 30 cold runs) and was slower on 28 of 30, so still not faster; the strategy turns on missing
+  measurements and close timing estimates, and two calls on one state chose differently on 4 of 30 changes.
 
 ## 0.11.7
 
