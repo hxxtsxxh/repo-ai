@@ -2,10 +2,15 @@
 
 ## Unreleased
 
-- Routing (found by routing-journey-v1, C06): an explicitly chosen live provider that hit a quota or rate limit
-  recently is refused before it starts ("cooling down until …"), instead of being called again into the same limit;
-  automatic routing already skipped it. A provider that crashed or broke its event protocol under a USD ceiling is
-  classified `contract_failure`, no longer `budget_limit` (its unknown cost matched the budget rule).
+- Routing (found by routing-journey-v1, C06):
+  - An explicitly chosen live provider that hit a quota or rate limit recently is refused before it starts ("cooling
+    down until …"), instead of being called again into the same limit; automatic routing already skipped it. A
+    handoff continuation to such a provider is refused before the capsule is claimed, so it stays usable.
+  - A provider that crashed or broke its event protocol is no longer classified `budget_limit` because it reported no
+    cost; a reported cost over the ceiling still is.
+  - `do --agent auto --allow-live-provider` with no eligible provider says so ("no provider can run this mission
+    (NO_AGENT): …"); it used to say that `--allow-live-provider` was required.
+  - A malformed cooldown or observation time in the project's provider policy is ignored instead of crashing.
 
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
