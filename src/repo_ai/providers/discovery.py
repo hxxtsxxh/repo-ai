@@ -137,6 +137,15 @@ def _has_socket(directory: str) -> bool:
         return True
 
 
+# The only Mach services a probed program may look up on macOS: the per-user temporary directory, user and group
+# lookups (getpwuid; the same facts /etc/passwd gives) and notifications. Everything else (the pasteboard, the
+# keychain through securityd, WindowServer, login items) is denied. Measured 2026-11-01 on Darwin 25.5: with every
+# lookup denied, the --version and --help output of codex, claude, bob, agy, opencode and opencode-acp was
+# byte-identical to the unrestricted profile's; Apple's python3 shim needs the temporary-directory helper.
+PROBE_MACH_ALLOW = ("com.apple.bsd.dirhelper", "com.apple.system.opendirectoryd.libinfo",
+                    "com.apple.system.DirectoryService.libinfo_v1", "com.apple.system.notification_center")
+
+
 def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -> list[str] | None:
     """No supported network-denying boundary means no executable probe. `expose`: the files and directories the probed
     program needs (itself, its directory, its runtime's), bound back read-only on Linux when they lie under a hidden
@@ -145,9 +154,10 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
         # `open` (LaunchServices) and Apple events would start a program outside this sandbox, with the network and
         # outside the sweep; launchd job creation is denied as well (defence in depth: on Darwin 25.5 launchd already
         # refused `launchctl submit` from a sandboxed caller); cfprefsd writes preferences outside the scratch
-        # directory on the caller's behalf; the pasteboard is a channel to the user's other applications
+        # directory on the caller's behalf; system services are denied but for PROBE_MACH_ALLOW
+        allow = "".join(f"(global-name {json.dumps(n)})" for n in PROBE_MACH_ALLOW)
         profile = ("(version 1)(allow default)(deny lsopen)(deny appleevent-send)(deny job-creation)"
-                   "(deny user-preference-write)(deny mach-lookup (global-name \"com.apple.pasteboard.1\"))"
+                   f"(deny user-preference-write)(deny mach-lookup)(allow mach-lookup {allow})"
                    "(deny network*)(deny file-write*)"
                    f"(allow file-write* (subpath {json.dumps(str(scratch.resolve()))}))")
         return ["/usr/bin/sandbox-exec", "-p", profile]
