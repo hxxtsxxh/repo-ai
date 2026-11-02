@@ -129,7 +129,7 @@ def decide(runner: TestRunner, selected: list[str], universe: list[str], duratio
         return Decision("targeted", f"the full suite is not chosen for speed here: its result cannot be attributed "
                                     f"to files ({full_unusable})", batches, est_t, est_f, src)
     if est_t is None or est_f is None:
-        missing = "per-file durations" if est_t is None else "a full-suite time"
+        missing = "per-file durations" if est_t is None else "full-suite time"
         return Decision("targeted", f"no {missing} yet to compare the two (`repo-ai verify --record` measures "
                                     "them); running the selection", batches, est_t, est_f, src)
     if est_f <= est_t + TIE_MARGIN_S:
