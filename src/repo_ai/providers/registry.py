@@ -31,6 +31,7 @@ Computing readiness never starts a provider and never makes a billable call.
 from __future__ import annotations
 
 import json
+import math
 import sys
 import tempfile
 import time
@@ -84,12 +85,13 @@ def load_policy(root: Path) -> dict[str, Any]:
     authorized = [p for p in raw.get("authorized", []) if p in PROVIDERS]
     preferred = [p for p in raw.get("preferred", []) if p in PROVIDERS]
     cooldown = {k: float(v) for k, v in (raw.get("cooldown") or {}).items()
-                if k in PROVIDERS and isinstance(v, (int, float)) and not isinstance(v, bool)}
+                if k in PROVIDERS and isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)}
     observations: dict[str, dict[str, Any]] = {}
     raw_obs = raw.get("observations")
     for name, obs in (raw_obs.items() if isinstance(raw_obs, dict) else []):
         if (name in PROVIDERS and isinstance(obs, dict) and obs.get("state") in OBSERVATION_TTL
                 and isinstance(obs.get("until"), (int, float)) and not isinstance(obs.get("until"), bool)
+                and math.isfinite(obs["until"])
                 and isinstance(obs.get("identity"), str) and len(obs["identity"]) <= 128):
             observations[name] = {"state": obs["state"], "until": float(obs["until"]), "identity": obs["identity"]}
     return {"schema": POLICY_SCHEMA, "exists": True, "authorized": authorized, "preferred": preferred,
