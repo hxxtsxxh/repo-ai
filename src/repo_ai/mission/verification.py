@@ -133,8 +133,14 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
     return outcomes, list(dict.fromkeys(reasons))
 
 
+def environment(contract: dict) -> tuple[str, str]:
+    """(sandbox preference, image): the frozen test environment of a stored mission contract (`do --sandbox/--image`);
+    older contracts: auto, none."""
+    return str(contract.get("sandbox") or "auto"), str(contract.get("image") or "")
+
+
 def observe(root: Path, command: str, timeout_s: float = 60,
-            sandbox_preference: str = "auto", project_root: Path | None = None) -> dict:
+            sandbox_preference: str = "auto", project_root: Path | None = None, image: str = "") -> dict:
     """Run one fresh, complete suite in a disposable, network-denied sandbox.
 
     Invalid input, unavailable environments and incomplete execution produce an
@@ -169,7 +175,7 @@ def observe(root: Path, command: str, timeout_s: float = 60,
                               "runner": cache.runner_identity(runner),
                               "test_inputs": _test_inputs(root, listing[0], files)}
         executor = execute.get_executor(root, sandbox_preference, runner.language, timeout_s=timeout_s,
-                                        interpreter_root=project_root)
+                                        interpreter_root=project_root, image=image)
         identity = {"backend": executor.backend.name, "language": runner.language,
                     "interpreter": executor.node if runner.kind == "node" else executor.python,
                     "network": False}

@@ -50,6 +50,9 @@ class Contract:
 ROLE_NAMES = frozenset({'investigator', 'adversary'})
 
 
+SANDBOXES = ('auto', 'seatbelt', 'bwrap', 'podman', 'docker')
+
+
 @dataclass
 class IntentContract(Contract):
     schema: ClassVar[str] = 'repo-ai.intent/1'
@@ -73,6 +76,10 @@ class IntentContract(Contract):
     # tests the task must fix (`--expect-fix`): with them, failures that already fail at the base and are not among
     # them may remain; without them the whole suite must pass, as before
     expect_fix: list[str] = field(default_factory=list)
+    # where the project's tests run (`do --sandbox/--image`): frozen with the mission, so the baseline, the candidate,
+    # the regression run, post-apply verification and a continuation all use the same environment
+    sandbox: str = 'auto'
+    image: str = ''
 
     def to_json(self) -> dict[str, Any]:
         value = super().to_json()
@@ -80,11 +87,22 @@ class IntentContract(Contract):
             del value['roles']  # keeps pre-role contract digests and stored missions valid
         if not value['expect_fix']:
             del value['expect_fix']  # same: contracts without it keep their digests
+        if value['sandbox'] == 'auto':
+            del value['sandbox']  # same
+        if not value['image']:
+            del value['image']  # same
         return value
 
     def validate(self) -> None:
         strings(self.roles, 'roles', 4)
         strings(self.expect_fix, 'expect_fix', 32)
+        if self.sandbox not in SANDBOXES:
+            raise ValueError('sandbox must be one of ' + ', '.join(SANDBOXES))
+        if not isinstance(self.image, str) or len(self.image) > 300 or (self.image and (
+                self.image.startswith('-') or any(c.isspace() or not c.isprintable() for c in self.image))):
+            raise ValueError('invalid image reference')
+        if self.image and self.sandbox not in ('podman', 'docker'):
+            raise ValueError('an image needs sandbox podman or docker')
         for test_id in self.expect_fix:
             file, sep, name = test_id.partition('::')
             if not sep or not name or len(test_id) > 1000:

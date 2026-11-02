@@ -89,6 +89,22 @@ base may fail**. Tests that already failed at the base and are not declared may 
 standing is `PASS_WITH_PRE_EXISTING_FAILURES` (claim `ASSURANCE_PARTIAL`), never a plain whole-suite PASS. `apply` and
 handoff continuations keep the same scope; tournaments do not support it yet.
 
+### Where the project's tests run (`--sandbox`, `--image`)
+
+By default a mission runs the project's tests in the host sandbox (seatbelt on macOS, bubblewrap on Linux) with the
+project's own interpreter. To keep the project's code off the host, run them in a container with a **local** image
+that has the project's dependencies (never pulled; the project code itself comes from the mission's workspace):
+
+```sh
+repo-ai do "Fix naturalsize for float strings" --agent claude --allow-live-provider --max-cost-usd 1 --run \
+    --sandbox podman --image localhost/humanize-deps:1
+```
+
+The choice is frozen with the mission: the baseline, the candidate, the regression run, `apply`'s post-apply
+verification and a handoff continuation all use the same environment. Install only the dependencies in the image,
+not the project: an installed copy could be imported instead of the candidate. The change-exercise measurement is
+not implemented for containers and is recorded as `UNMEASURED`.
+
 ## Offline: replay proposals
 
 To exercise the whole pipeline without a model, give a simulated proposal:

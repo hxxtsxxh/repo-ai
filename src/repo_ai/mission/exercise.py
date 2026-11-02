@@ -107,7 +107,7 @@ def _node_line_status(text: str, reports: list[list[dict[str, Any]]]) -> tuple[s
 
 
 def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.0,
-            project_root: Path | None = None) -> dict[str, Any]:
+            project_root: Path | None = None, sandbox_preference: str = "auto", image: str = "") -> dict[str, Any]:
     """Run `command` once more over a pristine copy of `workspace` (the verified candidate) under a
     line tracer and compare with the lines `diff` added. Never raises: failure is ``UNMEASURED``."""
     from . import verification
@@ -121,8 +121,8 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
     try:
         runner = verification._runner(command)
         listing = isolate.worktree_files(workspace)
-        executor = execute.get_executor(workspace, "auto", runner.language, timeout_s=timeout_s,
-                                        interpreter_root=project_root)
+        executor = execute.get_executor(workspace, sandbox_preference, runner.language, timeout_s=timeout_s,
+                                        interpreter_root=project_root, image=image)
         if executor.is_container:
             record["reason"] = "line measurement is not implemented for container backends"
             return record
