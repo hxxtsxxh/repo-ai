@@ -400,10 +400,11 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "positioning: local verifier that names what tests do not pin; live evidence includes a local-model false assurance that a hidden oracle caught and that repo-ai labelled ASSURANCE_PARTIAL; requirement-erasure detection (PR #7) built from it"
+    "positioning: local verifier that names what tests do not pin; live evidence includes a local-model false assurance that a hidden oracle caught and that repo-ai labelled ASSURANCE_PARTIAL; requirement-erasure detection (PR #7) built from it",
+    "2026-11-02 public comparison page (site docs/compare): what repo-ai adds next to pytest-testmon, jest --onlyChanged / vitest related, pytest --lf, containers and agent CLIs; where it is worse, each linked to a measurement (speed-v1 1.84-2.23x slower; Jest/Vitest/Mocha full-suite only; agent benefit NOT_YET_DEMONSTRATED in the 150-run blinded study; no Windows host sandbox); and the idea selection with rejected alternatives (docs/ARCHITECTURE-DECISION-0.8.md: ten candidate problems scored on impact, frequency, offline feasibility, open space and measurability; prior art in docs/RESEARCH-2026-10.md). Persona and non-claims: site docs/index"
    ],
    "limits": [],
-   "next_action": "positioning after features land"
+   "next_action": "measured usefulness for the persona beyond verify's held-out qualification (a developer-facing study, e.g. time to a correct pre-push answer), once a protocol and budget exist"
   },
   {
    "id": "C23",

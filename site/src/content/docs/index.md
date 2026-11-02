@@ -34,6 +34,7 @@ works without the ones after it.
 2. [Quickstart](/repo-ai/docs/quickstart/) — index a repository and verify a change, no agent needed.
 3. [Verify a change](/repo-ai/docs/verify/) — the plan, the sandboxed run and the evidence it keeps.
 4. [Status matrix](/repo-ai/docs/status/) — what is stable, experimental or unsupported, and why.
+5. [Compared with other tools](/repo-ai/docs/compare/) — what it adds, where it is worse, and how the idea was chosen.
 
 If you want agents in the loop, read [Missions with agents](/repo-ai/docs/missions/) and
 [Providers](/repo-ai/docs/providers/) before running anything live.
