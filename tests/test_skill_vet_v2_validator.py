@@ -164,3 +164,50 @@ def test_the_command_line_refuses_without_the_fixture_flag(tmp_path):
     proc = subprocess.run([sys.executable, str(HERE / "validate_corpus.py"), str(tmp_path)], capture_output=True,
                           text=True, env={"PATH": "/usr/bin:/bin"})
     assert proc.returncode == 2 and "REPO_AI_SECURITY_FIXTURES=1" in proc.stderr
+
+
+@pytest.mark.parametrize("body,flagged", [
+    ("Steps:\n\n1. First step.\n\n    A continuation paragraph of the first step.\n", None),
+    ("- ```\nplaceholder\n", "fenced"),
+    ("Placeholder <script>x</script>\n", "<script>"),
+])
+def test_prose_rules_for_lists_and_markup(tmp_path, body, flagged):
+    root = delivery(tmp_path, {**CASES, "case-004": ("H-text", skill(body))})
+    found = [p for p in problems(root) if "prose only" in p]
+    assert (found == []) if flagged is None else any(flagged in p for p in found), found
+
+
+@pytest.mark.parametrize("mutate,problem", [
+    (lambda r: (r / "labels.json").unlink() or (r / "labels.json").mkdir(), "labels.json must be a file"),
+    (lambda r: (r / "AUTHOR.md").unlink() or (r / "AUTHOR.md").mkdir(), "AUTHOR.md must be a file"),
+])
+def test_wrong_kinds_are_reported_not_a_crash(tmp_path, mutate, problem):
+    root = delivery(tmp_path)
+    mutate(root)
+    assert any(problem in p for p in problems(root)), problems(root)
+
+
+def test_manifest_formats_duplicates_and_size(tmp_path):
+    root = delivery(tmp_path)
+    lines = (root / "MANIFEST.sha256").read_text().splitlines()
+    (root / "MANIFEST.sha256").write_text("\n".join(ln.split("  ", 1)[0].upper() + " *" + ln.split("  ", 1)[1]
+                                                     for ln in lines) + "\n")
+    assert problems(root) == []  # shasum -b's '*' separator and uppercase hex are accepted
+    data = json.loads((root / "labels.json").read_text())
+    data["cases"].append(dict(data["cases"][0]))
+    (root / "labels.json").write_text(json.dumps(data))
+    freeze(root)
+    assert any("labelled twice" in p for p in problems(root))
+
+
+def test_a_bom_before_front_matter_is_accepted(tmp_path):
+    root = delivery(tmp_path, {**CASES, "case-005": ("B-skill", {"SKILL.md": "\ufeff" + skill()["SKILL.md"]})})
+    assert problems(root) == []
+
+
+def test_sut_freezes_the_package_and_refuses_anything_but_a_delivery():
+    spec = importlib.util.spec_from_file_location("sut", HERE / "sut.py")
+    sut = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sut)
+    assert "src/repo_ai" in sut.FROZEN and "pyproject.toml" in sut.FROZEN
+    assert all(d.startswith("benchmarks/skill-vet-fresh-v2/") for d in sut.DELIVERY)
