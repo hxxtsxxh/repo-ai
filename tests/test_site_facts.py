@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -51,6 +52,8 @@ def _build(matrix, providers, *, distribution="repo-ai-cli", version=None, tag=N
     return site_facts.build_facts(matrix=matrix, providers=providers, dist=dist, version=version, tag=tag)
 
 
+@pytest.mark.skipif(os.environ.get("GITHUB_REF", "").startswith("refs/tags/v"),
+                    reason="CI on a release tag: the PyPI read is recorded after the publish, in a follow-up PR")
 def test_committed_release_facts_are_current():
     proc = subprocess.run(
         [sys.executable, str(SCRIPT), "--check"], cwd=ROOT, capture_output=True, text=True, timeout=120
