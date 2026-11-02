@@ -855,7 +855,7 @@ map developer-declared requirements to the tests that observed them; no executio
 | `-v`, `--verbose` | more detail; on an error, print the traceback |
 | `-q`, `--quiet` | less output |
 | `id` | single candidate mission ID |
-| `--requirements` `FILE` | **required.** JSON {schema: repo-ai.requirements/1, requirements: [{text, kind: change\|preserve, tests: [ids]}]} |
+| `--requirements` `FILE` | JSON {schema: repo-ai.requirements/1, requirements: [{text, kind: change\|preserve, tests: [ids]}]}; default: the declaration frozen with the mission (`do --requirements`) |
 | `--json` | machine-readable JSON output |
 
 ## `repo-ai undo`
@@ -924,6 +924,7 @@ plan an outcome offline; run an isolated replay or authorized live provider cand
 | `--test-command` `TEST_COMMAND` | one of `python -m pytest`, `node --test` |
 | `--expect-fix` `TEST` | a test id the task must fix (repeatable; e.g. tests/test_x.py::test_y). With it, tests that already fail at the base and are not declared may keep failing; they are listed, and the result is PASS_WITH_PRE_EXISTING_FAILURES, never a plain whole-suite PASS |
 | `--role` `ROLE` | opt-in separate read-only provider process; refused for trivial changes; advisory, never a verdict (one of `investigator`, `adversary`) |
+| `--requirements` `FILE` | requirement -&gt; test declaration (repo-ai.requirements/1) frozen with the mission before it runs (needs --run); `repo-ai coverage ID` then assesses it and says it was declared before this run |
 | `--resume` `ID` | inspect/recover an interrupted checkpoint; no automatic model retry |
 
 ## `repo-ai agents`

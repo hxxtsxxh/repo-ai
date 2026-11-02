@@ -52,6 +52,10 @@ def load_requirements(path: Path) -> dict[str, Any]:
         data = json.loads(raw.decode('utf-8'))
     except (UnicodeDecodeError, ValueError) as exc:
         raise ValueError('requirements file is not valid JSON') from exc
+    return _validated(data)
+
+
+def _validated(data: Any) -> dict[str, Any]:
     if not isinstance(data, dict) or data.get('schema') != REQ_SCHEMA or not isinstance(data.get('requirements'), list):
         raise ValueError(f'requirements file must be an object with schema {REQ_SCHEMA!r} and a requirements list')
     items = data['requirements']
@@ -71,6 +75,51 @@ def load_requirements(path: Path) -> dict[str, Any]:
             raise ValueError(f'tests must be a list of up to {MAX_TESTS} test ID strings')
         clean.append({'text': text.strip(), 'kind': kind, 'tests': list(dict.fromkeys(t.strip() for t in tests))})
     return {'requirements': clean, 'sha256': digest(clean)}
+
+
+def freeze(path: Path) -> dict[str, Any]:
+    """The declaration as stored with a mission plan (before it runs)."""
+    decl = load_requirements(path)
+    return {'schema': REQ_SCHEMA, 'requirements': decl['requirements'], 'sha256': decl['sha256']}
+
+
+def _frozen(state: dict[str, Any]) -> tuple[dict[str, Any] | None, str]:
+    """(declaration, problem): the frozen declaration re-validated by the same rules as a file, or why it was not
+    used. The digest is unkeyed: it catches accidental edits, not someone who rewrites the local store."""
+    raw = (state.get('plan') or {}).get('requirements') if isinstance(state.get('plan'), dict) else None
+    if raw is None:
+        return None, ''
+    try:
+        decl = _validated({'schema': REQ_SCHEMA, 'requirements': raw.get('requirements') if isinstance(raw, dict) else None})
+    except ValueError as exc:
+        return None, f'the frozen declaration is malformed ({exc})'
+    if decl['sha256'] != raw.get('sha256'):
+        return None, 'the frozen declaration does not match its recorded digest'
+    return decl, ''
+
+
+def _prior_runs(root: Path, state: dict[str, Any]) -> list[str]:
+    """Earlier missions on the same source with the same proposal or the same candidate diff: their outcomes were
+    visible before this one froze its declaration, so "frozen before this mission ran" says nothing about what was
+    already known. Only missions still in this store are seen."""
+    from .ledger import Store
+    store = Store(root)
+    me, source = state.get('id'), (state.get('source') or {}).get('fingerprint')
+    started = state.get('attempt_started_at') or 0
+    out: list[str] = []
+    for path in sorted(store.folder.glob('*.json'))[:64] if store.folder.is_dir() else []:
+        if path.stem == me:
+            continue
+        try:
+            other = store.load(path.stem)
+        except (ValueError, OSError):
+            continue
+        same_change = (other.get('proposal_sha256') == state.get('proposal_sha256')
+                       or (bool(state.get('diff_sha256')) and other.get('diff_sha256') == state.get('diff_sha256')))
+        if ((other.get('source') or {}).get('fingerprint') == source and same_change
+                and (other.get('attempt_started_at') or 0) < started and 'candidate' in other):
+            out.append(path.stem)
+    return out
 
 
 def _resolve(test: str, known: set[str]) -> tuple[str | None, str | None]:
@@ -200,9 +249,22 @@ def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, 
                        'not frozen with the mission, so it can be written after the outcomes are known.']}
 
 
-def for_mission(root: Path, mission: str, decl: dict[str, Any]) -> dict[str, Any]:
+def for_mission(root: Path, mission: str, decl: dict[str, Any] | None = None) -> dict[str, Any]:
+    """`decl` None: the declaration frozen with the mission (`do --requirements`). A supplied one is marked as
+    written at assessment time unless it is byte-for-byte the frozen one."""
     from .runtime import status
     state = status(root.resolve(), mission)
+    frozen, problem = _frozen(state)
+    if decl is None:
+        if frozen is None:
+            raise ValueError((problem + '; ' if problem else '') + 'no requirements declaration: pass --requirements '
+                             'FILE, or freeze one when planning (repo-ai do ... --requirements FILE)')
+        decl = frozen
+    declared = 'FROZEN_WITH_MISSION' if frozen is not None and frozen['sha256'] == decl['sha256'] \
+        else 'SUPPLIED_AT_ASSESSMENT'
+    prior = _prior_runs(root.resolve(), state) if declared == 'FROZEN_WITH_MISSION' else []
+    if prior:
+        declared = 'FROZEN_AFTER_PRIOR_RUN'
     if state.get('kind') == 'comparison' or 'candidate' not in state or 'baseline' not in state:
         raise ValueError('coverage needs a single candidate mission with recorded baseline and candidate runs '
                          '(for a tournament, pass a candidate ID from the shortlist)')
@@ -214,6 +276,21 @@ def for_mission(root: Path, mission: str, decl: dict[str, Any]) -> dict[str, Any
     report = assess(decl, base, cand, verdict=state['effective_verdict'], freshness=state['freshness'],
                     exercise=exercise, pre_existing=[str(t) for t in (scoped.get('pre_existing_failures') or [])])
     report['mission'] = mission
+    report['declaration'] = declared
+    if declared in {'FROZEN_WITH_MISSION', 'FROZEN_AFTER_PRIOR_RUN'}:
+        report['limits'] = [x for x in report['limits'] if 'not frozen with the mission' not in x] + [
+            'The declaration was frozen before this mission ran; it says nothing about outcomes known from earlier runs '
+            'or local test runs. Its digest is unkeyed: it catches accidental edits, not someone who rewrites the '
+            'local mission store.']
+    if prior:
+        report['prior_runs'] = prior
+        report['limits'].append('Earlier missions on the same source and proposal had already recorded outcomes '
+                                '(' + ', '.join(prior[:3]) + '): the declaration may have been written knowing them.')
+    if frozen is not None and declared == 'SUPPLIED_AT_ASSESSMENT':
+        report['limits'].append('A different declaration was frozen with this mission; this report assesses the '
+                                'one supplied now.')
+    if problem:
+        report['limits'].append('Not used: ' + problem + '.')
     return report
 
 
@@ -227,6 +304,11 @@ def display_test_id(test: str) -> str:
 def render(report: dict[str, Any]) -> str:
     lines = [f"Acceptance coverage for {report.get('mission', 'mission')}: {report['headline']} "
              f"(task correctness: {report['task_correct']})"]
+    if report.get('declaration'):
+        lines.append('Declaration: ' + {'FROZEN_WITH_MISSION': 'frozen before this mission ran',
+                                        'FROZEN_AFTER_PRIOR_RUN': 'frozen before this mission ran, but after earlier '
+                                                                  'runs of the same change',
+                                        'SUPPLIED_AT_ASSESSMENT': 'supplied now, after the run'}[report['declaration']])
     for row in report['requirements']:
         lines.append(f"  [{row['status']}] ({row['kind']}) {json.dumps(row['text'], ensure_ascii=True)}")
         lines.append('      ' + row['detail'])
