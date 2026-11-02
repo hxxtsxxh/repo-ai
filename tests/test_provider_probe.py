@@ -299,3 +299,29 @@ def test_linux_probe_binds_back_a_real_agent_directory(tmp_path: Path, monkeypat
     assert prefix is not None
     ro = [prefix[i + 1] for i, a in enumerate(prefix) if a == "--ro-bind"]
     assert ro == ["/", str(bins), str(agent)]
+
+
+def test_has_socket_walks_the_subtree_with_a_limit(tmp_path):
+    (tmp_path / "a" / "b").mkdir(parents=True)
+    (tmp_path / "a" / "b" / "f").write_text("x")
+    assert d._has_socket(str(tmp_path)) is False
+    for i in range(5):
+        (tmp_path / f"f{i}").write_text("x")
+    assert d._has_socket(str(tmp_path), limit=3) is True  # too many entries to check: not bound back
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="unix socket check runs in CI (Linux)")
+def test_has_socket_finds_a_nested_unix_socket():
+    import socket
+    import tempfile
+    folder = Path(tempfile.mkdtemp(prefix="rai-sock-", dir="/tmp"))
+    (folder / "u").mkdir()
+    srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        srv.bind(str(folder / "u" / "s"))  # like /run/user/<uid>/bus under /run/user
+        assert d._has_socket(str(folder)) is True
+    finally:
+        srv.close()
+        (folder / "u" / "s").unlink(missing_ok=True)
+        (folder / "u").rmdir()
+        folder.rmdir()
