@@ -80,3 +80,30 @@ def test_these_workflows_do_not_persist_the_checkout_token(name):
     text = (WORKFLOWS / name).read_text()
     checkouts = re.findall(r"- uses: actions/checkout@v4\n((?: {8,}.*\n)*)", text)
     assert checkouts and all("persist-credentials: false" in c for c in checkouts)
+
+
+def test_a_long_licence_line_is_read_in_overlapping_windows():
+    line = "".join(chr(97 + i % 26) for i in range(5000))
+    wins = firewall._windows(line)
+    assert all(len(w) <= firewall.MAX_SCAN_LINE for w in wins)
+    assert wins[0] == line[:firewall.MAX_SCAN_LINE] and line.endswith(wins[-1])
+    # any span of up to half a window lies wholly inside one window
+    span = firewall.MAX_SCAN_LINE // 2
+    for start in range(0, len(line) - span, 37):
+        assert any(line[start:start + span] in w for w in wins)
+    assert firewall._windows("short") == ["short"]
+
+
+@pytest.mark.parametrize("rel", ["LICENSE", "fonts/LICENSE"])
+def test_a_licence_with_one_long_paragraph_is_not_an_overlong_code_line(tmp_path, monkeypatch, rel):
+    monkeypatch.setenv("REPO_AI_HOME", str(tmp_path / "rh"))
+    skill = tmp_path / "long-licence"
+    (skill / "fonts").mkdir(parents=True)
+    (skill / "SKILL.md").write_text("---\nname: long-licence\ndescription: \"Summarise a failing test run.\"\n"
+                                    "---\n# Steps\n\n1. Read the output.\n", encoding="utf-8")
+    (skill / rel).write_text("Permission is hereby granted, free of charge, to any person obtaining a copy "
+                             * 40 + "\n", encoding="utf-8")
+    dest, files, prior = firewall.quarantine_local(skill, skill.name)
+    report = firewall.inspect(dest, files, {"id": "local/long-licence", "name": skill.name, "path": skill.name},
+                              {}, prior)
+    assert not [f.rule for f in report.findings if f.path == rel and f.severity in ("high", "critical")]
