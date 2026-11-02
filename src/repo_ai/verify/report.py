@@ -7,6 +7,7 @@ import re
 
 from typing import Any
 
+from . import evidence
 from .select import Plan
 
 CONF_TEXT = {
@@ -285,9 +286,12 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
             out.append(f"         {tid}: at the base {str(m.get('base'))[:70]!r}, now {str(m.get('now'))[:70]!r}")
     for r in (rows[t] for t in s.get("unverified") or []):
         out.append(f"  SKIP {r['test']}: {r['unverified']}")
+    runner_missing = str(rec.get("verdict") or "").startswith(evidence.RUNNER_MISSING_PREFIX)
     if s["pre_existing"]:
-        out.append("  already failing at the base, so not caused by this change: "
-                   + ", ".join(s["pre_existing"][:6]) + (" …" if len(s["pre_existing"]) > 6 else ""))
+        # with no runner, nothing failed "at the base": the test files simply could not be run
+        label = ("  could not run (no test runner): " if runner_missing
+                 else "  already failing at the base, so not caused by this change: ")
+        out.append(label + ", ".join(s["pre_existing"][:6]) + (" …" if len(s["pre_existing"]) > 6 else ""))
     net = s.get("sandbox_network_suspected") or []
     if net:
         out.append("  some failures in these files look like the sandbox's denied network (verify runs tests "
