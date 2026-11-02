@@ -134,6 +134,10 @@ def cmd_do(args) -> int:
     from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, plan
     if args.run and args.dry_run:
         raise ValueError('--run and --dry-run are mutually exclusive')
+    if getattr(args, 'requirements', None) and (args.resume or getattr(args, 'from_handoff', None)
+                                                 or getattr(args, 'tournament', None) or not args.run):
+        raise ValueError('--requirements is frozen with a new single mission run: it needs --run and is not '
+                         'supported with --resume, --from-handoff or --tournament')
     if args.resume:
         args.id = args.resume
         args.action = 'resume'
@@ -185,10 +189,11 @@ def cmd_do(args) -> int:
         roles=args.role,
         expect_fix=args.expect_fix,
     )
+    frozen_now = None
     if getattr(args, 'requirements', None):
         # frozen with the mission record before anything runs, so `coverage` can show it was not written afterwards
         from .coverage import freeze
-        value['requirements'] = freeze(Path(args.requirements))
+        value['requirements'] = frozen_now = freeze(Path(args.requirements))
     if args.run:
         if args.candidate:
             if args.replay:
@@ -211,6 +216,15 @@ def cmd_do(args) -> int:
             raise ValueError(
                 'live provider execution requires --allow-live-provider (or use --agent replay --replay FILE for simulated execution)'
             )
+        frozen_sha = frozen_now['sha256'] if frozen_now else None
+        wanted = bool(frozen_sha) and value.get('schema') != 'repo-ai.candidate-comparison/1' and (
+            ((value.get('plan') or {}).get('requirements') or {}).get('sha256') == frozen_sha)
+        if getattr(args, 'requirements', None) and value.get('schema') != 'repo-ai.candidate-comparison/1' and not wanted:
+            # the same mission was already recorded (same contract, proposal and source): it ran without this
+            # declaration, so nothing was frozen; say so rather than pretend
+            raise ValueError(f"mission {value.get('id')} was already recorded without this declaration, so "
+                             '--requirements was not frozen; `repo-ai coverage ID --requirements FILE` assesses it '
+                             'as supplied after the run')
         if getattr(args, 'apply', False) and value.get('effective_verdict', value.get('verdict')) == 'PASS':
             target_id = value.get('winner') if value.get('schema') == 'repo-ai.candidate-comparison/1' else value.get('id')
             if target_id:
@@ -663,8 +677,8 @@ def register(sub, common) -> None:
     p.add_argument('--role', action='append', default=[], choices=['investigator', 'adversary'],
                    help='opt-in separate read-only provider process; refused for trivial changes; advisory, never a verdict')
     p.add_argument('--requirements', metavar='FILE',
-                   help='requirement -> test declaration (repo-ai.requirements/1) frozen with the mission before it runs; '
-                        '`repo-ai coverage ID` then assesses it and shows it was declared in advance')
+                   help='requirement -> test declaration (repo-ai.requirements/1) frozen with the mission before it runs '
+                        '(needs --run); `repo-ai coverage ID` then assesses it and says it was declared before this run')
     p.add_argument('--resume', metavar='ID', help='inspect/recover an interrupted checkpoint; no automatic model retry')
     p.set_defaults(func=cmd_do)
     p = sub.add_parser('agents', parents=[common], help='local provider availability; doctor runs sandboxed help/version only')
