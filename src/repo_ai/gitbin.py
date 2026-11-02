@@ -65,3 +65,11 @@ def git() -> str:
         return str(target)
     except (OSError, RuntimeError):
         return "git"
+
+
+def no_user_config_env(empty_home: str) -> dict[str, str]:
+    """The environment for git over a directory an agent could write: no user or system configuration (so no
+    filter driver, fsmonitor or alias configured on the host can be named by the agent's files) and no lazy fetch.
+    `empty_home` is an empty directory: older git (before 2.32) ignores GIT_CONFIG_GLOBAL and reads $HOME."""
+    return {**os.environ, "HOME": empty_home, "USERPROFILE": empty_home, "XDG_CONFIG_HOME": empty_home,
+            "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1", "GIT_NO_LAZY_FETCH": "1"}
