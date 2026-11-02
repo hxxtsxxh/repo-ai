@@ -252,6 +252,12 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     out: list[str] = [_HEADLINE.get(verdict, "NOT VERIFIED: " + verdict.split(": ", 1)[1]
                                     if verdict.startswith("not verified: ") else verdict.upper())]
     rows = {r["test"]: r for r in rec.get("results") or []}
+    runner_missing = verdict.startswith(evidence.RUNNER_MISSING_PREFIX)
+    if runner_missing:  # no test ran: every failed file is "could not run", none is new or pre-existing
+        stuck = [r["test"] for r in rows.values() if r["status"] not in {"pass", "no-tests"}]
+        out.append("  could not run (no test runner): " + ", ".join(stuck[:6]) + (" …" if len(stuck) > 6 else ""))
+        s = {**s, "new_failures": [], "pre_existing": [], "unconfirmed": [], "not_compared": [],
+             "failing_differently": []}
     new = [rows[x["test_file"]] for x in s["new_failures"]]
     # one cause, many files (an import that now fails): say it once
     by_msg: dict[str, list[dict[str, Any]]] = {}
@@ -286,12 +292,9 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
             out.append(f"         {tid}: at the base {str(m.get('base'))[:70]!r}, now {str(m.get('now'))[:70]!r}")
     for r in (rows[t] for t in s.get("unverified") or []):
         out.append(f"  SKIP {r['test']}: {r['unverified']}")
-    runner_missing = str(rec.get("verdict") or "").startswith(evidence.RUNNER_MISSING_PREFIX)
     if s["pre_existing"]:
-        # with no runner, nothing failed "at the base": the test files simply could not be run
-        label = ("  could not run (no test runner): " if runner_missing
-                 else "  already failing at the base, so not caused by this change: ")
-        out.append(label + ", ".join(s["pre_existing"][:6]) + (" …" if len(s["pre_existing"]) > 6 else ""))
+        out.append("  already failing at the base, so not caused by this change: "
+                   + ", ".join(s["pre_existing"][:6]) + (" …" if len(s["pre_existing"]) > 6 else ""))
     net = s.get("sandbox_network_suspected") or []
     if net:
         out.append("  some failures in these files look like the sandbox's denied network (verify runs tests "

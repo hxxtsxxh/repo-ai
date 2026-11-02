@@ -43,3 +43,37 @@ def test_a_real_failure_next_to_a_missing_runner_keeps_the_usual_verdict():
 def test_a_full_suite_that_could_not_start_counts_too():
     full = {"status": "fail", "attributed": False, "output_tail": MISSING}
     assert evidence.verdict([], full, 0, True).startswith("not verified: the test runner could not start")
+
+
+@pytest.mark.parametrize("tail", [
+    "ModuleNotFoundError: No module named 'pytest_foo'",  # the project's own plugin package, broken by the change
+    "ModuleNotFoundError: No module named 'pytest_utils'",  # a deleted test helper
+    MISSING,
+])
+def test_a_file_that_passed_at_the_base_is_a_regression_whatever_its_message(tail):
+    """Review of #89: the runner demonstrably started at the base in this environment."""
+    assert evidence.verdict([_row("tests/test_a.py", tail, baseline="pass")], None, 1, False) == "regression"
+
+
+@pytest.mark.parametrize("tail", [
+    "ModuleNotFoundError: No module named '_pytest.compat'",
+    "ModuleNotFoundError: No module named 'pytest.foo'",
+    "AssertionError: expected 'sh: jest: not found' to equal ''",
+    "E   assert 'Error: Cannot find module \\'jest\\'' == ''",
+])
+def test_submodules_and_quoted_text_are_not_a_missing_runner(tail):
+    assert evidence.runner_missing(tail) is None
+
+
+def test_the_report_lists_every_file_as_could_not_run():
+    from repo_ai.verify import report
+    rec = {"verdict": evidence.verdict([_row("tests/test_a.py", MISSING), _row("tests/test_new.py", MISSING, "absent")],
+                                       None, 2, False),
+           "results": [{**_row("tests/test_a.py", MISSING), "failing_tests": [], "failures": {}},
+                       {**_row("tests/test_new.py", MISSING, "absent"), "failing_tests": [], "failures": {},
+                        "new_failing_tests": []}]}
+    lines = report._outcome(rec, report.summarize(rec), [])
+    text = "\n".join(lines)
+    assert lines[0].startswith("NOT VERIFIED: the test runner could not start")
+    assert "could not run (no test runner): tests/test_a.py, tests/test_new.py" in text
+    assert "NEW" not in text and "already failing at the base" not in text

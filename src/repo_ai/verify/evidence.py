@@ -70,9 +70,9 @@ NOT_VERIFIED_FULL_NOT_RUN = "not verified: the full suite is required for this c
 # and with the change, which said "no new failures (all pre-existing)" although no test ran (found by the 0.11.8
 # smoke install: pytest absent from the interpreter).
 _RUNNER_MISSING = re.compile(
-    r"No module named '?(pytest_\w+|_pytest|pytest)\b'?"
-    r"|\b(pytest|jest|vitest|mocha|ava): (?:command )?not found"
-    r"|Cannot find module '(jest|vitest|mocha|ava)'")
+    r"No module named '?(pytest_\w+|_pytest|pytest)'?(?![\w.])"  # not a submodule such as _pytest.compat
+    r"|^(?:(?:/bin/)?(?:ba|z|da)?sh: (?:\d+: )?)?(pytest|jest|vitest|mocha|ava): (?:command )?not found\s*$"
+    r"|^Error: Cannot find module '(jest|vitest|mocha|ava)'", re.M)
 
 
 RUNNER_MISSING_PREFIX = "not verified: the test runner could not start"
@@ -103,7 +103,10 @@ def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected
         "pass", "not-run", None} else []
     outputs = [r.get("output_tail") or "" for r in failed] + full_out
     missing = {runner_missing(o) for o in outputs}
-    if outputs and None not in missing:
+    # a file that passed at the base ran in this same environment, so its runner did start: a failure now is the
+    # change's (a project's own `pytest_foo` package broken, a deleted helper), never "no runner"
+    ran_at_base = any(r.get("baseline") == "pass" for r in failed)
+    if outputs and None not in missing and not ran_at_base:
         # no test ran at all: not a regression, not pre-existing, not a pass
         names = ", ".join(sorted(str(m) for m in missing))
         return (f"{RUNNER_MISSING_PREFIX} in the environment verify used ({names} is not installed there); "
