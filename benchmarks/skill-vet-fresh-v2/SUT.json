@@ -1,0 +1,11 @@
+{
+ "files": {
+  "benchmarks/skill-vet-fresh-v2/run.py": "6a55e6d182a19e51810c48ca54bb29df77a78322",
+  "src/repo_ai/autonomy.py": "890fcf0e4b2fa669c84f1248f9d2a2108229cc03",
+  "src/repo_ai/capbundle.py": "f399500b6062c6acd5990d52b93ed2e5350e64c2",
+  "src/repo_ai/firewall.py": "4becd2ec57275d49863859dee5a9f21d4b7d0752",
+  "src/repo_ai/pluginvet.py": "6c6ca28f5e84f044d99f23072336c6654789075c",
+  "src/repo_ai/security.py": "4a2345318cda5d84a22d99c6ed56119d861737f2",
+  "src/repo_ai/skillcheck.py": "df1eda7a613de98946c681ab6e14b5667d9689a0"
+ }
+}
