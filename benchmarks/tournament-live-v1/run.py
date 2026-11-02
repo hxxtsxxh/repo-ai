@@ -223,7 +223,7 @@ def run(work: Path, tasks: list[str], dry: bool, log: Log) -> None:
                                   "label": graded.get("label"), "reason": graded.get("reason"),
                                   "equals_reference": (files == reference) if files is not None else None}
         if any(g["label"] == "HARNESS_ERROR" for g in grades.values()):
-            log(task_id, "graded", grades=grades, stopped="a grade failed in the harness; stopping before the next task")
+            log(task_id, "grade-error", grades=grades, why="a grade failed in the harness; stopping before the next task")
             break
         winner = report.get("winner")
         passed = [c["id"] for c in report["candidates"] if c.get("verdict") == "PASS"]
@@ -249,7 +249,7 @@ def run(work: Path, tasks: list[str], dry: bool, log: Log) -> None:
     tour = [r for r in rows if r["step"] == "tournament"]
     graded = [r for r in rows if r["step"] == "graded"]
     claude = [c for r in tour for c in (r.get("record") or {}).get("candidates", []) if c.get("provider") == "claude"]
-    log("all", "summary", tournaments=len(tour), sessions_started=2 * len([r for r in ledger()
+    log("all", "summary", tournaments=len(tour), grade_errors=[r["task"] for r in rows if r["step"] == "grade-error"], sessions_started=2 * len([r for r in ledger()
                                                                            if r["step"] == "tournament-start"]),
         t1_arbitrary_winners=sum(1 for r in graded if r["t1_arbitrary_winner"]),
         t2_mismatched_next_steps=sum(1 for r in graded if not r["t2_next_step_matches"]),
