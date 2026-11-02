@@ -135,7 +135,8 @@ def _git_show(ws: Path, rel: str, git_dir: Path | None = None) -> str:
             "show", f"HEAD:{rel}"]
     try:
         out = subprocess.run(argv, cwd=ws, capture_output=True, text=True, check=False, timeout=30,
-                             env={**os.environ, "GIT_NO_LAZY_FETCH": "1"})
+                             env={**os.environ, "GIT_NO_LAZY_FETCH": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                                  "GIT_CONFIG_NOSYSTEM": "1"})
     except (OSError, subprocess.SubprocessError):
         return ""
     return out.stdout if out.returncode == 0 else ""

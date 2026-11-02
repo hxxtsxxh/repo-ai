@@ -75,11 +75,11 @@ def test_coding_lab_reads_changes_with_the_git_dir_from_before_the_run(tmp_path)
     assert changed == ["a.py"] and untracked == ["new.py"]
 
 
-@pytest.mark.parametrize("name", ["diagnose.yml", "journey.yml", "speed.yml"])
+@pytest.mark.parametrize("name", sorted(p.name for p in WORKFLOWS.glob("*.yml")))
 def test_these_workflows_do_not_persist_the_checkout_token(name):
     text = (WORKFLOWS / name).read_text()
-    checkouts = re.findall(r"- uses: actions/checkout@v4\n((?: {8,}.*\n)*)", text)
-    assert checkouts and all("persist-credentials: false" in c for c in checkouts)
+    checkouts = re.findall(r"- uses: actions/checkout@[^\n]*\n((?: {8,}.*\n)*)", text)
+    assert all("persist-credentials: false" in c for c in checkouts), name
 
 
 def test_a_long_licence_line_is_read_in_overlapping_windows():
