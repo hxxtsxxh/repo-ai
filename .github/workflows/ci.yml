@@ -195,7 +195,35 @@ jobs:
           python -m repo_ai sandbox status
           python -m pytest -q tests/test_verify_isolation.py tests/test_verify_engine.py tests/test_verify_adaptive.py tests/test_sandbox.py
       - name: missions and providers (need the bwrap sandbox; skipped elsewhere)
-        run: python -m pytest -q tests/test_mission_*.py tests/test_provider_*.py tests/test_handoff_integrity.py tests/test_eval_integrity.py tests/test_acp_conformance.py
+        run: python -m pytest -q tests/test_mission_*.py tests/test_provider_*.py tests/test_handoff_integrity.py tests/test_eval_integrity.py tests/test_acp_conformance.py tests/test_review_row19_lows.py
+
+  sandbox-bwrap-fd:
+    # the probe sandbox's descriptor binds (`--ro-bind-fd`, bubblewrap 0.10+): the runner's bubblewrap is older, so
+    # v0.11.0 is built from its tag (commit checked) and replaces it for this job only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - name: Build bubblewrap v0.11.0 and allow unprivileged user namespaces
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q meson ninja-build libcap-dev pkg-config
+          git clone -q --depth 1 --branch v0.11.0 https://github.com/containers/bubblewrap.git "$RUNNER_TEMP/bwrap"
+          test "$(git -C "$RUNNER_TEMP/bwrap" rev-parse HEAD)" = 9ca3b05ec787acfb4b17bed37db5719fa777834f
+          meson setup "$RUNNER_TEMP/bwrap/build" "$RUNNER_TEMP/bwrap"
+          ninja -C "$RUNNER_TEMP/bwrap/build" bwrap
+          sudo install -m 0755 "$RUNNER_TEMP/bwrap/build/bwrap" /usr/bin/bwrap
+          /usr/bin/bwrap --version
+          /usr/bin/bwrap --help | grep -- --ro-bind-fd
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: probe sandbox with descriptor binds
+        env:
+          REPO_AI_EXPECT_BWRAP_FD: "1"
+        run: python -m pytest -q tests/test_review_row19_lows.py tests/test_provider_probe.py tests/test_acp_conformance.py
 
   eval-offline:
     runs-on: ubuntu-latest

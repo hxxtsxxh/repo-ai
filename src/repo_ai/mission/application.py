@@ -244,7 +244,9 @@ def apply(root: Path, mission: str) -> dict[str, Any]:
                 _replace(root, rel, base64.b64decode(item['before']), base64.b64decode(item['after']))
             rec['phase'] = 'VERIFYING'
             _save(path, rec)
-            obs = verification.observe(root, state['contract']['acceptance'][0])
+            preference, image = verification.environment(state['contract'])
+            obs = verification.observe(root, state['contract']['acceptance'][0], sandbox_preference=preference,
+                                       image=image)
             scoped = list(state['contract'].get('expect_fix') or [])
             verdict, reasons = verification.compare(state['baseline'], obs, expect_fix=scoped)
             if (verdict != 'PASS' or not obs.get('complete') or type(obs.get('ran')) is not int

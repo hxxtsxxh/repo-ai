@@ -9,6 +9,42 @@
   decision actually made (apply the winner after review; `repo-ai why` when one passed but the comparison was not
   controlled; pick either of the same code via `shortlist`; or write a test at the named definitions). The decision
   rule is unchanged: distinct passing candidates still abstain.
+- `repo-ai do --sandbox {auto,seatbelt,bwrap,podman,docker} [--image REF]`: choose where a mission runs the project's
+  tests. With podman or docker, `--image` (required) names a local image with the project's dependencies (never
+  pulled), and a src-layout project's tests import it through `PYTHONPATH=src`, as `verify` already did. The choice
+  is frozen with the mission contract: the baseline, the candidate, the regression run, `apply`'s post-apply
+  verification and `futures --rehearse` use it, a handoff continuation inherits it, and `--resume` or a continuation
+  given a different one is refused; live tournaments pass it to every arm. The change-exercise measurement stays
+  `UNMEASURED` in a container. This covers repo-ai's own test runs only: the coding agent still runs on the host in
+  its provider sandbox (Codex has a shell there; Claude Code in the isolated mode has file tools only). Before,
+  missions always chose `auto` (the host sandbox first, then a container with the default image). Contracts without
+  the options keep their digests.
+- Routing (found by routing-journey-v1, C06):
+  - An explicitly chosen live provider that hit a quota or rate limit recently is refused before it starts ("cooling
+    down until …"), instead of being called again into the same limit; automatic routing already skipped it. A
+    handoff continuation to such a provider is refused before the capsule is claimed, so it stays usable.
+  - A provider that crashed or broke its event protocol is no longer classified `budget_limit` because it reported no
+    cost; a reported cost over the ceiling still is.
+  - `do --agent auto --allow-live-provider` with no eligible provider says so ("no provider can run this mission
+    (NO_AGENT): …"); it used to say that `--allow-live-provider` was required.
+  - A malformed cooldown or observation time in the project's provider policy is ignored instead of crashing.
+- Security (queue row 19, the open lows from the 0.11.8 release review):
+  - Linux probe sandbox, with bubblewrap 0.10 or later (`--ro-bind-fd`): each directory or file bound back from a
+    hidden directory is opened one path component at a time without following a symlink, checked for sockets through
+    that descriptor, and bound by the descriptor itself. A path swapped for a symlink after it was resolved is not
+    bound (the probed program then does not run). With an older bubblewrap (Ubuntu 24.04 and 22.04 and Debian 12
+    ship 0.9, 0.6 and 0.8) the binds are by path, as before, and that race remains. Any process of the same user can
+    still add files, sockets included, inside a directory after it was checked.
+  - Skill firewall: a licence-named file (LICENSE, COPYING, NOTICE) read as code (below the skill's root, or a script)
+    whose overlong line does not read as prose (a minified script, one long token) gets the `overlong-code-line`
+    finding again. An unwrapped licence paragraph, in a language written with or without spaces, still does not.
+    Its content was, and is, scanned in overlapping windows.
+  - Coding lab: the untracked-file count (a metric; grading uses a copy) is taken against the base commit's own
+    `.gitignore` files, read from the copy of `.git` taken before the run and applied as git applies them (on an
+    untouched base it equals `git ls-files --others --exclude-standard`). A `.gitignore` the agent writes or edits no
+    longer hides the files it adds, a nested repository it creates is counted file by file, and a file name that is
+    not UTF-8 is counted instead of ending the run with an error. New files under paths the base already ignores
+    are still not counted.
 
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
