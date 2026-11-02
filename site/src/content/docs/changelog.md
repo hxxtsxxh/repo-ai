@@ -1,9 +1,25 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.11.7, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.11.8, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.11.8
+
+- **Security** the probe sandbox (`agents doctor`, `agents conformance`, the Claude preflight) no longer lets a probed
+  program reach the host's unix sockets on Linux (D-Bus, X11, docker, ssh-agent: their directories are hidden, the
+  program's own files bound back read-only), and on macOS denies preference writes, launchd jobs and every Mach
+  lookup but user and group lookups (no pasteboard, keychain, window server or notifications).
+- **Security** fixes from an independent review of 0.11.3–0.11.7: licence files are read as documentation only at a
+  skill's root and still get the code checks; the eval lab's git calls over an agent's workspace read a copy of `.git`
+  taken before the run; `verify` no longer crashes on unusual `pyproject.toml` values; workflows drop their checkout
+  token.
+- **Fixed** `handoff --verify` says when a capsule's one continuation has already been used (also for a capsule
+  exported afterwards, which verified as valid before).
+- **Evaluation** speed-v1 run 5 recorded why verify chose each strategy: 1.96× the native suite, slower on 28 of 30,
+  so still not faster; close timing estimates decide the strategy, and two calls on one state chose differently on 4
+  of 30 changes.
 
 ## 0.11.7
 
