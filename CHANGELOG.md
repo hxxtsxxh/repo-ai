@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Security (release review of 0.11.8): the coding lab's integrity check read a hidden test's baseline with
+  `git show` against the agent's workspace `.git`, which the agent can write (a lazy-fetch remote, fsmonitor or a hook
+  would have run on the host). It now reads the copy of `.git` taken before the run, with fsmonitor, hooks and lazy
+  fetching off. The probe's check for sockets in a directory it binds back now walks the subtree (a socket such as
+  `/run/user/<uid>/bus` under an exposed `/run/user` kept the directory bound); a directory with more than 2,000
+  entries, or one that cannot be read, is not bound back.
 - `repo-ai handoff --verify` on a mission whose continuation has already started now says so ("capsule already used:
   a continuation was already started from this mission (child mission …); one continuation per mission", with
   `consumed: true` and, when a well-formed child id is recorded, `consumed_by` in the JSON). Before, a capsule

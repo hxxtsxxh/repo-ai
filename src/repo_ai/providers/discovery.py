@@ -128,13 +128,27 @@ def _hidden_dirs() -> list[str]:
     return [d for d in dict.fromkeys(candidates) if os.path.isdir(d) and not os.path.islink(d)]
 
 
-def _has_socket(directory: str) -> bool:
-    """A unix socket directly inside `directory` (a runtime directory such as /run/user/<uid>): never bound back."""
+def _has_socket(directory: str, limit: int = 2000) -> bool:
+    """A unix socket anywhere under `directory` (a bind brings back the host's whole subtree, such as
+    /run/user/<uid>/bus under /run/user): never bound back. Symlinks are not followed (they resolve inside the
+    sandbox, where hidden targets stay hidden). More than `limit` entries, or one that cannot be read, counts as a
+    socket: the directory is then not bound back, only the program's own file."""
+    stack, seen = [directory], 0
     try:
-        with os.scandir(directory) as entries:
-            return any(stat.S_ISSOCK(e.stat(follow_symlinks=False).st_mode) for e in entries)
+        while stack:
+            with os.scandir(stack.pop()) as entries:
+                for e in entries:
+                    seen += 1
+                    if seen > limit:
+                        return True
+                    mode = e.stat(follow_symlinks=False).st_mode
+                    if stat.S_ISSOCK(mode):
+                        return True
+                    if stat.S_ISDIR(mode):
+                        stack.append(e.path)
     except OSError:
         return True
+    return False
 
 
 # The only Mach service a probed program may look up on macOS: user and group lookups through opendirectoryd
