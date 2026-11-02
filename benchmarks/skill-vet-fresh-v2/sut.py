@@ -18,8 +18,9 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 FROZEN = ["src/repo_ai", "pyproject.toml", "benchmarks/skill-vet-fresh-v2/run.py",
           "benchmarks/skill-vet-fresh-v2/constraints.txt", "benchmarks/skill-vet-fresh-v2/validate_corpus.py"]
-DELIVERY = ("benchmarks/skill-vet-fresh-v2/corpus/", "benchmarks/skill-vet-fresh-v2/labels.json",
-            "benchmarks/skill-vet-fresh-v2/AUTHOR.md", "benchmarks/skill-vet-fresh-v2/MANIFEST.sha256")
+DELIVERY_DIR = "benchmarks/skill-vet-fresh-v2/corpus/"
+DELIVERY_FILES = {"benchmarks/skill-vet-fresh-v2/labels.json", "benchmarks/skill-vet-fresh-v2/AUTHOR.md",
+                  "benchmarks/skill-vet-fresh-v2/MANIFEST.sha256"}
 
 
 def git(*args: str) -> str:
@@ -44,12 +45,17 @@ def main() -> int:
     if not args.check:
         raise SystemExit("--record or --check FREEZE_SHA")
     problems = []
-    frozen = json.loads(git("show", f"{args.check}:benchmarks/skill-vet-fresh-v2/SUT.json"))["objects"]
+    sut = "benchmarks/skill-vet-fresh-v2/SUT.json"
+    added = git("log", "--diff-filter=A", "--format=%H", "--", sut).splitlines()
+    if git("rev-parse", f"{args.check}^{{commit}}") not in added:
+        problems.append(f"{args.check} is not the commit that added SUT.json")
+    frozen = json.loads(git("show", f"{args.check}:{sut}"))["objects"]
     for rel, oid in frozen.items():
         if objects()[rel] != oid:
             problems.append(f"changed since the freeze: {rel}")
     changed = [p for p in git("diff", "--name-only", args.check, "HEAD").splitlines() if p]
-    problems += [f"not part of the delivery: {p}" for p in changed if not p.startswith(DELIVERY)]
+    problems += [f"not part of the delivery: {p}" for p in changed
+                 if not (p.startswith(DELIVERY_DIR) or p in DELIVERY_FILES)]
     for p in problems:
         print(p, file=sys.stderr)
     return 1 if problems else 0

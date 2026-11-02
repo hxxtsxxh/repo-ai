@@ -210,4 +210,55 @@ def test_sut_freezes_the_package_and_refuses_anything_but_a_delivery():
     sut = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sut)
     assert "src/repo_ai" in sut.FROZEN and "pyproject.toml" in sut.FROZEN
-    assert all(d.startswith("benchmarks/skill-vet-fresh-v2/") for d in sut.DELIVERY)
+    assert sut.DELIVERY_DIR.startswith("benchmarks/skill-vet-fresh-v2/")
+
+
+def test_sut_check_in_a_real_repository(tmp_path):
+    root = tmp_path / "r"
+    bench = root / "benchmarks" / "skill-vet-fresh-v2"
+    bench.mkdir(parents=True)
+    (root / "src" / "repo_ai").mkdir(parents=True)
+    (root / "src" / "repo_ai" / "m.py").write_text("x = 1\n")
+    (root / "pyproject.toml").write_text("[project]\nname = 'x'\n")
+    for name in ("run.py", "validate_corpus.py", "constraints.txt"):
+        (bench / name).write_text("# placeholder\n")
+    shutil.copy(HERE / "sut.py", bench / "sut.py")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid", "-c", "core.hooksPath=/dev/null"]
+
+    def commit(msg):
+        subprocess.run([*git, "add", "-A"], cwd=root, check=True)
+        subprocess.run([*git, "commit", "-qm", msg], cwd=root, check=True)
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True).stdout.strip()
+
+    def check(rev):
+        return subprocess.run([sys.executable, str(bench / "sut.py"), "--check", rev], capture_output=True,
+                              text=True).returncode
+
+    subprocess.run([*git, "init", "-q"], cwd=root, check=True)
+    before = commit("base")
+    subprocess.run([sys.executable, str(bench / "sut.py"), "--record"], check=True)
+    freeze = commit("freeze")
+    (bench / "corpus" / "case-001").mkdir(parents=True)
+    (bench / "corpus" / "case-001" / "SKILL.md").write_text("placeholder\n")
+    (bench / "labels.json").write_text("{}")
+    commit("delivery")
+    assert check(freeze) == 0
+    assert check(before) == 1  # not the commit that added SUT.json
+    (bench / "labels.json.bak").write_text("{}")
+    commit("not a delivery path")
+    assert check(freeze) == 1
+    (bench / "labels.json.bak").unlink()
+    (root / "src" / "repo_ai" / "m.py").write_text("x = 2\n")
+    commit("vetter changed")
+    assert check(freeze) == 1
+
+
+@pytest.mark.parametrize("text", ["Run setup.sh first", "see `deploy.sh`", "MANIFEST.in and Makefile.in",
+                                  "helper.pl", "Calculator.app", "[1]: https://docs.example.com/x", "[ab]/x"])
+def test_file_names_and_link_references_are_not_hosts(text):
+    assert [h for h in vc.hosts(text) if vc.unsafe_host(h)] == []
+
+
+def test_code_nested_in_a_list_item_is_not_prose(tmp_path):
+    root = delivery(tmp_path, {**CASES, "case-004": ("H-text", skill("1. Run:\n\n        placeholder command\n"))})
+    assert any("indented code block" in p for p in problems(root)), problems(root)

@@ -26,14 +26,14 @@ FIELDS = ("id", "stratum", "intended_harm", "observable_harm")
 URL_HOST = re.compile(r"(?i)\b[a-z][a-z0-9+.-]*://(?:[^\s/?#\\@]*@)?(\[[^\]\s]*\]|[a-z0-9._%-]+)")
 BARE_HOST = re.compile(r"(?i)(?<![\w@/.-])((?:[a-z0-9_-]+\.)+[a-z][a-z0-9-]{1,62})(?=[/:?#][^\s])")
 # a bare dotted name in prose ("send it to backup.corp.com"): only common top-level domains, so file names do not count
-PROSE_HOST = re.compile(r"(?i)(?<![\w@/.-])((?:[a-z0-9_-]+\.)+(?:com|org|net|io|dev|ai|co|app|cloud|gov|edu|info|biz|me|"
-                        r"xyz|us|uk|de|fr|jp|cn|ru|in|br|au|ca|eu|nl|se|ch|it|es|pl|kr|tv|sh|gg|so|to|ly))\b(?![\w-])")
-LOCAL = re.compile(r"(?i)(?<![\w.-])(localhost|\[[0-9a-f:.%]+\])(?=[:/])")
+PROSE_HOST = re.compile(r"(?i)(?<![\w@/.-])((?:[a-z0-9_-]+\.)+(?:com|org|net|io|dev|ai|cloud|gov|edu|info|biz|me|"
+                        r"xyz|us|uk|de|fr|jp|cn|ru|br|au|ca|eu|nl|se|ch|it|es|kr|tv|gg|so|to|ly))\b(?![\w-])")
+LOCAL = re.compile(r"(?i)(?<![\w.-])(localhost|\[[0-9a-f.%]*:[0-9a-f:.%]*\])(?=[:/])")  # an IPv6 literal has a colon
 PLACEHOLDER = re.compile(r"\{[^{}\s]{1,40}\}|<[A-Za-z_][\w-]{0,40}>|\$\{?[A-Za-z_]\w{0,40}\}?")
 EMAIL_HOST = re.compile(r"(?i)\b[a-z0-9._%+-]+@((?:[a-z0-9_-]+\.)+[a-z][a-z0-9-]{1,62})\b")
 BARE_IP = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?![\w.])")
 SAFE_HOST = re.compile(r"(?i)^(?:[a-z0-9_-]+\.)*(?:example\.com|[a-z0-9_-]+\.invalid)$")
-FILE_SUFFIXES = {"py", "md", "json", "js", "mjs", "cjs", "ts", "sh", "txt", "yml", "yaml", "toml", "cfg", "ini", "html",
+FILE_SUFFIXES = {"py", "md", "json", "js", "mjs", "cjs", "ts", "sh", "pl", "in", "app", "txt", "yml", "yaml", "toml", "cfg", "ini", "html",
                  "css", "lock", "log", "rs", "go", "rb", "java", "kt", "swift", "c", "h", "cpp", "env", "pem", "key",
                  "csv", "xml", "zip", "tar", "gz", "png", "jpg", "svg", "pdf"}
 MAX_FILE = 1_000_000
@@ -62,7 +62,7 @@ def hosts(text: str) -> list[str]:
     # a placeholder label stands for a defanged one, so a real domain behind it ({region}.realhost.com) still counts
     text = PLACEHOLDER.sub("placeholder.invalid", text)
     found = [m.group(1) for m in URL_HOST.finditer(text)]
-    found += [m.group(1) for m in PROSE_HOST.finditer(text)]
+    found += [m.group(1) for m in PROSE_HOST.finditer(text) if m.group(1).rsplit(".", 1)[-1].lower() not in FILE_SUFFIXES]
     found += [m.group(1) for m in LOCAL.finditer(text)]
     found += [m.group(1) for m in EMAIL_HOST.finditer(text)]
     found += [m.group(1) for m in BARE_HOST.finditer(text) if m.group(1).rsplit(".", 1)[-1].lower() not in FILE_SUFFIXES]
@@ -81,16 +81,19 @@ _LIST_ITEM = re.compile(r"^\s*([-*+]|\d+[.)])\s")
 def _prose_only(text: str) -> str | None:
     lines = text.replace("\r\n", "\n").split("\n")
     in_list = False
+    item_indent = 0
     for i, line in enumerate(lines):
         stripped = re.sub(r"^[\s>]*(?:(?:[-*+]|\d+[.)])\s+)?", "", line)
         if stripped.startswith(("```", "~~~")):
             return "a fenced code block"
         if _LIST_ITEM.match(line):
             in_list = True
+            item_indent = len(line) - len(line.lstrip())
         elif line.strip() and not line[:1].isspace():
             in_list = False  # a paragraph at the margin ends the list
-        if (line.startswith("    ") or line.startswith("\t")) and line.strip() and not in_list and \
-                (i == 0 or not lines[i - 1].strip()) and not _LIST_ITEM.match(line):
+        indent = len(line.expandtabs(4)) - len(line.expandtabs(4).lstrip())
+        code_at = item_indent + 8 if in_list else 4  # inside a list item, code sits four columns past its text
+        if indent >= code_at and line.strip() and (i == 0 or not lines[i - 1].strip()) and not _LIST_ITEM.match(line):
             return "an indented code block"
     if re.search(r"(?i)<\s*(pre|code|script)\b", text):
         return "a <pre>, <code> or <script> element"
