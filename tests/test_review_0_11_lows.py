@@ -61,7 +61,8 @@ def test_coding_lab_reads_changes_with_the_git_dir_from_before_the_run(tmp_path)
     ws = tmp_path / "ws"
     ws.mkdir()
     (ws / "a.py").write_text("x = 1\n")
-    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t"]
+    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t", "-c", "maintenance.auto=false",
+           "-c", "gc.auto=0"]  # no background maintenance racing the copy of .git
     subprocess.run([*git, "init", "-q"], cwd=ws, check=True)
     subprocess.run([*git, "add", "-A"], cwd=ws, check=True)
     subprocess.run([*git, "commit", "-qm", "base"], cwd=ws, check=True)
@@ -120,7 +121,8 @@ def test_integrity_reads_the_hidden_tests_baseline_from_the_pre_run_git_copy(tmp
     ws = tmp_path / "ws"
     ws.mkdir()
     (ws / "t.py").write_text("before\n")
-    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t"]
+    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t", "-c", "maintenance.auto=false",
+           "-c", "gc.auto=0"]  # no background maintenance racing the copy of .git
     subprocess.run([*git, "init", "-q"], cwd=ws, check=True)
     subprocess.run([*git, "add", "-A"], cwd=ws, check=True)
     subprocess.run([*git, "commit", "-qm", "base"], cwd=ws, check=True)
@@ -142,7 +144,8 @@ def test_coding_lab_git_ignores_the_hosts_user_git_config(tmp_path, monkeypatch)
     ws = tmp_path / "ws"
     ws.mkdir()
     (ws / "a.py").write_text("x = 1\n")
-    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t"]
+    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t", "-c", "maintenance.auto=false",
+           "-c", "gc.auto=0"]  # no background maintenance racing the copy of .git
     subprocess.run([*git, "init", "-q"], cwd=ws, check=True)
     subprocess.run([*git, "add", "-A"], cwd=ws, check=True)
     subprocess.run([*git, "commit", "-qm", "base"], cwd=ws, check=True)
