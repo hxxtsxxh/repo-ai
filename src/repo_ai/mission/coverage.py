@@ -93,7 +93,9 @@ def _row(req: dict[str, Any], known: set[str], baseline: dict[str, str], candida
         if resolved is None:
             problems.append(f'{test}: {why}')
             continue
-        observed.append({'test': resolved, 'declared': test, 'matched': 'exact' if resolved == test else 'suffix',
+        # `file::test` names the recorded `file::file::test` exactly (pytest's id repeats the file)
+        exact = resolved == test or display_test_id(resolved) == test
+        observed.append({'test': resolved, 'declared': test, 'matched': 'exact' if exact else 'suffix',
                          'baseline': baseline.get(resolved, 'absent'), 'candidate': candidate.get(resolved, 'absent')})
     if problems:
         return {**req, 'status': 'MISSING_TEST', 'detail': '; '.join(problems), 'observed': observed}

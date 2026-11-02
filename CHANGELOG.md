@@ -7,9 +7,9 @@
     `VERIFIED_*` and left out of `follow_up_test_needed`. It is now `UNVERIFIED_STALE` or `UNVERIFIED_INCONCLUSIVE`
     (what the tests showed kept as `observed_status`).
   - Changed executable lines no frozen test ran (the mission's change-exercise measurement), and failures a scoped
-    mission accepted as pre-existing, are listed under `other_obligations` and keep the headline at
+    mission accepted as pre-existing, are listed under `other_obligations` and keep the headline at most
     `ACCEPTANCE_PARTIAL`; before, `ACCEPTANCE_MAPPED_ALL` could stand next to them.
-  - A bare test name matched to a test in another file is flagged in its row; one test mapped to several
+  - A declared test that matched only by its trailing name (not `file::test`) is flagged in its row; one test mapped to several
     requirements is listed under `shared_tests`; a failing mapped test is no longer reported as `NOT_OBSERVED`
     because another mapped test was skipped.
 - `handoff --verify`: a capsule exported after its mission's continuation started no longer also reports "stored
