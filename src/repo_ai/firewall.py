@@ -460,21 +460,15 @@ MAX_SCAN_LINE = 2_000  # longer lines are cut for these patterns (a SKILL.md lin
 
 
 _LICENCE_NAMES = {"LICENSE", "COPYING", "NOTICE"}
-_RUN_NAME = re.compile(r"(?i)(?:\b(?:ba|z|k|da)?sh|\bpython[0-9.]*|\bnode|\bsource|\bexec|\beval|^\.|\s\.)\s+(?:\./)?"
-                       r"(LICENSE|COPYING|NOTICE)\b|\./(LICENSE|COPYING|NOTICE)\b", re.M)
 
 
-def run_names(skill_md: str) -> frozenset[str]:
-    """Licence or notice names that SKILL.md hands to an interpreter or runs (`bash NOTICE`, `./LICENSE`)."""
-    return frozenset((m.group(1) or m.group(2)).upper() for m in _RUN_NAME.finditer(skill_md))
-
-
-def _licence_doc(path: str, text: str, run: frozenset[str] = frozenset()) -> bool:
-    """A licence or notice file read as documentation: only at the skill's root, never a script (a shebang) and never
-    one SKILL.md runs, so `scripts/notice`, a `#!` NOTICE and `bash LICENSE` keep the code rules."""
+def _licence_doc(path: str, text: str, *, executed: bool = False) -> bool:
+    """A licence or notice file whose lines are read as documentation (described commands one level lower): only at
+    the skill's root, never a script (a shebang, after a byte-order mark) and never a file known to be executed.
+    `inspect` still applies the code rules to it, since a skill can run any of its files by a route no text shows."""
     p = PurePosixPath(path)
-    name = p.name.upper()
-    return len(p.parts) == 1 and name in _LICENCE_NAMES and name not in run and not text.startswith("#!")
+    return (not executed and len(p.parts) == 1 and p.name.upper() in _LICENCE_NAMES
+            and not text.lstrip("\ufeff").startswith("#!"))
 
 
 def code_risks(code: str) -> list[tuple[str, str, str]]:
@@ -780,10 +774,11 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
 
     # 2./3. instructions and code, line by line
     hosts: dict[str, str] = {}
-    run = run_names(texts.get("SKILL.md", ""))
     for path, text in texts.items():
-        # licence and notice files are installed with an inert skill, so their text is read as documentation
-        is_doc = path.endswith((".md", ".txt")) or _licence_doc(path, text, run)
+        # licence and notice files are installed with an inert skill, so their text is read as documentation; the
+        # instruction and injection checks apply to every licence-named file, and the code rules to the root ones
+        licence = _licence_doc(path, text)
+        is_doc = path.endswith((".md", ".txt")) or licence or PurePosixPath(path).name.upper() in _LICENCE_NAMES
         ext = PurePosixPath(path).suffix.lower()
         # one leading byte-order mark is an encoding signature, not hidden text
         # (editors and Anthropic's own docx skill write it); any other is flagged
@@ -803,9 +798,9 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
         if is_doc:
             for rule, at, snip in instruction_risks(text):
                 findings.append(Finding("high", "suspected", "instruction-risk", rule, path, at, snip))
-        contexts = line_contexts(path, text, run)
+        contexts = line_contexts(path, text)
         raw_lines = text.splitlines()
-        code = "\n".join(ln for ln, c in zip(raw_lines, contexts, strict=False) if c == "code")
+        code = "\n".join(ln for ln, c in zip(raw_lines, contexts, strict=False) if c == "code" or licence)
         for category, rule, evidence in code_risks(code):
             sev = "critical" if rule == "reverse-shell" else "high"
             findings.append(Finding(sev, "suspected", category, rule, path, 0, evidence))
@@ -832,7 +827,7 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                 findings.append(Finding("high", "suspected", "obfuscation", "overlong-code-line", path, lineno,
                                         f"{len(logical.strip())} characters on one line (only the first "
                                         f"{MAX_SCAN_LINE} are read for behaviour)"))
-            if ctx == "code":
+            if ctx == "code" or licence:
                 for severity, kind, category, rule, pattern in _CODE_RULES:
                     if pattern.search(logical.strip()[:MAX_SCAN_LINE]):
                         findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
@@ -954,14 +949,14 @@ def _magic_ok(ext: str, data: bytes) -> bool:
     return data.startswith(_MAGIC.get(ext, (b"",)))
 
 
-def line_contexts(path: str, text: str, run: frozenset[str] = frozenset()) -> list[str]:
+def line_contexts(path: str, text: str, *, executed: bool = False) -> list[str]:
     """`code` | `comment` | `prose` | `inline` per line. Markdown is prose,
     except fenced or indented blocks (code) and sentences quoting inline code
     (inline: full severity, but "never run `x`" still counts as a warning);
     scripts are code except comments."""
     lines = text.splitlines()
     ext = PurePosixPath(path).suffix.lower()
-    if ext in {".md", ".txt", ".markdown", ".rst"} or _licence_doc(path, text, run):
+    if ext in {".md", ".txt", ".markdown", ".rst"} or _licence_doc(path, text, executed=executed):
         out = []
         fence = None
         for line in lines:
