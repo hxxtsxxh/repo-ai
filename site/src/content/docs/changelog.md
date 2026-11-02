@@ -11,7 +11,7 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
   startup), verify says NOT VERIFIED and lists the files as could not run. 0.11.8 headlined that "NO NEW FAILURES".
 - **Added** `repo-ai do ... --run --requirements FILE` freezes a requirement-to-test declaration with the mission;
   `repo-ai coverage MISSION_ID` then says whether it was declared before this run, after an earlier run of the same
-  change, or supplied afterwards.
+  change, or supplied afterwards (its digest catches accidental edits, not tampering).
 - **Fixed** `repo-ai coverage` after an independent review: no requirement reads as verified on a stale or
   non-PASS mission; changed code no test ran and accepted pre-existing failures are listed as obligations; a test
   matched only by name, or shared by several requirements, is flagged.

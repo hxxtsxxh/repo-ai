@@ -8,6 +8,18 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 
 ## Current state (2026-11-02)
 
+### Release 0.11.9 (verified after publication)
+
+| What | Value |
+|---|---|
+| Tag | `v0.11.9` (annotated) at `26f3988e763b2b9721180322007fa4a180dd9862`, merge of #97; pushed by the agent with the owner's authorization for this release |
+| Contents | the code changes merged after 0.11.8: #87 workspace git without host configuration and no persisted checkout tokens, #89 a missing test runner is NOT VERIFIED, #90 probe hidden directories by real path, #91 handoff snapshot, #94 coverage review fixes, #96 `do --requirements`; plus the findings of its own release-level review, fixed in #97 (two rounds) |
+| Qualification | #97 green, incl. the dispatched full CI with the macOS suite at `d4c94ac` (run 41444670896) |
+| Release workflow | run 41487187744: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
+| PyPI | <https://pypi.org/project/repo-ai-cli/0.11.9/>: wheel `ca3bc35fa442db4d1ab971be37012ac5df65c2b4d18ab28f943c0549db0cec4d`, sdist `2dddc5255e424ff314506bed8f54554389ec8564f78c8b8666ea8d5ae34e488c`; identical to the GitHub release assets and to a local clean build; the wheel rebuilt from the sdist is identical; `SHA256SUMS` OK; SLSA provenance verified for both (release.yml at `refs/tags/v0.11.9`, `26f3988`) |
+| Clean install | macOS, fresh virtualenv from the default index (no `direct_url.json`; the index wheel's hash matches): `repo-ai 0.11.9`, `init`; with pytest absent from the interpreter, `verify --run` reported NOT VERIFIED: the test runner could not start (the 0.11.8 smoke finding) |
+| Website | updated by the Pages deploy that follows this record |
+
 ### Release 0.11.8 (verified after publication)
 
 | What | Value |
@@ -18,7 +30,7 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 | Release workflow | run 41396702501: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
 | PyPI | <https://pypi.org/project/repo-ai-cli/0.11.8/>: wheel `967e659016454f9da1b8d37ddbd2f5d8fa59b592a910892d22f7bfe40a57ba8c`, sdist `d46d99aac42a2d87d2cffea27bacee414ea076884f94904dea21beb21e212b21`; identical to the GitHub release assets and to a local clean build; the wheel rebuilt from the sdist is identical; `SHA256SUMS` OK; SLSA provenance verified for both (release.yml at `refs/tags/v0.11.8`, `5662506`) |
 | Website | <https://hxxtsxxh.github.io/repo-ai/>, Pages run for main `9f3904d` (2026-11-02T07:40Z); checked 2026-11-02T10:00Z: all 20 sitemap URLs 200 over HTTPS, a real 404 for a missing page, the served pages name 0.11.8 and the site changelog has a 0.11.8 section |
-| Clean install | macOS, fresh virtualenv from the default index: `repo-ai 0.11.8`, `init`, a comment-only change gave NOTHING TO RUN. The same run found that a missing test runner was headlined "NO NEW FAILURES" (exit 1); fixed on main (#89) |
+| Clean install | macOS, fresh virtualenv from the default index: `repo-ai 0.11.8`, `init`, a comment-only change gave NOTHING TO RUN. The same run found that a missing test runner was headlined "NO NEW FAILURES" (exit 1); fixed in 0.11.9 (#89) |
 
 ### Releases since 0.11.2
 
@@ -36,13 +48,7 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 attestation, clean install); 0.11.3: PyPI = GitHub release = local build, attestation, smoke (`SHA256SUMS` not
 recorded). Details per release in ACCEPTANCE.json C20.
 
-**0.11.9** (tag `v0.11.9` at `26f3988e763b2b9721180322007fa4a180dd9862`, release run 41487187744, pushed with the
-owner's authorization) shipped everything that was on main after 0.11.8: #87, #89, #90, #91, #94, #96, plus the
-fixes from its own release-level review. Verified after publication: PyPI wheel
-`ca3bc35fa442db4d1ab971be37012ac5df65c2b4d18ab28f943c0549db0cec4d`, sdist
-`2dddc5255e424ff314506bed8f54554389ec8564f78c8b8666ea8d5ae34e488c`, identical to the GitHub assets and a local clean
-build (the wheel rebuilt from the sdist too), `SHA256SUMS` OK, SLSA provenance for both; a clean install from PyPI
-with pytest absent reported NOT VERIFIED, the 0.11.8 smoke finding fixed.
+**0.11.9** shipped the code changes merged after 0.11.8 (details in the table above).
 
 ### Providers (changes since 0.10.0)
 
