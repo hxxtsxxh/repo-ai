@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `handoff --verify`: a capsule exported after its mission's continuation started no longer also reports "stored
+  mission changed since capsule export" once the child mission is recorded; the consumed reason says it. The
+  continuation record is left out of the capsule's snapshot and checked on its own.
 - Fixed: when the test runner is missing from the environment `verify` runs in (for example `No module named
   'pytest'`), every test fails the same way at the base and with the change, and verify said "NO NEW FAILURES: every
   failure also happens at the base". It now says "NOT VERIFIED: the test runner could not start … (pytest is not
