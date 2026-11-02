@@ -242,7 +242,8 @@ def _close_all(fds: tuple[int, ...]) -> None:
 
 @functools.lru_cache(maxsize=4)
 def _bwrap_binds_fds(bwrap: str) -> bool:
-    """bubblewrap 0.8 and later bind an inherited descriptor (`--ro-bind-fd FD DEST`) without resolving a path."""
+    """bubblewrap 0.10 and later bind an inherited descriptor (`--ro-bind-fd FD DEST`): it mounts what the descriptor
+    names and aborts if the mount is not the descriptor's file (a path swapped in between)."""
     try:
         shown = subprocess.run([bwrap, "--help"], capture_output=True, text=True, timeout=10, check=False)
     except (OSError, subprocess.SubprocessError):
@@ -297,7 +298,7 @@ def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -
             # agent under /tmp still runs), then the scratch directory, writable
             # order: hidden directories; the program's directories (none holding a socket); hidden directories inside
             # those again (a bind brings back the host's whole subtree); the program's files; the scratch directory
-            # with a bubblewrap that binds descriptors, each path bound back is pinned first (`_pin`: opened without
+            # with a bubblewrap that binds descriptors (0.10 and later), each path bound back is pinned first (`_pin`: opened without
             # following a symlink), checked for sockets through that descriptor and bound by it: a path swapped for
             # a symlink after it was resolved is not bound, and the directory checked is the one bound. An older
             # bubblewrap binds by path, as before (the resolve-to-bind race stays open there)

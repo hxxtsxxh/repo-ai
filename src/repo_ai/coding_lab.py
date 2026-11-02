@@ -699,7 +699,10 @@ def _base_excludes(git: list[str], env: dict[str, str], out: Path) -> Path:
                                capture_output=True, check=False, timeout=60, env=env).stdout
         at = 0
         for rel, sha in blobs:
-            header_end = batch.index(b"\n", at)
+            header_end = batch.find(b"\n", at)
+            if header_end < 0:
+                lines = []  # truncated output: no base patterns, so every untracked file is counted
+                break
             header = batch[at:header_end].split()
             if len(header) != 3 or header[0].decode("ascii", "replace") != sha or header[1] != b"blob":
                 lines = []  # unexpected output: no base patterns, so every untracked file is counted
