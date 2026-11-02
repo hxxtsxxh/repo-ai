@@ -1291,8 +1291,10 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def _handoff_snapshot(state: dict[str, Any]) -> str:
-    # Export receipts are metadata, not part of the experiment they describe.
-    return digest({k: v for k, v in state.items() if k != 'handoff_receipts'})
+    # Export receipts are metadata, not part of the experiment they describe. The continuation record is checked on
+    # its own by verify_handoff (any started continuation makes every capsule of the mission used), so its later
+    # child id never also reads as "stored mission changed".
+    return digest({k: v for k, v in state.items() if k not in ('handoff_receipts', 'continuation_started')})
 
 
 def handoff(root: Path, mission: str, *, target_provider: str | None = None) -> dict[str, Any]:
@@ -1406,11 +1408,8 @@ def verify_handoff(root: Path, capsule_data: dict[str, Any]) -> dict[str, Any]:
             reasons.append('capsule already used: a continuation was already started from this mission ('
                            + (f'child mission {child}' if child else 'child mission not recorded')
                            + '); one continuation per mission')
-        if _handoff_snapshot(stored) != capsule.mission_snapshot_sha256:
-            only_the_continuation = started and _handoff_snapshot(
-                {k: v for k, v in stored.items() if k != 'continuation_started'}) == capsule.mission_snapshot_sha256
-            if not only_the_continuation:  # anything else changed: said separately, never hidden by the above
-                reasons.append('stored mission changed since capsule export')
+        if _handoff_snapshot(stored) != capsule.mission_snapshot_sha256:  # anything else changed, said separately
+            reasons.append('stored mission changed since capsule export')
         state = status(root, capsule.mission)
         if digest(state.get('contract', {})) != capsule.contract:
             reasons.append('capsule contract digest does not match stored mission contract')

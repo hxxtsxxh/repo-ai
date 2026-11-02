@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `handoff --verify`: a capsule exported after its mission's continuation started no longer also reports "stored
+  mission changed since capsule export" once the child mission is recorded; the consumed reason says it. The
+  continuation record is left out of the capsule's snapshot and checked on its own. Such a capsule exported by
+  0.11.8 still shows both reasons (it was already refused).
 - Security: the Linux probe sandbox compares the directories it hides by their real paths. On systems where `/home`
   links to `/var/home` (ostree), a program inside a hidden home directory (such as `~/.docker/bin`) was not bound back,
   so its probe did not run; and a hidden directory that is itself a link (`~/.ssh -> elsewhere`) now hides its target.

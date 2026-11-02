@@ -294,3 +294,20 @@ def test_capsule_mission_id_cannot_traverse_the_store(recorded, tmp_path, monkey
     assert not r.verify_handoff(root, cap)['valid']
     with pytest.raises(Exception):
         r.continue_from_handoff(root, _write(tmp_path, cap))
+
+
+def test_a_capsule_exported_after_the_continuation_gets_only_the_consumed_reason(recorded, tmp_path, monkeypatch):
+    """0.11.8 release review (L5): once the child id was recorded, such a capsule also read "stored mission changed"."""
+    root, store, state = recorded
+    path = tmp_path / 'capsule.json'
+    path.write_text(json.dumps(r.handoff(root, state['id'], target_provider='bob')))
+    monkeypatch.setattr(r, 'execute', lambda *a, **k: (_ for _ in ()).throw(RuntimeError('interrupted')))
+    with pytest.raises(RuntimeError):
+        r.continue_from_handoff(root, path)
+    later = r.handoff(root, state['id'], target_provider='bob')
+    saved = store.load(state['id'])
+    saved['continuation_started']['child_mission'] = 'd' * 24
+    store.save(saved)
+    ver = r.verify_handoff(root, later)
+    assert not ver['valid'] and ver['consumed_by'] == 'd' * 24
+    assert 'stored mission changed since capsule export' not in ver['reasons']
