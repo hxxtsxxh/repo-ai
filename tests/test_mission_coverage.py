@@ -222,3 +222,9 @@ def test_a_failure_is_not_hidden_by_a_skipped_neighbour():
     d = decl(req('deposit unchanged', ['t::a', 't::b'], 'preserve'))
     out = cov.assess(d, {'t::a': 'skip', 't::b': 'pass'}, {'t::a': 'skip', 't::b': 'fail'}, verdict='FAIL', freshness='fresh')
     assert out['requirements'][0]['status'] == 'FAILING'
+
+
+def test_the_canonical_file_and_test_form_is_not_flagged():
+    """Review of #94: `tests/test_a.py::test_neg` names `tests/test_a.py::tests/test_a.py::test_neg` exactly."""
+    row = cov.assess(NEG, B, C, verdict='PASS', freshness='fresh', exercise={'assurance': 'FULL'})['requirements'][0]
+    assert row['observed'][0]['matched'] == 'exact' and 'matched by name' not in row['detail']
