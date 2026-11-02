@@ -57,7 +57,8 @@ def _readiness(root: Path, providers: list[str], max_cost_usd: float) -> dict[st
 
 def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths: list[str] | None = None,
                     max_cost_usd: float = 0.0, max_seconds: float = 600.0, command: str = 'python -m pytest',
-                    executables: dict[str, Path] | None = None) -> dict[str, Any]:
+                    executables: dict[str, Path] | None = None, sandbox: str = 'auto',
+                    image: str = '') -> dict[str, Any]:
     """Plan only: one plan per arm plus the bounds and readiness. Starts no provider and runs no test."""
     root = root.resolve()
     names = _validate(providers)
@@ -77,7 +78,8 @@ def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths:
     arms: list[dict[str, Any]] = []
     for name in names:
         arm = plan(root, task, agent=name, write_paths=write_paths, execute_local=True, allow_live=True,
-                   max_cost_usd=per_arm_usd, max_seconds=max_seconds / len(names), command=command)
+                   max_cost_usd=per_arm_usd, max_seconds=max_seconds / len(names), command=command,
+                   sandbox=sandbox, image=image)
         arms.append({'provider': name, 'plan': arm})
     first = arms[0]['plan']
     if len({a['plan']['source']['fingerprint'] for a in arms}) != 1 or first['decision'] != 'LIVE_SINGLE_AGENT':
@@ -93,10 +95,12 @@ def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths:
 
 def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: list[str] | None = None,
                    max_cost_usd: float = 0.0, max_seconds: float = 600.0, command: str = 'python -m pytest',
-                   executables: dict[str, Path] | None = None) -> dict[str, Any]:
+                   executables: dict[str, Path] | None = None, sandbox: str = 'auto',
+                   image: str = '') -> dict[str, Any]:
     root = root.resolve()
     tplan = plan_tournament(root, task, providers, write_paths=write_paths, max_cost_usd=max_cost_usd,
-                            max_seconds=max_seconds, command=command, executables=executables)
+                            max_seconds=max_seconds, command=command, executables=executables,
+                            sandbox=sandbox, image=image)
     arms = tplan['arms']
     first = arms[0]['plan']
     if not check_privacy(root, first['contract']):
