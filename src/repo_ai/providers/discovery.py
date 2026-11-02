@@ -122,16 +122,28 @@ def _homes() -> list[str]:
     return [h for h in dict.fromkeys(homes) if h not in {"", "/", "~"}]
 
 
-_NEVER_HIDDEN = {"/", "/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc", "/proc", "/dev", "/sys", "/opt", "/nix"}
+# never hidden, nor anything inside them: the system's programs and libraries
+_SYSTEM_DIRS = ("/usr", "/bin", "/sbin", "/lib", "/lib32", "/lib64", "/libx32", "/etc", "/opt", "/nix", "/proc",
+                "/dev", "/sys", "/snap", "/gnu")
+
+
+def _never_hidden(d: str) -> bool:
+    """A directory whose hiding would hide what the probe needs: a system directory or one inside it, or `/`, `/var`,
+    `/home`, a home directory, or any of their ancestors (real paths, so `/bin -> /usr/bin` counts too)."""
+    system = {os.path.realpath(s) for s in _SYSTEM_DIRS} | set(_SYSTEM_DIRS)
+    if any(d == s or d.startswith(s.rstrip("/") + "/") for s in system):
+        return True
+    keep = {os.path.realpath(p) for p in ("/var", "/home", *_homes())} | {"/var", "/home", *_homes()}
+    return d == "/" or any(k == d or k.startswith(d.rstrip("/") + "/") for k in keep)
 
 
 def _hidden_dirs() -> list[str]:
     """Real paths, so they compare with the resolved paths bound back (on ostree systems `/home` links to
     `/var/home`) and a linked directory (`~/.ssh -> elsewhere`, `/var/run -> /run`) hides its target. A link that
-    resolves to a system directory is ignored: hiding it would hide the programs being probed."""
+    resolves to a directory the probe needs (`_never_hidden`) is ignored."""
     candidates = [*_HIDDEN_ROOTS, *(os.path.join(h, d) for h in _homes() for d in _HIDDEN_HOME)]
     real = (os.path.realpath(d) for d in candidates if os.path.isdir(d))
-    return [d for d in dict.fromkeys(real) if d not in _NEVER_HIDDEN]
+    return [d for d in dict.fromkeys(real) if not _never_hidden(d)]
 
 
 def _has_socket(directory: str, limit: int = 2000) -> bool:

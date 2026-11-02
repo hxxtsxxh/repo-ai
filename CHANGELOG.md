@@ -3,9 +3,10 @@
 ## Unreleased
 
 - Security: the Linux probe sandbox compares the directories it hides by their real paths. On systems where `/home`
-  links to `/var/home` (ostree), the probed program's own directory was not bound back (the probe did not run), and
-  a hidden directory that is itself a link (`~/.ssh -> elsewhere`) now hides its target. A link that resolves to a
-  system directory is never hidden.
+  links to `/var/home` (ostree), a program inside a hidden home directory (such as `~/.docker/bin`) was not bound back,
+  so its probe did not run; and a hidden directory that is itself a link (`~/.ssh -> elsewhere`) now hides its target.
+  A link that resolves to a system directory, into one, or to `/`, `/var`, `/home` or a home directory is never
+  hidden.
 - Security: the coding lab's git calls over an agent's workspace ignore the host's user and system git
   configuration, so a `.gitattributes` the agent wrote cannot make `git diff` run a filter driver configured
   globally (git-lfs, for one); this holds on git older than 2.32 too (an empty HOME). Every workflow checkout now drops the token from `.git/config`

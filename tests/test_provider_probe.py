@@ -256,6 +256,7 @@ def test_hidden_dirs_are_real_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     (real / "elsewhere").mkdir()
     (home / ".gnupg").symlink_to(real / "elsewhere")  # a linked agent directory
     (home / ".docker").symlink_to("/")  # resolves to a system directory: never hidden
+    (home / ".1password").symlink_to("/usr/bin")  # inside a system directory: never hidden (it holds env and sh)
     monkeypatch.setattr(d, "_homes", lambda: [str(home)])
     monkeypatch.setattr(d, "_HIDDEN_ROOTS", (str(tmp_path / "missing"),))
     assert d._hidden_dirs() == [str(real / "var-home" / "u" / ".ssh"), str(real / "elsewhere")]
@@ -330,3 +331,12 @@ def test_has_socket_finds_a_nested_unix_socket():
         (folder / "u" / "s").unlink(missing_ok=True)
         (folder / "u").rmdir()
         folder.rmdir()
+
+
+@pytest.mark.parametrize("path,never", [
+    ("/", True), ("/usr", True), ("/usr/bin", True), ("/usr/local/bin", True), ("/etc", True), ("/nix/store", True),
+    ("/var", True), ("/home", True), ("/tmp", False), ("/run", False), ("/var/tmp", False), ("/var/lib/lxd", False),
+])
+def test_never_hidden(path, never, monkeypatch):
+    monkeypatch.setattr(d, "_homes", lambda: ["/home/u"])
+    assert d._never_hidden(path) is never
