@@ -201,10 +201,15 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "coverage names unpinned requirements (0.9.0)"
+    "coverage names unpinned requirements (0.9.0)",
+    "2026-11-02 independent adversarial review of `repo-ai coverage` against C11 (calls into assess/for_mission with constructed records): green needs exact fail->pass or pass->pass on a fresh, comparable PASS (identical test ids, pinned test inputs and skip sets), outcome vocabulary allow-listed; found 3 high (VERIFIED rows and an empty follow-up list under a STALE or INCONCLUSIVE headline; no link from requirements to changed code although the mission measures which changed lines the tests ran; scoped pre-existing failures dropped), 3 medium (silent suffix binding to another file's test; one test for several requirements unflagged; the declaration is not frozen) and 4 low. Fixed in the coverage PR: rows downgraded to UNVERIFIED_*, changed code no test ran and pre-existing failures listed as other_obligations (headline at most ACCEPTANCE_PARTIAL), suffix and shared-test flags, failure-before-skip ordering"
    ],
-   "limits": [],
-   "next_action": "review"
+   "limits": [
+    "requirements map to changed code only through the mission's line-level exercise measurement (lines no frozen test ran are named), not requirement by requirement",
+    "the declaration is read when coverage runs, not frozen with the mission: it can be written after the outcomes are known (stated in the report's limits)",
+    "test-id resolution: a bare name matched by suffix is flagged, not refused; node and parametrized ids with '::' can match partially; a leaf name never matches a `describe > leaf` id"
+   ],
+   "next_action": "freeze an optional requirements declaration with the mission contract (so it is pre-registered), and map requirements to changed lines through the recorded runtime links"
   },
   {
    "id": "C12",
