@@ -105,8 +105,10 @@ def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected
     missing = {runner_missing(o) for o in outputs}
     # a file that passed at the base ran in this same environment, so its runner did start: a failure now is the
     # change's (a project's own `pytest_foo` package broken, a deleted helper), never "no runner"
-    ran_at_base = any(r.get("baseline") == "pass" for r in failed)
-    if outputs and None not in missing and not ran_at_base:
+    # (and a file or full suite that passed in this run proves the same)
+    ran = (any(r.get("baseline") == "pass" for r in failed) or any(r["status"] == "pass" for r in results)
+           or (full is not None and full.get("status") == "pass"))
+    if outputs and None not in missing and not ran:
         # no test ran at all: not a regression, not pre-existing, not a pass
         names = ", ".join(sorted(str(m) for m in missing))
         return (f"{RUNNER_MISSING_PREFIX} in the environment verify used ({names} is not installed there); "
