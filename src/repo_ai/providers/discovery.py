@@ -103,18 +103,73 @@ def _probe_env(scratch: Path) -> dict[str, str]:
     }
 
 
-def _sandbox_prefix(scratch: Path) -> list[str] | None:
-    """No supported network-denying boundary means no executable probe."""
+# Where host unix sockets live on Linux, hidden from the bubblewrap probe (`--unshare-net` cuts abstract sockets, not
+# path-based ones): D-Bus and the systemd user manager under /run, X11 and agents under /tmp, docker under /var/run,
+# WSLg's X11 and Wayland, LXD and Incus, and the per-user agent and control sockets kept in these home directories.
+# Other locations stay reachable (disclosed on the providers page).
+_HIDDEN_ROOTS = ("/tmp", "/run", "/var/run", "/var/tmp", "/mnt/wslg", "/var/lib/lxd", "/var/snap/lxd",
+                 "/var/lib/incus")
+_HIDDEN_HOME = (".ssh", ".gnupg", ".1password", ".docker")
+
+
+def _homes() -> list[str]:
+    homes = [os.path.expanduser("~")]  # $HOME, and the account's home when HOME points elsewhere (sudo -E)
+    try:
+        import pwd
+        homes.append(pwd.getpwuid(os.getuid()).pw_dir)
+    except (ImportError, KeyError, OSError):
+        pass
+    return [h for h in dict.fromkeys(homes) if h not in {"", "/", "~"}]
+
+
+def _hidden_dirs() -> list[str]:
+    candidates = [*_HIDDEN_ROOTS, *(os.path.join(h, d) for h in _homes() for d in _HIDDEN_HOME)]
+    # a tmpfs needs a real directory; a symlink such as /var/run -> /run is covered by its target
+    return [d for d in dict.fromkeys(candidates) if os.path.isdir(d) and not os.path.islink(d)]
+
+
+def _has_socket(directory: str) -> bool:
+    """A unix socket directly inside `directory` (a runtime directory such as /run/user/<uid>): never bound back."""
+    try:
+        with os.scandir(directory) as entries:
+            return any(stat.S_ISSOCK(e.stat(follow_symlinks=False).st_mode) for e in entries)
+    except OSError:
+        return True
+
+
+def _sandbox_prefix(scratch: Path, expose: tuple[Path, ...] | list[Path] = ()) -> list[str] | None:
+    """No supported network-denying boundary means no executable probe. `expose`: the files and directories the probed
+    program needs (itself, its directory, its runtime's), bound back read-only on Linux when they lie under a hidden
+    directory. A hidden directory itself is never bound back (an agent directly in /tmp is bound as a file)."""
     if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
-        # `open` (LaunchServices) and Apple events would start a program outside this sandbox, with the network
-        profile = ("(version 1)(allow default)(deny lsopen)(deny appleevent-send)(deny network*)(deny file-write*)"
+        # `open` (LaunchServices) and Apple events would start a program outside this sandbox, with the network and
+        # outside the sweep; launchd job creation is denied as well (defence in depth: on Darwin 25.5 launchd already
+        # refused `launchctl submit` from a sandboxed caller); cfprefsd writes preferences outside the scratch
+        # directory on the caller's behalf; the pasteboard is a channel to the user's other applications
+        profile = ("(version 1)(allow default)(deny lsopen)(deny appleevent-send)(deny job-creation)"
+                   "(deny user-preference-write)(deny mach-lookup (global-name \"com.apple.pasteboard.1\"))"
+                   "(deny network*)(deny file-write*)"
                    f"(allow file-write* (subpath {json.dumps(str(scratch.resolve()))}))")
         return ["/usr/bin/sandbox-exec", "-p", profile]
     if sys.platform.startswith("linux"):
         bwrap = shutil.which("bwrap", path=os.defpath)
         if bwrap:
-            return [bwrap, "--unshare-net", "--unshare-pid", "--die-with-parent", "--new-session", "--ro-bind", "/", "/",
-                    "--bind", str(scratch), str(scratch), "--proc", "/proc", "--dev", "/dev", "--"]
+            # host socket directories are hidden first; the program's own directories are bound back read-only (an
+            # agent under /tmp still runs), then the scratch directory, writable
+            # order: hidden directories; the program's directories (none holding a socket); hidden directories inside
+            # those again (a bind brings back the host's whole subtree); the program's files; the scratch directory
+            dirs = _hidden_dirs()
+            hidden = [a for d in dirs for a in ("--tmpfs", d)]
+            under = [p for p in dict.fromkeys(str(Path(x).resolve()) for x in expose)
+                     if p not in dirs and any(p.startswith(d.rstrip("/") + "/") for d in dirs)]
+            shown_dirs = [p for p in under if os.path.isdir(p) and not _has_socket(p)]
+            shown_files = [p for p in under if os.path.isfile(p)]  # regular files only (never a socket)
+            again = [d for d in dirs if any(d.startswith(p.rstrip("/") + "/") for p in shown_dirs)]
+            back = [*(a for p in shown_dirs for a in ("--ro-bind", p, p)), *(a for d in again for a in ("--tmpfs", d)),
+                    *(a for p in shown_files for a in ("--ro-bind", p, p))]
+            return [bwrap, "--unshare-net", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--die-with-parent",
+                    "--new-session", "--ro-bind", "/", "/", *hidden, *back, "--bind", str(scratch), str(scratch),
+                    "--proc", "/proc", "--dev", "/dev", "--"]
     return None
 
 
@@ -293,7 +348,9 @@ def _one(provider: str, root: Path, probe: bool) -> dict[str, Any]:
         scratch = Path(directory).resolve()
         for name in ("home", "tmp", "work", "home/.codex", "home/.gemini", "home/.claude"):
             (scratch / name).mkdir()
-        prefix = _sandbox_prefix(scratch)
+        runtime = shutil.which("node", path=os.environ.get("PATH", os.defpath))
+        node_dir = [Path(runtime).resolve().parent] if runtime else []
+        prefix = _sandbox_prefix(scratch, [resolved, resolved.parent, *node_dir])
         if prefix is None:
             profile["provenance"].append({"kind": "help_probe", "status": "NOT_RUN"})
             profile["limitations"].append("No supported network-denying probe sandbox; no subprocess was run.")
@@ -301,7 +358,6 @@ def _one(provider: str, root: Path, probe: bool) -> dict[str, Any]:
         env = _probe_env(scratch)
         # Node CLIs use /usr/bin/env node. Its installation directory is selected
         # explicitly; inherited PATH hooks, cwd entries and injected Node options are not copied.
-        runtime = shutil.which("node", path=os.environ.get("PATH", os.defpath))
         if runtime:
             runtime_path = Path(runtime).resolve()
             if not _inside(runtime_path, root) and not _inside(Path(os.path.abspath(runtime)), root):
