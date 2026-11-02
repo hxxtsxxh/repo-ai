@@ -507,6 +507,15 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
         raise ValueError('only zero-cost offline replay execution is implemented; external providers are planning-only')
     if is_live_provider and contract.max_cost_usd > 0 and not contract_for(contract.provider).enforces_hard_usd_budget:
         raise ValueError(f'{contract.provider} does not enforce a hard USD CLI budget flag; execution blocked')
+    if is_live_provider and not resume:
+        # an explicitly chosen provider that hit a quota or rate limit recently would only hit it again (automatic
+        # routing already skips it while it cools down)
+        from ..providers.registry import load_policy
+        until = float(load_policy(root)['cooldown'].get(contract.provider, 0.0))
+        if until > time.time():
+            raise ValueError(f"{contract.provider} hit a quota or rate limit recently and is cooling down until "
+                             f"{time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(until))}; another call would hit it "
+                             'again. Wait, or let routing choose another provider (--agent auto)')
     if not check_privacy(root, planned['contract']):
         raise ValueError('zone policy changed or unbound legacy contract; create a fresh plan')
     dag = decode(planned['dag'])
@@ -1221,7 +1230,11 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
                 'action': 'switch provider via handoff --to <provider> and continue with do --from-handoff <capsule.json>',
                 'reasons': negatives,
             }
-    if any(k in joined for k in ('time budget', 'cost', 'three-attempt', 'parallel budget', 'budget exhausted')):
+    # a provider that crashed or broke its event protocol also has no reported cost; the crash is the cause
+    crashed = any(k in joined for k in ('provider process exited with code', 'did not conform to structured jsonl',
+                                        'lacks a consistent terminal event'))
+    if any(k in joined for k in ('time budget', 'three-attempt', 'parallel budget', 'budget exhausted')) or (
+            'cost' in joined and not crashed):
         return {
             'category': 'budget_limit',
             'recoverable': False,
