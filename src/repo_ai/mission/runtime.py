@@ -321,7 +321,7 @@ def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] |
          execute_local: bool = False, max_cost_usd: float = 0, max_parallel: int = 1,
          max_seconds: float = 120, command: str = 'python -m pytest',
          allow_live: bool = False, roles: list[str] | None = None,
-         expect_fix: list[str] | None = None) -> dict[str, Any]:
+         expect_fix: list[str] | None = None, sandbox: str = 'auto', image: str = '') -> dict[str, Any]:
     root = root.resolve()
     if agent not in {'auto', 'none', 'replay', *LIVE_PROVIDERS}:
         raise ValueError('unknown agent')
@@ -373,6 +373,8 @@ def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] |
         policy_sha256=policy,
         roles=granted_roles,
         expect_fix=sorted(set(expect_fix or [])),
+        sandbox=sandbox,
+        image=image,
     )
     contract.validate()
 
@@ -841,7 +843,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 def regression() -> dict[str, Any]:
                     layout = resolve_layout(candidate, load_config(candidate))
                     vp, change = engine.build_plan(candidate, layout, command=contract.acceptance[0], use_runtime=False)
-                    executor = get_executor(candidate, 'auto', vp.runner.language, interpreter_root=root)
+                    executor = get_executor(candidate, contract.sandbox, vp.runner.language, interpreter_root=root,
+                                            image=contract.image)
                     try:
                         return engine.run_plan(candidate, layout, vp, change, executor,
                                                full=True, reuse=False, workers=1,
@@ -887,9 +890,11 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                             'claim': 'static relationships are hypotheses, not runtime observations'}
 
                 actions = {'context': lambda: planned['context'],
-                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
+                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root,
+                                                       sandbox_preference=contract.sandbox, image=contract.image),
                            'edit': edit_candidate,
-                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
+                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root,
+                                                        sandbox_preference=contract.sandbox, image=contract.image),
                            'review': regression}
                 if any(n['id'] == 'impact' for n in planned['dag']['nodes']):
                     actions.update(impact=impact_investigation, acceptance=acceptance_inventory)
@@ -940,7 +945,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                     from .exercise import measure as measure_exercise
                     try:
                         state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining(),
-                                                             project_root=root)
+                                                             project_root=root, sandbox_preference=contract.sandbox,
+                                                             image=contract.image)
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}
@@ -1547,6 +1553,8 @@ def _continue_verified_handoff(
         command=orig_contract['acceptance'][0],
         allow_live=allow_live and target_agent in LIVE_PROVIDERS,
         expect_fix=list(orig_contract.get('expect_fix') or []),  # a continuation keeps the declared scope exactly
+        sandbox=str(orig_contract.get('sandbox') or 'auto'),  # and the frozen test environment
+        image=str(orig_contract.get('image') or ''),
     )
     # Claim the attempt durably before any external side effect. A crash requires
     # inspecting the child; re-exporting cannot replay the parent's allowance.

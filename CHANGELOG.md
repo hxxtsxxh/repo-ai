@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- `repo-ai do --sandbox {auto,seatbelt,bwrap,podman,docker} [--image REF]`: choose where a mission runs the project's
+  tests; with podman or docker, `--image` names a local image with the project's dependencies (never pulled). The
+  choice is frozen with the mission contract, so the baseline, the candidate, the regression run, the change-exercise
+  measurement, `apply`'s post-apply verification, `futures --rehearse` and a handoff continuation all use it; live
+  tournaments pass it to every arm. Before, missions always used the host sandbox (`auto`). Contracts without the
+  options keep their digests.
+
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
 - `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.
