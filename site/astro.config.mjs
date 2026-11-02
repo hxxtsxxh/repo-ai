@@ -88,6 +88,7 @@ export default defineConfig({
             { label: 'Evidence Lab', slug: 'docs/evidence' },
             { label: 'Evaluation & methodology', slug: 'docs/evaluation' },
             { label: 'Status matrix', slug: 'docs/status' },
+            { label: 'Compared with other tools', slug: 'docs/compare' },
           ],
         },
         {
