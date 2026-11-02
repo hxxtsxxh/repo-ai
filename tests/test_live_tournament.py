@@ -94,6 +94,7 @@ def test_a_crashing_arm_forces_abstention_even_if_the_other_passes(bug, tmp_path
     report = run(bug, exes)
     assert rows(report)['codex']['verdict'] in {'BLOCKED', 'FAIL', 'INCONCLUSIVE'}
     assert report['winner'] is None
+    assert 'not controlled' in report['next_step'] and 'apply' not in report['next_step'].split('before')[0]
 
 
 def test_rewriting_the_frozen_tests_cannot_win(bug, tmp_path):
@@ -104,6 +105,7 @@ def test_rewriting_the_frozen_tests_cannot_win(bug, tmp_path):
     assert by['claude']['verdict'] != 'PASS'
     assert by['codex']['verdict'] == 'PASS'
     assert report['winner'] is None, 'one arm failed to produce an observed candidate: comparison is not controlled'
+    assert report['next_step'].startswith('one candidate passed, but the comparison was not controlled')
 
 
 def test_no_op_arm_cannot_win(bug, tmp_path):

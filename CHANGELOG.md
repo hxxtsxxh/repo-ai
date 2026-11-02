@@ -3,10 +3,12 @@
 ## Unreleased
 
 - Live tournaments (`do --tournament`): when several distinct candidates pass, the comparison now says how they
-  differ, by parsing them (nothing is run): `COSMETIC` (same files, each identical or the same Python syntax tree) or
-  `SUBSTANTIVE` with the differing definitions named (`charge.py:charge`). Every comparison carries a `next_step`
-  (apply the winner after review; pick either of the same code via `shortlist`; or write a test at the named
-  definitions). The decision rule is unchanged: distinct passing candidates still abstain.
+  differ, by rebuilding their files from the frozen commit as `shortlist` does (nothing is run): `IDENTICAL`,
+  `COSMETIC` (the same Python syntax tree), `SUBSTANTIVE` with the differing definitions named (`charge.py:charge`),
+  or `UNKNOWN` when a candidate cannot be rebuilt exactly. Each live comparison carries a `next_step` taken from the
+  decision actually made (apply the winner after review; `repo-ai why` when one passed but the comparison was not
+  controlled; pick either of the same code via `shortlist`; or write a test at the named definitions). The decision
+  rule is unchanged: distinct passing candidates still abstain.
 
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 

@@ -25,13 +25,16 @@ frozen tests**. The arms must be independent agents: two transports of one execu
 | Several **distinct** candidates pass | **abstain** (no winner) |
 | A crash, a no-op, or a baseline mismatch | abstain |
 
-When several distinct candidates pass, the live comparison says **how** they differ, without running them: `COSMETIC`
-(the same files, each identical or the same Python syntax tree: comments and formatting only, so choosing either
-changes no behaviour) or `SUBSTANTIVE`, naming the definitions that differ (`charge.py:charge`, `m.py:C.m`,
-`<module level>`; a docstring counts, since code can read it; a non-Python file is substantive whenever it differs).
-The rule above is unchanged: both still abstain. Every comparison ends with a **next step**: review and
-`repo-ai apply` the winner; for the same code, pick either via `shortlist`; for a substantive difference, write a test
-that pins the intended behaviour at the named definitions and run again, or review and apply the one you choose.
+When several distinct candidates pass, the live comparison (`do --tournament`; not the replay `--candidate` one) says
+**how** they differ, without running them. It rebuilds each candidate's files from the frozen commit, as `shortlist`
+does, and reports `IDENTICAL` (same bytes), `COSMETIC` (the same Python syntax tree: comments and formatting only, so
+nothing they compute differs, except code that reads its own source or line numbers), `SUBSTANTIVE` with the
+definitions that differ (`charge.py:charge`, `m.py:C.m`, `<module level>`; a docstring counts; a non-Python file is
+substantive whenever it differs), or `UNKNOWN` when a candidate's files cannot be rebuilt exactly (no claim). The rule
+above is unchanged: they still abstain. The comparison ends with a **next step** taken from the decision: review and
+`repo-ai apply` the winner; when one candidate passed but the comparison was not controlled, `repo-ai why`; for the
+same code, pick either via `shortlist`; for a substantive difference, write a test that pins the intended behaviour at
+the named definitions and run again, or review and apply the one you choose.
 
 There is no LLM vote, no blending of patches, and no "smaller diff wins" by default. Nothing is ever applied
 automatically: even a winner needs `repo-ai apply`.
