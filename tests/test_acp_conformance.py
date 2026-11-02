@@ -98,7 +98,7 @@ def test_the_probe_sandbox_denies_launchservices_and_isolates_processes(tmp_path
         pytest.skip("no sandbox on this host")
     if prefix[0] == "/usr/bin/sandbox-exec":  # `open` would start a program outside the sandbox, with the network
         for rule in ("(deny lsopen)", "(deny appleevent-send)", "(deny job-creation)", "(deny user-preference-write)",
-                     "(deny mach-lookup)"):
+                     "(deny mach-lookup)", "(deny mach-register)"):
             assert rule in prefix[2], rule
         # system services are denied by default; only the listed lookups are allowed, and never the pasteboard
         import re
@@ -211,16 +211,36 @@ def test_a_host_unix_socket_under_tmp_is_not_reachable_from_the_linux_probe(tmp_
         host_dir.rmdir()
 
 
-@pytest.mark.skipif(sys.platform != "darwin" or not Path("/usr/bin/pbpaste").is_file(), reason="seatbelt (macOS)")
-def test_the_macos_probe_denies_system_services_but_runs_ordinary_programs(tmp_path):
-    """Mach lookups are denied by default: the pasteboard is out of reach (only the exit status is looked at, never
-    the clipboard), while a program needing the user database and a temporary directory still runs."""
+_LOOKUP = """
+import ctypes, json, sys
+lib = ctypes.CDLL(None)
+port = ctypes.c_uint32.in_dll(lib, "bootstrap_port")
+out = {}
+for name in sys.argv[1:]:
+    p = ctypes.c_uint32(0)
+    out[name] = lib.bootstrap_look_up(port, name.encode(), ctypes.byref(p))
+print(json.dumps(out))
+"""
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="seatbelt (macOS)")
+def test_the_macos_probe_denies_mach_lookups_but_the_allowlist(tmp_path):
+    """Mach lookups are denied by default (bootstrap_look_up answers 1100, BOOTSTRAP_NOT_PRIVILEGED); only
+    PROBE_MACH_ALLOW resolves, and a program needing the user database still runs. No service is used, only looked
+    up; nothing reads the clipboard."""
     prefix = discovery._sandbox_prefix(tmp_path)
     assert prefix is not None
     env = {"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "TMPDIR": str(tmp_path)}
-    paste = subprocess.run([*prefix, "/usr/bin/pbpaste"], capture_output=True, env=env, timeout=60)
-    assert paste.returncode != 0
+    denied = ["com.apple.pasteboard.1", "com.apple.SecurityServer", "com.apple.cfprefsd.agent",
+              "com.apple.system.notification_center", "com.apple.windowserver.active"]
+    names = [*discovery.PROBE_MACH_ALLOW, *denied]
+    inside = subprocess.run([*prefix, sys.executable, "-I", "-c", _LOOKUP, *names], capture_output=True, text=True,
+                            env=env, timeout=60)
+    assert inside.returncode == 0, inside.stderr[-400:]
+    got = json.loads(inside.stdout)
+    assert all(got[n] == 0 for n in discovery.PROBE_MACH_ALLOW), got
+    assert all(got[n] == 1100 for n in denied), got
     ok = subprocess.run([*prefix, sys.executable, "-I", "-c",
-                         "import os, pwd, tempfile; pwd.getpwuid(os.getuid()); tempfile.gettempdir(); print('ok')"],
+                         "import os, pwd; print(pwd.getpwuid(os.getuid()).pw_uid == os.getuid())"],
                         capture_output=True, text=True, env=env, timeout=60)
-    assert ok.returncode == 0 and ok.stdout.strip() == "ok", ok.stderr[-400:]
+    assert ok.returncode == 0 and ok.stdout.strip() == "True", ok.stderr[-400:]
