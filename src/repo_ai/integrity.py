@@ -28,6 +28,7 @@ those are kept and reported.
 from __future__ import annotations
 
 import json
+import os
 import secrets
 import shutil
 import subprocess
@@ -126,16 +127,21 @@ def scan_transcript(lines: list[str], protected: list[str], canary: str) -> dict
     return {"access": access[:20], "attempts": attempts[:20], "canary_seen": canary_seen}
 
 
-def _git_show(ws: Path, rel: str) -> str:
+def _git_show(ws: Path, rel: str, git_dir: Path | None = None) -> str:
+    # the agent could write the workspace's .git: read the copy taken before the run when there is one, and never
+    # run a configured command (fsmonitor, hooks, a promisor remote's lazy fetch)
+    where = ["--git-dir", str(git_dir), "--work-tree", str(ws)] if git_dir is not None else []
+    argv = [gitbin.git(), *where, "-c", "core.fsmonitor=false", "-c", "core.hooksPath=" + os.devnull,
+            "show", f"HEAD:{rel}"]
     try:
-        out = subprocess.run([gitbin.git(), "show", f"HEAD:{rel}"], cwd=ws, capture_output=True, text=True,
-                             check=False, timeout=30)
+        out = subprocess.run(argv, cwd=ws, capture_output=True, text=True, check=False, timeout=30,
+                             env={**os.environ, "GIT_NO_LAZY_FETCH": "1"})
     except (OSError, subprocess.SubprocessError):
         return ""
     return out.stdout if out.returncode == 0 else ""
 
 
-def content_diagnostics(hidden: list[tuple[str, bytes]], ws: Path) -> dict[str, Any]:
+def content_diagnostics(hidden: list[tuple[str, bytes]], ws: Path, git_dir: Path | None = None) -> dict[str, Any]:
     """`hidden`: (workspace destination, hidden test bytes). Never proof."""
     identical: list[str] = []
     overlap_num = overlap_den = 0
@@ -145,7 +151,7 @@ def content_diagnostics(hidden: list[tuple[str, bytes]], ws: Path) -> dict[str, 
     corpus = "\n".join(b.decode("utf-8", "replace") for b in blobs.values())
     for dest, data in hidden:
         identical += [rel for rel, b in blobs.items() if b == data]
-        visible = {line.strip() for line in _git_show(ws, dest).splitlines()}
+        visible = {line.strip() for line in _git_show(ws, dest, git_dir).splitlines()}
         only = [line.strip() for line in data.decode("utf-8", "replace").splitlines()
                 if len(line.strip()) >= 8 and line.strip() not in visible]
         overlap_den += len(only)
@@ -156,7 +162,7 @@ def content_diagnostics(hidden: list[tuple[str, bytes]], ws: Path) -> dict[str, 
 
 
 def assess(lines: list[str], protected: list[str], canary: str, canary_root: Path | None,
-           hidden: list[tuple[str, bytes]], ws: Path) -> dict[str, Any]:
+           hidden: list[tuple[str, bytes]], ws: Path, git_dir: Path | None = None) -> dict[str, Any]:
     """The run's integrity verdict. `contaminated` lists proof only."""
     seen = scan_transcript(lines, protected, canary)
     if canary and not seen["canary_seen"]:
@@ -170,4 +176,4 @@ def assess(lines: list[str], protected: list[str], canary: str, canary_root: Pat
     proof = list(seen["access"]) + (["canary token found (a protected decoy was read)"]
                                     if seen["canary_seen"] else [])
     return {"contaminated": proof, "hidden_access_attempts": seen["attempts"],
-            "hidden_content_match": content_diagnostics(hidden, ws)}
+            "hidden_content_match": content_diagnostics(hidden, ws, git_dir)}

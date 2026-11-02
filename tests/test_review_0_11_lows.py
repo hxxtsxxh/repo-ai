@@ -107,3 +107,25 @@ def test_a_licence_with_one_long_paragraph_is_not_an_overlong_code_line(tmp_path
     report = firewall.inspect(dest, files, {"id": "local/long-licence", "name": skill.name, "path": skill.name},
                               {}, prior)
     assert not [f.rule for f in report.findings if f.file == rel and f.severity in ("high", "critical")]
+
+
+def test_integrity_reads_the_hidden_tests_baseline_from_the_pre_run_git_copy(tmp_path):
+    """Release review of 0.11.8: integrity's `git show HEAD:<path>` used the workspace's own .git, which the agent can
+    write. With the copy taken before the run, a commit the agent makes does not change what is read."""
+    import shutil
+    import subprocess
+
+    from repo_ai import integrity
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    (ws / "t.py").write_text("before\n")
+    git = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t"]
+    subprocess.run([*git, "init", "-q"], cwd=ws, check=True)
+    subprocess.run([*git, "add", "-A"], cwd=ws, check=True)
+    subprocess.run([*git, "commit", "-qm", "base"], cwd=ws, check=True)
+    pristine = tmp_path / "git-copy"
+    shutil.copytree(ws / ".git", pristine, symlinks=True)
+    (ws / "t.py").write_text("after\n")
+    subprocess.run([*git, "commit", "-qam", "agent"], cwd=ws, check=True)
+    assert integrity._git_show(ws, "t.py") == "after\n"
+    assert integrity._git_show(ws, "t.py", pristine) == "before\n"
