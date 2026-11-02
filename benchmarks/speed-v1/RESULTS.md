@@ -244,10 +244,10 @@ marshmallow 2fc8207d, itsdangerous c2300185, humanize 9528daf5). Every run-5 rea
   for example 1.33 ≤ 1.18 + 0.25).
 
 **Recorded within run 5:** the cold and `--rerun` calls on one state chose different strategies on 4 of 30 changes,
-each after the cold call had added timings: humanize f772e59b (targeted → full, full suite estimated at 0.8 s),
+each after the cold call had added timings or a full-suite record: humanize f772e59b (targeted → full, full suite estimated at 0.8 s),
 humanize 9528daf5 (full → targeted: the full suite's result could not be attributed to files), more-itertools
 e7331924 (targeted → full, 1.4 s against 1.3 s) and itsdangerous 4712ab6f (targeted → full, 0.7 s against 0.6 s). So
-the same runner chooses differently between two calls on the same state once timings change, the pattern of 2fc8207d
+the same runner chooses differently between two calls on the same state once the recorded inputs change, the pattern of 2fc8207d
 in runs 2 and 3. That the earlier cross-run flips happened this way remains inferred: runs 2–4 did not record their
 estimates. One reason's wording was wrong ("no a full-suite time yet"); fixed in #83.
 
