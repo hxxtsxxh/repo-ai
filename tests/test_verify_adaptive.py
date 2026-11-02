@@ -252,6 +252,9 @@ def test_the_full_suite_is_chosen_only_when_it_is_expected_to_be_no_slower():
     assert slow_full.kind == "targeted" and len(slow_full.batches) == 1
     unknown = strategy.decide(r, universe[:2], universe, {}, measured_full=None, **kw)
     assert unknown.kind == "targeted" and "no per-file durations" in unknown.reason
+    # per-file times for the selection only: no full-suite estimate (speed-v1 run 5 printed "no a full-suite time")
+    partial = strategy.decide(r, universe[:2], universe, {f: 0.3 for f in universe[:2]}, measured_full=None, **kw)
+    assert partial.kind == "targeted" and partial.reason.startswith("no full-suite time yet")
     required = strategy.decide(r, universe[:1], universe, d, measured_full=30.0,
                                **{**kw, "full_required": True})
     assert required.kind == "full" and "not run twice" in required.reason
