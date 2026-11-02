@@ -134,7 +134,7 @@ def _run_live(tmp_path, exe, monkeypatch, env):
     root.mkdir()
     ws.mkdir()
     return adapters.run_provider("claude", root, ws, "fix", write_paths=["a.py"], executable=exe, timeout=20,
-                                 simulated=False, allow_live=True)
+                                 simulated=False, allow_live=True, max_cost_usd=0.5)  # a live claude needs a ceiling
 
 
 def test_live_run_without_any_login_never_starts_the_cli(tmp_path, monkeypatch):

@@ -1532,9 +1532,9 @@ def _continue_verified_handoff(
             raise ValueError('continuation exceeds remaining prior cost budget; create a newly approved plan')
     if target_agent == 'replay':
         eff_cost = 0.0
-    if allow_live and target_agent in LIVE_PROVIDERS and provider_executable is None and eff_cost <= 0:
-        from ..providers.adapters import contract_for
-        if contract_for(target_agent).enforces_hard_usd_budget:
+    if allow_live and target_agent in LIVE_PROVIDERS:
+        from ..providers.adapters import MIN_CEILING_USD, contract_for
+        if contract_for(target_agent).enforces_hard_usd_budget and eff_cost < MIN_CEILING_USD:
             # refused before the continuation is claimed: the capsule stays usable
             raise ValueError(f'{target_agent} enforces a USD ceiling and no budget remains from the original mission: '
                              + ('its live cost cannot establish one, so create a newly approved plan'
