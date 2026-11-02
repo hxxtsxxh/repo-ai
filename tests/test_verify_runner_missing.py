@@ -17,7 +17,6 @@ def _row(test: str, tail: str, baseline: str = "fail") -> dict:
     (MISSING, "pytest"),
     ("sh: 1: vitest: not found", "vitest"),
     ("Error: Cannot find module 'jest'", "jest"),
-    ("ModuleNotFoundError: No module named 'pytest_asyncio'", "pytest_asyncio"),
 ])
 def test_runner_missing_is_recognised(tail, name):
     assert evidence.runner_missing(tail) == name
@@ -84,3 +83,26 @@ def test_a_file_that_passed_in_the_same_run_means_the_runner_started():
     rows = [_row("tests/test_new.py", "ModuleNotFoundError: No module named 'pytest_helpers'", baseline="absent"),
             {"test": "tests/test_ok.py", "status": "pass", "baseline": "pass", "output_tail": ""}]
     assert evidence.verdict(rows, None, 2, False) == "regression"
+
+
+@pytest.mark.parametrize("tail", [
+    "ModuleNotFoundError: No module named 'pytest_helpers'",  # a project's own helper, missing from the change
+    "E   ModuleNotFoundError: No module named 'pytest_benchmark'",  # a plugin: the runner started
+])
+def test_a_plugin_or_project_module_is_not_a_missing_runner(tail):
+    assert evidence.runner_missing(tail) is None
+
+
+def test_a_named_failing_test_means_the_runner_started():
+    """0.11.9 release review, case B: a file failing at the base now has a new named failure next to the message."""
+    row = {**_row("tests/test_a.py", MISSING, baseline="fail"), "new_failing_tests": ["tests/test_a.py::t2"],
+           "failing_tests": ["tests/test_a.py::t2"]}
+    assert evidence.verdict([row], None, 1, False) == "regression"
+
+
+def test_a_plugin_pytest_could_not_load_at_startup_is_a_missing_runner():
+    """Round 2 of the 0.11.9 review: `pytest_plugins = ["pytest_asyncio"]` with the plugin not installed."""
+    tail = 'ImportError: Error importing plugin "pytest_asyncio": No module named \'pytest_asyncio\''
+    assert evidence.runner_missing(tail) == "pytest_asyncio"
+    assert evidence.verdict([_row("tests/test_a.py", tail)], None, 1, False).startswith(
+        "not verified: the test runner could not start")

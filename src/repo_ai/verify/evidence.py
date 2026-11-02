@@ -70,7 +70,8 @@ NOT_VERIFIED_FULL_NOT_RUN = "not verified: the full suite is required for this c
 # and with the change, which said "no new failures (all pre-existing)" although no test ran (found by the 0.11.8
 # smoke install: pytest absent from the interpreter).
 _RUNNER_MISSING = re.compile(
-    r"No module named '?(pytest_\w+|_pytest|pytest)'?(?![\w.])"  # not a submodule such as _pytest.compat
+    r"No module named '?(_pytest|pytest)'?(?![\w.])"  # pytest itself; not a plugin or a project's pytest_* module
+    r"|Error importing plugin \"([\w.-]+)\""  # pytest's own startup error: a required plugin is missing
     r"|^(?:(?:/bin/)?(?:ba|z|da)?sh: (?:\d+: )?)?(pytest|jest|vitest|mocha|ava): (?:command )?not found\s*$"
     r"|^Error: Cannot find module '(jest|vitest|mocha|ava)'", re.M)
 
@@ -107,7 +108,10 @@ def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected
     # change's (a project's own `pytest_foo` package broken, a deleted helper), never "no runner"
     # (and a file or full suite that passed in this run proves the same)
     ran = (any(r.get("baseline") == "pass" for r in failed) or any(r["status"] == "pass" for r in results)
-           or (full is not None and full.get("status") == "pass"))
+           or (full is not None and full.get("status") == "pass")
+           # a test the runner reported failing by name: it started (0.11.9 release review)
+           or any(r.get("new_failing_tests") or [t for t in r.get("failing_tests") or [] if t != "<file>"]
+                  for r in failed))
     if outputs and None not in missing and not ran:
         # no test ran at all: not a regression, not pre-existing, not a pass
         names = ", ".join(sorted(str(m) for m in missing))

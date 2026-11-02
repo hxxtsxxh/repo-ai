@@ -19,7 +19,7 @@ repo-ai coverage MISSION_ID --requirements reqs.json --json
 `MISSION_ID` is a single candidate mission with recorded baseline and candidate runs, from `repo-ai do ... --run`
 (see [Missions](/repo-ai/docs/missions/)).
 
-After 0.11.8 you can declare the requirements **before** the run: `repo-ai do ... --run --requirements reqs.json`
+Since 0.11.9 you can declare the requirements **before** the run: `repo-ai do ... --run --requirements reqs.json`
 freezes the declaration with the mission record. `repo-ai coverage MISSION_ID` (no `--requirements`) then assesses
 that frozen declaration and reports `declaration: FROZEN_WITH_MISSION`: it was written before this mission ran. If an
 earlier mission still in the store, on the same source with the same proposal or candidate diff, had already
@@ -71,9 +71,9 @@ recorded test identities).
 | `MISSING_TEST` | a declared test ID was not collected in the recorded runs (absent or ambiguous) |
 | `UNMAPPED` | no test declared: nothing observed supports this requirement |
 | `NOT_OBSERVED` | a mapped test was skipped on the candidate, so it observed nothing |
-| `UNVERIFIED_STALE`, `UNVERIFIED_INCONCLUSIVE` | (after 0.11.8) the mission is stale or not a comparable fresh PASS, so what the mapped tests showed is not verification; `observed_status` keeps it |
+| `UNVERIFIED_STALE`, `UNVERIFIED_INCONCLUSIVE` | (0.11.9 and later) the mission is stale or not a comparable fresh PASS, so what the mapped tests showed is not verification; `observed_status` keeps it |
 
-After 0.11.8, a declared test that matched only by its trailing name, not as `file::test`, is flagged in the row
+Since 0.11.9, a declared test that matched only by its trailing name, not as `file::test`, is flagged in the row
 ("matched by name, check it is the intended test"), and one test mapped to several requirements is listed under `shared_tests`.
 
 ## Headline and exit code
@@ -81,17 +81,17 @@ After 0.11.8, a declared test that matched only by its trailing name, not as `fi
 | Headline | When |
 |---|---|
 | `ACCEPTANCE_MAPPED_ALL` | every declared requirement is verified by a discriminating test, and nothing else is outstanding |
-| `ACCEPTANCE_PARTIAL` | some are verified, some are not, or (after 0.11.8) something no requirement covers is outstanding |
+| `ACCEPTANCE_PARTIAL` | some are verified, some are not, or (0.11.9 and later) something no requirement covers is outstanding |
 | `ACCEPTANCE_UNMAPPED` | none are verified |
 | `STALE` | the mission's evidence no longer matches the source |
 | `INCONCLUSIVE` | the mission is not a fresh PASS |
 
 The command exits 0 only for `ACCEPTANCE_MAPPED_ALL`, so it can gate a script. The JSON also lists
-`follow_up_test_needed`: the requirements that still need a test. After 0.11.8 it also lists `other_obligations`:
+`follow_up_test_needed`: the requirements that still need a test. Since 0.11.9 it also lists `other_obligations`:
 changed executable lines that no frozen test ran (from the mission's change-exercise measurement; a mission without
 that measurement says so), and failures a scoped mission accepted as pre-existing. Either one keeps the headline at most
-`ACCEPTANCE_PARTIAL`. The map is read when you run `coverage`, not frozen with the mission, so it can be written after
-the outcomes are known.
+`ACCEPTANCE_PARTIAL`. A map supplied with `--requirements` when you run `coverage` (not frozen with the mission) can be written after
+the outcomes are known; it is labelled `SUPPLIED_AT_ASSESSMENT`.
 
 :::caution[Never a correctness claim]
 `task_correct` is always `CLAIM_UNVERIFIED`. The map is your statement; repo-ai only checked that the named tests
