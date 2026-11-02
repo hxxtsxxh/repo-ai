@@ -921,6 +921,7 @@ plan an outcome offline; run an isolated replay or authorized live provider cand
 | `--tournament` `A,B[,C]` | live tournament: independent candidates from 2-3 providers; abstains unless exactly one distinct candidate passes |
 | `--allow-write` `PATH` | allow one source path in the isolated candidate |
 | `--max-cost-usd` `MAX_COST_USD` | explicit cost ceiling; default zero; replay requires zero |
+| `--allow-unknown-cost` | --tournament with --max-cost-usd: cap the providers that enforce a USD ceiling and run the others with cost UNKNOWN (never counted as $0) |
 | `--max-parallel` `MAX_PARALLEL` | ceiling 1–4; P0 executes one writer sequentially |
 | `--max-seconds` `MAX_SECONDS` | wall-clock limit per provider run (default: 120) |
 | `--test-command` `TEST_COMMAND` | one of `python -m pytest`, `node --test` |

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Live runs of a provider whose CLI enforces a USD ceiling (Claude Code, Bob) are refused before they start without
+  `--max-cost-usd > 0`, for `do`, handoff continuations (before the capsule is claimed) and tournaments. Before, the
+  default ceiling of 0 started the provider uncapped and refused its result afterwards ("provider reported cost
+  exceeding approved contract ceiling"), after the money was spent.
+- `do --tournament A,B --max-cost-usd X --allow-unknown-cost`: the ceiling is split among the arms whose CLI enforces
+  it, and the others run with cost UNKNOWN (never counted as $0). Without the flag, a ceiling with a provider that
+  cannot enforce it is refused, as before. This is what makes a Claude + Codex tournament possible with a cap.
+
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
 - `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.
