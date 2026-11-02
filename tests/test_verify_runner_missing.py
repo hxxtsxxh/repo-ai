@@ -98,3 +98,11 @@ def test_a_named_failing_test_means_the_runner_started():
     row = {**_row("tests/test_a.py", MISSING, baseline="fail"), "new_failing_tests": ["tests/test_a.py::t2"],
            "failing_tests": ["tests/test_a.py::t2"]}
     assert evidence.verdict([row], None, 1, False) == "regression"
+
+
+def test_a_plugin_pytest_could_not_load_at_startup_is_a_missing_runner():
+    """Round 2 of the 0.11.9 review: `pytest_plugins = ["pytest_asyncio"]` with the plugin not installed."""
+    tail = 'ImportError: Error importing plugin "pytest_asyncio": No module named \'pytest_asyncio\''
+    assert evidence.runner_missing(tail) == "pytest_asyncio"
+    assert evidence.verdict([_row("tests/test_a.py", tail)], None, 1, False).startswith(
+        "not verified: the test runner could not start")

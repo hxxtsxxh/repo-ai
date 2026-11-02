@@ -71,6 +71,7 @@ NOT_VERIFIED_FULL_NOT_RUN = "not verified: the full suite is required for this c
 # smoke install: pytest absent from the interpreter).
 _RUNNER_MISSING = re.compile(
     r"No module named '?(_pytest|pytest)'?(?![\w.])"  # pytest itself; not a plugin or a project's pytest_* module
+    r"|Error importing plugin \"([\w.-]+)\""  # pytest's own startup error: a required plugin is missing
     r"|^(?:(?:/bin/)?(?:ba|z|da)?sh: (?:\d+: )?)?(pytest|jest|vitest|mocha|ava): (?:command )?not found\s*$"
     r"|^Error: Cannot find module '(jest|vitest|mocha|ava)'", re.M)
 

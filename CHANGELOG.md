@@ -31,8 +31,8 @@
 - Fixed: when the test runner is missing from the environment `verify` runs in (for example `No module named
   'pytest'`), every test fails the same way at the base and with the change, and verify said "NO NEW FAILURES: every
   failure also happens at the base". It now says "NOT VERIFIED: the test runner could not start … (pytest is not
-  installed there)" and lists the files as could not run. Only pytest itself counts (a missing plugin or a
-  project's `pytest_*` module is a test failure). A run with a real failure as well, a test reported failing by
+  installed there)" and lists the files as could not run. Only pytest itself, or a plugin pytest reports it could
+  not load at startup, counts (a project's `pytest_*` module failing to import is a test failure). A run with a real failure as well, a test reported failing by
   name, or a file that passed at the base or in the run (the runner started), keeps its usual verdict.
   `repo-ai prove` and missions no longer count such a run as "no new failures". Found by the 0.11.8 smoke install.
 - Security: the coding lab's git calls over an agent's workspace ignore the host's user and system git
