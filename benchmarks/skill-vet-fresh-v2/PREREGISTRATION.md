@@ -12,7 +12,8 @@ questions, strata and counts, defanging, labels, gates G1–G4, reports R1–R3 
   since (later security fixes). It is frozen now instead: [SUT.json](SUT.json) records the git tree of `src/repo_ai`
   (the vetter, `skills vet` and every helper they import), `pyproject.toml`, the harness, the validator and
   [constraints.txt](constraints.txt) (the one runtime dependency pinned). The **freeze commit** is the commit that adds
-  `SUT.json`. The run is dispatched on a branch cut from the freeze commit with only the delivery added; the run job
+  `SUT.json`: `1e2041fdd8f68e3ddea7659e3d1b4262c592e5d7`. The maintainer creates `skill-vet-v2/delivery` from it; the
+  author's pull request targets that branch. The run is dispatched on a branch cut from the freeze commit with only the delivery added; the run job
   (`sut.py --check FREEZE`) refuses if any frozen object differs or anything but the delivery changed since then.
 - **Run:** once, by hand (`skill-vet-v2` workflow, `run` job, `workflow_dispatch` with the freeze commit), refused when
   `results/run-1.json` exists and serialised by a concurrency group; every dispatched run is reported, whatever its
