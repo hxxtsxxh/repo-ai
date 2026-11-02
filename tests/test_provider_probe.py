@@ -247,13 +247,18 @@ def test_linux_probe_hides_socket_dirs_and_binds_back_only_the_programs_own_path
                      ("--bind", str(scratch))]
 
 
-def test_hidden_dirs_are_real_directories_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    home = tmp_path / "home"
-    (home / ".ssh").mkdir(parents=True)
-    (home / ".gnupg").symlink_to(home / ".ssh")
+def test_hidden_dirs_are_real_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Release review of 0.11.8 (L3): linked hidden directories hide their target, by its real path, once."""
+    real = tmp_path.resolve()
+    (real / "var-home" / "u" / ".ssh").mkdir(parents=True)
+    (real / "home").symlink_to(real / "var-home")  # an ostree-style /home -> /var/home
+    home = real / "home" / "u"
+    (real / "elsewhere").mkdir()
+    (home / ".gnupg").symlink_to(real / "elsewhere")  # a linked agent directory
+    (home / ".docker").symlink_to("/")  # resolves to a system directory: never hidden
     monkeypatch.setattr(d, "_homes", lambda: [str(home)])
     monkeypatch.setattr(d, "_HIDDEN_ROOTS", (str(tmp_path / "missing"),))
-    assert d._hidden_dirs() == [str(home / ".ssh")]
+    assert d._hidden_dirs() == [str(real / "var-home" / "u" / ".ssh"), str(real / "elsewhere")]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX accounts")

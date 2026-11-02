@@ -122,10 +122,16 @@ def _homes() -> list[str]:
     return [h for h in dict.fromkeys(homes) if h not in {"", "/", "~"}]
 
 
+_NEVER_HIDDEN = {"/", "/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc", "/proc", "/dev", "/sys", "/opt", "/nix"}
+
+
 def _hidden_dirs() -> list[str]:
+    """Real paths, so they compare with the resolved paths bound back (on ostree systems `/home` links to
+    `/var/home`) and a linked directory (`~/.ssh -> elsewhere`, `/var/run -> /run`) hides its target. A link that
+    resolves to a system directory is ignored: hiding it would hide the programs being probed."""
     candidates = [*_HIDDEN_ROOTS, *(os.path.join(h, d) for h in _homes() for d in _HIDDEN_HOME)]
-    # a tmpfs needs a real directory; a symlink such as /var/run -> /run is covered by its target
-    return [d for d in dict.fromkeys(candidates) if os.path.isdir(d) and not os.path.islink(d)]
+    real = (os.path.realpath(d) for d in candidates if os.path.isdir(d))
+    return [d for d in dict.fromkeys(real) if d not in _NEVER_HIDDEN]
 
 
 def _has_socket(directory: str, limit: int = 2000) -> bool:
