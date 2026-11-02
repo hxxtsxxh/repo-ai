@@ -480,6 +480,26 @@ def _windows(line: str) -> list[str]:
     return [line[i:i + MAX_SCAN_LINE] for i in range(0, len(line) - step, step)]
 
 
+_CODE_PUNCT = frozenset("{}[]=;<>|\\$`^~")
+
+
+def _prose_line(line: str) -> bool:
+    """A long line of a licence-named file that reads as prose (an unwrapped licence paragraph): words separated by
+    spaces, with almost none of the punctuation code is made of. A minified script or one long token is not prose.
+    Only decides whether the overlong-line finding applies; the line's content is read in windows either way."""
+    s = line.strip()
+    if not s:
+        return True
+    punct = sum(c in _CODE_PUNCT for c in s) / len(s)
+    if punct >= 0.01:
+        return False
+    # scripts written without spaces between words (Chinese, Japanese, Thai): mostly letters outside ASCII
+    if sum(c.isalpha() and ord(c) > 0x2E7F for c in s) / len(s) >= 0.5:
+        return True
+    words = s.split()
+    return s.count(" ") / len(s) >= 0.08 and sum(map(len, words)) / len(words) <= 15
+
+
 def code_risks(code: str) -> list[tuple[str, str, str]]:
     """(category, rule, evidence) for whole-program behaviour that no single line shows. Evidence is redacted."""
     out = []
@@ -834,11 +854,14 @@ def inspect(dest: Path, files: list[dict[str, Any]], candidate: dict[str, Any],
                     severity = {"critical": "high", "high": "medium", "medium": "low"}.get(severity, "info")
                     kind = "suspected"
                 findings.append(Finding(severity, kind, category, rule, path, lineno, _snippet(logical)))
+            # a licence-named file below the root is read as code, in windows: an unwrapped licence paragraph is
+            # not an overlong code line, a minified script named LICENSE is
             if ctx == "code" and len(logical.strip()) > MAX_SCAN_LINE and ext not in ASSET_EXT and ext != ".json" \
-                    and not licence_named:
+                    and not (licence_named and _prose_line(logical)):
+                read = "read in overlapping windows" if licence_named else \
+                    f"only the first {MAX_SCAN_LINE} are read for behaviour"
                 findings.append(Finding("high", "suspected", "obfuscation", "overlong-code-line", path, lineno,
-                                        f"{len(logical.strip())} characters on one line (only the first "
-                                        f"{MAX_SCAN_LINE} are read for behaviour)"))
+                                        f"{len(logical.strip())} characters on one line ({read})"))
             if ctx == "code" or licence:
                 segments = _windows(logical.strip()) if licence_named else [logical.strip()[:MAX_SCAN_LINE]]
                 for severity, kind, category, rule, pattern in _CODE_RULES:
