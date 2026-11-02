@@ -19,3 +19,18 @@ The run record (0.11.6) does not yet name the auth mode. `claude_auth.plan()` ch
 its token variables is set; the shell that ran it had only `CLAUDE_CODE_OAUTH_TOKEN` (no `ANTHROPIC_API_KEY`), so
 this was the subscription token and the cost is notional. From the next release the mission record keeps
 `provider.auth_mode` and `provider.auth_env_vars` (variable names only).
+
+## 2026-11-02: the $20 ceiling is not renewed; per-batch approvals
+
+The owner restated the goal on 2026-11-02: the $20 experiment ceiling above is closed (not renewed or increased), and
+every paid or subscription-metered batch needs its own approval with the call count, upper bound and accounting basis
+shown first. Unknown provider cost stays UNKNOWN, never $0. Approved that day (none run yet, **$0 spent**):
+
+| batch | sessions | upper bound | accounting |
+|---|---|---|---|
+| C13 live handoff | 1 Claude Code | $0.50 (`--max-budget-usd`) | Claude Code's reported `total_cost_usd`; on a subscription login metered against the plan |
+| C21 journey-live-v1 | at most 4 Claude Code | $4.00 ($1.00 each) | same |
+| C12 tournament-live-v1 | 4 Claude Code + 4 Codex | Claude $6.00 ($1.50 each); Codex UNKNOWN | Claude as above; Codex: ChatGPT plan usage, no USD figure |
+
+Claude Code checks `--max-budget-usd` between turns, so a last turn can overshoot a cap; the reported cost is recorded
+as is. All three wait for the owner's dedicated Claude login.
