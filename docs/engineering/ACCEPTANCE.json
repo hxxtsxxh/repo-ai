@@ -201,10 +201,16 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "coverage names unpinned requirements (0.9.0)"
+    "coverage names unpinned requirements (0.9.0)",
+    "2026-11-02 independent adversarial review of `repo-ai coverage` against C11 (calls into assess/for_mission with constructed records): green needs exact fail->pass or pass->pass on a fresh, comparable PASS (identical test ids, pinned test inputs and skip sets), outcome vocabulary allow-listed; found 3 high (VERIFIED rows and an empty follow-up list under a STALE or INCONCLUSIVE headline; no link from requirements to changed code although the mission measures which changed lines the tests ran; scoped pre-existing failures dropped), 3 medium (silent suffix binding to another file's test; one test for several requirements unflagged; the declaration is not frozen) and 4 low. Fixed in the coverage PR: rows downgraded to UNVERIFIED_*, changed code no test ran and pre-existing failures listed as other_obligations (headline at most ACCEPTANCE_PARTIAL), suffix and shared-test flags, failure-before-skip ordering"
    ],
-   "limits": [],
-   "next_action": "review"
+   "limits": [
+    "requirements map to changed code only through the mission's line-level exercise measurement (lines no frozen test ran are named), not requirement by requirement",
+    "the declaration is read when coverage runs, not frozen with the mission: it can be written after the outcomes are known (stated in the report's limits)",
+    "test-id resolution: a bare name matched by suffix is flagged, not refused; node and parametrized ids with '::' can match partially; a leaf name never matches a `describe > leaf` id",
+    "one test mapped to several requirements is flagged (shared_tests), not refused: all of them can still reach ACCEPTANCE_MAPPED_ALL"
+   ],
+   "next_action": "freeze an optional requirements declaration with the mission contract (so it is pre-registered), and map requirements to changed lines through the recorded runtime links"
   },
   {
    "id": "C12",
@@ -400,10 +406,11 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "positioning: local verifier that names what tests do not pin; live evidence includes a local-model false assurance that a hidden oracle caught and that repo-ai labelled ASSURANCE_PARTIAL; requirement-erasure detection (PR #7) built from it"
+    "positioning: local verifier that names what tests do not pin; live evidence includes a local-model false assurance that a hidden oracle caught and that repo-ai labelled ASSURANCE_PARTIAL; requirement-erasure detection (PR #7) built from it",
+    "2026-11-02 public comparison page (site docs/compare): what repo-ai adds next to pytest-testmon, jest --onlyChanged / vitest related, pytest --lf, containers and agent CLIs; where it is worse, each backed by a measurement on a linked page (speed-v1 1.84-2.23x slower; Jest/Vitest/Mocha full-suite only; agent benefit NOT_YET_DEMONSTRATED in the 150-run blinded study; no Windows host sandbox); and the idea selection with rejected alternatives (docs/ARCHITECTURE-DECISION-0.8.md: ten candidate problems scored on impact, frequency, offline feasibility, open space and measurability; prior art in docs/RESEARCH-2026-10.md). Persona and non-claims: site docs/index"
    ],
    "limits": [],
-   "next_action": "positioning after features land"
+   "next_action": "measured usefulness for the persona beyond verify's held-out qualification (a developer-facing study, e.g. time to a correct pre-push answer), once a protocol and budget exist"
   },
   {
    "id": "C23",

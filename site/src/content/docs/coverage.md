@@ -60,19 +60,28 @@ recorded test identities).
 | `FAILING` | a mapped test does not pass on the candidate |
 | `MISSING_TEST` | a declared test ID was not collected in the recorded runs (absent or ambiguous) |
 | `UNMAPPED` | no test declared: nothing observed supports this requirement |
+| `NOT_OBSERVED` | a mapped test was skipped on the candidate, so it observed nothing |
+| `UNVERIFIED_STALE`, `UNVERIFIED_INCONCLUSIVE` | (after 0.11.8) the mission is stale or not a comparable fresh PASS, so what the mapped tests showed is not verification; `observed_status` keeps it |
+
+After 0.11.8, a declared test that matched only by its trailing name, not as `file::test`, is flagged in the row
+("matched by name, check it is the intended test"), and one test mapped to several requirements is listed under `shared_tests`.
 
 ## Headline and exit code
 
 | Headline | When |
 |---|---|
-| `ACCEPTANCE_MAPPED_ALL` | every declared requirement is verified by a discriminating test |
-| `ACCEPTANCE_PARTIAL` | some are verified, some are not |
+| `ACCEPTANCE_MAPPED_ALL` | every declared requirement is verified by a discriminating test, and nothing else is outstanding |
+| `ACCEPTANCE_PARTIAL` | some are verified, some are not, or (after 0.11.8) something no requirement covers is outstanding |
 | `ACCEPTANCE_UNMAPPED` | none are verified |
 | `STALE` | the mission's evidence no longer matches the source |
 | `INCONCLUSIVE` | the mission is not a fresh PASS |
 
 The command exits 0 only for `ACCEPTANCE_MAPPED_ALL`, so it can gate a script. The JSON also lists
-`follow_up_test_needed`: the requirements that still need a test.
+`follow_up_test_needed`: the requirements that still need a test. After 0.11.8 it also lists `other_obligations`:
+changed executable lines that no frozen test ran (from the mission's change-exercise measurement; a mission without
+that measurement says so), and failures a scoped mission accepted as pre-existing. Either one keeps the headline at most
+`ACCEPTANCE_PARTIAL`. The map is read when you run `coverage`, not frozen with the mission, so it can be written after
+the outcomes are known.
 
 :::caution[Never a correctness claim]
 `task_correct` is always `CLAIM_UNVERIFIED`. The map is your statement; repo-ai only checked that the named tests
