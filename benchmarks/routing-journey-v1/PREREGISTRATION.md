@@ -65,3 +65,15 @@ The pilots also corrected the harness (a USD ceiling where a capped provider run
 task on the same commit returns the stored mission unrun; a missing versus an empty login directory; an in-process
 platform injection limited to the adapters module). The counted run is the first run of the committed harness on the
 fixed build. One run on macOS (seatbelt); results in `RESULTS.md` and `results/`.
+
+## Amendment after run 1 (2026-11-02, independent review of the change)
+
+Run 1 was recorded with the checks above (27 of 27). The review found the refusal checks too loose: any non-zero exit
+without a verdict passed, and the Z1, U1 and Q2 refusals printed a misleading reason ("live provider execution
+requires --allow-live-provider" although it was given); X1 was checked only as "not `budget_limit`". It also found
+three defects in the pilot's fixes (a continuation refused for a cooldown used up its capsule; a cost overrun with a
+non-zero exit was no longer `budget_limit`; a malformed cooldown time crashed the refusal) and a unit test that could
+start a real `claude` (its run_provider was not stubbed). All are fixed. The checks now require exit 1, the stated
+reason ("no provider can run this mission (NO_AGENT)", "is cooling down until"), no traceback, and X1 recovery
+`contract_failure`. Run 1 is kept and re-evaluated under these checks; run 2 is the first run of the amended harness
+on the fixed build. Both are reported.

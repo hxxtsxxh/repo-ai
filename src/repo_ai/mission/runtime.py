@@ -486,6 +486,18 @@ def proposal(path: Path, root: Path, contract: IntentContract) -> dict[str, Any]
     return raw
 
 
+def cooldown_until(root: Path, provider: str) -> str | None:
+    """When `provider` is cooling down after a quota or rate-limit observation: until when (UTC), else None."""
+    from ..providers.registry import load_policy
+    until = float(load_policy(root)['cooldown'].get(provider, 0.0))
+    if not until > time.time():
+        return None
+    try:
+        return time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(until))
+    except (OverflowError, ValueError, OSError):
+        return 'an unreadable time (the policy file is malformed)'
+
+
 def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None, *,
             resume: bool = False, provider_executable: Path | None = None,
             allow_live: bool = False, seed: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -510,12 +522,11 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
     if is_live_provider and not resume:
         # an explicitly chosen provider that hit a quota or rate limit recently would only hit it again (automatic
         # routing already skips it while it cools down)
-        from ..providers.registry import load_policy
-        until = float(load_policy(root)['cooldown'].get(contract.provider, 0.0))
-        if until > time.time():
-            raise ValueError(f"{contract.provider} hit a quota or rate limit recently and is cooling down until "
-                             f"{time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(until))}; another call would hit it "
-                             'again. Wait, or let routing choose another provider (--agent auto)')
+        cooling = cooldown_until(root, contract.provider)
+        if cooling:
+            raise ValueError(f'{contract.provider} hit a quota or rate limit recently and is cooling down until '
+                             f'{cooling}; another call would hit it again. Wait, or let routing choose another '
+                             'provider (--agent auto)')
     if not check_privacy(root, planned['contract']):
         raise ValueError('zone policy changed or unbound legacy contract; create a fresh plan')
     dag = decode(planned['dag'])
@@ -1230,11 +1241,15 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
                 'action': 'switch provider via handoff --to <provider> and continue with do --from-handoff <capsule.json>',
                 'reasons': negatives,
             }
-    # a provider that crashed or broke its event protocol also has no reported cost; the crash is the cause
+    # a provider that crashed or broke its event protocol also has no reported cost: that missing cost is not a
+    # budget limit (a reported cost over the ceiling always is)
     crashed = any(k in joined for k in ('provider process exited with code', 'did not conform to structured jsonl',
                                         'lacks a consistent terminal event'))
-    if any(k in joined for k in ('time budget', 'three-attempt', 'parallel budget', 'budget exhausted')) or (
-            'cost' in joined and not crashed):
+    cost_reasons = [n.lower() for n in negatives if 'cost' in n.lower()]
+    only_missing_cost = all('did not report cost' in n or 'unknown cost cannot satisfy' in n for n in cost_reasons)
+    if any(k in joined for k in ('time budget', 'three-attempt', 'parallel budget', 'budget exhausted',
+                                 'exceeding approved contract ceiling')) or (
+            cost_reasons and not (crashed and only_missing_cost)):
         return {
             'category': 'budget_limit',
             'recoverable': False,
@@ -1546,6 +1561,11 @@ def _continue_verified_handoff(
     if target_agent == 'replay':
         eff_cost = 0.0
 
+    if allow_live and target_agent in LIVE_PROVIDERS and (cooling := cooldown_until(root, target_agent)):
+        # refused before the continuation is claimed: the capsule stays usable once the cooldown has passed
+        raise ValueError(f'{target_agent} hit a quota or rate limit recently and is cooling down until {cooling}; '
+                         'the capsule is still unused. Wait and run this again, or continue with another provider '
+                         '(--agent <provider>, or export a new capsule with `repo-ai handoff ID --to <provider>`)')
     inherited_paths = list(orig_contract['write_paths'])
     added_paths = [p for p in dict.fromkeys(extra_write_paths or []) if p not in inherited_paths]
     planned = plan(
