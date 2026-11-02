@@ -185,6 +185,10 @@ def cmd_do(args) -> int:
         roles=args.role,
         expect_fix=args.expect_fix,
     )
+    if getattr(args, 'requirements', None):
+        # frozen with the mission record before anything runs, so `coverage` can show it was not written afterwards
+        from .coverage import freeze
+        value['requirements'] = freeze(Path(args.requirements))
     if args.run:
         if args.candidate:
             if args.replay:
@@ -270,7 +274,8 @@ def cmd_shortlist(args) -> int:
 
 def cmd_coverage(args) -> int:
     from .coverage import for_mission, load_requirements, render
-    report = for_mission(_root(args), args.id, load_requirements(Path(args.requirements)))
+    supplied = load_requirements(Path(args.requirements)) if args.requirements else None
+    report = for_mission(_root(args), args.id, supplied)
     if args.json:
         print(json.dumps(report, indent=2, sort_keys=True))
     else:
@@ -615,7 +620,8 @@ def register(sub, common) -> None:
     p.set_defaults(func=cmd_shortlist)
     p = sub.add_parser('coverage', parents=[common], help='map developer-declared requirements to the tests that observed them; no execution, never a correctness claim')
     p.add_argument('id', help='single candidate mission ID')
-    p.add_argument('--requirements', required=True, metavar='FILE', help='JSON {schema: repo-ai.requirements/1, requirements: [{text, kind: change|preserve, tests: [ids]}]}')
+    p.add_argument('--requirements', metavar='FILE', help='JSON {schema: repo-ai.requirements/1, requirements: [{text, kind: change|preserve, tests: [ids]}]}; '
+                   'default: the declaration frozen with the mission (`do --requirements`)')
     p.add_argument('--json', action='store_true', help='machine-readable JSON output')
     p.set_defaults(func=cmd_coverage)
     p = sub.add_parser('undo', parents=[common], help='restore receipt-owned applied bytes; refuse later user edits')
@@ -656,6 +662,9 @@ def register(sub, common) -> None:
                         'result is PASS_WITH_PRE_EXISTING_FAILURES, never a plain whole-suite PASS')
     p.add_argument('--role', action='append', default=[], choices=['investigator', 'adversary'],
                    help='opt-in separate read-only provider process; refused for trivial changes; advisory, never a verdict')
+    p.add_argument('--requirements', metavar='FILE',
+                   help='requirement -> test declaration (repo-ai.requirements/1) frozen with the mission before it runs; '
+                        '`repo-ai coverage ID` then assesses it and shows it was declared in advance')
     p.add_argument('--resume', metavar='ID', help='inspect/recover an interrupted checkpoint; no automatic model retry')
     p.set_defaults(func=cmd_do)
     p = sub.add_parser('agents', parents=[common], help='local provider availability; doctor runs sandboxed help/version only')

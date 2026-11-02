@@ -17,7 +17,12 @@ repo-ai coverage MISSION_ID --requirements reqs.json --json
 ```
 
 `MISSION_ID` is a single candidate mission with recorded baseline and candidate runs, from `repo-ai do ... --run`
-(see [Missions](/repo-ai/docs/missions/)). For a tournament, pass a candidate's mission ID from
+(see [Missions](/repo-ai/docs/missions/)).
+
+After 0.11.8 you can declare the requirements **before** the run: `repo-ai do ... --run --requirements reqs.json`
+freezes the declaration with the mission record. `repo-ai coverage MISSION_ID` (no `--requirements`) then assesses
+that frozen declaration and reports `declaration: FROZEN_WITH_MISSION`, so the map cannot have been written after the
+outcomes were known. A file supplied later is reported as `SUPPLIED_AT_ASSESSMENT`. For a tournament, pass a candidate's mission ID from
 [`shortlist`](/repo-ai/docs/tournaments/), not the comparison ID.
 
 ## The requirements file
