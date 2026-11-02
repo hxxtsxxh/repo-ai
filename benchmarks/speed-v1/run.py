@@ -84,11 +84,28 @@ def verify(repo: Path, rai: Path, *extra: str) -> dict:
     def field(name: str):  # the report's fields may sit at the top level or under "summary"
         return data.get(name, (data.get("summary") or {}).get(name) if isinstance(data.get("summary"), dict) else None)
     return {"seconds": round(secs, 3), "exit": code, "verdict": field("verdict"), "strategy": field("strategy"),
+            **evidence_fields(data),
             "reused": field("reused"), "passed_files": field("passed"), "processes": field("processes"),
             "new_failures": len(field("new_failures") or []), "tail": "" if data else out[-600:],
             # what failed, so a disagreement with the native suite can be explained (run 1 could not)
             "detail": {k: field(k) for k in ("new_failures", "pre_existing", "failing_differently", "unconfirmed",
-                                             "not_compared", "no_tests", "not_run", "full_suite_counts")}}
+                                             "not_compared", "no_tests", "not_run", "full_suite_counts",
+                                             "sandbox_network_suspected")}}
+
+
+def evidence_fields(data: dict) -> dict:
+    """Why verify chose its strategy and what it ran (C16's next action: run 4 could not say why a strategy shifted
+    or which pytest argv a run used). From the record `verify --json` prints under "evidence"; absent fields stay
+    None, never guessed."""
+    rec = data.get("evidence") if isinstance(data.get("evidence"), dict) else {}
+    strat = rec.get("strategy") if isinstance(rec.get("strategy"), dict) else {}
+    full = rec.get("full_suite") if isinstance(rec.get("full_suite"), dict) else {}
+    results = rec.get("results") if isinstance(rec.get("results"), list) else []
+    commands = list(dict.fromkeys(r["command"] for r in results if isinstance(r, dict) and r.get("command")))
+    return {"strategy_detail": {k: strat.get(k) for k in ("reason", "batches", "est_targeted_s", "est_full_s",
+                                                          "est_full_source")} if strat else None,
+            "full_suite": {k: full.get(k) for k in ("status", "command", "duration_s", "reason")} if full else None,
+            "commands": commands[:10], "command_count": len(commands)}
 
 
 def native(repo: Path) -> dict:
