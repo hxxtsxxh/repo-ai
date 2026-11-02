@@ -58,3 +58,7 @@ The protocol above is kept verbatim. These deviations were declared before any v
   outcome (the Actions history lists them). Gates G1–G4, reports R1–R4 and the decision rule above are unchanged.
 
 Nothing in this directory was written as a case, and no case will be written by the maintainer's agent.
+
+## Status (2026-11-02): frozen
+
+Freeze commit `8f6ae0ac7b287e287b0fbb6df7d7fb08ec260e62` (adds SUT.json). Branch `skill-vet-v2/delivery` was created at it for the author's pull request.
