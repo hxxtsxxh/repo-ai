@@ -49,3 +49,41 @@ def test_coverage_cli_end_to_end_on_a_real_mission(bug, tmp_path):
     stale = json.loads(run_cli(bug, 'coverage', result['id'], '--requirements', str(f), '--json').stdout)
     assert stale['headline'] == 'STALE'
     assert run_cli(bug, 'coverage', result['id'], '--requirements', str(tmp_path / 'missing.json')).returncode != 0
+
+
+def test_requirements_frozen_with_the_mission_are_assessed_and_marked(bug, tmp_path):
+    """C11 next action: `do --requirements FILE` freezes the declaration before the run; `coverage ID` uses it and
+    says it was declared in advance. A declaration supplied afterwards is marked as such."""
+    from conftest import run_cli
+    from repo_ai.mission import coverage as cov
+    f = tmp_path / 'req.json'
+    f.write_text(json.dumps({'schema': cov.REQ_SCHEMA, 'requirements': [
+        {'text': 'retries do not charge twice', 'tests': ['test_retry']}]}))
+    done = run_cli(bug, 'do', 'Fix duplicate charge in charge.py when retries happen', '--agent', 'replay',
+                   '--replay', str(replay(bug, tmp_path)), '--run', '--allow-write', 'charge.py',
+                   '--requirements', str(f), '--json')
+    mission = json.loads(done.stdout)
+    assert mission['effective_verdict'] == 'PASS', done.stdout[-400:] + done.stderr[-400:]
+    out = run_cli(bug, 'coverage', mission['id'], '--json')
+    data = json.loads(out.stdout)
+    assert data['declaration'] == 'FROZEN_WITH_MISSION' and data['headline'] == 'ACCEPTANCE_MAPPED_ALL', out.stdout
+    assert any('frozen with the mission before it ran' in x for x in data['limits'])
+    assert 'Declaration: frozen with the mission before it ran' in run_cli(bug, 'coverage', mission['id']).stdout
+    same = json.loads(run_cli(bug, 'coverage', mission['id'], '--requirements', str(f), '--json').stdout)
+    assert same['declaration'] == 'FROZEN_WITH_MISSION'
+    later = tmp_path / 'later.json'
+    later.write_text(json.dumps({'schema': cov.REQ_SCHEMA, 'requirements': [
+        {'text': 'a single charge still works', 'kind': 'preserve', 'tests': ['test_once']}]}))
+    after = json.loads(run_cli(bug, 'coverage', mission['id'], '--requirements', str(later), '--json').stdout)
+    assert after['declaration'] == 'SUPPLIED_AT_ASSESSMENT'
+    assert any('A different declaration was frozen' in x for x in after['limits'])
+
+
+def test_coverage_without_a_declaration_is_refused(bug, tmp_path):
+    from conftest import run_cli
+    from repo_ai.mission.runtime import execute, plan
+    p = plan(bug, 'Fix duplicate charge in charge.py when retries happen', agent='replay',
+             write_paths=['charge.py'], execute_local=True)
+    result = execute(bug, p, replay(bug, tmp_path))
+    out = run_cli(bug, 'coverage', result['id'])
+    assert out.returncode != 0 and 'no requirements declaration' in (out.stdout + out.stderr)

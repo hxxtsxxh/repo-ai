@@ -73,6 +73,20 @@ def load_requirements(path: Path) -> dict[str, Any]:
     return {'requirements': clean, 'sha256': digest(clean)}
 
 
+def freeze(path: Path) -> dict[str, Any]:
+    """The declaration as stored with a mission plan (before it runs)."""
+    decl = load_requirements(path)
+    return {'schema': REQ_SCHEMA, 'requirements': decl['requirements'], 'sha256': decl['sha256']}
+
+
+def _frozen(state: dict[str, Any]) -> dict[str, Any] | None:
+    raw = (state.get('plan') or {}).get('requirements') if isinstance(state.get('plan'), dict) else None
+    if not isinstance(raw, dict) or not isinstance(raw.get('requirements'), list):
+        return None
+    clean = raw['requirements']
+    return {'requirements': clean, 'sha256': digest(clean)} if digest(clean) == raw.get('sha256') else None
+
+
 def _resolve(test: str, known: set[str]) -> tuple[str | None, str | None]:
     if test in known:
         return test, None
@@ -200,9 +214,19 @@ def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, 
                        'not frozen with the mission, so it can be written after the outcomes are known.']}
 
 
-def for_mission(root: Path, mission: str, decl: dict[str, Any]) -> dict[str, Any]:
+def for_mission(root: Path, mission: str, decl: dict[str, Any] | None = None) -> dict[str, Any]:
+    """`decl` None: the declaration frozen with the mission (`do --requirements`). A supplied one is marked as
+    written at assessment time unless it is byte-for-byte the frozen one."""
     from .runtime import status
     state = status(root.resolve(), mission)
+    frozen = _frozen(state)
+    if decl is None:
+        if frozen is None:
+            raise ValueError('no requirements declaration: pass --requirements FILE, or freeze one when planning '
+                             '(repo-ai do ... --requirements FILE)')
+        decl = frozen
+    declared = 'FROZEN_WITH_MISSION' if frozen is not None and frozen['sha256'] == decl['sha256'] \
+        else 'SUPPLIED_AT_ASSESSMENT'
     if state.get('kind') == 'comparison' or 'candidate' not in state or 'baseline' not in state:
         raise ValueError('coverage needs a single candidate mission with recorded baseline and candidate runs '
                          '(for a tournament, pass a candidate ID from the shortlist)')
@@ -214,6 +238,13 @@ def for_mission(root: Path, mission: str, decl: dict[str, Any]) -> dict[str, Any
     report = assess(decl, base, cand, verdict=state['effective_verdict'], freshness=state['freshness'],
                     exercise=exercise, pre_existing=[str(t) for t in (scoped.get('pre_existing_failures') or [])])
     report['mission'] = mission
+    report['declaration'] = declared
+    if declared == 'FROZEN_WITH_MISSION':
+        report['limits'] = [x for x in report['limits'] if 'not frozen with the mission' not in x] + [
+            'The declaration was frozen with the mission before it ran (it could not be written after the outcomes).']
+    elif frozen is not None:
+        report['limits'].append('A different declaration was frozen with this mission; this report assesses the '
+                                'one supplied now.')
     return report
 
 
@@ -227,6 +258,9 @@ def display_test_id(test: str) -> str:
 def render(report: dict[str, Any]) -> str:
     lines = [f"Acceptance coverage for {report.get('mission', 'mission')}: {report['headline']} "
              f"(task correctness: {report['task_correct']})"]
+    if report.get('declaration'):
+        lines.append('Declaration: ' + {'FROZEN_WITH_MISSION': 'frozen with the mission before it ran',
+                                        'SUPPLIED_AT_ASSESSMENT': 'supplied now, after the run'}[report['declaration']])
     for row in report['requirements']:
         lines.append(f"  [{row['status']}] ({row['kind']}) {json.dumps(row['text'], ensure_ascii=True)}")
         lines.append('      ' + row['detail'])

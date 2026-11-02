@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.
+  `repo-ai coverage MISSION_ID` without `--requirements` assesses it and reports `declaration: FROZEN_WITH_MISSION`;
+  a declaration supplied at assessment time is reported as `SUPPLIED_AT_ASSESSMENT` (C11's next action: a
+  pre-registered declaration).
 - `repo-ai coverage`, after an independent review against its acceptance criterion (C11):
   - A requirement whose tests showed fail-to-pass or pass-to-pass on a stale or non-PASS mission was still listed as
     `VERIFIED_*` and left out of `follow_up_test_needed`. It is now `UNVERIFIED_STALE` or `UNVERIFIED_INCONCLUSIVE`
