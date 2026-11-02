@@ -234,21 +234,31 @@ same 6 pyjwt disagreements as run 4: `failing (all failures pre-existing at the 
 
 **Question 1 (why strategies shifted).** Nine changes ran a different cold strategy across runs 2–4 (more-itertools 6,
 marshmallow 2fc8207d, itsdangerous c2300185, humanize 9528daf5). Every run-5 reason names the input that decided it:
-- the first change of a project has no measured times yet ("no per-file durations yet … running the selection"),
-  so it runs `targeted` whatever the suite;
-- later changes compare two estimates, and in run 5 those were close: more-itertools selection ~1.3 s against a
-  measured full suite of 1.8 s (`targeted`); marshmallow full 1.3 s against selection ~1.2 s and itsdangerous full
-  0.7 s against ~0.6 s, within the tie margin (`full`); humanize 9528daf5 full 0.8 s against ~0.8 s (`full`).
+- of the nine, more-itertools e7331924 (its project's first change) had no per-file durations and ran `targeted`.
+  When the full suite is not required, a missing measurement means `targeted`; in run 5 that reason appears on 9 cold
+  calls, 4 of them a project's first change (pyjwt's later changes and itsdangerous's second also lacked durations);
+  a change that requires the full suite runs `full` regardless (marshmallow 5c136b11);
+- the other eight compared two estimates, and those were close: more-itertools selection ~1.3 s against a measured
+  full suite of 1.8 s (`targeted`); marshmallow full 1.33 s against selection ~1.18 s, itsdangerous c2300185 0.73 s
+  against ~0.56 s and humanize 9528daf5 0.85 s against ~0.79 s (`full`: with `strategy.py`'s 0.25 s tie margin,
+  for example 1.33 ≤ 1.18 + 0.25).
 
-So a few tenths of a second, measured on the same runner during the run, decide the strategy: one plausible way the
-earlier runs flipped. That is inferred, because runs 2–4 did not record their estimates; run 5 shows the mechanism and
-its margins, not what those runs saw. One reason's wording was wrong ("no a full-suite time yet"); fixed in #83.
+**Recorded within run 5:** the cold and `--rerun` calls on one state chose different strategies on 4 of 30 changes,
+each after the cold call had added timings: humanize f772e59b (targeted → full, full suite estimated at 0.8 s),
+humanize 9528daf5 (full → targeted: the full suite's result could not be attributed to files), more-itertools
+e7331924 (targeted → full, 1.4 s against 1.3 s) and itsdangerous 4712ab6f (targeted → full, 0.7 s against 0.6 s). So
+the same runner chooses differently between two calls on the same state once timings change, the pattern of 2fc8207d
+in runs 2 and 3. That the earlier cross-run flips happened this way remains inferred: runs 2–4 did not record their
+estimates. One reason's wording was wrong ("no a full-suite time yet"); fixed in #83.
 
-**Question 2 (marshmallow 2fc8207d).** All three calls (cold, reuse, `--rerun`) chose `full` and ran the same
-command, `PYTHONPATH=src python -m pytest` (exit 0, `selected-and-full-suite-passed`; the three
-`tests/mypy_test_cases/` files listed as `no_tests`). The `targeted` path that gave exit 1 in runs 2 and 3 did not
-occur, so the addendum's inference about its command is still not checked by a recorded argv. The reason recorded
-shows why it went `full`: the measured full suite (1.3 s) was within the tie margin of the selection (~1.2 s).
+**Question 2 (marshmallow 2fc8207d).** The cold and `--rerun` calls each chose `full` and ran the same command,
+`PYTHONPATH=src python -m pytest` (exit 0, `selected-and-full-suite-passed`; the three `tests/mypy_test_cases/` files
+listed as `no_tests`); the reuse call reported the cold call's record (`reused: true`). The `targeted` path that gave
+exit 1 in runs 2 and 3 did not occur, so the addendum's inference about its command is still not checked by a
+recorded argv. Why it went `full`: the measured full suite (1.33 s) was within the 0.25 s tie margin of the
+selection (~1.18 s).
 
-**Limits.** One run. Not pooled. Estimates come from the same run's timings, so another runner can choose
-differently.
+**Limits.** One run. Not pooled. Estimates come from the same run's timings, so the same runner can choose
+differently between calls (above). For reuse calls the new fields describe the earlier run whose record was reused.
+`commands` holds the per-file result rows' display commands; a full suite run's command is in `full_suite.command`
+(so a `full`-only call can list no `commands`), and the base-comparison runs are not recorded.
