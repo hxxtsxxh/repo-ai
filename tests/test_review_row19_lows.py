@@ -14,7 +14,7 @@ from repo_ai import coding_lab, firewall
 from repo_ai.providers import discovery as d
 
 GIT = ["git", "-c", "user.email=t@example.invalid", "-c", "user.name=t", "-c", "maintenance.auto=false",
-       "-c", "gc.auto=0"]  # no background maintenance racing the copy of .git
+       "-c", "gc.auto=0", "-c", "core.autocrlf=false"]  # Windows runners' system config converts line endings  # no background maintenance racing the copy of .git
 
 
 # --- L4: a minified one-line file named LICENSE below the skill's root -------------------------------------------
@@ -154,6 +154,7 @@ def test_gitignore_patterns_are_anchored_to_their_directory():
 
 # --- L2: the Linux probe binds what it resolved and checked, not whatever the path names later -------------------
 
+@pytest.mark.skipif(sys.platform == "win32", reason="the probe sandbox runs on Linux (POSIX open flags)")
 def test_pin_refuses_a_path_with_a_symlinked_component(tmp_path):
     real = tmp_path.resolve() / "real"
     (real / "bin").mkdir(parents=True)
@@ -177,6 +178,7 @@ def _linux_bwrap(monkeypatch: pytest.MonkeyPatch, *, fd_binds: bool = True) -> N
     monkeypatch.setattr(d, "_bwrap_binds_fds", lambda bwrap: fd_binds)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="the probe sandbox runs on Linux (POSIX open flags)")
 def test_the_probe_binds_the_pinned_descriptor(tmp_path, monkeypatch):
     _linux_bwrap(monkeypatch)
     hidden = tmp_path.resolve()
@@ -202,6 +204,7 @@ def test_the_probe_binds_the_pinned_descriptor(tmp_path, monkeypatch):
             os.fstat(fd)  # closed with the prefix
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="the probe sandbox runs on Linux (POSIX open flags)")
 def test_a_path_swapped_after_resolution_is_not_bound(tmp_path, monkeypatch):
     """The exposed path resolved before a component became a symlink (to a directory that holds a socket, say):
     nothing is bound at that path, so the program does not run rather than seeing the swapped-in directory."""
@@ -218,6 +221,7 @@ def test_a_path_swapped_after_resolution_is_not_bound(tmp_path, monkeypatch):
     assert [prefix[i + 2] for i, a in enumerate(prefix) if a in ("--ro-bind", "--ro-bind-fd")] == ["/"]
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="the probe sandbox runs on Linux (POSIX open flags)")
 def test_an_older_bubblewrap_binds_by_path_as_before(tmp_path, monkeypatch):
     """No --ro-bind-fd (bubblewrap before 0.10): the path binds of 0.11.9, race not closed (recorded as residual)."""
     _linux_bwrap(monkeypatch, fd_binds=False)
@@ -231,19 +235,30 @@ def test_an_older_bubblewrap_binds_by_path_as_before(tmp_path, monkeypatch):
     assert d.pinned_fds(prefix) == ()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="the probe sandbox runs on Linux (POSIX open flags)")
 def test_a_subdirectory_swapped_during_the_socket_walk_counts_as_a_socket(tmp_path, monkeypatch):
     (tmp_path / "a").mkdir()
     (tmp_path / "b").mkdir()
     real_scandir = os.scandir
     swapped = []
 
+    class Listed(list):  # read eagerly (scandir is lazy on Linux), then swap, as a concurrent rename would
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
     def scandir(target):
-        it = real_scandir(target)
+        with real_scandir(target) as it:
+            entries = Listed(it)
+            for e in entries:
+                e.stat(follow_symlinks=False)  # cached now, as the walk reads it
         if not swapped:  # after the top level is listed, `a` becomes another directory
             swapped.append(True)
             (tmp_path / "a").rename(tmp_path / "a-old")
             (tmp_path / "b").rename(tmp_path / "a")
-        return it
+        return entries
     monkeypatch.setattr(d.os, "scandir", scandir)
     assert d._has_socket(str(tmp_path)) is True
 
