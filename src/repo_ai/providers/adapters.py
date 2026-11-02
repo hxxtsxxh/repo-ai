@@ -929,7 +929,10 @@ def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: 
         scratch = Path(directory).resolve()
         for name in ("home", "tmp", "work"):
             (scratch / name).mkdir()
-        prefix = _sandbox_prefix(scratch)
+        node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
+        node_dir = [Path(node).resolve().parent] if node and Path(node).is_absolute() and not _repo_owned(
+            node, root.resolve()) else []
+        prefix = _sandbox_prefix(scratch, [resolved, raw.parent, resolved.parent, *node_dir])
         if prefix is None:
             return {**base, "verdict": "NO_SANDBOX",
                     "problem": "no network-denying sandbox on this host (seatbelt or bubblewrap); nothing was run"}
@@ -944,10 +947,7 @@ def acp_conformance(executable: str, args: list[str], root: Path, *, timeout_s: 
         env = _probe_env(scratch)
         # an npm-installed agent starts through `env node`: its own directory and the host's node (never one inside
         # the repository), nothing else
-        extra = [str(raw.parent)]
-        node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
-        if node and Path(node).is_absolute() and not _repo_owned(node, root.resolve()):
-            extra.append(str(Path(node).resolve().parent))
+        extra = [str(raw.parent), *(str(d) for d in node_dir)]
         env["PATH"] = os.pathsep.join([*dict.fromkeys(extra), env["PATH"]])
         client = AcpClient([*prefix, str(resolved), *args], scratch / "work", allowed_writes=[], env=env)
         try:
@@ -1545,7 +1545,7 @@ def _claude_preflight(executable: Path, plan: claude_auth.ClaudeAuthPlan) -> tup
         scratch = Path(directory).resolve()
         for name in ("home", "tmp", "home/.claude"):
             (scratch / name).mkdir()
-        prefix = _sandbox_prefix(scratch)
+        prefix = _sandbox_prefix(scratch, [executable, executable.parent, *(r.parent for r in _node_roots())])
         if prefix is None:
             return "no_sandbox", ["no supported execution sandbox on this host"]
         env = _probe_env(scratch)

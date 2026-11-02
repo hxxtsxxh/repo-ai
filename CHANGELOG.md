@@ -2,12 +2,17 @@
 
 ## Unreleased
 
-- Security: the probe sandbox of `agents doctor` and `agents conformance` let a probed program reach the host's
-  unix sockets on Linux (D-Bus and the systemd user manager, X11, docker, ssh/gpg agents; `--unshare-net` does not
-  cover path-based sockets) and, on macOS, create launchd jobs or write preferences outside its scratch directory
-  (found by an independent security review of 0.11.3–0.11.7). Linux now hides `/tmp` and `/run` (and a real
-  `/var/run`) and unshares IPC and UTS; macOS denies job creation, preference writes and the pasteboard. Reads stay
-  unrestricted and other macOS system services stay reachable (disclosed). Live provider sandboxes are unchanged.
+- Security: the probe sandbox of `agents doctor`, `agents conformance` and the Claude preflight let a probed
+  program reach the host's unix sockets on Linux (D-Bus and the systemd user manager, X11, docker, ssh-agent;
+  `--unshare-net` does not cover path-based sockets) and, on macOS, write preferences outside its scratch directory
+  through cfprefsd and use the pasteboard (found by an independent security review of 0.11.3–0.11.7). Linux now hides
+  `/tmp`, `/run`, `/var/tmp`, a real `/var/run`, WSLg's `/mnt/wslg`, LXD's and Incus's directories and
+  `~/.ssh`, `~/.gnupg`, `~/.1password` and `~/.docker`, binds the probed program's own file and directory (and its
+  node runtime's) back read-only, so an agent installed under `/tmp` still runs, and unshares IPC and UTS. macOS
+  denies preference writes, the pasteboard and, as defence in depth, launchd job creation (launchd already refused
+  `launchctl submit` from a sandboxed caller on Darwin 25.5). Still open and disclosed: reads are not restricted;
+  unix sockets elsewhere on Linux (other files in your home directory, other `/var/lib` services) stay reachable; on
+  macOS other system services (Mach lookups) stay reachable. Live provider sandboxes are unchanged.
 
 ## 0.11.7 — faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed
 

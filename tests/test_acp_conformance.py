@@ -74,7 +74,7 @@ def test_a_relative_missing_or_repository_owned_executable_is_never_run(tmp_path
 
 def test_without_a_sandbox_nothing_runs(tmp_path, repo, monkeypatch):
     exe = fake_agent(tmp_path / "bins", expect=["acp"])
-    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: None)
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch, expose=(): None)
     res = adapters.acp_conformance(str(exe), ["acp"], repo)
     assert res["verdict"] == "NO_SANDBOX" and res["model_invoked"] is False
 
@@ -108,6 +108,22 @@ def test_the_probe_sandbox_denies_launchservices_and_isolates_processes(tmp_path
         assert prefix.index("--bind") > max(i for i, a in enumerate(prefix) if a == "--tmpfs")
 
 
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="bubblewrap probe (Linux)")
+@needs_sandbox
+def test_an_agent_directly_in_tmp_still_runs_in_the_linux_probe(repo):
+    """Review of #78: the probe hides /tmp; an agent there is bound back as a file (not the whole of /tmp)."""
+    import secrets
+    folder = Path("/tmp")
+    exe = fake_agent(folder, expect=["acp"])
+    target = folder / f"rai-agent-{secrets.token_hex(4)}"
+    exe.rename(target)
+    try:
+        res = adapters.acp_conformance(str(target), ["acp"], repo)
+        assert res["verdict"] == "HANDSHAKE_CONFORMANT", res
+    finally:
+        target.unlink(missing_ok=True)
+
+
 class _FakeClient:
     seen: dict = {}
 
@@ -122,7 +138,7 @@ class _FakeClient:
 
 def test_agent_supplied_text_is_stripped_of_terminal_escapes_and_bounded(tmp_path, repo, monkeypatch):
     exe = fake_agent(tmp_path / "bins", expect=[])
-    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["env"])
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch, expose=(): ["env"])
     monkeypatch.setattr(adapters, "AcpClient", _FakeClient)
     res = adapters.acp_conformance(str(exe), [], repo)
     printed = json.dumps(res, ensure_ascii=False)
@@ -135,7 +151,7 @@ def test_a_non_mapping_agent_info_does_not_break_the_report(tmp_path, repo, monk
         def probe(self, timeout_s=20.0):
             return {"acp": True, "protocol_version": 1, "agent": ["not", "a", "dict"], "capabilities": "nope"}
     exe = fake_agent(tmp_path / "bins", expect=[])
-    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["env"])
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch, expose=(): ["env"])
     monkeypatch.setattr(adapters, "AcpClient", Odd)
     res = adapters.acp_conformance(str(exe), [], repo)
     assert res["agent"] == {} and res["capabilities"] == [] and not res["checks"]["names_itself"]
@@ -148,7 +164,7 @@ def test_a_repository_owned_node_is_never_put_on_the_agents_path(tmp_path, repo,
     node.chmod(0o755)
     exe = fake_agent(tmp_path / "bins", expect=[])
     monkeypatch.setenv("PATH", f"{repo / 'bin'}{os.pathsep}{os.environ.get('PATH', '')}")
-    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["env"])
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch, expose=(): ["env"])
     monkeypatch.setattr(adapters, "AcpClient", _FakeClient)
     adapters.acp_conformance(str(exe), [], repo)
     assert str(repo / "bin") not in _FakeClient.seen["env"]["PATH"]
@@ -157,7 +173,7 @@ def test_a_repository_owned_node_is_never_put_on_the_agents_path(tmp_path, repo,
 def test_format_characters_are_stripped_and_unconfirmed_cleanup_is_not_a_pass(tmp_path, repo, monkeypatch):
     assert adapters._shown("a\u202eb\u200bc") == "abc"
     exe = fake_agent(tmp_path / "bins", expect=[])
-    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch: ["/usr/bin/sandbox-exec", "-p", "(version 1)"])
+    monkeypatch.setattr(adapters, "_sandbox_prefix", lambda scratch, expose=(): ["/usr/bin/sandbox-exec", "-p", "(version 1)"])
     monkeypatch.setattr(adapters, "AcpClient", _FakeClient)
     monkeypatch.setattr(adapters, "_reap_provider_run", lambda marker: ["provider cleanup not confirmed: x"])
     res = adapters.acp_conformance(str(exe), [], repo)
