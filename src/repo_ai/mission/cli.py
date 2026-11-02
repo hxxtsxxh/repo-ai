@@ -138,6 +138,9 @@ def cmd_do(args) -> int:
                                                  or getattr(args, 'tournament', None) or not args.run):
         raise ValueError('--requirements is frozen with a new single mission run: it needs --run and is not '
                          'supported with --resume, --from-handoff or --tournament')
+    if args.resume and (getattr(args, 'sandbox', None) or getattr(args, 'image', None)):
+        raise ValueError('--resume uses the test environment frozen with the mission; --sandbox and --image are '
+                         'not accepted with it')
     if args.resume:
         args.id = args.resume
         args.action = 'resume'
@@ -158,6 +161,8 @@ def cmd_do(args) -> int:
             max_cost_usd=args.max_cost_usd if args.max_cost_usd > 0 else None,
             extra_write_paths=list(args.allow_write or []),
             expect_fix=list(getattr(args, 'expect_fix', None) or []),
+            sandbox=getattr(args, 'sandbox', None),
+            image=getattr(args, 'image', None),
         )
         if getattr(args, 'apply', False) and value.get('effective_verdict') == 'PASS':
             apply_res = apply_mission(root, value['id'])
@@ -190,6 +195,8 @@ def cmd_do(args) -> int:
         allow_live=allow_live,
         roles=args.role,
         expect_fix=args.expect_fix,
+        sandbox=getattr(args, 'sandbox', None) or 'auto',
+        image=getattr(args, 'image', None) or '',
     )
     frozen_now = None
     if getattr(args, 'requirements', None):
@@ -215,6 +222,10 @@ def cmd_do(args) -> int:
         elif allow_live and value['contract']['provider'] in LIVE_PROVIDERS:
             _require_ceiling(value['contract']['provider'], args.max_cost_usd, value.get('provider_route'))
             value = execute(root, value, None, allow_live=True)
+        elif allow_live and args.agent == 'auto' and value.get('provider_route'):
+            route = value['provider_route']
+            raise ValueError(f"no provider can run this mission ({route['outcome']}): {route['why']}. "
+                             'See `repo-ai agents route --allow-live-provider` for each provider\'s reasons')
         else:
             raise ValueError(
                 'live provider execution requires --allow-live-provider (or use --agent replay --replay FILE for simulated execution)'
@@ -261,7 +272,8 @@ def _cmd_live_tournament(args, root: Path, allow_live: bool) -> int:
     options = dict(write_paths=args.allow_write, max_cost_usd=args.max_cost_usd,
                    allow_unknown_cost=bool(getattr(args, 'allow_unknown_cost', False)),
                    max_seconds=max(args.max_seconds, 600.0) if args.max_seconds == 120 else args.max_seconds,
-                   command=args.test_command)
+                   command=args.test_command, sandbox=getattr(args, 'sandbox', None) or 'auto',
+                   image=getattr(args, 'image', None) or '')
     if not args.run:
         tplan = plan_tournament(root, args.task, providers, **options)
         value = {'schema': 'repo-ai.live-tournament.plan/1', 'providers': tplan['providers'], 'bounds': tplan['bounds'],
@@ -699,6 +711,12 @@ def register(sub, common) -> None:
     p.add_argument('--requirements', metavar='FILE',
                    help='requirement -> test declaration (repo-ai.requirements/1) frozen with the mission before it runs '
                         '(needs --run); `repo-ai coverage ID` then assesses it and says it was declared before this run')
+    p.add_argument('--sandbox', default=None, choices=['auto', 'seatbelt', 'bwrap', 'podman', 'docker'],
+                   help="where the project's tests run (frozen with the mission: baseline, candidate, regression, "
+                        'post-apply verification and a continuation); auto: the host sandbox first')
+    p.add_argument('--image', metavar='REF',
+                   help="with --sandbox podman/docker: a local image with the project's dependencies (never pulled); "
+                        'the project code itself comes from the mission workspace')
     p.add_argument('--resume', metavar='ID', help='inspect/recover an interrupted checkpoint; no automatic model retry')
     p.set_defaults(func=cmd_do)
     p = sub.add_parser('agents', parents=[common], help='local provider availability; doctor runs sandboxed help/version only')
