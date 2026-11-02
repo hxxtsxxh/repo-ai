@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Routing (found by routing-journey-v1, C06): an explicitly chosen live provider that hit a quota or rate limit
+  recently is refused before it starts ("cooling down until …"), instead of being called again into the same limit;
+  automatic routing already skipped it. A provider that crashed or broke its event protocol under a USD ceiling is
+  classified `contract_failure`, no longer `budget_limit` (its unknown cost matched the budget rule).
+
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
 - `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.
