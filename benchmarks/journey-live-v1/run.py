@@ -422,8 +422,10 @@ def recovery(work: Path, exe: str, log: Log) -> None:
     """Failure recovery without a model: a replay mission whose image has no pytest must not pass. Only after every
     live session, so the upstream fix it carries is never on disk while an agent runs."""
     history = rows(work)
-    if not any(r["step"] == "sessions" for r in history):
-        raise SystemExit("recovery runs after the live stage (no `sessions` summary record yet)")
+    settled = {r["defect"] for r in history if r["step"] in ("live-mission-start", "skipped")}
+    if not set(DEFECTS) <= settled:
+        raise SystemExit("recovery runs after every defect's live stage (started or skipped): "
+                         + ", ".join(sorted(set(DEFECTS) - settled)))
     checked_build(exe, log)
     name = "humanize"
     d = DEFECTS[name]
