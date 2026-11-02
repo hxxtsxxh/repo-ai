@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Fixed: when the test runner is missing from the environment `verify` runs in (for example `No module named
+  'pytest'`), every test fails the same way at the base and with the change, and verify said "NO NEW FAILURES: every
+  failure also happens at the base". It now says "NOT VERIFIED: the test runner could not start … (pytest is not
+  installed there)" and lists the files as could not run. A run with a real failure as well keeps its usual verdict.
+  `repo-ai prove` and missions no longer count such a run as "no new failures". Found by the 0.11.8 smoke install.
+
 ## 0.11.8 — probe sandbox hardening, security review fixes, consumed handoff capsules
 
 - Security (release review of 0.11.8): the coding lab's integrity check read a hidden test's baseline with
