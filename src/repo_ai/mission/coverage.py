@@ -11,6 +11,13 @@ observed for exactly those test IDs. Per requirement:
   NOT_OBSERVED            a mapped test was skipped at baseline and candidate: it observed nothing
   MISSING_TEST            a declared test ID was not collected (absent or ambiguous)
   UNMAPPED                no test declared: nothing observed supports this requirement
+  UNVERIFIED_STALE / UNVERIFIED_INCONCLUSIVE
+                          the run is stale or not a comparable PASS: whatever the tests showed is not verification
+
+Besides the declared requirements, the report names the obligations nothing declared covers: changed executable
+lines no frozen test ran (the mission's change-exercise measurement), and failures a scoped mission accepted as
+pre-existing. Either keeps the headline below ACCEPTANCE_MAPPED_ALL. A test named by a bare suffix and one test
+mapped to several requirements are flagged.
 
 The headline is ACCEPTANCE_MAPPED_ALL only if every requirement is verified. It is never a task-correctness claim:
 the mapping is the developer's statement, the tests may be weak, and a verified requirement only means the declared
@@ -75,61 +82,104 @@ def _resolve(test: str, known: set[str]) -> tuple[str | None, str | None]:
     return None, ('ambiguous: matches ' + ', '.join(hits[:3])) if hits else 'not collected in the recorded runs'
 
 
-def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, str], *,
-           verdict: str, freshness: str) -> dict[str, Any]:
-    known = set(baseline) | set(candidate)
-    rows: list[dict[str, Any]] = []
-    for req in decl['requirements']:
-        if not req['tests']:
-            rows.append({**req, 'status': 'UNMAPPED', 'detail': 'no test declared; nothing observed supports this requirement',
-                         'observed': []})
+def _row(req: dict[str, Any], known: set[str], baseline: dict[str, str], candidate: dict[str, str]) -> dict[str, Any]:
+    if not req['tests']:
+        return {**req, 'status': 'UNMAPPED', 'detail': 'no test declared; nothing observed supports this requirement',
+                'observed': []}
+    observed: list[dict[str, Any]] = []
+    problems: list[str] = []
+    for test in req['tests']:
+        resolved, why = _resolve(test, known)
+        if resolved is None:
+            problems.append(f'{test}: {why}')
             continue
-        observed: list[dict[str, Any]] = []
-        problems: list[str] = []
-        for test in req['tests']:
-            resolved, why = _resolve(test, known)
-            if resolved is None:
-                problems.append(f'{test}: {why}')
-                continue
-            observed.append({'test': resolved, 'baseline': baseline.get(resolved, 'absent'),
-                             'candidate': candidate.get(resolved, 'absent')})
-        if problems:
-            status, detail = 'MISSING_TEST', '; '.join(problems)
-        elif any(o['candidate'] == 'skip' and o['baseline'] == 'skip' for o in observed):
-            status, detail = 'NOT_OBSERVED', 'a mapped test was skipped at baseline and candidate'
-        elif any(o['candidate'] != 'pass' for o in observed):
-            status, detail = 'FAILING', 'a mapped test does not pass on the candidate'
-        elif req['kind'] == 'preserve':
-            ok = all(o['baseline'] == 'pass' for o in observed)
-            status = 'VERIFIED_PRESERVED' if ok else 'NOT_DISCRIMINATING'
-            detail = 'mapped tests passed before and after' if ok else 'a preserve test did not pass at baseline'
-        elif all(o['baseline'] == 'fail' for o in observed):
-            status, detail = 'VERIFIED_FAIL_TO_PASS', 'every mapped test failed at baseline and passes on the candidate'
+        observed.append({'test': resolved, 'declared': test, 'matched': 'exact' if resolved == test else 'suffix',
+                         'baseline': baseline.get(resolved, 'absent'), 'candidate': candidate.get(resolved, 'absent')})
+    if problems:
+        return {**req, 'status': 'MISSING_TEST', 'detail': '; '.join(problems), 'observed': observed}
+    # a failure on the candidate outranks a skipped neighbour: a regression is never called "not observed"
+    if any(o['candidate'] not in {'pass', 'skip'} for o in observed):
+        status, detail = 'FAILING', 'a mapped test does not pass on the candidate'
+    elif any(o['candidate'] == 'skip' for o in observed):
+        status, detail = 'NOT_OBSERVED', 'a mapped test was skipped on the candidate: it observed nothing'
+    elif req['kind'] == 'preserve':
+        ok = all(o['baseline'] == 'pass' for o in observed)
+        status = 'VERIFIED_PRESERVED' if ok else 'NOT_DISCRIMINATING'
+        detail = 'mapped tests passed before and after' if ok else 'a preserve test did not pass at baseline'
+    elif all(o['baseline'] == 'fail' for o in observed):
+        status, detail = 'VERIFIED_FAIL_TO_PASS', 'every mapped test failed at baseline and passes on the candidate'
+    else:
+        status = 'NOT_DISCRIMINATING'
+        passed = [display_test_id(o['test']) for o in observed if o['baseline'] == 'pass']
+        moved = [display_test_id(o['test']) for o in observed if o['baseline'] == 'fail']
+        unseen = [display_test_id(o['test']) for o in observed if o['baseline'] not in {'pass', 'fail'}]
+        parts = []
+        if passed:
+            parts.append('already passed at baseline, so it cannot show this change: ' + ', '.join(passed))
+        if unseen:
+            parts.append('no baseline observation, so it cannot show this change: ' + ', '.join(unseen))
+        detail = '; '.join(parts)
+        if moved:
+            detail += ('; failed at baseline and passes now: ' + ', '.join(moved)
+                       + '. Map the already-passing tests to a separate preserve requirement to verify this one')
         else:
-            status = 'NOT_DISCRIMINATING'
-            passed = [display_test_id(o['test']) for o in observed if o['baseline'] == 'pass']
-            moved = [display_test_id(o['test']) for o in observed if o['baseline'] == 'fail']
-            unseen = [display_test_id(o['test']) for o in observed if o['baseline'] not in {'pass', 'fail'}]
-            parts = []
-            if passed:
-                parts.append('already passed at baseline, so it cannot show this change: ' + ', '.join(passed))
-            if unseen:
-                parts.append('no baseline observation, so it cannot show this change: ' + ', '.join(unseen))
-            detail = '; '.join(parts)
-            if moved:
-                detail += ('; failed at baseline and passes now: ' + ', '.join(moved)
-                           + '. Map the already-passing tests to a separate preserve requirement to verify this one')
-            else:
-                detail += ('. No mapped test failed before the change; add one that does (a requirement the original '
-                           'code already met is a preserve requirement)')
-        rows.append({**req, 'status': status, 'detail': detail, 'observed': observed})
+            detail += ('. No mapped test failed before the change; add one that does (a requirement the original '
+                       'code already met is a preserve requirement)')
+    by_suffix = [o for o in observed if o['matched'] == 'suffix']
+    if by_suffix:
+        detail += '; matched by name, check it is the intended test: ' + ', '.join(
+            f"{o['declared']} -> {display_test_id(o['test'])}" for o in by_suffix)
+    return {**req, 'status': status, 'detail': detail, 'observed': observed}
+
+
+def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, str], *,
+           verdict: str, freshness: str, exercise: dict[str, Any] | None = None,
+           pre_existing: list[str] | None = None) -> dict[str, Any]:
+    """`exercise`: the mission's change-exercise record (which changed lines the frozen tests ran); `pre_existing`:
+    failures a scoped mission accepted. Both are obligations no declared requirement discharges."""
+    known = set(baseline) | set(candidate)
+    rows = [_row(req, known, baseline, candidate) for req in decl['requirements']]
     verified = {'VERIFIED_FAIL_TO_PASS', 'VERIFIED_PRESERVED'}
+    fresh_pass = freshness == 'fresh' and verdict == 'PASS'
+    if not fresh_pass:
+        # what the tests showed is not verification when the run is stale or not a comparable PASS
+        label = 'UNVERIFIED_STALE' if freshness == 'stale' else 'UNVERIFIED_INCONCLUSIVE'
+        why = ('the evidence is stale' if freshness == 'stale'
+               else f'the mission verdict is {verdict} (freshness {freshness}), not a comparable fresh PASS')
+        for r in rows:
+            if r['status'] in verified:
+                r['observed_status'] = r['status']
+                r['status'], r['detail'] = label, f"{why}; the mapped tests showed {r['observed_status']}"
+    # one test standing for several requirements cannot show each of them separately
+    owners: dict[str, list[str]] = {}
+    for r in rows:
+        for o in r['observed']:
+            owners.setdefault(o['test'], []).append(r['text'])
+    shared = {t: reqs for t, reqs in owners.items() if len(reqs) > 1}
+    obligations: list[str] = []
+    # `exercise` None: not given by the caller (nothing claimed either way); a record: the mission's measurement
+    changed_code: dict[str, Any] = {'assurance': 'NOT_GIVEN'}
+    if exercise is not None:
+        changed_code = {k: exercise.get(k) for k in ('assurance', 'changed_lines', 'unexercised', 'unexercised_count')
+                        if k in exercise}
+    level = changed_code.get('assurance')
+    if level == 'NOT_GIVEN':
+        pass
+    elif level == 'PARTIAL':
+        shown = ', '.join((changed_code.get('unexercised') or [])[:8])
+        obligations.append(f"changed code no frozen test ran ({changed_code.get('unexercised_count', 0)} of "
+                           f"{changed_code.get('changed_lines', 0)} changed executable lines: {shown})")
+    elif level not in {'FULL', 'NO_EXECUTABLE_CHANGE'}:
+        obligations.append('whether the frozen tests ran the changed code was not measured for this mission')
+    if pre_existing:
+        obligations.append('failures accepted as pre-existing in this scoped mission: '
+                           + ', '.join(display_test_id(t) for t in pre_existing[:8]))
     unverified = [r for r in rows if r['status'] not in verified]
     if freshness == 'stale':
         headline = 'STALE'
-    elif freshness != 'fresh' or verdict != 'PASS':
+    elif not fresh_pass:
         headline = 'INCONCLUSIVE'
-    elif not unverified:
+    elif not unverified and not obligations:
         headline = 'ACCEPTANCE_MAPPED_ALL'
     elif len(unverified) == len(rows):
         headline = 'ACCEPTANCE_UNMAPPED'
@@ -139,10 +189,13 @@ def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, 
             'requirements_sha256': decl['sha256'], 'mission_verdict': verdict, 'freshness': freshness,
             'counts': {s: sum(1 for r in rows if r['status'] == s) for s in sorted({r['status'] for r in rows})},
             'follow_up_test_needed': [r['text'] for r in unverified],
+            'other_obligations': obligations, 'changed_code': changed_code,
+            'shared_tests': {display_test_id(t): reqs for t, reqs in shared.items()},
             'limits': ['The mapping is the developer\'s declaration; repo-ai checked only that the named tests exist and what '
                        'they observed.',
                        'A verified requirement means a declared test observed it, not that the test is strong enough.',
-                       'Behavior not listed as a requirement is not assessed.']}
+                       'Behavior not listed as a requirement is not assessed; the declaration is read when coverage runs, '
+                       'not frozen with the mission, so it can be written after the outcomes are known.']}
 
 
 def for_mission(root: Path, mission: str, decl: dict[str, Any]) -> dict[str, Any]:
@@ -153,7 +206,11 @@ def for_mission(root: Path, mission: str, decl: dict[str, Any]) -> dict[str, Any
                          '(for a tournament, pass a candidate ID from the shortlist)')
     base = {k: str(v) for k, v in (state['baseline'].get('outcomes') or {}).items()}
     cand = {k: str(v) for k, v in (state['candidate'].get('outcomes') or {}).items()}
-    report = assess(decl, base, cand, verdict=state['effective_verdict'], freshness=state['freshness'])
+    raw_scoped, raw_exercise = state.get('scoped'), state.get('exercise')
+    scoped: dict[str, Any] = raw_scoped if isinstance(raw_scoped, dict) else {}
+    exercise: dict[str, Any] = raw_exercise if isinstance(raw_exercise, dict) else {'assurance': 'NOT_RECORDED'}
+    report = assess(decl, base, cand, verdict=state['effective_verdict'], freshness=state['freshness'],
+                    exercise=exercise, pre_existing=[str(t) for t in (scoped.get('pre_existing_failures') or [])])
     report['mission'] = mission
     return report
 
@@ -176,5 +233,9 @@ def render(report: dict[str, Any]) -> str:
     if report['follow_up_test_needed']:
         lines.append('Follow-up acceptance test needed for: ' + '; '.join(json.dumps(t, ensure_ascii=True)
                                                                          for t in report['follow_up_test_needed']))
+    for item in report.get('other_obligations') or []:
+        lines.append('Not covered by any requirement: ' + item)
+    for test, reqs in (report.get('shared_tests') or {}).items():
+        lines.append(f'One test, {len(reqs)} requirements: {test} cannot show each of them separately')
     lines.extend('Limit: ' + x for x in report['limits'])
     return '\n'.join(lines)

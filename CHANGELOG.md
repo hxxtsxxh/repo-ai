@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- `repo-ai coverage`, after an independent review against its acceptance criterion (C11):
+  - A requirement whose tests showed fail-to-pass or pass-to-pass on a stale or non-PASS mission was still listed as
+    `VERIFIED_*` and left out of `follow_up_test_needed`. It is now `UNVERIFIED_STALE` or `UNVERIFIED_INCONCLUSIVE`
+    (what the tests showed kept as `observed_status`).
+  - Changed executable lines no frozen test ran (the mission's change-exercise measurement), and failures a scoped
+    mission accepted as pre-existing, are listed under `other_obligations` and keep the headline at
+    `ACCEPTANCE_PARTIAL`; before, `ACCEPTANCE_MAPPED_ALL` could stand next to them.
+  - A bare test name matched to a test in another file is flagged in its row; one test mapped to several
+    requirements is listed under `shared_tests`; a failing mapped test is no longer reported as `NOT_OBSERVED`
+    because another mapped test was skipped.
 - `handoff --verify`: a capsule exported after its mission's continuation started no longer also reports "stored
   mission changed since capsule export" once the child mission is recorded; the consumed reason says it. The
   continuation record is left out of the capsule's snapshot and checked on its own. Such a capsule exported by
