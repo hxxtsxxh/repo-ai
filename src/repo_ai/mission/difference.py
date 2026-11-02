@@ -69,10 +69,11 @@ def compare(root: Path, base: str, diffs: dict[str, str]) -> dict[str, Any]:
     prints: dict[str, str | None] = {}
     for cid, diff in diffs.items():
         try:
-            rebuilt = _post_images(root, base, diff, diff_stats(diff)["files"])
-            images[cid], prints[cid] = rebuilt, (code_fingerprint(rebuilt) if rebuilt is not None else None)
+            images[cid] = _post_images(root, base, diff, diff_stats(diff)["files"])
         except Exception:  # noqa: BLE001 - a rebuild that fails makes no claim; it never loses the comparison
-            images[cid], prints[cid] = None, None
+            images[cid] = None
+        rebuilt = images[cid]
+        prints[cid] = code_fingerprint(rebuilt) if rebuilt is not None else None
     ids = list(diffs)
     pairs = []
     group_of: dict[str, str] = {}

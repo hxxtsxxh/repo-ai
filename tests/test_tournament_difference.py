@@ -91,10 +91,12 @@ def test_a_coding_cookie_is_never_cosmetic(repo):
     assert pair['difference'] == 'SUBSTANTIVE'
 
 
-def test_a_file_too_deep_to_parse_is_compared_by_name_not_a_crash(repo):
+def test_a_file_too_deep_to_parse_is_never_a_crash_or_a_same_code_claim(repo):
     root, head = repo
     deep = 'X = ' + ' + '.join(['1'] * 5000) + '\n'
     a = diff(root, {'m.py': BASE + deep})
     b = diff(root, {'m.py': BASE + deep.replace('X =', 'Y =')})
     [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
-    assert pair['difference'] in ('SUBSTANTIVE', 'UNKNOWN')
+    assert pair['difference'] == 'SUBSTANTIVE' and pair['where'] == ['m.py']  # rebuilt, compared by file name
+    from repo_ai.mission.shortlist import code_fingerprint
+    assert code_fingerprint({'m.py': (BASE + deep).encode()}) is None
