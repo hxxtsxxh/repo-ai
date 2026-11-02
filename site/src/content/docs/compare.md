@@ -28,13 +28,15 @@ runs. The scope and the projects it does not cover are on [Evaluation & methodol
 - **Slower than running the suite yourself.** On 30 real upstream commits in five small pure-Python projects
   (speed-v1), `verify --run` took 1.84× the native suite (geometric mean) in the preregistered run, slower on 24 of
   30, and 2.23×, 2.00× and 1.96× in three later runs, slower on 30, 30 and 28 of 30. It does not save time on small
-  suites; where the extra time goes has not been profiled component by component.
+  suites. A profile on a generated 40-test project traced most of the fixed cost to source-tree snapshots and git
+  calls, since reduced; the speed-v1 projects themselves have not been profiled.
   ([Evaluation](/repo-ai/docs/evaluation/); [speed-v1 results](https://github.com/hxxtsxxh/repo-ai/blob/main/benchmarks/speed-v1/RESULTS.md))
 - **Fewer runners.** Jest, Vitest and Mocha are not supported for selection (full suite only). unittest and
   TypeScript have no held-out qualification. ([Status matrix](/repo-ai/docs/status/))
 - **It runs in the project's environment.** If the project's test runner is not installed where verify runs the
-  tests, nothing is verified. 0.11.8 exits 1 but labels that run "NO NEW FAILURES … at the base"; the next release
-  says NOT VERIFIED.
+  tests, nothing is verified. 0.11.8 exits 1 but labels that run "NO NEW FAILURES … at the base" (and its `prove`
+  and `--expect-fix` missions counted it as no new failures); main, unreleased, says NOT VERIFIED.
+  ([changelog](https://github.com/hxxtsxxh/repo-ai/blob/main/CHANGELOG.md))
 - **Not shown to make agents better.** In a preregistered, blinded study (150 runs, 25 tasks) plain Claude scored 92%,
   and repo-ai's two context configurations 90% (Core) and 88% (Full). Every difference was inconclusive, and
   equivalence was not shown either. Whether repo-ai improves an agent's results is `NOT_YET_DEMONSTRATED`.
