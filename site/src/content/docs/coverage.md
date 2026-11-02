@@ -22,7 +22,8 @@ repo-ai coverage MISSION_ID --requirements reqs.json --json
 After 0.11.8 you can declare the requirements **before** the run: `repo-ai do ... --run --requirements reqs.json`
 freezes the declaration with the mission record. `repo-ai coverage MISSION_ID` (no `--requirements`) then assesses
 that frozen declaration and reports `declaration: FROZEN_WITH_MISSION`: it was written before this mission ran. If an
-earlier mission on the same source and proposal had already recorded outcomes, it says `FROZEN_AFTER_PRIOR_RUN`
+earlier mission still in the store, on the same source with the same proposal or candidate diff, had already
+recorded outcomes, it says `FROZEN_AFTER_PRIOR_RUN`
 instead; and it cannot know about tests you ran yourself. A file supplied later is `SUPPLIED_AT_ASSESSMENT`. The record's
 digest is unkeyed: it catches accidental edits, not someone who rewrites the local mission store. `--requirements`
 needs `--run` and is refused with `--resume`, `--from-handoff`, `--tournament`, and for a mission already recorded

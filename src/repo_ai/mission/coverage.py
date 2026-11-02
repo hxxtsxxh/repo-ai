@@ -99,8 +99,9 @@ def _frozen(state: dict[str, Any]) -> tuple[dict[str, Any] | None, str]:
 
 
 def _prior_runs(root: Path, state: dict[str, Any]) -> list[str]:
-    """Earlier missions on the same source and proposal: their outcomes were visible before this one froze its
-    declaration, so "frozen before this mission ran" says nothing about what was already known."""
+    """Earlier missions on the same source with the same proposal or the same candidate diff: their outcomes were
+    visible before this one froze its declaration, so "frozen before this mission ran" says nothing about what was
+    already known. Only missions still in this store are seen."""
     from .ledger import Store
     store = Store(root)
     me, source = state.get('id'), (state.get('source') or {}).get('fingerprint')
@@ -113,8 +114,9 @@ def _prior_runs(root: Path, state: dict[str, Any]) -> list[str]:
             other = store.load(path.stem)
         except (ValueError, OSError):
             continue
-        if ((other.get('source') or {}).get('fingerprint') == source
-                and other.get('proposal_sha256') == state.get('proposal_sha256')
+        same_change = (other.get('proposal_sha256') == state.get('proposal_sha256')
+                       or (bool(state.get('diff_sha256')) and other.get('diff_sha256') == state.get('diff_sha256')))
+        if ((other.get('source') or {}).get('fingerprint') == source and same_change
                 and (other.get('attempt_started_at') or 0) < started and 'candidate' in other):
             out.append(path.stem)
     return out

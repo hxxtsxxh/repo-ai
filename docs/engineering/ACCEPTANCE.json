@@ -207,7 +207,7 @@
    ],
    "limits": [
     "requirements map to changed code only through the mission's line-level exercise measurement (lines no frozen test ran are named), not requirement by requirement",
-    "a frozen declaration shows only that it preceded this mission's run: outcomes known from tests run outside repo-ai are invisible to it, and its digest is unkeyed (accidental edits only, not a rewritten local store); a declaration supplied at assessment time is labelled SUPPLIED_AT_ASSESSMENT",
+    "a frozen declaration shows only that it preceded this mission's run: outcomes known from tests run outside repo-ai are invisible to it, and its digest is unkeyed (accidental edits only, not a rewritten local store); a declaration supplied at assessment time is labelled SUPPLIED_AT_ASSESSMENT; prior-run detection sees only missions still in the store on the same source with the same proposal or candidate diff",
     "test-id resolution: a bare name matched by suffix is flagged, not refused; node and parametrized ids with '::' can match partially; a leaf name never matches a `describe > leaf` id",
     "one test mapped to several requirements is flagged (shared_tests), not refused: all of them can still reach ACCEPTANCE_MAPPED_ALL"
    ],

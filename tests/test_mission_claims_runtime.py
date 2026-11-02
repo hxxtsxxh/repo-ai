@@ -141,3 +141,23 @@ def test_a_malformed_frozen_declaration_is_reported_not_crashed_on(bug, tmp_path
     store.save(rec)
     out = run_cli(bug, 'coverage', done['id'])
     assert out.returncode != 0 and 'malformed' in (out.stdout + out.stderr) and 'Traceback' not in out.stderr
+
+
+def test_the_same_diff_through_a_relabelled_proposal_is_a_prior_run(bug, tmp_path):
+    """Review round 2 of #96: a copy of the replay file with only its label changed."""
+    from conftest import run_cli
+    from repo_ai.mission import coverage as cov
+    task = 'Fix duplicate charge in charge.py when retries happen'
+    proposal = replay(bug, tmp_path)
+    first = json.loads(run_cli(bug, 'do', task, '--agent', 'replay', '--replay', str(proposal), '--run',
+                               '--allow-write', 'charge.py', '--json').stdout)
+    relabelled = tmp_path / 'relabelled.json'
+    data = json.loads(proposal.read_text())
+    data['label'] = data['label'] + ' (again)'
+    relabelled.write_text(json.dumps(data))
+    f = tmp_path / 'late.json'
+    f.write_text(json.dumps({'schema': cov.REQ_SCHEMA, 'requirements': [{'text': 'x', 'tests': ['test_retry']}]}))
+    second = json.loads(run_cli(bug, 'do', task, '--agent', 'replay', '--replay', str(relabelled), '--run',
+                                '--allow-write', 'charge.py', '--requirements', str(f), '--json').stdout)
+    report = json.loads(run_cli(bug, 'coverage', second['id'], '--json').stdout)
+    assert report['declaration'] == 'FROZEN_AFTER_PRIOR_RUN' and first['id'] in report['prior_runs']
