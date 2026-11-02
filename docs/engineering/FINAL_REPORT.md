@@ -1,12 +1,24 @@
 # Omniprovider mission — report
 
-Status: **0.11.8 publicly shipped and verified (2026-11-02)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.11.9 publicly shipped and verified (2026-11-02)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-02)
+
+### Release 0.11.9 (verified after publication)
+
+| What | Value |
+|---|---|
+| Tag | `v0.11.9` (annotated) at `26f3988e763b2b9721180322007fa4a180dd9862`, merge of #97; pushed by the agent with the owner's authorization for this release |
+| Contents | the code changes merged after 0.11.8: #87 workspace git without host configuration and no persisted checkout tokens, #89 a missing test runner is NOT VERIFIED, #90 probe hidden directories by real path, #91 handoff snapshot, #94 coverage review fixes, #96 `do --requirements`; plus the findings of its own release-level review, fixed in #97 (two rounds) |
+| Qualification | #97 green, incl. the dispatched full CI with the macOS suite at `d4c94ac` (run 41444670896) |
+| Release workflow | run 41487187744: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
+| PyPI | <https://pypi.org/project/repo-ai-cli/0.11.9/>: wheel `ca3bc35fa442db4d1ab971be37012ac5df65c2b4d18ab28f943c0549db0cec4d`, sdist `2dddc5255e424ff314506bed8f54554389ec8564f78c8b8666ea8d5ae34e488c`; identical to the GitHub release assets and to a local clean build; the wheel rebuilt from the sdist is identical; `SHA256SUMS` OK; SLSA provenance verified for both (release.yml at `refs/tags/v0.11.9`, `26f3988`) |
+| Clean install | macOS, fresh virtualenv from the default index (no `direct_url.json`; the index wheel's hash matches): `repo-ai 0.11.9`, `init`; with pytest absent from the interpreter, `verify --run` reported NOT VERIFIED: the test runner could not start (the 0.11.8 smoke finding) |
+| Website | updated by the Pages deploy that follows this record |
 
 ### Release 0.11.8 (verified after publication)
 
@@ -18,7 +30,7 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 | Release workflow | run 41396702501: build, smoke on ubuntu/windows/macos, Trusted Publishing, GitHub release |
 | PyPI | <https://pypi.org/project/repo-ai-cli/0.11.8/>: wheel `967e659016454f9da1b8d37ddbd2f5d8fa59b592a910892d22f7bfe40a57ba8c`, sdist `d46d99aac42a2d87d2cffea27bacee414ea076884f94904dea21beb21e212b21`; identical to the GitHub release assets and to a local clean build; the wheel rebuilt from the sdist is identical; `SHA256SUMS` OK; SLSA provenance verified for both (release.yml at `refs/tags/v0.11.8`, `5662506`) |
 | Website | <https://hxxtsxxh.github.io/repo-ai/>, Pages run for main `9f3904d` (2026-11-02T07:40Z); checked 2026-11-02T10:00Z: all 20 sitemap URLs 200 over HTTPS, a real 404 for a missing page, the served pages name 0.11.8 and the site changelog has a 0.11.8 section |
-| Clean install | macOS, fresh virtualenv from the default index: `repo-ai 0.11.8`, `init`, a comment-only change gave NOTHING TO RUN. The same run found that a missing test runner was headlined "NO NEW FAILURES" (exit 1); fixed on main (#89) |
+| Clean install | macOS, fresh virtualenv from the default index: `repo-ai 0.11.8`, `init`, a comment-only change gave NOTHING TO RUN. The same run found that a missing test runner was headlined "NO NEW FAILURES" (exit 1); fixed in 0.11.9 (#89) |
 
 ### Releases since 0.11.2
 
@@ -30,15 +42,13 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 | 0.11.6 | 2026-11-01 | `9edf537` | `c56e61e5…` | faster hooks and commands, a pytest collection note |
 | 0.11.7 | 2026-11-01 | `34cb2e9` | `6a70b4b7…` | faster verify on Linux, Claude live on Linux, conventions-skill trial, Gemini removed |
 | 0.11.8 | 2026-11-02 | `5662506` | `967e6590…` | security review fixes (above) |
+| 0.11.9 | 2026-11-02 | `26f3988` | `ca3bc35f…` | a missing test runner is NOT VERIFIED; `do --requirements`; coverage review fixes; workspace git without host configuration; probe hidden directories by real path |
 
-0.11.5–0.11.8 were each checked after publication the same way (PyPI = GitHub release = local build, `SHA256SUMS`,
+0.11.5–0.11.9 were each checked after publication the same way (PyPI = GitHub release = local build, `SHA256SUMS`,
 attestation, clean install); 0.11.3: PyPI = GitHub release = local build, attestation, smoke (`SHA256SUMS` not
 recorded). Details per release in ACCEPTANCE.json C20.
 
-**On main, not released** (after 0.11.8): #87 workspace git without host-global configuration and no persisted
-checkout tokens; #89 a missing test runner is NOT VERIFIED; #90 probe hidden directories by real path; #91 handoff
-snapshot; the coverage review fixes (C11) and the comparison page (C22) when merged. A 0.11.9 tag needs the owner's
-authorization.
+**0.11.9** shipped the code changes merged after 0.11.8 (details in the table above).
 
 ### Providers (changes since 0.10.0)
 
@@ -60,7 +70,7 @@ Every medium is fixed.
   vetting, a quadratic dup2 check, a TOML crash, an unbounded pytestcfg pattern, checkout tokens in three workflows),
   coding-lab host git over a pre-run copy of `.git`, and the second review's medium (integrity `git show` on the
   agent-writable `.git`) and L1 (#86).
-- **Fixed on main, unreleased:** L3 (#90), L5 (#91), L7 and part of L6 (#87: no host-global git configuration,
+- **Fixed in 0.11.9:** L3 (#90), L5 (#91), L7 and part of L6 (#87: no host-global git configuration,
   `persist-credentials: false` everywhere).
 - **Still open and disclosed:** L2 (a resolve-to-bind race in the Linux probe), L4, the rest of L6 (QUEUE row 19);
   probe reads are not restricted; Linux unix sockets outside the hidden directories; macOS signals and IOKit; the
@@ -99,8 +109,8 @@ IN_PROGRESS: C24.
 - **Live third-party projects (C21):** the live provider journey within the remaining live budget; third-party code
   needs the owner's explicit approval or runs on CI (EXPERIMENTS.md). The Claude token used so far was removed.
 - **Tournament on behaviourally different candidates (C12), routing over real host states (C06):** live calls.
-- **Requirement coverage (C11):** an independent review found it partly met; its fixes are in #94 (open). Proposed
-  next: a declaration frozen with the mission and requirement-to-code links.
+- **Requirement coverage (C11):** an independent review found it partly met; its fixes (#94) and a declaration frozen
+  with the mission (#96) shipped in 0.11.9. Next: requirement-by-requirement links to the changed code.
 - **Speed (C16):** the fixed cost on small suites; steadier strategy inputs.
 
 ## The 0.10.0 cycle (2026-10-30)
