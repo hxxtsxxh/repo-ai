@@ -167,6 +167,11 @@ def classify_failure(reasons: list[str]) -> str | None:
 
 
 def _isolated_ready(provider: str) -> bool:
+    from . import egress
+    from .adapters import EGRESS_PROVIDERS
+    if (sys.platform.startswith("linux") and egress.enabled() and provider in EGRESS_PROVIDERS
+            and egress.system_python() is None):
+        return False  # run_provider would refuse it: the egress forwarder needs a system python3
     with tempfile.TemporaryDirectory(prefix="repo-ai-route-") as d:
         base = Path(d)
         return _execution_sandbox_prefix(base, base, allow_network=True, provider=provider, live=True,
