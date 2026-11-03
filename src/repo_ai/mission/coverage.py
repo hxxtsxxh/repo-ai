@@ -368,6 +368,9 @@ def render(report: dict[str, Any]) -> str:
         if by_req.get('run_outside_any_test'):
             lines.append('Changed lines run outside any test (import, collection): '
                          + ', '.join(by_req['run_outside_any_test'][:8]))
+        if not by_req.get('complete'):
+            lines.append('Changed lines by requirement: the per-test record is incomplete (a child process, an early '
+                         'stop or too many tests); a requirement shown with 0 lines may have run some')
         lines.append('Changed lines by requirement: ' + str(by_req.get('note', '')))
     elif by_req:
         lines.append('Changed lines by requirement: ' + str(by_req.get('reason', 'not measured')))

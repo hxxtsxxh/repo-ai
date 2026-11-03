@@ -188,3 +188,37 @@ def test_a_spawned_process_makes_the_per_test_record_incomplete(tmp_path):
     root = _repo(tmp_path, PY_AFTER, test)
     rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
     assert rec['per_test_complete'] is False, rec
+
+
+def test_multiprocessing_and_an_early_stop_make_the_per_test_record_incomplete(tmp_path):
+    """Re-review: multiprocessing children (no audit event) and --maxfail early stops were missed."""
+    mp_test = ('import multiprocessing as mp\nfrom m import pick\n\n\ndef test_pool():\n'
+               '    with mp.get_context("spawn").Pool(1) as pool:\n        assert pool.map(abs, [-1]) == [1]\n'
+               '    assert pick(-2) == 2\n')
+    (tmp_path / 'a').mkdir()
+    root = _repo(tmp_path / 'a', PY_AFTER, mp_test)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['per_test_complete'] is False, rec
+
+
+def test_a_per_test_timeout_leaves_the_assurance_as_measured(tmp_path, monkeypatch):
+    """The per-test run is a second run in the time left: if it cannot finish, only its record is missing."""
+    root = _repo(tmp_path, PY_AFTER, PY_TEST_BOTH)
+    from types import SimpleNamespace
+    real_run = exercise.execute.Executor.run
+
+    def maybe_timeout(self, argv, *a, **k):
+        if '--per-test' in argv:
+            return SimpleNamespace(timed_out=True, exit_code=-1)
+        return real_run(self, argv, *a, **k)
+    monkeypatch.setattr(exercise.execute.Executor, 'run', maybe_timeout)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['assurance'] == 'FULL' and 'per_test' not in rec and rec['per_test_reason'] == 'the per-test run timed out'
+
+
+def test_an_early_stop_makes_the_per_test_record_incomplete(tmp_path):
+    (tmp_path / 'pytest.ini').write_text('[pytest]\naddopts = --maxfail=1\n')
+    failing_first = 'from m import pick\n\n\ndef test_a_fails():\n    assert False\n\n\ndef test_neg():\n    assert pick(-2) == 2\n'
+    root = _repo(tmp_path, PY_AFTER, failing_first)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['per_test_complete'] is False, rec

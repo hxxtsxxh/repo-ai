@@ -15,9 +15,6 @@ values, environment or output.
 
 Python 3.12+ uses ``sys.monitoring`` and disables each code location after
 its first start, so the overhead is one callback per function, not per call.
-Older interpreters fall back to ``sys.setprofile`` (and ``sys.settrace`` for
-lines).
-
 ``--per-test --watch a.py,b.py`` (with ``--lines``, for ``-m pytest`` only)
 also records, per pytest node id, which lines of the watched files ran while
 that test ran (its setup, call and teardown), and separately the watched lines
@@ -54,6 +51,7 @@ def main(argv):
     per_test = {}  # pytest node id -> {watched path -> lines run during that test}
     outside = {}  # watched path -> lines run while no test was running (import, collection)
     current = [None]
+    counts = {"collected": 0, "ran": 0}
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
     seen = {}
@@ -102,7 +100,8 @@ def main(argv):
             "/zipimport.py"))
 
     def on_open(event, args):
-        if event in {"subprocess.Popen", "os.system", "os.posix_spawn", "os.exec", "os.spawn"}:
+        if event in {"subprocess.Popen", "os.system", "os.posix_spawn", "os.exec", "os.spawn", "os.fork",
+                     "os.forkpty"}:
             # a child process runs code this tracer cannot see: the record is incomplete
             try:
                 head = args[0] if event != "subprocess.Popen" else (args[0] or (args[1] or [""])[0])
@@ -131,7 +130,8 @@ def main(argv):
         if per_test_on:
             data["per_test"] = {t: {k: sorted(v) for k, v in sorted(files.items())}
                                 for t, files in sorted(per_test.items())}
-            data["per_test_complete"] = len(per_test) <= MAX_PER_TEST
+            # every collected test ran (an early stop, -x or --maxfail, leaves some unrun)
+            data["per_test_complete"] = len(per_test) <= MAX_PER_TEST and counts["ran"] >= counts["collected"]
             data["outside_tests"] = {k: sorted(v) for k, v in sorted(outside.items())}
         tmp = out + ".tmp"
         with open(tmp, "w", encoding="utf-8") as fh:
@@ -190,9 +190,21 @@ def main(argv):
     if per_test_on:
         import pytest  # the project's own pytest, as `-m pytest` would load it
 
+        import multiprocessing.process as _mpp
+        _start = _mpp.BaseProcess.start
+
+        def _counted_start(self, *a, **k):  # multiprocessing children run code this tracer cannot see
+            spawned.append("multiprocessing")
+            return _start(self, *a, **k)
+        _mpp.BaseProcess.start = _counted_start
+
         class _PerTest:
+            def pytest_collection_finish(self, session):
+                counts["collected"] = len(session.items)
+
             @pytest.hookimpl(hookwrapper=True)
             def pytest_runtest_protocol(self, item, nextitem):
+                counts["ran"] += 1
                 current[0] = item.nodeid
                 if mon is not None:
                     mon.restart_events()  # lines disabled after their first hit fire again for this test
