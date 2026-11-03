@@ -57,28 +57,40 @@ def _readiness(root: Path, providers: list[str], max_cost_usd: float) -> dict[st
 
 def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths: list[str] | None = None,
                     max_cost_usd: float = 0.0, max_seconds: float = 600.0, command: str = 'python -m pytest',
-                    executables: dict[str, Path] | None = None, sandbox: str = 'auto',
-                    image: str = '') -> dict[str, Any]:
-    """Plan only: one plan per arm plus the bounds and readiness. Starts no provider and runs no test."""
+                    executables: dict[str, Path] | None = None, allow_unknown_cost: bool = False,
+                    sandbox: str = 'auto', image: str = '') -> dict[str, Any]:
+    """Plan only: one plan per arm plus the bounds and readiness. Starts no provider and runs no test.
+    `allow_unknown_cost`: with `max_cost_usd`, the ceiling is split among the arms whose CLI enforces it, and the
+    others run with cost UNKNOWN (never counted as $0)."""
+    from ..providers.adapters import contract_for
     root = root.resolve()
     names = _validate(providers)
     if max_seconds < MIN_ARM_SECONDS * len(names):
         raise ValueError(f'max_seconds must allow at least {MIN_ARM_SECONDS:g}s per arm')
-    readiness = {} if executables else _readiness(root, names, max_cost_usd)
+    enforcing = [n for n in names if contract_for(n).enforces_hard_usd_budget]
+    unenforced = [n for n in names if n not in enforcing]
+    if max_cost_usd > 0 and allow_unknown_cost and not enforcing:
+        raise ValueError('none of these providers enforces a USD ceiling, so --max-cost-usd would cap nothing; omit it '
+                         '(their cost is UNKNOWN)')
+    if max_cost_usd > 0 and unenforced and not allow_unknown_cost:
+        raise ValueError(f"cannot enforce a USD ceiling for: {', '.join(unenforced)} (cost would be UNKNOWN); "
+                         'omit --max-cost-usd, choose providers with a hard budget flag, or pass --allow-unknown-cost '
+                         'to cap only the providers that enforce it')
+    if not executables and enforcing and max_cost_usd <= 0:
+        raise ValueError(f"{', '.join(enforcing)} enforce{'s' if len(enforcing) == 1 else ''} a USD ceiling: give "
+                         '--max-cost-usd > 0 (the default 0 authorises no spend; without a ceiling the arm would start '
+                         'uncapped and its result be refused afterwards)')
+    readiness = {} if executables else _readiness(root, names, 0.0 if allow_unknown_cost else max_cost_usd)
     problems = [f"{n}: {'; '.join(r['reasons'])}" for n, r in readiness.items() if not r['eligible']]
     if problems:
         raise ValueError('provider(s) not eligible for a live tournament: ' + ' | '.join(problems))
-    per_arm_usd = round(max_cost_usd / len(names), 6) if max_cost_usd > 0 else 0.0
-    if max_cost_usd > 0:
-        from ..providers.adapters import contract_for
-        unenforced = [n for n in names if not contract_for(n).enforces_hard_usd_budget]
-        if unenforced:
-            raise ValueError(f"cannot enforce a USD ceiling for: {', '.join(unenforced)} (cost would be UNKNOWN); "
-                             'omit --max-cost-usd or choose providers with a hard budget flag')
+    capped = enforcing if allow_unknown_cost else names
+    per_arm_usd = round(max_cost_usd / len(capped), 6) if max_cost_usd > 0 and capped else 0.0
+    per_arm = {n: (per_arm_usd if n in capped else 0.0) for n in names}
     arms: list[dict[str, Any]] = []
     for name in names:
         arm = plan(root, task, agent=name, write_paths=write_paths, execute_local=True, allow_live=True,
-                   max_cost_usd=per_arm_usd, max_seconds=max_seconds / len(names), command=command,
+                   max_cost_usd=per_arm[name], max_seconds=max_seconds / len(names), command=command,
                    sandbox=sandbox, image=image)
         arms.append({'provider': name, 'plan': arm})
     first = arms[0]['plan']
@@ -86,21 +98,23 @@ def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths:
         raise ValueError('tournament arms need one clean frozen source: ' + str(first['decision']) + ': ' + first['why'])
     return {'schema': SCHEMA + '.plan', 'providers': names, 'arms': arms,
             'bounds': {'max_seconds_total': max_seconds, 'max_cost_usd_total': max_cost_usd,
-                       'per_arm_cost_usd': per_arm_usd, 'sequential': True,
-                       'cost_semantics': 'USD ceiling enforced per arm' if max_cost_usd > 0 else
-                                         'UNKNOWN unless a provider reports it; never counted as $0'},
+                       'per_arm_cost_usd': per_arm_usd, 'per_arm_cost_usd_by_provider': per_arm, 'sequential': True,
+                       'cost_semantics': ('USD ceiling enforced per arm' if max_cost_usd > 0 and not unenforced else
+                                          f"USD ceiling enforced for {', '.join(capped)}; UNKNOWN for "
+                                          f"{', '.join(unenforced)} (never counted as $0)" if max_cost_usd > 0 else
+                                          'UNKNOWN unless a provider reports it; never counted as $0')},
             'readiness': readiness,
             'rule': 'one distinct passing arm wins; identical passing diffs are equivalent; otherwise abstain'}
 
 
 def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: list[str] | None = None,
                    max_cost_usd: float = 0.0, max_seconds: float = 600.0, command: str = 'python -m pytest',
-                   executables: dict[str, Path] | None = None, sandbox: str = 'auto',
-                   image: str = '') -> dict[str, Any]:
+                   executables: dict[str, Path] | None = None, allow_unknown_cost: bool = False,
+                   sandbox: str = 'auto', image: str = '') -> dict[str, Any]:
     root = root.resolve()
     tplan = plan_tournament(root, task, providers, write_paths=write_paths, max_cost_usd=max_cost_usd,
                             max_seconds=max_seconds, command=command, executables=executables,
-                            sandbox=sandbox, image=image)
+                            allow_unknown_cost=allow_unknown_cost, sandbox=sandbox, image=image)
     arms = tplan['arms']
     first = arms[0]['plan']
     if not check_privacy(root, first['contract']):
@@ -130,8 +144,9 @@ def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: 
             abstain.append(f'{name}: aggregate cost ceiling exhausted')
             continue
         planned['contract']['max_seconds'] = round(share, 3)
-        if max_cost_usd > 0:
-            planned['contract']['max_cost_usd'] = round(min(tplan['bounds']['per_arm_cost_usd'], max_cost_usd - spent), 6)
+        if max_cost_usd > 0 and tplan['bounds']['per_arm_cost_usd_by_provider'][name] > 0:
+            planned['contract']['max_cost_usd'] = round(min(tplan['bounds']['per_arm_cost_usd_by_provider'][name],
+                                                            max_cost_usd - spent), 6)
         exe = (executables or {}).get(name)
 
         def run_arm(planned: dict[str, Any] = planned, exe: Path | None = exe) -> dict[str, Any]:
