@@ -31,6 +31,7 @@ def _world(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, fd_binds: bool = 
     (etc / "resolv.conf").symlink_to(run / "resolve" / "stub-resolv.conf")
     monkeypatch.setattr(adapters.Path, "home", classmethod(lambda cls: home))
     monkeypatch.setattr(adapters, "_hidden_dirs", lambda: [str(run), str(home / ".ssh")])
+    monkeypatch.setattr(adapters, "_homes", lambda: [str(home)])
     monkeypatch.setattr(adapters, "_bwrap_binds_fds", lambda bwrap: fd_binds)
     monkeypatch.setattr(adapters, "RESOLV_CONF", str(etc / "resolv.conf"))
     return {"base": base, "home": home, "run": run, "outside": outside}
@@ -92,7 +93,7 @@ def _linux(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(adapters.shutil, "which", lambda name, path=None: "/usr/bin/bwrap" if name == "bwrap" else None)
 
 
-@pytest.mark.parametrize("provider", ["codex", "claude"])
+@pytest.mark.parametrize("provider", ["codex", "claude", "bob"])
 def test_the_live_prefix_hides_socket_directories_before_binding_the_workspace(tmp_path, monkeypatch, provider):
     w = _world(tmp_path, monkeypatch)
     _linux(monkeypatch)
@@ -126,3 +127,47 @@ def test_a_dry_run_starts_no_process_and_pins_nothing(tmp_path, monkeypatch):
     monkeypatch.setattr(adapters, "_bwrap_binds_fds", refuse)
     args, fds = adapters._live_linux_binds("/usr/bin/bwrap", [w["home"] / "inst"], dry_run=True)
     assert fds == [] and "--ro-bind-fd" not in args and str(w["run"]) in args
+
+
+def test_the_accounts_own_home_is_hidden_too(tmp_path, monkeypatch):
+    """HOME overridden (sudo -E, a service account): the passwd home's credentials stay unreadable as well."""
+    w = _world(tmp_path, monkeypatch)
+    real = w["base"] / "account-home"
+    real.mkdir()
+    monkeypatch.setattr(adapters, "_homes", lambda: [str(w["home"]), str(real)])
+    args, fds = adapters._live_linux_binds("/usr/bin/bwrap", [])
+    assert str(real) in [args[i + 1] for i, a in enumerate(args) if a == "--tmpfs"]
+    d._close_all(tuple(fds))
+
+
+def test_login_stores_outside_home_are_hidden_but_never_a_system_or_ancestor_directory(tmp_path, monkeypatch):
+    w = _world(tmp_path, monkeypatch)
+    store = w["base"] / "repo-ai-home"
+    store.mkdir()
+    args, fds = adapters._live_linux_binds("/usr/bin/bwrap", [], private=[store, Path("/"), Path("/usr"), w["base"]])
+    tmpfs = [args[i + 1] for i, a in enumerate(args) if a == "--tmpfs"]
+    assert str(store) in tmpfs
+    assert "/" not in tmpfs and "/usr" not in tmpfs and str(w["base"]) not in tmpfs  # base holds HOME
+    d._close_all(tuple(fds))
+
+
+def test_an_install_directory_that_cannot_come_back_still_binds_the_executable(tmp_path, monkeypatch):
+    w = _world(tmp_path, monkeypatch)
+    monkeypatch.setattr(adapters, "_has_socket", lambda path, limit=2000, fd=None: True)  # e.g. too many entries
+    exe = w["home"] / "inst" / "bin" / "agent"
+    args, fds = adapters._live_linux_binds("/usr/bin/bwrap", [w["home"] / "inst"], files=[exe])
+    dests = [dest for _, _, dest in _binds(args)]
+    assert str(w["home"] / "inst") not in dests and str(exe) in dests
+    d._close_all(tuple(fds))
+
+
+@pytest.mark.parametrize("provider", ["codex", "claude", "bob"])
+def test_live_runs_get_their_own_ipc_and_uts_namespaces(tmp_path, monkeypatch, provider):
+    w = _world(tmp_path, monkeypatch)
+    _linux(monkeypatch)
+    plan = claude_auth.ClaudeAuthPlan(mode="token_env", config_dir=None, env_vars=(), problems=()) \
+        if provider == "claude" else None
+    prefix = adapters._execution_sandbox_prefix(w["run"], w["run"], allow_network=True, provider=provider, live=True,
+                                                executable=w["home"] / "inst" / "bin" / "agent", claude_plan=plan,
+                                                dry_run=True)
+    assert "--unshare-ipc" in prefix and "--unshare-uts" in prefix

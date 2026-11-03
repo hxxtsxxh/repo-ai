@@ -28,8 +28,8 @@ from ..security import redact_text, source_contains_secret
 from . import claude_auth, codex_broker, opencode_cfg
 from .acp import AcpClient, AcpResult
 from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _bwrap_binds_fds, _capture, _close_all, _has_socket,
-                        _hidden_dirs, _identity, _inside, _pin, _PinnedPrefix, _probe_env, _repo_owned, _sandbox_prefix,
-                        executable_name, pinned_fds)
+                        _hidden_dirs, _homes, _identity, _inside, _pin, _PinnedPrefix, _probe_env, _repo_owned,
+                        _sandbox_prefix, _system, executable_name, pinned_fds)
 
 STAGES = (
     "NOT_INSTALLED",
@@ -634,16 +634,25 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                 "/",
             ])
             fds: list[int] = []
-            if (provider == "codex" and live) or claude_live:
-                # hide the whole HOME (credentials, other projects) and the directories where host unix sockets live
-                # (a container engine, an ssh-agent, the session bus: a networked model with a shell could drive
-                # them), then re-expose only what the provider needs, read-only
-                if claude_live:
-                    assert claude_plan is not None
-                    roots = [*(claude_auth._install_roots(executable) if executable is not None else []), *_node_roots()]
-                else:
+            if (live and provider in ("codex", "bob")) or claude_live:
+                # hide every home directory (credentials, other projects), repo-ai's login stores wherever they live,
+                # and the directories where host unix sockets live (a container engine, an ssh-agent, the session
+                # bus: a networked model with a shell could drive them), then re-expose only what the provider needs,
+                # read-only. Bob reads its settings from the scratch HOME they were copied to.
+                cmd.extend(["--unshare-ipc", "--unshare-uts"])
+                if provider == "codex":
                     roots = [*_codex_install_roots(executable), *_node_roots()]
-                back, fds = _live_linux_binds(bwrap, roots, dry_run=dry_run)
+                else:
+                    if executable is None:
+                        located = shutil.which(provider)
+                        executable = Path(located) if located else None
+                    roots = [*(claude_auth._install_roots(executable) if executable is not None else []), *_node_roots()]
+                from ..registry import registry_home
+                private = [registry_home(), claude_auth.default_config_dir()]
+                if os.environ.get(CODEX_HOME_ENV):
+                    private.append(Path(os.environ[CODEX_HOME_ENV]))
+                back, fds = _live_linux_binds(bwrap, roots, files=[executable] if executable is not None else [],
+                                              private=private, dry_run=dry_run)
                 cmd.extend(back)
                 if claude_live and claude_plan is not None and claude_plan.mode == "dedicated_config" \
                         and claude_plan.config_dir is not None:
@@ -669,50 +678,80 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
 RESOLV_CONF = "/etc/resolv.conf"  # often a link into /run (systemd-resolved, resolvconf, NetworkManager)
 
 
-def _live_linux_binds(bwrap: str, roots: list[Path], *, dry_run: bool = False) -> tuple[list[str], list[int]]:
-    """bubblewrap arguments for a live run on Linux: tmpfs over HOME and the host socket directories (`/tmp`, `/run`,
-    `/var/run`, `/var/tmp`, ...: `discovery._hidden_dirs`), then `roots` (install directories, the `node` runtime) and
-    the resolver configuration (`/etc/resolv.conf` often links into `/run`) bound back read-only. A directory holding
-    a unix socket is never bound back. With bubblewrap 0.10 or later each path is pinned first (`_pin`: opened without
-    following a symlink), checked through that descriptor and bound by it (`--ro-bind-fd`), so a symlink swapped in
-    after the path was resolved is not bound; the descriptors are returned for `pass_fds`. Older bubblewrap binds by
-    path (the resolve-to-bind race stays open there). Workspace, scratch and login directories are bound afterwards."""
-    home = str(Path.home().resolve())
-    covered = sorted(dict.fromkeys([*_hidden_dirs(), home]), key=lambda d: (d.count("/"), d))
+def _live_linux_binds(bwrap: str, roots: list[Path], *, files: list[Path] | tuple[Path, ...] = (),
+                      private: list[Path] | tuple[Path, ...] = (),
+                      dry_run: bool = False) -> tuple[list[str], list[int]]:
+    """bubblewrap arguments for a live run on Linux: tmpfs over every home directory, the host socket directories
+    (`/tmp`, `/run`, `/var/run`, `/var/tmp`, ...: `discovery._hidden_dirs`) and `private` (repo-ai's login stores
+    outside HOME; never `/`, a system directory or an ancestor of a home), then `roots` (install directories, the
+    `node` runtime) and the resolver configuration (`/etc/resolv.conf` often links into `/run`) bound back read-only.
+    A directory holding a unix socket (or too large to check) is never bound back; `files` (the executable) are then
+    bound alone. With bubblewrap 0.10 or later each path is pinned first (`_pin`: opened without following a
+    symlink), checked through that descriptor and bound by it (`--ro-bind-fd`), so a symlink swapped in after the path
+    was resolved is not bound; the descriptors are returned for `pass_fds`. Older bubblewrap binds by path (the
+    resolve-to-bind race stays open there). `dry_run` (routing): no process, no descriptor. Workspace, scratch and
+    the dedicated login directory are bound afterwards, by path."""
+    homes = [os.path.realpath(h) for h in dict.fromkeys([str(Path.home()), *_homes()])]
+
+    def hideable(d: str) -> bool:
+        return d != "/" and not _system(d) and not any(h.startswith(d.rstrip("/") + "/") for h in homes)
+
+    extra = [r for r in (os.path.realpath(str(x)) for x in private) if os.path.isdir(r) and hideable(r)]
+    covered = sorted(dict.fromkeys([*_hidden_dirs(), *homes, *extra]), key=lambda d: (d.count("/"), d))
     tops = [d for d in covered if not any(d != o and d.startswith(o.rstrip("/") + "/") for o in covered)]
 
-    def under(p: str) -> bool:
-        return any(p == d or p.startswith(d.rstrip("/") + "/") for d in tops)
+    def under(path: str, within: list[str]) -> bool:
+        return any(path == d or path.startswith(d.rstrip("/") + "/") for d in within)
 
     wanted = [str(Path(r).resolve()) for r in roots]
     resolv = os.path.realpath(RESOLV_CONF)
     if os.path.isfile(resolv):
         wanted.append(resolv)
-    wanted = [p for p in dict.fromkeys(wanted) if under(p) and p not in tops]
+    wanted = [x for x in dict.fromkeys(wanted) if under(x, tops) and x not in tops]
+    lone = [x for x in dict.fromkeys(str(Path(f).resolve()) for f in files) if under(x, tops)]
     args = [a for d in tops for a in ("--tmpfs", d)]
-    fds: list[int] = []
-    if wanted and not dry_run and _bwrap_binds_fds(bwrap):
-        pinned = {p: fd for p in wanted if (fd := _pin(p)) is not None}
-        try:
-            kinds = {p: os.fstat(fd).st_mode for p, fd in pinned.items()}
-        except OSError:
-            _close_all(tuple(pinned.values()))
-            pinned, kinds = {}, {}
-        dirs = [p for p in pinned if stat.S_ISDIR(kinds[p]) and not _has_socket(p, fd=pinned[p])]
-        files = [p for p in pinned if stat.S_ISREG(kinds[p])]
-        _close_all(tuple(fd for p, fd in pinned.items() if p not in dirs and p not in files))
-        bind = [(p, ("--ro-bind-fd", str(pinned[p]), p)) for p in (*dirs, *files)]
-        fds = [pinned[p] for p in (*dirs, *files)]
-    else:
-        dirs = [p for p in wanted if os.path.isdir(p) and not os.path.islink(p) and not _has_socket(p)]
-        files = [p for p in wanted if os.path.isfile(p) and not os.path.islink(p)]
-        bind = [(p, ("--ro-bind", p, p)) for p in (*dirs, *files)]
-    # a bound directory brings back its whole host subtree: hide the socket directories inside it again
-    again = [d for d in _hidden_dirs() if any(d.startswith(p.rstrip("/") + "/") for p in dirs)]
-    for p, a in bind:
-        args.extend(a)
-        if p in dirs:
-            args.extend(x for d in again if d.startswith(p.rstrip("/") + "/") for x in ("--tmpfs", d))
+    use_fd = bool((wanted or lone) and not dry_run and _bwrap_binds_fds(bwrap))
+    pinned: dict[str, int] = {}
+    kinds: dict[str, int] = {}
+
+    def pin(path: str) -> bool:
+        fd = _pin(path) if use_fd else None
+        if use_fd and fd is None:
+            return False
+        if fd is not None:
+            try:
+                kinds[path] = os.fstat(fd).st_mode
+            except OSError:
+                os.close(fd)
+                return False
+            pinned[path] = fd
+        elif os.path.islink(path) or not os.path.exists(path):
+            return False
+        else:
+            kinds[path] = os.stat(path).st_mode
+        return True
+
+    dirs: list[str] = []
+    singles: list[str] = []
+    for x in wanted:
+        if not pin(x):
+            continue
+        if stat.S_ISDIR(kinds[x]) and not _has_socket(x, fd=pinned.get(x)):
+            dirs.append(x)
+        elif stat.S_ISREG(kinds[x]):
+            singles.append(x)
+    for x in lone:  # the executable, when no bound directory brings it back
+        if x not in singles and not under(x, dirs) and pin(x) and stat.S_ISREG(kinds[x]):
+            singles.append(x)
+    keep = {*dirs, *singles}
+    d_close = tuple(fd for x, fd in pinned.items() if x not in keep)
+    _close_all(d_close)
+    fds = [pinned[x] for x in (*dirs, *singles) if x in pinned]
+    again = [d for d in _hidden_dirs() if any(d.startswith(x.rstrip("/") + "/") for x in dirs)]
+    for x in (*dirs, *singles):
+        args.extend(("--ro-bind-fd", str(pinned[x]), x) if x in pinned else ("--ro-bind", x, x))
+        if x in dirs:  # a bound directory brings back its whole host subtree: hide socket directories inside it again
+            args.extend(a for d in again if d.startswith(x.rstrip("/") + "/") for a in ("--tmpfs", d))
     return args, fds
 
 
