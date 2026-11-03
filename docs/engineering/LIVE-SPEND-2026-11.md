@@ -37,3 +37,6 @@ as is. All three wait for the owner's dedicated Claude login; C13 and C21 also r
 
 | 2026-11-03 | C13 attempt 1 (claude-eval login, token revoked) | Claude Code | $0.00 OBSERVED (no model turn) |
 | 2026-11-03 | C13 attempt 2 (claude-provider login) | Claude Code | $0.038988 OBSERVED (cap $0.50) |
+| 2026-11-03 | C21 journey-live-v1 humanize | Claude Code | $0.040707 OBSERVED (cap $1.00) |
+| 2026-11-03 | C21 journey-live-v1 more-itertools | Claude Code | UNKNOWN (killed at the capture limit; cap $1.00) |
+| 2026-11-03 | C21 journey-live-v1 pyjwt | Claude Code | $0.046787 OBSERVED (cap $1.00) |
