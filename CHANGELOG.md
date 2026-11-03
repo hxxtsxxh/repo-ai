@@ -7,6 +7,14 @@
   against the remaining budget (also for a role mission that ended with partial progress). A continuation is now
   also refused ("prior live cost is UNKNOWN") when a role's cost was UNKNOWN under a ceiling, and its provenance
   records the role-inclusive `prior_cost_usd` (none when any part is UNKNOWN).
+- Tournament differences and `repo-ai shortlist` now compare file by file: two passing candidates whose changed files
+  are each byte-identical or have the same Python syntax tree are COSMETIC (and shortlisted as the same code), so an
+  identical non-Python change, or an identical file with a coding cookie, no longer makes a formatting-only Python
+  difference SUBSTANTIVE. A SUBSTANTIVE pair's `where` leaves out a Python file that differs only in formatting, keeps
+  each same-named definition (a property setter, `singledispatch` functions) and names the file when no single
+  definition differs. A stale comparison (`repo-ai compare ID`, `repo-ai mission status ID --json`, after HEAD moved or
+  its evidence changed) no longer gives its recorded next step (such as applying the winner); it says to run the
+  tournament again and keeps the old one as `recorded_next_step`.
 - Security (Linux, live Claude, Codex and Bob runs): the run's bubblewrap sandbox now hides the host's unix-socket
   directories (`/tmp`, `/run`, `/var/run`, `/var/tmp`, `/mnt/wslg`, LXD's and Incus's), as the probe sandbox already
   did, and gives the run its own IPC and UTS namespaces. Before, a networked model with a shell could reach a
