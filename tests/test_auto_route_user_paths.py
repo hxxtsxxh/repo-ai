@@ -74,3 +74,16 @@ def test_an_explicit_ceiling_provider_without_one_names_the_alternative(bug, two
                                       "--run", "--allow-write", "charge.py"])
     with pytest.raises(ValueError, match=r"enforces a USD ceiling.*--agent codex"):
         args.func(args)
+
+
+def test_a_tournament_share_under_the_flag_precision_names_the_total_needed(bug, two_installed):
+    from repo_ai.mission import live_tournament as lt
+    with pytest.raises(ValueError, match=r"give at least 0\.0002"):
+        lt.plan_tournament(bug, "Fix charge", ["claude", "bob"], write_paths=["charge.py"], max_cost_usd=0.0001)
+
+
+def test_the_explicit_agent_refusal_survives_a_failing_route(bug, monkeypatch):
+    from repo_ai.mission import cli as mcli
+    monkeypatch.setattr(registry, "route", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    with pytest.raises(ValueError, match="enforces a USD ceiling"):
+        mcli._require_ceiling("claude", 0, None, bug)
