@@ -106,6 +106,27 @@ def _node_line_status(text: str, reports: list[list[dict[str, Any]]]) -> tuple[s
     return executable, never
 
 
+MAX_PER_TEST = 2000  # tests kept in the per-test record (those that ran a changed line)
+
+
+def _per_test(trace: dict[str, Any], eligible: dict[str, set[int]]) -> tuple[dict[str, list[str]], bool]:
+    """{pytest node id: the changed executable lines ("path:line") it ran}, for tests that ran at least one."""
+    out: dict[str, list[str]] = {}
+    complete = trace.get("per_test_complete") is True
+    for test, files in trace["per_test"].items():
+        if not isinstance(test, str) or not isinstance(files, dict) or len(test) > 1000:
+            complete = False
+            continue
+        ran = sorted(f"{rel}:{int(n)}" for rel, lines in files.items() if isinstance(lines, list)
+                     for n in lines if isinstance(n, int) and n in eligible.get(rel, set()))
+        if ran:
+            if len(out) >= MAX_PER_TEST:
+                complete = False
+                break
+            out[test] = ran[:MAX_LISTED]
+    return out, complete
+
+
 def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.0,
             project_root: Path | None = None, sandbox_preference: str = "auto", image: str = "") -> dict[str, Any]:
     """Run `command` once more over a pristine copy of `workspace` (the verified candidate) under a
@@ -139,7 +160,11 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                 import shutil
                 shutil.copy2(TRACER, run_dir / "rai_trace.py")
                 argv = ["python", f"{inside}/{RUN_DIR}/rai_trace.py", "--lines", "--out", f"{inside}/{RUN_DIR}/trace.json",
-                        "--root", inside, "--", *runner.full[1:]]
+                        "--root", inside]
+                watched = sorted(p for p in changed if p.endswith(".py") and "," not in p)
+                if runner.kind == "pytest" and watched:  # which changed lines each test ran (requirement mapping)
+                    argv += ["--per-test", "--watch", ",".join(watched)]
+                argv += ["--", *runner.full[1:]]
             res = bound.run(argv, cwd=runner.cwd, env=env, timeout_s=timeout_s, toolchain=runner.language)
             if res.timed_out:
                 record["reason"] = "measurement run timed out"
@@ -154,6 +179,7 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
             executed_by_file: dict[str, set[int]] = {}
             never_by_file: dict[str, set[int]] = {}
             exec_by_file: dict[str, set[int]] = {}
+            trace: Any = {}
             if runner.kind == "node":
                 per_file: dict[str, list[list[dict[str, Any]]]] = {}
                 for rel, functions in _node_scripts(ws.path, inside):
@@ -177,8 +203,11 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                     never_by_file[rel] = executable - executed_by_file[rel]
             unexercised: list[str] = []
             total = 0
-            for rel, lines_added in sorted(changed.items()):
-                eligible = lines_added & exec_by_file.get(rel, set())
+            eligible_by_file = {rel: lines_added & exec_by_file.get(rel, set()) for rel, lines_added in changed.items()}
+            if isinstance(trace, dict) and isinstance(trace.get("per_test"), dict):
+                record["per_test"], record["per_test_complete"] = _per_test(trace, eligible_by_file)
+            for rel in sorted(changed):
+                eligible = eligible_by_file[rel]
                 missed = eligible & never_by_file.get(rel, set())
                 total += len(eligible)
                 unexercised.extend(f"{rel}:{n}" for n in sorted(missed))

@@ -228,3 +228,54 @@ def test_the_canonical_file_and_test_form_is_not_flagged():
     """Review of #94: `tests/test_a.py::test_neg` names `tests/test_a.py::tests/test_a.py::test_neg` exactly."""
     row = cov.assess(NEG, B, C, verdict='PASS', freshness='fresh', exercise={'assurance': 'FULL'})['requirements'][0]
     assert row['observed'][0]['matched'] == 'exact' and 'matched by name' not in row['detail']
+
+
+# -- C11: requirement by requirement, the changed lines its own tests ran (pytest per-test line record) ------------
+
+T_NEG, T_PICK, T_OTHER = 'm_test.py::m_test.py::test_neg', 'm_test.py::m_test.py::test_pick', 'm_test.py::m_test.py::test_other'
+C11_EXERCISE = {'assurance': 'FULL', 'changed_lines': 2, 'unexercised': [], 'unexercised_count': 0, 'per_test_complete': True,
+            'per_test': {'m_test.py::test_neg': ['m.py:2', 'm.py:3'], 'm_test.py::test_pick': ['m.py:2']}}
+
+
+def test_each_requirement_names_the_changed_lines_its_tests_ran():
+    d = decl(req('negative input is negated', ['m_test.py::test_neg']),
+             req('positive input unchanged', ['m_test.py::test_pick'], kind='preserve'))
+    out = cov.assess(d, {T_NEG: 'fail', T_PICK: 'pass'}, {T_NEG: 'pass', T_PICK: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise=C11_EXERCISE)
+    rows = {r['text']: r for r in out['requirements']}
+    assert rows['negative input is negated']['changed_lines_run'] == ['m.py:2', 'm.py:3']
+    assert rows['positive input unchanged']['changed_lines_run'] == ['m.py:2']
+    assert out['headline'] == 'ACCEPTANCE_MAPPED_ALL', out
+    assert out['changed_lines_by_requirement'] == {'measured': True, 'complete': True, 'changed_lines': 2,
+                                                   'run_by_tests_of_no_requirement': [],
+                                                   'run_by_tests_of_no_requirement_count': 0}
+    assert 'its tests ran 2 changed line(s): m.py:2, m.py:3' in cov.render(out)
+
+
+def test_a_change_requirement_whose_tests_ran_no_changed_line_is_an_obligation():
+    """The mapped test flipped fail->pass, but it never ran the changed code: something else made it pass."""
+    d = decl(req('negative input is negated', ['m_test.py::test_other']))
+    out = cov.assess(d, {T_OTHER: 'fail', T_NEG: 'fail'}, {T_OTHER: 'pass', T_NEG: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise=C11_EXERCISE)
+    [row] = out['requirements']
+    assert row['status'] == 'VERIFIED_FAIL_TO_PASS' and row['tests_ran_no_changed_line'] is True
+    assert out['headline'] == 'ACCEPTANCE_PARTIAL'
+    assert any('ran none of the 2 changed executable lines' in o for o in out['other_obligations'])
+    # changed lines only an undeclared test ran are named (informational)
+    assert out['changed_lines_by_requirement']['run_by_tests_of_no_requirement'] == ['m.py:2', 'm.py:3']
+
+
+def test_an_incomplete_per_test_record_names_lines_but_adds_no_obligation():
+    d = decl(req('negative input is negated', ['m_test.py::test_other']))
+    out = cov.assess(d, {T_OTHER: 'fail'}, {T_OTHER: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise={**C11_EXERCISE, 'per_test_complete': False})
+    assert out['headline'] == 'ACCEPTANCE_MAPPED_ALL' and out['changed_lines_by_requirement']['complete'] is False
+
+
+def test_without_a_per_test_record_the_mapping_is_not_measured():
+    d = decl(req('negative input is negated', ['m_test.py::test_neg']))
+    plain = {k: v for k, v in C11_EXERCISE.items() if k not in ('per_test', 'per_test_complete')}
+    out = cov.assess(d, {T_NEG: 'fail'}, {T_NEG: 'pass'}, verdict='PASS', freshness='fresh', exercise=plain)
+    assert out['changed_lines_by_requirement']['measured'] is False
+    assert 'changed_lines_run' not in out['requirements'][0]
+    assert 'Changed lines by requirement: not measured' in cov.render(out)

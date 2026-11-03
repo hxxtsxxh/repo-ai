@@ -154,3 +154,19 @@ def test_explain_and_cli_surface_the_limit(tmp_path, capsys):
     assert 'never run by the frozen tests' in explanation.render(report)
     cli._emit(runtime.status(root, result['id']), type('A', (), {'json': False, 'format': ''})())
     assert 'Limit: ' in capsys.readouterr().out
+
+
+def test_per_test_record_names_the_changed_lines_each_test_ran(tmp_path):
+    """C11: requirement-by-requirement mapping needs which changed lines each test ran, not only the union."""
+    root = _repo(tmp_path, PY_AFTER, PY_TEST_BOTH)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER))
+    assert rec['assurance'] == 'FULL', rec
+    assert rec['per_test_complete'] is True
+    assert rec['per_test'] == {'test_m.py::test_neg': ['m.py:2', 'm.py:3'], 'test_m.py::test_pick': ['m.py:2']}, rec
+
+
+def test_a_test_that_runs_no_changed_line_is_absent_from_the_per_test_record(tmp_path):
+    other = PY_TEST_BOTH + '\n\ndef test_unrelated():\n    assert 1 + 1 == 2\n'
+    root = _repo(tmp_path, PY_AFTER, other)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER))
+    assert 'test_m.py::test_unrelated' not in rec['per_test'] and 'test_m.py::test_neg' in rec['per_test']

@@ -76,6 +76,17 @@ recorded test identities).
 Since 0.11.9, a declared test that matched only by its trailing name, not as `file::test`, is flagged in the row
 ("matched by name, check it is the intended test"), and one test mapped to several requirements is listed under `shared_tests`.
 
+## Which changed lines each requirement's tests ran
+
+For a pytest mission (unreleased; after 0.12.1), the change-exercise run also records which changed executable lines
+each test ran. `coverage` then lists, per requirement, the changed lines its own mapped tests ran
+(`changed_lines_run`), and under `changed_lines_by_requirement` the changed lines that only tests no requirement names
+ran. A `change` requirement whose tests flipped from failing to passing **without running any changed line** is an
+obligation (headline at most `ACCEPTANCE_PARTIAL`): what made those tests pass is not code this mission changed, or not
+code repo-ai measured (a data or configuration file, a JavaScript file). Missions recorded before this, Node missions
+and container runs say `not measured`. A per-test record cut short (over 2,000 tests ran a changed line) names lines
+but adds no obligation.
+
 ## Headline and exit code
 
 | Headline | When |
