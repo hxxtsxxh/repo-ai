@@ -45,7 +45,7 @@ Updated 2026-11-02: 0.11.7 published (#68–#75); C18 release review findings fi
 | 19 | Follow-ups from the 0.11.8 release review | C18 | done: M1, L1 (#86), L3 (#90), L5 (#91), L6 in part and L7 (#87); L2, L4 and L6 (rest) in #99 (two review rounds and a nits round; residuals in `evidence/ROW19-LOWS-2026-11-02.md`: path binds with bubblewrap older than 0.10, same-user writes after the socket check, the prose check is a heuristic, new files under base-ignored paths not counted) |
 | 21 | C13 live: Claude as a handoff target | C13 | done 2026-11-03: attempt 2 PASS ($0.039; oracle 4/4; apply/undo exact) after attempt 1 failed authentication on the revoked claude-eval login ($0) |
 | 22 | C21 live: journey-live-v1 | C21 | ready, blocked on the same login; runs from 0.12.0 (approved: 4 sessions, $4.00) |
-| 23 | C12 live: tournament-live-v1 | C12 | ready, blocked on the same login (approved: 8 sessions, Claude $6.00, Codex UNKNOWN) |
+| 23 | C12 live: tournament-live-v1 | C12 | run 2026-11-03: 8/8 arms CORRECT on the hidden oracle; 4 abstentions with named differences; T1-T3 0; Claude $0.2028, Codex UNKNOWN (`benchmarks/tournament-live-v1/RESULTS.md`) |
 | 24 | C08 v2 corpus | C08 | ready for an eligible person: `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`, pull request against `skill-vet-v2/delivery` (freeze `8f6ae0a`) |
 | 25 | C14 phase 1 authors | C14 | blocked on the owner recruiting three independent authors (S, M, F) (`benchmarks/abc-v5/STATUS-2026-11-02.md`) |
 | 26 | Mission records leave out what roles spent (`state['spend']` only on the role-records path; a continuation reads `provider.cost_usd`) | C06, C12 | fixed in #114 (`spend` on the failure path; continuation budget from `_prior_spend`; `tests/test_mission_roles.py`) |
