@@ -1023,8 +1023,23 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 transition(state, 'CANCELLED' if isinstance(exc, (InterruptedError, KeyboardInterrupt)) else 'INCONCLUSIVE', reason)
             state['seconds_used'] = round(time.monotonic() - started, 3)
             state['cleanup_confirmed'] = candidate_path is None or not candidate_path.exists()
+            if contract.roles:  # what the roles (and the implementer, if it ran) spent before the failure
+                state['spend'] = {'usd_observed_total': round(spend['usd'], 6), 'any_cost_unknown': bool(spend['unknown'])}
             store.save(state)
         return status(root, mission_id)
+
+
+def _prior_spend(orig: dict[str, Any]) -> tuple[float, bool]:
+    """What a mission spent, for its continuation's budget: the implementer's provider cost, or the total over the
+    implementer and its roles when the record has one (`spend`), whichever is larger; and whether any of it is
+    UNKNOWN. A simulated mission spent nothing."""
+    prov = orig.get('provider') or {}
+    recorded = orig.get('spend') or {}
+    live = not prov.get('simulated', True)
+    cost = float(prov.get('cost_usd', 0.0) or 0.0) if live else 0.0
+    cost = max(cost, float(recorded.get('usd_observed_total', 0.0) or 0.0))
+    unknown = (live and prov.get('cost_status') != 'OBSERVED') or bool(recorded.get('any_cost_unknown') and live)
+    return cost, unknown
 
 
 def _cache_observation(root: Path, provider: str, identity_sha: str, run_res: dict[str, Any]) -> None:
@@ -1559,9 +1574,8 @@ def _continue_verified_handoff(
     prior_provider = orig.get('provider') or {}
     inherited_budget = orig.get('continuation_budget') or {}
     prior_live = not prior_provider.get('simulated', True) or bool(inherited_budget.get('live_seen'))
-    prior_cost = float(prior_provider.get('cost_usd', 0.0)) if not prior_provider.get('simulated', True) else 0.0
-    cost_unknown = bool(inherited_budget.get('unknown_cost')) or (
-        not prior_provider.get('simulated', True) and prior_provider.get('cost_status') != 'OBSERVED')
+    prior_cost, spent_unknown = _prior_spend(orig)  # roles included (an investigator spends before the implementer)
+    cost_unknown = bool(inherited_budget.get('unknown_cost')) or spent_unknown
     prior_ceiling = float(inherited_budget.get('ceiling_usd', orig_contract.get('max_cost_usd', 0.0)))
     remaining_cost = max(0.0, prior_ceiling - prior_cost)
     eff_cost = max_cost_usd if max_cost_usd is not None else remaining_cost
