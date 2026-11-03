@@ -71,7 +71,7 @@ start without network (its ACP mode runs its own local server) and reports `NO_H
 
 Last live-verified on an earlier pre-release; not re-run on 0.9.0 or 0.10.0, and its account entitlement was not
 re-checked. Install and log in to Bob as its documentation describes. repo-ai passes your `--max-cost-usd` to Bob's own cost cap,
-so a positive ceiling is enforced by the provider. Cost figures are provider-reported, not billing records.
+so a positive ceiling is enforced by the provider; from 0.12.0 a live Bob run without one is refused before it starts. Cost figures are provider-reported, not billing records.
 repo-ai copies your `~/.bob/settings` directory into the run's scratch HOME and passes `BOB_API_KEY` if it is set;
 both are readable inside the run.
 
@@ -124,7 +124,8 @@ separate repo-ai login (`CLAUDE_CONFIG_DIR=<dir> claude auth login`; `repo-ai ag
 command). The model gets file tools only, with no shell, web, MCP, skills or hooks; before every live run repo-ai
 starts the session once with a model name Claude Code rejects locally and refuses the run if anything else would load
 (an account can sync plugins and connectors into every login). `--max-cost-usd` maps to Claude's own cap, which is
-checked between turns: one turn of overshoot was observed. Claude is also a **host** (`repo-ai init --agent claude`).
+checked between turns: one turn of overshoot was observed. From 0.12.0 a live Claude run needs a positive
+`--max-cost-usd` and is refused before it starts without one (the default 0 authorises no spend). Claude is also a **host** (`repo-ai init --agent claude`).
 
 ### OpenCode (local model, macOS only)
 
