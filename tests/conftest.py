@@ -140,6 +140,7 @@ _MISSION_POSIX_ONLY = _MISSION_NEEDS_SANDBOX | {
     "test_eval_integrity", "test_mission_real_project_edges", "test_mission_apply_transaction",
     "test_provider_channels", "test_provider_probe", "test_mission_redteam", "test_mission_review_state",
     "test_mission_review_security", "test_abc_protocol", "test_abc_v2_protocol", "test_abc_v3_protocol", "test_abc_v4_protocol", "test_abc_v5_protocol",
+    "test_auto_route_user_paths",
 }
 # These write attack-like fixtures to disk (reverse and bind shells, recursive deletes, credential or environment
 # uploads, curl-pipe-to-shell) for the skill and plugin vetting checks to read, or make real, deliberately denied
