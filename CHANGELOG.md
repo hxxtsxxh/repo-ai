@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.1 — Linux live-run sandbox, auto routing without a ceiling, container missions applicable, tournament and budget fixes
 
 - Missions run in a container (`--sandbox podman|docker`, or `auto` falling back to one) could not be applied in
   0.12.0: their evidence always reads `not checked` (a read-only command cannot check the image), so `apply`, `do
