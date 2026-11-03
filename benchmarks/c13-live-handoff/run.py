@@ -97,6 +97,22 @@ def oracle_image() -> bool:
                           capture_output=True, timeout=1800).returncode == 0
 
 
+def _no_inference(child: dict | None) -> bool:
+    """No model call happened: a refusal before inference (the probe or a setup check), or (amendment, 2026-11-03,
+    recorded in RESULTS.md before use) Claude Code failing to authenticate with an observed $0.00 and no model turn."""
+    child = child or {}
+    prov = child.get("provider") or {}
+    reasons = " ".join(str(r) for r in child.get("reasons") or []) + " ".join(
+        str(r) for r in (child.get("passport") or {}).get("negative") or [])
+    events = prov.get("events") or {}
+    refused = (prov.get("capture_status") in NO_INFERENCE and not events.get("assistant")
+               and "did not stop before inference" not in reasons and "changed the workspace" not in reasons)
+    auth_failed = ("authentication_failed" in reasons and prov.get("cost_status") == "OBSERVED"
+                   and float(prov.get("cost_usd") or 0) == 0 and not events.get("assistant")
+                   and not child.get("diff"))
+    return refused or auth_failed
+
+
 def attempts(work: Path) -> list[dict]:
     path = work / "records.jsonl"
     rows = [json.loads(x) for x in path.read_text().splitlines()] if path.exists() else []
@@ -104,7 +120,7 @@ def attempts(work: Path) -> list[dict]:
 
 
 def live(work: Path, exe: str) -> int:
-    used = [a for a in attempts(work) if not a.get("no_inference")]
+    used = [a for a in attempts(work) if not (a.get("no_inference") or _no_inference(a.get("record")))]
     if used:
         print("refusing: the approved live session was already used (see records.jsonl)")
         return 3
@@ -147,8 +163,7 @@ def live(work: Path, exe: str) -> int:
         str(r) for r in ((child or {}).get("passport") or {}).get("negative") or [])
     # a probe refusal is free only when the probe stopped before inference; "did not stop before inference" (or a
     # changed workspace) may mean a model call happened, so that attempt counts as the session
-    no_inference = (prov.get("capture_status") in NO_INFERENCE and not (prov.get("events") or {}).get("assistant")
-                    and "did not stop before inference" not in reasons and "changed the workspace" not in reasons)
+    no_inference = _no_inference(child)
     log(work, "live-result", exit=code, id=(child or {}).get("id"), verdict=(child or {}).get("effective_verdict"),
         provider={k: prov.get(k) for k in ("stage", "capture_status", "cost_usd", "cost_status", "auth_mode",
                                            "auth_env_vars", "verification_label")},
