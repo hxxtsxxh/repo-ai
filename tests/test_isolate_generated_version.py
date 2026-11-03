@@ -110,3 +110,24 @@ def test_a_link_or_file_in_the_way_leaves_the_version_file_out_without_failing(t
         assert ws.generated == []
     finally:
         isolate._remove(ws.path)
+
+
+def test_a_copied_version_file_is_not_blamed_on_the_provider(tmp_path):
+    """journey-live-v1 (C21, humanize): repo-ai itself copied the declared version file into the candidate, then
+    refused the provider's result for "creating" it. Only a version file the provider changed is refused."""
+    from repo_ai.providers.adapters import validate_workspace_edits
+    files = {**FILES, "src/pkg/core.py": "def f():\n    return 1\n"}
+    root = _repo(tmp_path, HATCH, files)
+    (root / "src/pkg/_version.py").write_text("v = '1.2.3'\n", encoding="utf-8")
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True).stdout.strip()
+    tracked = set(subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True).stdout.split())
+    with isolate.materialize_commit(root, head, label="t-gen") as ws:
+        assert ws.generated == ["src/pkg/_version.py"]
+        (ws.path / "src/pkg/core.py").write_text("def f():\n    return 2\n")  # the provider's edit
+        problems = validate_workspace_edits(root, ws.path, ["src/pkg/core.py"], set(), tracked,
+                                            generated=set(ws.generated))
+        assert not any("_version.py" in p for p in problems), problems
+        (ws.path / "src/pkg/_version.py").write_text("v = 'changed by the provider'\n")
+        changed = validate_workspace_edits(root, ws.path, ["src/pkg/core.py"], set(), tracked,
+                                           generated=set(ws.generated))
+        assert any("modified a generated version file: src/pkg/_version.py" in p for p in changed), changed
