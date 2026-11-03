@@ -159,14 +159,32 @@ def test_explain_and_cli_surface_the_limit(tmp_path, capsys):
 def test_per_test_record_names_the_changed_lines_each_test_ran(tmp_path):
     """C11: requirement-by-requirement mapping needs which changed lines each test ran, not only the union."""
     root = _repo(tmp_path, PY_AFTER, PY_TEST_BOTH)
-    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER))
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
     assert rec['assurance'] == 'FULL', rec
-    assert rec['per_test_complete'] is True
+    assert rec['per_test_complete'] is True and rec['changed_outside_tests'] == []
     assert rec['per_test'] == {'test_m.py::test_neg': ['m.py:2', 'm.py:3'], 'test_m.py::test_pick': ['m.py:2']}, rec
 
 
 def test_a_test_that_runs_no_changed_line_is_absent_from_the_per_test_record(tmp_path):
     other = PY_TEST_BOTH + '\n\ndef test_unrelated():\n    assert 1 + 1 == 2\n'
     root = _repo(tmp_path, PY_AFTER, other)
-    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER))
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
     assert 'test_m.py::test_unrelated' not in rec['per_test'] and 'test_m.py::test_neg' in rec['per_test']
+
+
+def test_per_test_is_off_by_default_and_import_time_lines_are_outside_any_test(tmp_path):
+    """Review of #118: a changed module constant runs at import, outside every test window."""
+    before, after = 'LIMIT = 5\n\n\ndef cap(x):\n    return min(x, LIMIT)\n', 'LIMIT = 3\n\n\ndef cap(x):\n    return min(x, LIMIT)\n'
+    root = _repo(tmp_path, after, 'from m import cap\n\n\ndef test_cap():\n    assert cap(9) == 3\n')
+    plain = exercise.measure(root, 'python -m pytest -q', _diff('m.py', before, after))
+    assert plain['assurance'] == 'FULL' and 'per_test' not in plain
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', before, after), per_test=True)
+    assert rec['per_test'] == {} and rec['changed_outside_tests'] == ['m.py:1'], rec
+
+
+def test_a_spawned_process_makes_the_per_test_record_incomplete(tmp_path):
+    test = ('import subprocess, sys\nfrom m import pick\n\n\ndef test_cli():\n'
+            '    subprocess.run([sys.executable, "-c", "pass"], check=True)\n    assert pick(-2) == 2\n')
+    root = _repo(tmp_path, PY_AFTER, test)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['per_test_complete'] is False, rec

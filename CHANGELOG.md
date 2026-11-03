@@ -2,11 +2,13 @@
 
 ## Unreleased
 
-- `repo-ai coverage` maps each requirement to the changed lines its own tests ran (pytest missions): the mission's
-  change-exercise run now records which changed executable lines each test ran (the tracer re-arms line events at
-  every test boundary, for the changed files only). A change requirement whose mapped tests flipped from failing to
-  passing without running any changed line is an obligation (headline at most ACCEPTANCE_PARTIAL), and changed lines
-  run only by tests no requirement names are listed. Older, Node and container missions report it as not measured.
+- `repo-ai coverage` lists, per requirement, the changed lines that ran while its own tests ran (pytest missions
+  run with a frozen `--requirements` declaration), plus the changed lines run only during undeclared tests and those
+  run outside any test (import, collection). The mission's change-exercise run records this per test (line events
+  re-armed at each test boundary, for all code, so it is slower on large suites; only when a declaration is frozen).
+  It is informational: attribution is by time window (shared fixtures, threads and child processes are not credited
+  to the test they serve), so it never changes a row, obligation, headline or exit code; a spawned process or an
+  early stop marks the record incomplete.
 
 ## 0.12.1 — Linux live-run sandbox, auto routing without a ceiling, container missions applicable, tournament and budget fixes
 

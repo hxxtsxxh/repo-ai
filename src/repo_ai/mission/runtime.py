@@ -966,9 +966,12 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 if verdict == 'PASS':
                     from .exercise import measure as measure_exercise
                     try:
+                        # per-test changed lines only for a mission with a frozen requirements declaration (it
+                        # slows the extra run, and only `coverage` reads it)
                         state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining(),
                                                              project_root=root, sandbox_preference=contract.sandbox,
-                                                             image=contract.image)
+                                                             image=contract.image,
+                                                             per_test=bool((planned or {}).get('requirements')))
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}
