@@ -80,7 +80,7 @@ Real repositories often carry failures unrelated to your task (a missing optiona
 help, a mission cannot PASS there. Declare the tests the task must fix:
 
 ```sh
-repo-ai do "separators must be stripped again" --agent claude --run --allow-live-provider \
+repo-ai do "separators must be stripped again" --agent claude --run --allow-live-provider --max-cost-usd 1 \
     --allow-write slugify/slugify.py --expect-fix tests/test_release.py::ReleaseRegressionTests::test_empty_and_whitespace
 ```
 
