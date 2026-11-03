@@ -1,0 +1,46 @@
+{
+ "checks": {
+  "A1-explicit-while-cooling mission": true,
+  "C1-cooldown-expiry route-after-cooldown": true,
+  "E1-expired mission-after-expiry": true,
+  "E1-expired route-after-binary-change": true,
+  "E1-expired route-after-expiry": true,
+  "E1-expired route-after-second-success": true,
+  "F1-fallback mission": true,
+  "M1-many route": true,
+  "M1-many route-with-preference": true,
+  "M1-many route-with-usd-ceiling": true,
+  "O1-one mission": true,
+  "O1-one route": true,
+  "O1-one route-after-success": true,
+  "P1-unsupported-platform route-as-win32": true,
+  "Q1-quota mission": true,
+  "Q1-quota route-after-rate-limit": true,
+  "Q2-ceiling-blocks-fallback mission": true,
+  "Q2-ceiling-blocks-fallback route-with-usd-ceiling": true,
+  "U1-unauthenticated mission": true,
+  "U1-unauthenticated route": true,
+  "U2-configured-not-logged-in mission": true,
+  "U2-configured-not-logged-in route": true,
+  "U2-configured-not-logged-in route-after-not-logged-in": true,
+  "X1-failure mission": true,
+  "X1-failure route-after-failure": true,
+  "Z1-zero mission": true,
+  "Z1-zero route": true
+ },
+ "summary": {
+  "G1_expected": 27,
+  "G1_failed": [],
+  "G1_total": 27,
+  "G2_violations": [],
+  "G3_violations": [],
+  "G4_ceiling_not_recorded": [
+   "U2-configured-not-logged-in mission",
+   "O1-one mission",
+   "E1-expired mission-after-expiry",
+   "Q1-quota mission",
+   "X1-failure mission"
+  ],
+  "G4_uncapped_starts": []
+ }
+}
