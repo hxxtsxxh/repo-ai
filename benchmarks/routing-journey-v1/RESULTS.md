@@ -22,6 +22,10 @@ eligible: "enforces a USD ceiling and none was given: pass --max-cost-usd > 0 to
 `NO_AGENT` naming `--max-cost-usd`, and `do --agent auto` was refused with that advice and no provider started. With
 `--max-cost-usd 0.5` every Claude expectation of runs 1 to 3 held unchanged. Runs 1 to 3 remain the record of 0.12.0,
 where the same $0 route selected Claude and its mission was then refused.
+**Run 5** (2026-11-03 UTC, `45de6e7`, the code after the review of #111, harness unchanged, results in
+`results/run-5*`): **G1 29 of 29, G2 0, G3 0, G4 0**; the ceiling reason now appears only on providers that are
+otherwise usable (P1's rows no longer carry it).
+
 As the correction to amendment 3 records, since amendment 3 the default-order, `--prefer` and fallback checks no
 longer discriminate with these two stand-ins; for those, runs 1 to 3 remain the evidence. The table below describes
 runs 1 to 3.
