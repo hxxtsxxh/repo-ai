@@ -690,9 +690,11 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
         spend: dict[str, Any] = {'usd': 0.0, 'unknown': False, 'lock': threading.Lock()}
 
         def account(res: dict[str, Any]) -> None:
+            # a run refused before its process started spent nothing: only a started one can leave cost UNKNOWN
+            started = bool(res.get('events')) or res.get('returncode', -1) != -1
             with spend['lock']:
                 spend['usd'] += float(res.get('cost_usd') or 0.0)
-                spend['unknown'] = spend['unknown'] or res.get('cost_status') != 'OBSERVED'
+                spend['unknown'] = spend['unknown'] or (started and res.get('cost_status') != 'OBSERVED')
 
         def ceiling_left() -> float:
             # once a live run's cost is UNKNOWN (e.g. its terminal event was lost), nothing can be shown to remain
