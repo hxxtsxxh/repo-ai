@@ -235,26 +235,33 @@
    "observations": [
     "live abstain + byte-identical tie at 0.9.0",
     "2026-11-02: live comparisons classify how distinct passing candidates differ (IDENTICAL, COSMETIC = same Python syntax tree, SUBSTANTIVE with definitions named, UNKNOWN), rebuilt with shortlist's hardened reconstruction, and carry a next step taken from the decision; the abstention rule is unchanged. Tournaments can cap only the arms that enforce a ceiling (--allow-unknown-cost). tournament-live-v1 preregistered (owner approved 8 sessions); not run yet",
-    "2026-11-03 #113 (queue row 29): candidate differences are compared file by file (shortlist.code_identity, shared with shortlist): an identical non-Python change no longer hides a formatting-only Python difference; a SUBSTANTIVE pair always names a place (duplicate definition names kept, file fallback); a stale comparison never repeats its recorded next step (repo-ai compare, mission status --json)"
+    "2026-11-03 #113 (queue row 29): candidate differences are compared file by file (shortlist.code_identity, shared with shortlist): an identical non-Python change no longer hides a formatting-only Python difference; a SUBSTANTIVE pair always names a place (duplicate definition names kept, file fallback); a stale comparison never repeats its recorded next step (repo-ai compare, mission status --json)",
+    "2026-11-03 tournament-live-v1 (benchmarks/tournament-live-v1/RESULTS.md): 4 live Codex-vs-Claude tournaments on the abc-v5 calibration tasks, main at a2099be; all 8 arms PASS and graded CORRECT by the sealed hidden oracle in a podman container; every tournament abstained with a SUBSTANTIVE difference named and a pinning-test or shortlist next step; T1/T2/T3 0, no winners; R1: 0 of 4 SUBSTANTIVE pairs differed on the oracle (different code, same observed behaviour); Claude $0.2028 observed, Codex UNKNOWN"
    ],
-   "limits": [],
-   "next_action": "run tournament-live-v1 once the owner's dedicated Claude login exists"
+   "limits": [
+    "4 synthetic calibration tasks (no rate); every abstention here was between two correct candidates, so the tie rule cost a human choice each time"
+   ],
+   "next_action": "evidence expansion: a predeclared differential test between abstaining candidates (mission section 5B), evaluated on tasks where candidates truly differ"
   },
   {
    "id": "C13",
    "title": "Handoff/recovery",
-   "status": "EXPERIMENTAL",
+   "status": "PASS_WITH_LIMITS",
    "owner": "principal",
-   "code_sha": null,
+   "code_sha": "ecfdc8e",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "codex→agy live handoff PASS, hidden oracle 714/714 (0.9.0)",
     "2026-11-01 Claude as handoff target, BLOCKED (auth): replay source mission FAIL/partial_progress (simulated, fixes 1 of 2) -> `handoff --to claude` capsule, accepted by `do --from-handoff --agent claude` (which refuses a stale one; a later re-verify reports stale because the continuation is recorded on the source) -> the continuation carried the partial diff (seed: test_add fixed, test_scale still failing) and stopped at the provider preflight with auth_mode none, recovery provider_unavailable, $0, no model call (docs/engineering/evidence/C13-CLAUDE-HANDOFF-2026-11-01.md)",
-    "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (benchmarks/c13-live-handoff) (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet"
+    "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (benchmarks/c13-live-handoff) (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet",
+    "2026-11-03 live attempt 1 (benchmarks/c13-live-handoff/RESULTS.md): the owner chose the existing dedicated login claude-eval; repo-ai 0.12.1 from PyPI, preflight eligible, partial source and valid capsule, isolation probe passed, then Claude Code failed to authenticate (OAuth token revoked); $0.00 observed, no model turn, mission BLOCKED with the provider's reason. Not a C13 result; needs a fresh dedicated login",
+    "2026-11-03 live attempt 2 (benchmarks/c13-live-handoff/RESULTS.md, after a recorded runner amendment): new dedicated login claude-provider; replay partial candidate (partial_progress) handed to Claude Code via a verified capsule; partial patch transferred and re-verified from the same frozen source; Claude (file tools only: Read, Read, Edit) completed it: PASS, LIVE_CANDIDATE_VERIFIED, $0.038988 observed; hidden oracle 4/4 in a podman container without network; post-apply PASS, undo byte-identical; capsule consumed"
    ],
-   "limits": [],
-   "next_action": "owner runs `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login`; then, with 0.12.0 from PyPI, the approved preflight and one live session"
+   "limits": [
+    "one task, one session (a demonstration that the path works, not a success rate); macOS seatbelt only; the source was a replay provider, not a live one"
+   ],
+   "next_action": "a live-to-live handoff (e.g. Codex partial to Claude) when a budget is approved; Linux"
   },
   {
    "id": "C14",
@@ -413,14 +420,15 @@
     "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)",
     "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 (5 detected as regression, 2 refused; small sample, ~35% 95% bound); J2 fix 3/6 as selected-passed (pyjwt jwks tests pre-existing, likely network; more-itertools no trusted test command, likely an 'unknown' framework); J3 uninstall left no tracked or untracked difference 7/7; deviation: one clone per project, not fresh",
     "2026-11-01 #51: `from unittest import TestCase` marks a unittest suite (more-itertools gap from journey-offline-v2 closed; confirmed on real commits by CI diagnose)",
-    "2026-11-02: owner approved journey-live-v1 (4 MIT upstream defects, project code only in podman, at most 4 Claude sessions, $4.00); `do --sandbox podman --image` added so missions keep project code off the host; preregistration, harness and no-model preparation committed (all 4 defects qualify in their containers); a no-model check showed verify in podman sees pytest-9 subtest failures"
+    "2026-11-02: owner approved journey-live-v1 (4 MIT upstream defects, project code only in podman, at most 4 Claude sessions, $4.00); `do --sandbox podman --image` added so missions keep project code off the host; preregistration, harness and no-model preparation committed (all 4 defects qualify in their containers); a no-model check showed verify in podman sees pytest-9 subtest failures",
+    "2026-11-03 journey-live-v1 (benchmarks/journey-live-v1/RESULTS.md; amendment 3 before any session): repo-ai 0.12.1 from PyPI, Claude Code 2.1.317 on the dedicated login, project code only in podman. Controls: 3 of 4 (marshmallow INCONCLUSIVE, unstable observation; no session). Zero-provider onboarding found the frozen regressions on all three. Live: pyjwt PASS (native frozen ok, hidden upstream oracle no behavioural difference, apply/undo exact); humanize BLOCKED by a repo-ai defect (copied version file blamed on the provider); more-itertools BLOCKED by a repo-ai defect (64 KB capture killed the run, cost UNKNOWN); both fixed in #125. Gates L1, L3, L4, L5: 0; L6: 3 sessions, $0.0875 + one UNKNOWN (capped $1.00)"
    ],
    "limits": [
     "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
     "two repositories; on the published build, one live run (Claude, python-humanize)"
    ],
-   "next_action": "run journey-live-v1 from the 0.12.0 release once the owner's dedicated Claude login exists"
+   "next_action": "re-run the two sessions repo-ai blocked, on a build with #125, with a new approval; investigate the marshmallow control's unstable observation"
   },
   {
    "id": "C22",
