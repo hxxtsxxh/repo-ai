@@ -49,7 +49,18 @@ def _fixture_key(fixturedef):
 
 
 def _run_token(fixturedef, runs):
-    return "%s#%d" % (_fixture_key(fixturedef), runs.get(id(fixturedef), 0))
+    return "%s@%x#%d" % (_fixture_key(fixturedef), id(fixturedef), runs.get(id(fixturedef), 0))
+
+
+def _used(chain):
+    """Of an override chain, the definitions actually used: the active (last) one, and further back only while the
+    current one requests its own name (an override that ignores its parent never ran the parent's code)."""
+    out = []
+    for fixturedef in reversed(tuple(chain or ())):
+        out.append(fixturedef)
+        if getattr(fixturedef, "argname", None) not in (getattr(fixturedef, "argnames", ()) or ()):
+            break
+    return out
 
 
 def _active_runs(item, runs):
@@ -61,11 +72,11 @@ def _active_runs(item, runs):
         info = getattr(item, "_fixtureinfo", None)
         chains = getattr(info, "name2fixturedefs", None) or {}
         for name in getattr(item, "fixturenames", ()):
-            defs.extend(chains.get(name) or ())
+            defs.extend(_used(chains.get(name)))
         request = getattr(item, "_request", None)
         defs.extend((getattr(request, "_fixture_defs", None) or {}).values())
         for chain in (getattr(request, "_arg2fixturedefs", None) or {}).values():  # incl. getfixturevalue chains
-            defs.extend(chain or ())
+            defs.extend(_used(chain))
         manager = getattr(getattr(item, "session", None), "_fixturemanager", None)
         seen, queue = set(), list(defs)
         while queue:  # what those fixtures depend on (set up before their own setup hook runs)
@@ -79,7 +90,7 @@ def _active_runs(item, runs):
                     chain = manager.getfixturedefs(name, item) if manager is not None else None
                 except Exception:  # signature differs across pytest versions: credit what is known
                     chain = None
-                queue.extend(chain or ())
+                queue.extend(_used(chain))
         for fixturedef in defs:
             if (getattr(fixturedef, "scope", "function") != "function"
                     and getattr(fixturedef, "cached_result", None) is not None and id(fixturedef) in runs):
@@ -198,6 +209,13 @@ def main(argv):
             # every collected test ran (an early stop, -x or --maxfail, leaves some unrun)
             data["per_test_complete"] = (len(per_test) <= MAX_PER_TEST and counts["ran"] >= counts["collected"]
                                          and counts["collection_finished"] == 1)
+            # a shared fixture run no test's call claimed (it skipped or failed, or every user failed setup) still
+            # ran its lines: they count as outside any test rather than nowhere
+            claimed = {k for keys in uses.values() for k in keys}
+            for token, files in fixture_lines.items():
+                if token not in claimed:
+                    for path, lines in files.items():
+                        outside.setdefault(path, set()).update(lines)
             data["outside_tests"] = {k: sorted(v) for k, v in sorted(outside.items())}
         tmp = out + ".tmp"
         with open(tmp, "w", encoding="utf-8") as fh:

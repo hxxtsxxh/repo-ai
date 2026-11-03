@@ -318,3 +318,21 @@ def test_direct_lines_fill_the_cap_before_fixture_credit(monkeypatch):
              'fixture_uses': {f't::user{i}': ['conftest::app::session#1'] for i in range(5)}}
     out, complete = exercise._per_test(trace, {'m.py': {2, 3}})
     assert out['t::direct'] == ['m.py:2'] and len(out) == 2 and complete is False
+
+
+def test_an_override_that_ignores_its_parent_is_not_credited_with_the_parents_lines(tmp_path):
+    """Re-review of #121: another test left the parent's run cached; the override never ran it."""
+    (tmp_path / 'conftest.py').write_text('import pytest\nfrom m import make\n\n\n@pytest.fixture(scope="session")\n'
+                                         'def app():\n    return make(1)\n')
+    (tmp_path / 'test_b.py').write_text('import pytest\n\n\n@pytest.fixture(scope="module")\ndef app():\n'
+                                       '    return "x"\n\n\ndef test_b1(app):\n    assert app == "x"\n')
+    root = _repo(tmp_path, BRANCH_AFTER, 'def test_a1(app):\n    assert app == "one"\n')
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', BRANCH_BEFORE, BRANCH_AFTER), per_test=True)
+    assert rec['per_test'].get('test_m.py::test_a1') == ['m.py:2', 'm.py:3'], rec['per_test']
+    assert 'test_b.py::test_b1' not in rec['per_test'], rec['per_test']
+
+
+def test_lines_of_a_shared_fixture_no_test_ran_with_count_as_outside_any_test(tmp_path):
+    rec = _fixture_case(tmp_path, '@pytest.fixture(scope="session")\ndef app():\n    make(1)\n    pytest.skip("not here")\n',
+                        'def test_a(app):\n    pass\n')
+    assert rec['per_test'] == {} and rec['changed_outside_tests'] == ['m.py:2', 'm.py:3'], rec
