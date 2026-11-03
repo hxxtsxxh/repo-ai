@@ -42,8 +42,8 @@ Contents (each code PR: independent review rounds and a full CI run):
 
 ### Blocked on the owner or other people
 
-- C13, C21, C12 live studies (approved): the dedicated Claude login
-  `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login` does not exist yet.
+- C13 done on 2026-11-03 (PASS, $0.039, `benchmarks/c13-live-handoff/RESULTS.md`) with the new dedicated login; C21 and
+  C12 (approved) run next.
 - C08: an eligible author per `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`. C14: three independent authors.
 
 Resume directive: verify the public state (tags, PyPI, site), run the
