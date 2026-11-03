@@ -21,9 +21,10 @@ also records, per pytest node id, which lines of the watched files ran while
 that test ran (its setup, call and teardown), and separately the watched lines
 that ran outside any test (import, collection). Line events are re-armed for
 all code at each test, which slows large suites. Attribution is by time
-window: a shared fixture's setup belongs to the first test that triggers it,
-a thread's work to whichever test is running, and child processes are not
-seen (``spawned`` says so).
+window, except that a shared (session-, package-, module- or class-scoped)
+fixture's setup lines are credited to every test that uses it; its teardown
+belongs to the test it runs after, a thread's work to whichever test is
+running, and child processes are not seen (``spawned`` says so).
 Older interpreters fall back to ``sys.setprofile``. Code that runs in child
 processes or in threads started before tracing is not seen.
 """
@@ -37,6 +38,11 @@ import threading
 
 _HERE = os.path.abspath(__file__)
 MAX_PER_TEST = 5000  # tests recorded per run; beyond this the per-test record is marked incomplete
+
+
+def _fixture_key(fixturedef):
+    return "%s::%s::%s" % (getattr(fixturedef, "baseid", ""), getattr(fixturedef, "argname", ""),
+                           getattr(fixturedef, "scope", ""))
 
 
 def main(argv):
@@ -53,6 +59,9 @@ def main(argv):
     outside = {}  # watched path -> lines run while no test was running (import, collection)
     current = [None]
     counts = {"collected": 0, "ran": 0, "collection_finished": 0}
+    fixtures = [[]]  # stack of shared (non-function-scoped) fixtures being set up
+    fixture_lines = {}  # shared fixture key -> {watched path -> lines run during its setup}
+    uses = {}  # pytest node id -> keys of the shared fixtures it uses
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
     seen = {}
@@ -82,6 +91,8 @@ def main(argv):
         if path is not None:
             line_hits.setdefault(path, set()).add(line)
             if path in watch:
+                if fixtures[0]:  # inside a shared fixture's setup: credited to every test that uses it
+                    fixture_lines.setdefault(fixtures[0][-1], {}).setdefault(path, set()).add(line)
                 test = current[0]
                 if test is None:
                     outside.setdefault(path, set()).add(line)
@@ -129,6 +140,11 @@ def main(argv):
         if want_lines:
             data["lines"] = {k: sorted(v) for k, v in sorted(line_hits.items())}
         if per_test_on:
+            for test, keys in uses.items():  # a shared fixture's setup lines count for each test that uses it
+                for key in keys:
+                    for path, lines in fixture_lines.get(key, {}).items():
+                        if test in per_test or len(per_test) <= MAX_PER_TEST:
+                            per_test.setdefault(test, {}).setdefault(path, set()).update(lines)
             data["per_test"] = {t: {k: sorted(v) for k, v in sorted(files.items())}
                                 for t, files in sorted(per_test.items())}
             # every collected test ran (an early stop, -x or --maxfail, leaves some unrun)
@@ -206,9 +222,25 @@ def main(argv):
                 counts["collection_finished"] = 1
 
             @pytest.hookimpl(hookwrapper=True)
+            def pytest_fixture_setup(self, fixturedef, request):
+                shared = getattr(fixturedef, "scope", "function") != "function"
+                if shared:
+                    fixtures[0].append(_fixture_key(fixturedef))
+                try:
+                    yield
+                finally:
+                    if shared:
+                        fixtures[0].pop()
+
+            @pytest.hookimpl(hookwrapper=True)
             def pytest_runtest_protocol(self, item, nextitem):
                 counts["ran"] += 1
                 current[0] = item.nodeid
+                info = getattr(item, "_fixtureinfo", None)
+                for name in getattr(item, "fixturenames", ()):
+                    chain = info.name2fixturedefs.get(name) if info is not None else None
+                    if chain and getattr(chain[-1], "scope", "function") != "function":  # the active definition
+                        uses.setdefault(item.nodeid, set()).add(_fixture_key(chain[-1]))
                 if mon is not None:
                     mon.restart_events()  # lines disabled after their first hit fire again for this test
                 try:
