@@ -80,8 +80,9 @@ on the fixed build. Both are reported.
 
 ## Amendment 2 after run 2 (2026-11-02, review of the integration record)
 
-Run 2 was at `bf49f2a`, before #105. Two of its missions (Q1, A1) started the Claude stand-in with no `--max-cost-usd`,
-which is the "started uncapped, refused afterwards" path #105 later closed; the journey did not detect it. On main
+Run 2 was at `bf49f2a`, before #105. Its Q1 mission started the Claude stand-in with no `--max-cost-usd`, which is the
+"started uncapped, refused afterwards" path #105 later closed; A1 also had no ceiling but was refused for the cooldown
+before starting. The journey did not detect it. On main
 those missions are now refused for the missing ceiling, so run 2's result does not describe main. The harness now
 gives Claude a ceiling in Q1 and A1 (F1 stays without one, so Codex remains the fallback) and adds **G4: missions
 that started a ceiling-enforcing provider without a usable ceiling = 0**. Run 2 is re-evaluated with G4 and kept;
