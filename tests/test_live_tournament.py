@@ -264,6 +264,26 @@ def test_changed_source_empties_the_shortlist(bug, tmp_path):
     assert out['candidates'] == [] and out['preferred'] is None and out['blockers']
 
 
+
+def test_a_stale_comparison_says_run_again_instead_of_its_recorded_step(bug, tmp_path):
+    """Queue row 29, end to end: after HEAD moves, `compare` and `mission status` stop repeating the recorded step."""
+    import subprocess
+    from repo_ai.mission import runtime
+    from repo_ai.mission.tournament import render_comparison
+    report = two_passing(bug, tmp_path)
+    recorded = report.get('next_step')
+    assert recorded
+    (bug / 'charge.py').write_text('# changed later\n')
+    subprocess.run(['git', '-C', str(bug), 'commit', '-qam', 'later'], check=True,
+                   env={**__import__('os').environ, 'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@t',
+                        'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@t'})
+    state = runtime.status(bug, report['id'])
+    assert state['freshness'] != 'fresh'
+    assert state['comparison']['recorded_next_step'] == recorded
+    assert 'run the tournament again' in state['comparison']['next_step']
+    text = render_comparison(inspect_comparison(bug, report['id']))
+    assert 'run the tournament again' in text and recorded not in text
+
 def test_cli_shortlist_then_explicit_apply_of_a_chosen_candidate(bug, tmp_path):
     from conftest import run_cli
     report = two_passing(bug, tmp_path)

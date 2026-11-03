@@ -1142,6 +1142,8 @@ def status(root: Path, mission: str, *, _depth: int = 0) -> dict[str, Any]:
     state['effective_verdict'] = (state.get('passport') or {}).get('verdict', 'BLOCKED') if fresh and not unchecked else 'INCONCLUSIVE'
     if state.get('kind') == 'comparison' and state['effective_verdict'] != 'PASS' and isinstance(state.get('comparison'), dict):
         state['comparison'] = {**state['comparison'], 'winner': None, 'verdict': 'INCONCLUSIVE'}
+    if state.get('kind') == 'comparison' and isinstance(state.get('comparison'), dict):
+        state['comparison'] = stale_comparison_step(state['comparison'], state['freshness'])
     if state['effective_verdict'] != 'PASS' and state.get('provider', {}).get('verification_label') in {'LIVE_VERIFIED', 'LIVE_CANDIDATE_VERIFIED'}:
         state['provider']['verification_label'] = 'LIVE_STALE' if state['freshness'] != 'fresh' else 'LIVE_FAILED'
     state['recovery'] = classify_recovery(state)
@@ -1228,6 +1230,19 @@ def partial_progress(state: dict[str, Any]) -> dict[str, Any] | None:
     if not fixed or regressed or not after:
         return None
     return {'fixed': fixed, 'still_failing': sorted(after), 'diff_sha256': state['diff_sha256']}
+
+
+def stale_comparison_step(comparison: dict[str, Any], freshness: str) -> dict[str, Any]:
+    """A comparison that is no longer fresh never repeats the next step recorded for its old evidence (e.g. "apply
+    the winner"): it keeps it as `recorded_next_step` and says to run the tournament again."""
+    if freshness == 'fresh':
+        return comparison
+    comp = dict(comparison)
+    if comp.get('next_step') and 'recorded_next_step' not in comp:
+        comp['recorded_next_step'] = comp['next_step']
+    comp['next_step'] = ('this comparison is stale (freshness_reasons says why); run the tournament again on the '
+                         'current commit before acting on any candidate')
+    return comp
 
 
 def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
