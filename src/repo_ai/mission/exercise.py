@@ -209,7 +209,8 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                 record["per_test"], complete = _per_test(trace, eligible_by_file)
                 # a child process runs code this run cannot see, and an early stop leaves tests unrun
                 record["per_test_complete"] = complete and not trace.get("spawned") and res.exit_code in (0, 1)
-                outside = trace.get("outside_tests") if isinstance(trace.get("outside_tests"), dict) else {}
+                raw_outside = trace.get("outside_tests")
+                outside: dict[str, Any] = raw_outside if isinstance(raw_outside, dict) else {}
                 record["changed_outside_tests"] = sorted(
                     f"{rel}:{int(n)}" for rel, lines in outside.items() if isinstance(lines, list)
                     for n in lines if isinstance(n, int) and n in eligible_by_file.get(rel, set()))[:MAX_LISTED]
