@@ -120,18 +120,51 @@ def test_a_non_python_file_changed_differently_is_still_substantive(repo):
 
 
 @pytest.mark.parametrize('freshness', ['fresh', 'stale'])
-def test_a_stale_comparison_never_repeats_its_recorded_next_step(tmp_path, monkeypatch, freshness):
-    """Queue row 29: "apply the winner" written for evidence that no longer holds must not be printed as advice."""
+def test_a_stale_comparison_never_repeats_its_recorded_next_step(freshness):
+    """Queue row 29: "apply the winner" written for evidence that no longer holds must not be printed as advice (in
+    `repo-ai compare ID` and `repo-ai mission status ID --json`, both read through runtime.status)."""
     from repo_ai.mission import runtime, tournament
     recorded = 'repo-ai apply m1 (the only distinct passing candidate)'
-    monkeypatch.setattr(runtime, 'status', lambda root, mid: {
-        'kind': 'comparison', 'comparison': {'winner': 'm1', 'next_step': recorded, 'candidates': []},
-        'freshness': freshness, 'freshness_reasons': [] if freshness == 'fresh' else ['HEAD moved'],
-        'effective_verdict': 'PASS'})
-    comp = tournament.inspect_comparison(tmp_path, 'c1')
-    text = tournament.render_comparison(comp)
+    comp = runtime.stale_comparison_step({'winner': None, 'next_step': recorded, 'candidates': []}, freshness)
+    text = tournament.render_comparison({**comp, 'freshness': freshness})
     if freshness == 'fresh':
         assert comp['next_step'] == recorded and 'Next: ' + recorded in text
     else:
-        assert comp['winner'] is None and comp['recorded_next_step'] == recorded
-        assert recorded not in text and 'run the tournament again' in text
+        assert comp['recorded_next_step'] == recorded and recorded not in text and 'run the tournament again' in text
+    old = runtime.stale_comparison_step({'candidates': []}, freshness)  # a record from before next_step existed
+    assert ('next_step' in old) == (freshness != 'fresh') and 'recorded_next_step' not in old
+
+
+
+GETTER = ('class C:\n    @property\n    def x(self):\n        return {v}\n\n    @x.setter\n    def x(self, value):\n'
+          '        pass\n')
+
+
+@pytest.mark.parametrize('a_text,b_text', [
+    (GETTER.format(v=2), GETTER.format(v=3)),  # the getter's body; the setter (same name) last
+    ('def f():\n    return 1\n\n\ndef g():\n    return 2\n', 'def g():\n    return 2\n\n\ndef f():\n    return 1\n'),
+    ('# -*- coding: utf-8 -*-\nx = 1+1\n', '# -*- coding: utf-8 -*-\nx = (1 + 1)\n'),  # cookie: by bytes
+])
+def test_a_substantive_pair_always_names_where_it_differs(repo, a_text, b_text):
+    root, head = repo
+    a = diff(root, {'m.py': a_text, 'README.md': 'same\n'})
+    b = diff(root, {'m.py': b_text, 'README.md': 'same\n'})
+    [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
+    assert pair['difference'] == 'SUBSTANTIVE' and pair['where'], pair
+    assert all(w.startswith('m.py') for w in pair['where']), pair
+
+
+def test_a_duplicate_definition_name_is_named_when_it_differs(repo):
+    root, head = repo
+    a = diff(root, {'m.py': GETTER.format(v=2)})
+    b = diff(root, {'m.py': GETTER.format(v=3)})
+    [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
+    assert pair['where'] == ['m.py:C.x'], pair
+
+
+def test_shortlist_groups_by_the_same_rule(repo):
+    from repo_ai.mission.shortlist import code_identity
+    one = {'m.py': b'x = 1  # a\n', 'README.md': b'same\n'}
+    two = {'m.py': b'x=1\n', 'README.md': b'same\n'}
+    assert code_identity(one) == code_identity(two)
+    assert code_identity(one) != code_identity({**two, 'README.md': b'other\n'})

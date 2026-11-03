@@ -2,11 +2,14 @@
 
 ## Unreleased
 
-- Tournament differences: two passing candidates that change a non-Python file identically and a Python file only in
-  formatting or comments are now COSMETIC (before: SUBSTANTIVE whenever any changed file was not Python), and a
-  Python file that differs only cosmetically is no longer listed among the places two candidates differ. A stale
-  comparison (`repo-ai status` of a tournament after HEAD moved or its evidence changed) no longer prints its recorded
-  next step (such as applying the winner); it says to run the tournament again.
+- Tournament differences and `repo-ai shortlist` now compare file by file: two passing candidates whose changed files
+  are each byte-identical or have the same Python syntax tree are COSMETIC (and shortlisted as the same code), so an
+  identical non-Python change, or an identical file with a coding cookie, no longer makes a formatting-only Python
+  difference SUBSTANTIVE. A SUBSTANTIVE pair's `where` leaves out a Python file that differs only in formatting, keeps
+  each same-named definition (a property setter, `singledispatch` functions) and names the file when no single
+  definition differs. A stale comparison (`repo-ai compare ID`, `repo-ai mission status ID --json`, after HEAD moved or
+  its evidence changed) no longer gives its recorded next step (such as applying the winner); it says to run the
+  tournament again and keeps the old one as `recorded_next_step`.
 - `--agent auto` (and `agents route`) without a usable `--max-cost-usd` (the default 0, or under $0.0001) no longer
   selects a provider whose CLI enforces a USD ceiling (Claude Code, Bob): its run was then refused for the missing
   ceiling. Routing skips it with the reason and picks the next eligible provider (e.g. Codex, cost UNKNOWN); when none
