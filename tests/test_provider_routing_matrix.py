@@ -155,9 +155,13 @@ def test_runtime_unsupported_matches_the_adapter(tmp_path, monkeypatch, name):
     from repo_ai.providers import claude_auth
     monkeypatch.setattr(adapters, "sys", _Platform("linux"))
     monkeypatch.setattr(adapters, "shutil", _Which())
+    monkeypatch.setattr(adapters, "_bwrap_binds_fds", lambda bwrap: False)  # a real run asks bwrap --help once
     plan = claude_auth.ClaudeAuthPlan("token_env", None, ("ANTHROPIC_API_KEY",), ())
     prefix = adapters._execution_sandbox_prefix(tmp_path, tmp_path, allow_network=True, provider=name, live=True,
                                                 claude_plan=plan)
+    # routing's readiness check (dry_run) builds the same answer without starting any process
+    assert (adapters._execution_sandbox_prefix(tmp_path, tmp_path, allow_network=True, provider=name, live=True,
+                                               claude_plan=plan, dry_run=True) is None) == (prefix is None)
     if name in NO_CONTAINMENT_OFF_MACOS:
         assert prefix is None
     else:
