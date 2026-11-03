@@ -14,8 +14,9 @@ A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the sour
 - **Added** `repo-ai do --sandbox podman --image REF` runs a mission's tests in a local container image (frozen with
   the mission: baseline, candidate, regression, post-apply, continuations). The coding agent itself still runs on the
   host.
-- **Added** live tournaments say whether distinct passing candidates differ only in formatting or comments, or where
-  they differ, with a next step; `--allow-unknown-cost` caps only the arms that enforce a ceiling.
+- **Added** live tournaments say whether distinct passing candidates differ only cosmetically (the same Python syntax
+  tree) or where they differ (or UNKNOWN), with a next step; such tournaments still abstain. `--allow-unknown-cost`
+  caps only the arms that enforce a ceiling.
 - **Fixed** routing: an explicitly chosen provider in a rate-limit cooldown is refused before it starts; a
   continuation refused for a cooldown keeps its capsule; a crash is no longer classified as a budget limit; the
   no-provider refusal names the reason.

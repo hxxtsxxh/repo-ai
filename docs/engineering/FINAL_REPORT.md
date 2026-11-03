@@ -6,7 +6,7 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
-## Current state (2026-11-02)
+## Current state (2026-11-03 UTC)
 
 ### Release 0.12.0 (verified after publication)
 
