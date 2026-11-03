@@ -121,6 +121,7 @@ def tsmono(tmp_path: Path) -> Path:
 # bubblewrap installed. Windows is unsupported for missions (refused at runtime by `safe application requires
 # POSIX no-follow`).
 _MISSION_NEEDS_SANDBOX = {
+    "test_live_ceiling",
     "test_mission_sandbox_choice",
     "test_routing_journey_fixes",
     "test_mission_cli", "test_mission_decision_chain", "test_mission_demo",
