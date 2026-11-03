@@ -35,3 +35,23 @@ def test_the_event_parser_counts_truncated_lines_and_still_sees_the_terminal_eve
                    output_limit=65_536, separate_stderr=True, max_line=32_768)
     ev = adapters.parse_event_stream("claude", res.output)
     assert ev["truncated_events"] == 1 and ev["terminal_observed"] is True and ev["protocol_valid"] is True, ev
+
+
+def test_a_long_terminal_result_line_is_kept_whole_with_its_cost(tmp_path):
+    """Review of #125: a terminal event padded past the line cap must not lose the cost or the terminal status."""
+    script = ("import json\n"
+              "print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': 's'}))\n"
+              "print(json.dumps({'type': 'result', 'session_id': 's', 'total_cost_usd': 0.5, 'is_error': True,"
+              " 'permission_denials': [{'tool_name': 'Write', 'tool_input': {'content': 'x' * 40000}}]}))\n")
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=262_144, separate_stderr=True, max_line=32_768)
+    ev = adapters.parse_event_stream("claude", res.output)
+    assert res.status == "complete" and ev["terminal_observed"] and ev["truncated_events"] == 0
+    assert ev["cost_usd"] == 0.5
+
+
+def test_an_endless_run_of_dropped_lines_stops_at_the_read_cap(tmp_path):
+    script = "import sys\nfor _ in range(5000):\n    sys.stdout.write('{\"type\":\"user\",\"x\":\"' + 'y' * 2000 + '\"}\\n')\n"
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=4096, separate_stderr=True, max_line=1024)
+    assert res.status == "output_limit"

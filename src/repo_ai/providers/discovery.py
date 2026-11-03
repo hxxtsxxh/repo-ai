@@ -344,13 +344,26 @@ def _stop(proc: subprocess.Popen[bytes]) -> None:
         pass
 
 
+KEEP_WHOLE_TYPES = frozenset({"result", "turn.completed", "turn.failed", "text", "error", "rate_limit_event"})
+MAX_READ_FACTOR = 64
+_TYPE_PREFIX = re.compile(rb'^\s*\{\s*"type"\s*:\s*"([A-Za-z_.]{1,40})"')
+
+
+def _keep_whole(line: bytes | bytearray) -> bool:
+    """An event line repo-ai must see whole (its cost, errors and terminal status), judged from its leading `type`."""
+    found = _TYPE_PREFIX.match(bytes(line[:256]))
+    return found is not None and found.group(1).decode("ascii") in KEEP_WHOLE_TYPES
+
+
 def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
              timeout: float = 5.0, output_limit: int = MAX_OUTPUT,
              separate_stderr: bool = False, max_timeout: float = 30.0,
              pass_fds: tuple[int, ...] = (), max_line: int = 0) -> ProbeResult:
     """Bound memory, elapsed time, and process-group lifetime without a shell. `max_line` (a JSONL event stream):
     a stdout line longer than this is replaced by `{"type":"repo_ai_truncated","bytes":N}` instead of stopping the
-    run (a large tool result or file read); `output_limit` still bounds what is kept."""
+    run (a large tool result or file read), unless its type is one repo-ai must see whole (terminal, error, rate
+    limit: `KEEP_WHOLE_TYPES`); `output_limit` still bounds what is kept, and reading stops after
+    `MAX_READ_FACTOR` x `output_limit` bytes in all."""
     if not 0 < timeout <= max_timeout or not 0 < max_timeout <= 900 or not 0 < output_limit <= MAX_OUTPUT * 4:
         raise ValueError("invalid probe bounds")
     try:
@@ -380,6 +393,7 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
     def read(pipe: Any, destination: bytearray, done: threading.Event, lines: int = 0) -> None:
         line = bytearray()
         dropped = [0]  # bytes of the line being dropped (0: not dropping)
+        total = 0
         try:
             while not stop_readers.is_set():
                 # POSIX pipes may be inherited by detached descendants outside
@@ -392,6 +406,10 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
                 if not lines:
                     keep(destination, chunk)
                     continue
+                total += len(chunk)
+                if total > output_limit * MAX_READ_FACTOR:  # dropped lines no longer fill the limit: bound them too
+                    overflow.set()
+                    break
                 pos = 0
                 while pos < len(chunk):
                     nl = chunk.find(b"\n", pos)
@@ -400,8 +418,11 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
                         dropped[0] += len(piece)
                     else:
                         line.extend(piece)
-                        if len(line) > lines:
+                        if len(line) > lines and not _keep_whole(line):
                             dropped[0] = len(line)
+                            line.clear()
+                        elif len(line) > output_limit:  # even a kept type cannot exceed what is kept in all
+                            overflow.set()
                             line.clear()
                     if nl == -1:
                         break
