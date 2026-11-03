@@ -6,8 +6,13 @@ from __future__ import annotations
 import json
 import sys
 
+import pytest
+
 from repo_ai.providers import adapters
 from repo_ai.providers.discovery import _capture
+
+# live provider runs are POSIX-only (repo-ai refuses them on Windows); the child here also needs a POSIX environment
+pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="live provider capture is POSIX-only")
 
 SCRIPT = ("import json, sys\n"
           "print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': 's'}))\n"
