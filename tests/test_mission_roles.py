@@ -99,3 +99,36 @@ def test_unknown_role_is_rejected() -> None:
     from repo_ai.mission.contracts import IntentContract
     with pytest.raises(ValueError, match="roles must be"):
         IntentContract("x", "r", "b", ["python -m pytest"], [], roles=["committee"]).validate()
+
+
+def test_a_failed_mission_with_roles_records_what_they_spent(bug: Path, tmp_path: Path, monkeypatch) -> None:  # noqa: F811
+    """Queue row 26: the record kept role spend only on the completed path; a failure after the investigator ran
+    dropped it, so a continuation's budget could not count it."""
+    from repo_ai.mission import verification
+    real = verification.observe
+    calls = {"n": 0}
+
+    def observe(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 2:  # the candidate observation, after the investigator and the implementer ran
+            raise ValueError("observation failed (injected)")
+        return real(*a, **k)
+    monkeypatch.setattr(verification, "observe", observe)
+    cli = _cli(tmp_path)
+    p = runtime.plan(bug, "Fix duplicate payment charge when retry uncertain again", agent="claude",
+                     write_paths=["charge.py"], execute_local=True, roles=["investigator"])
+    res = runtime.execute(bug, p, None, provider_executable=cli)
+    assert res["effective_verdict"] != "PASS"
+    assert res["spend"] == {"usd_observed_total": 0.0, "any_cost_unknown": False}, res.get("spend")
+
+
+def test_a_continuation_counts_role_spend_against_the_remaining_budget() -> None:
+    live = {"simulated": False, "cost_usd": 0.10, "cost_status": "OBSERVED"}
+    assert runtime._prior_spend({"provider": live}) == (0.10, False)
+    # the investigator spent 0.30 before the implementer's 0.10: 0.40 is gone, not 0.10
+    assert runtime._prior_spend({"provider": live, "spend": {"usd_observed_total": 0.40,
+                                                             "any_cost_unknown": False}}) == (0.40, False)
+    assert runtime._prior_spend({"provider": live, "spend": {"usd_observed_total": 0.40,
+                                                             "any_cost_unknown": True}})[1] is True
+    assert runtime._prior_spend({"provider": {**live, "cost_status": "UNKNOWN"}})[1] is True
+    assert runtime._prior_spend({"provider": {"simulated": True, "cost_usd": 0.5}}) == (0.0, False)
