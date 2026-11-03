@@ -5,9 +5,10 @@
 - Security (Linux, live Claude, Codex and Bob runs): the run's bubblewrap sandbox now hides the host's unix-socket
   directories (`/tmp`, `/run`, `/var/run`, `/var/tmp`, `/mnt/wslg`, LXD's and Incus's), as the probe sandbox already
   did, and gives the run its own IPC and UTS namespaces. Before, a networked model with a shell could reach a
-  container engine socket, an ssh-agent under `/tmp` or the session bus. Every home directory is hidden (HOME and the
-  account's own, which differ under `sudo -E` or a service account; before, only HOME), and so are repo-ai's login
-  stores outside HOME (`REPO_AI_HOME`, `REPO_AI_CLAUDE_CONFIG_DIR`, `REPO_AI_CODEX_HOME`). Bob live runs on Linux had
+  container engine socket, an ssh-agent under `/tmp` or the session bus. HOME and the account's own home directory are
+  hidden (they differ under `sudo -E` or a service account; before, only HOME), and so are repo-ai's login stores
+  outside HOME (`REPO_AI_HOME`, `REPO_AI_CLAUDE_CONFIG_DIR`, `REPO_AI_CODEX_HOME`) unless one is a top-level directory
+  or holds a home, a system directory, `/var/lib` or the TLS certificates (then it stays readable). Bob live runs on Linux had
   none of this (not even HOME hidden) and now get the same sandbox. The install directories, the `node` runtime and
   the resolver configuration (`/etc/resolv.conf`, often a link into `/run`) are bound back read-only; a directory
   holding a socket (or too large to check) is not, and then only the executable is bound. With bubblewrap 0.10 or

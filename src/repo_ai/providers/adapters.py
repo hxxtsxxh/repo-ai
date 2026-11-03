@@ -640,13 +640,15 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                 # bus: a networked model with a shell could drive them), then re-expose only what the provider needs,
                 # read-only. Bob reads its settings from the scratch HOME they were copied to.
                 cmd.extend(["--unshare-ipc", "--unshare-uts"])
+                located_node = shutil.which("node", path=os.environ.get("PATH", os.defpath))
+                node = [Path(located_node).resolve()] if located_node else []
                 if provider == "codex":
-                    roots = [*_codex_install_roots(executable), *_node_roots()]
+                    roots = [*_codex_install_roots(executable), *node]
                 else:
                     if executable is None:
                         located = shutil.which(provider)
                         executable = Path(located) if located else None
-                    roots = [*(claude_auth._install_roots(executable) if executable is not None else []), *_node_roots()]
+                    roots = [*(claude_auth._install_roots(executable) if executable is not None else []), *node]
                 from ..registry import registry_home
                 private = [registry_home(), claude_auth.default_config_dir()]
                 if os.environ.get(CODEX_HOME_ENV):
@@ -691,10 +693,14 @@ def _live_linux_binds(bwrap: str, roots: list[Path], *, files: list[Path] | tupl
     was resolved is not bound; the descriptors are returned for `pass_fds`. Older bubblewrap binds by path (the
     resolve-to-bind race stays open there). `dry_run` (routing): no process, no descriptor. Workspace, scratch and
     the dedicated login directory are bound afterwards, by path."""
-    homes = [os.path.realpath(h) for h in dict.fromkeys([str(Path.home()), *_homes()])]
+    homes = [r for r in dict.fromkeys(os.path.realpath(h) for h in [str(Path.home()), *_homes()]) if os.path.isdir(r)]
+    # never hidden: `/`, a top-level directory, or a directory holding a home, a system directory or what TLS and
+    # user lookups read (a login store inside /opt or /usr/local is hidden; `/var` or `/var/lib` is not)
+    keep = {*homes, *(os.path.realpath(s) for s in ("/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc", "/opt",
+                                                    "/nix", "/snap", "/var/lib", "/etc/ssl", "/etc/pki"))}
 
     def hideable(d: str) -> bool:
-        return d != "/" and not _system(d) and not any(h.startswith(d.rstrip("/") + "/") for h in homes)
+        return d.count("/") >= 2 and not any(k == d or k.startswith(d.rstrip("/") + "/") for k in keep)
 
     extra = [r for r in (os.path.realpath(str(x)) for x in private) if os.path.isdir(r) and hideable(r)]
     covered = sorted(dict.fromkeys([*_hidden_dirs(), *homes, *extra]), key=lambda d: (d.count("/"), d))
@@ -747,7 +753,7 @@ def _live_linux_binds(bwrap: str, roots: list[Path], *, files: list[Path] | tupl
     d_close = tuple(fd for x, fd in pinned.items() if x not in keep)
     _close_all(d_close)
     fds = [pinned[x] for x in (*dirs, *singles) if x in pinned]
-    again = [d for d in _hidden_dirs() if any(d.startswith(x.rstrip("/") + "/") for x in dirs)]
+    again = [d for d in covered if any(d.startswith(x.rstrip("/") + "/") for x in dirs)]
     for x in (*dirs, *singles):
         args.extend(("--ro-bind-fd", str(pinned[x]), x) if x in pinned else ("--ro-bind", x, x))
         if x in dirs:  # a bound directory brings back its whole host subtree: hide socket directories inside it again

@@ -171,3 +171,33 @@ def test_live_runs_get_their_own_ipc_and_uts_namespaces(tmp_path, monkeypatch, p
                                                 executable=w["home"] / "inst" / "bin" / "agent", claude_plan=plan,
                                                 dry_run=True)
     assert "--unshare-ipc" in prefix and "--unshare-uts" in prefix
+
+
+def test_a_home_directory_that_does_not_exist_is_not_mounted(tmp_path, monkeypatch):
+    """`nobody` (/nonexistent), `useradd -M`: bubblewrap cannot create a mount point on the read-only root."""
+    w = _world(tmp_path, monkeypatch)
+    monkeypatch.setattr(adapters, "_homes", lambda: [str(w["home"]), str(w["base"] / "nonexistent")])
+    args, fds = adapters._live_linux_binds("/usr/bin/bwrap", [])
+    assert str(w["base"] / "nonexistent") not in args
+    d._close_all(tuple(fds))
+
+
+def test_a_login_store_inside_a_bound_install_directory_is_hidden_again(tmp_path, monkeypatch):
+    w = _world(tmp_path, monkeypatch)
+    store = w["home"] / "inst" / "repo-ai"  # REPO_AI_HOME inside the directory that holds the executable
+    store.mkdir()
+    monkeypatch.setattr(adapters, "_homes", lambda: [str(w["home"])])
+    args, fds = adapters._live_linux_binds("/usr/bin/bwrap", [w["home"] / "inst"], private=[store])
+    i = args.index(str(w["home"] / "inst"), args.index("--ro-bind-fd"))
+    assert str(store) in args[i + 1:]
+    d._close_all(tuple(fds))
+
+
+def test_broad_or_system_holding_store_locations_are_never_hidden(tmp_path, monkeypatch):
+    w = _world(tmp_path, monkeypatch)
+    args, fds = adapters._live_linux_binds("/usr/bin/bwrap", [], private=[Path("/var"), Path("/var/lib"),
+                                                                         Path("/etc"), w["base"]])
+    tmpfs = [args[i + 1] for i, a in enumerate(args) if a == "--tmpfs"]
+    assert not {"/var", "/var/lib", "/etc", os.path.realpath("/var"), os.path.realpath("/etc")} & set(tmpfs)
+    assert str(w["base"]) not in tmpfs  # holds HOME
+    d._close_all(tuple(fds))
