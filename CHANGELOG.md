@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- `repo-ai coverage` maps each requirement to the changed lines its own tests ran (pytest missions): the mission's
+  change-exercise run now records which changed executable lines each test ran (the tracer re-arms line events at
+  every test boundary, for the changed files only). A change requirement whose mapped tests flipped from failing to
+  passing without running any changed line is an obligation (headline at most ACCEPTANCE_PARTIAL), and changed lines
+  run only by tests no requirement names are listed. Older, Node and container missions report it as not measured.
+
 ## 0.12.1 — Linux live-run sandbox, auto routing without a ceiling, container missions applicable, tournament and budget fixes
 
 - Missions run in a container (`--sandbox podman|docker`, or `auto` falling back to one) could not be applied in

@@ -15,6 +15,10 @@ values, environment or output.
 
 Python 3.12+ uses ``sys.monitoring`` and disables each code location after
 its first start, so the overhead is one callback per function, not per call.
+
+``--per-test --watch a.py,b.py`` (with ``--lines``, for ``-m pytest`` only)
+also records, per pytest node id, which lines of the watched files ran during
+that test (setup, call and teardown): line events are re-armed at each test.
 Older interpreters fall back to ``sys.setprofile``. Code that runs in child
 processes or in threads started before tracing is not seen.
 """
@@ -27,6 +31,7 @@ import sys
 import threading
 
 _HERE = os.path.abspath(__file__)
+MAX_PER_TEST = 5000  # tests recorded per run; beyond this the per-test record is marked incomplete
 
 
 def main(argv):
@@ -37,6 +42,10 @@ def main(argv):
     opts, target = argv[:sep], argv[sep + 1:]
     out = opts[opts.index("--out") + 1]
     want_lines = "--lines" in opts  # also record which lines ran (changed-line exercise measurement)
+    per_test_on = want_lines and "--per-test" in opts and target[:2] == ["-m", "pytest"]
+    watch = set(opts[opts.index("--watch") + 1].split(",")) if per_test_on and "--watch" in opts else set()
+    per_test = {}  # pytest node id -> {watched path -> lines run during that test}
+    current = [None]
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
     seen = {}
@@ -65,6 +74,9 @@ def main(argv):
         path = rel(code.co_filename)
         if path is not None:
             line_hits.setdefault(path, set()).add(line)
+            test = current[0]
+            if test is not None and path in watch and len(per_test) <= MAX_PER_TEST:
+                per_test.setdefault(test, {}).setdefault(path, set()).add(line)
 
     spawned = []
 
@@ -105,6 +117,10 @@ def main(argv):
                 "opened": sorted(opened), "spawned": sorted(set(spawned))[:20]}
         if want_lines:
             data["lines"] = {k: sorted(v) for k, v in sorted(line_hits.items())}
+        if per_test_on:
+            data["per_test"] = {t: {k: sorted(v) for k, v in sorted(files.items())}
+                                for t, files in sorted(per_test.items())}
+            data["per_test_complete"] = len(per_test) <= MAX_PER_TEST
         tmp = out + ".tmp"
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(data, fh)
@@ -159,6 +175,22 @@ def main(argv):
     if target and target[0] != "-m":
         script = rel(os.path.abspath(target[0]))
     sys.argv = list(target)
+    if per_test_on:
+        import pytest  # the project's own pytest, as `-m pytest` would load it
+
+        class _PerTest:
+            @pytest.hookimpl(hookwrapper=True)
+            def pytest_runtest_protocol(self, item, nextitem):
+                current[0] = item.nodeid
+                if mon is not None:
+                    mon.restart_events()  # lines disabled after their first hit fire again for this test
+                try:
+                    yield
+                finally:
+                    current[0] = None
+
+        sys.argv = ["pytest", *target[2:]]
+        raise SystemExit(pytest.main(target[2:], plugins=[_PerTest()]))
     if target and target[0] == "-m":
         sys.argv = [target[1], *target[2:]]
         runpy.run_module(target[1], run_name="__main__", alter_sys=True)

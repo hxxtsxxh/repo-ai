@@ -161,3 +161,23 @@ def test_the_same_diff_through_a_relabelled_proposal_is_a_prior_run(bug, tmp_pat
                                 '--allow-write', 'charge.py', '--requirements', str(f), '--json').stdout)
     report = json.loads(run_cli(bug, 'coverage', second['id'], '--json').stdout)
     assert report['declaration'] == 'FROZEN_AFTER_PRIOR_RUN' and first['id'] in report['prior_runs']
+
+
+def test_coverage_maps_each_requirement_to_the_changed_lines_its_tests_ran(bug, tmp_path):
+    """C11 end to end: the mission's exercise run records per-test changed lines; coverage reads them per requirement."""
+    from conftest import run_cli
+    from repo_ai.mission import coverage as cov
+    from repo_ai.mission.runtime import execute, plan, status
+    p = plan(bug, 'Fix duplicate charge in charge.py when retries happen', agent='replay',
+             write_paths=['charge.py'], execute_local=True)
+    result = execute(bug, p, replay(bug, tmp_path))
+    assert result['effective_verdict'] == 'PASS'
+    ex = status(bug, result['id'])['exercise']
+    assert ex.get('per_test_complete') is True and ex.get('per_test'), ex
+    f = tmp_path / 'req.json'
+    f.write_text(json.dumps({'schema': cov.REQ_SCHEMA, 'requirements': [
+        {'text': 'retries do not charge twice', 'kind': 'change', 'tests': ['test_retry']}]}))
+    data = json.loads(run_cli(bug, 'coverage', result['id'], '--requirements', str(f), '--json').stdout)
+    [row] = data['requirements']
+    assert row['changed_lines_run_count'] >= 1 and all(x.startswith('charge.py:') for x in row['changed_lines_run'])
+    assert data['changed_lines_by_requirement']['measured'] is True
