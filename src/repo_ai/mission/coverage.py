@@ -188,8 +188,9 @@ def _row(req: dict[str, Any], known: set[str], baseline: dict[str, str], candida
 def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str, Any] | None) -> dict[str, Any]:
     """Requirement by requirement, which changed executable lines ran while its mapped tests ran (the exercise
     measurement's per-test record: pytest missions with a frozen declaration). Informational only, never an
-    obligation or a status: attribution is by time window, so a line that runs at import, in a shared fixture set up
-    by an earlier test, in a child process or in another test's thread is not credited to the test it serves."""
+    obligation or a status: attribution is by time window (a shared fixture's setup run is credited to each test
+    whose call ran with it active), so a line that runs at import, in a teardown, in a child process or in another
+    test's thread is not credited to the test it serves."""
     per_test = (exercise or {}).get('per_test')
     total = int((exercise or {}).get('changed_lines') or 0)
     if not isinstance(per_test, dict):
@@ -213,9 +214,10 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
     return {'measured': True, 'complete': complete, 'changed_lines': total,
             'run_outside_any_test': outside[:20],
             'run_by_tests_of_no_requirement': unclaimed[:20], 'run_by_tests_of_no_requirement_count': len(unclaimed),
-            'note': ('attribution is by time window: lines run at import, in a shared fixture set up by an earlier '
-                     'test, in a child process or in another test\'s thread are not credited to the test they serve; '
-                     'informational, never part of a status or the headline')}
+            'note': ('attribution is by time window (a shared fixture\'s setup run is credited to each test whose '
+                     'call ran with it active): lines run at import, in a teardown, in a child process or in another '
+                     'test\'s thread are not credited to the test they serve; informational, never part of a status '
+                     'or the headline')}
 
 
 def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, str], *,
