@@ -35,9 +35,11 @@
   "G2_violations": [],
   "G3_violations": [],
   "G4_ceiling_not_recorded": [
+   "U2-configured-not-logged-in mission",
    "O1-one mission",
    "E1-expired mission-after-expiry",
-   "Q1-quota mission"
+   "Q1-quota mission",
+   "X1-failure mission"
   ],
   "G4_uncapped_starts": []
  }

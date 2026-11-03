@@ -143,7 +143,12 @@ def live(work: Path, exe: str) -> int:
     code, child, err = ra(exe, repo, "do", "--from-handoff", str(capsule_path), "--agent", "claude",
                           "--allow-live-provider", "--max-cost-usd", CAP, "--run", "--json", timeout=2400)
     prov = (child or {}).get("provider") or {}
-    no_inference = prov.get("capture_status") in NO_INFERENCE and not (prov.get("events") or {}).get("assistant")
+    reasons = " ".join(str(r) for r in (child or {}).get("reasons") or []) + " ".join(
+        str(r) for r in ((child or {}).get("passport") or {}).get("negative") or [])
+    # a probe refusal is free only when the probe stopped before inference; "did not stop before inference" (or a
+    # changed workspace) may mean a model call happened, so that attempt counts as the session
+    no_inference = (prov.get("capture_status") in NO_INFERENCE and not (prov.get("events") or {}).get("assistant")
+                    and "did not stop before inference" not in reasons and "changed the workspace" not in reasons)
     log(work, "live-result", exit=code, id=(child or {}).get("id"), verdict=(child or {}).get("effective_verdict"),
         provider={k: prov.get(k) for k in ("stage", "capture_status", "cost_usd", "cost_status", "auth_mode",
                                            "auth_env_vars", "verification_label")},

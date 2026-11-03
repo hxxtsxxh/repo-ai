@@ -303,7 +303,7 @@ def evaluate(work: Path) -> dict:
           and (r.get("provider") or {}).get("name") == "codex" and r["provider"].get("cost_status") == "OBSERVED"]
     # G4 (amendment 2): a ceiling-enforcing provider (claude) was started without a usable ceiling
     started_claude = [r for r in rows if "mission" in r["step"] and (r.get("provider") or {}).get("name") == "claude"
-                      and (r.get("provider") or {}).get("stage") != "BLOCKED"]
+                      and (r.get("provider") or {}).get("capture_status") != "no_cost_ceiling"]
     g4 = [f"{r['scenario']} {r['step']}" for r in started_claude if "ceiling" in r and float(r["ceiling"] or 0) < 0.0001]
     g4_unrecorded = [f"{r['scenario']} {r['step']}" for r in started_claude if "ceiling" not in r]
     summary = {"G1_expected": sum(1 for v in results.values() if v), "G1_total": len(results),
