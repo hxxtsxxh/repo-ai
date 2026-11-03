@@ -125,7 +125,12 @@ def _emit(value: dict[str, Any], args) -> None:
                 rec = value.get('recovery') or {}
                 if rec.get('action'):
                     print(f"Recovery [{rec.get('category')}]: {rec.get('action')}")
-                print(f"Next: repo-ai why-test-failed {mid}  (or repo-ai handoff {mid} --to bob)")
+                prov = value.get('provider') or {}
+                # a continuation to a ceiling-enforcing provider needs an observed prior cost (UNKNOWN cannot establish
+                # the remaining budget), so suggest one only when the cost was observed or nothing live ran
+                observed = prov.get('cost_status') == 'OBSERVED' or prov.get('simulated', True)
+                target = 'claude' if observed else 'codex'
+                print(f"Next: repo-ai why-test-failed {mid}  (or repo-ai handoff {mid} --to {target})")
         return
     print(json.dumps(value, indent=2, sort_keys=True))
 
@@ -480,8 +485,8 @@ def _agents_setup(args) -> int:
     for problem in plan.problems:
         print(f'  - {problem}')
     if plan.usable:
-        print('Ready to try. A live run still needs --allow-live-provider (or agents authorize claude) and is checked '
-              'by its result, not by this command.')
+        print('Ready to try. A live run still needs --allow-live-provider (or agents authorize claude) and a USD '
+              'ceiling (--max-cost-usd > 0), and is checked by its result, not by this command.')
     else:
         print('Fix it once, either way:')
         print(f'  1. {value["login_command"]}   (a separate login just for repo-ai; your ~/.claude is untouched)')
