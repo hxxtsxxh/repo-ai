@@ -302,12 +302,13 @@ def evaluate(work: Path) -> dict:
     g3 = [f"{r['scenario']} {r['step']}" for r in rows if "mission" in r["step"]
           and (r.get("provider") or {}).get("name") == "codex" and r["provider"].get("cost_status") == "OBSERVED"]
     # G4 (amendment 2): a ceiling-enforcing provider (claude) was started without a usable ceiling
-    g4 = [f"{r['scenario']} {r['step']}" for r in rows if "mission" in r["step"]
-          and (r.get("provider") or {}).get("name") == "claude" and (r.get("provider") or {}).get("stage") != "BLOCKED"
-          and float(r.get("ceiling") or 0) < 0.0001]
+    started_claude = [r for r in rows if "mission" in r["step"] and (r.get("provider") or {}).get("name") == "claude"
+                      and (r.get("provider") or {}).get("stage") != "BLOCKED"]
+    g4 = [f"{r['scenario']} {r['step']}" for r in started_claude if "ceiling" in r and float(r["ceiling"] or 0) < 0.0001]
+    g4_unrecorded = [f"{r['scenario']} {r['step']}" for r in started_claude if "ceiling" not in r]
     summary = {"G1_expected": sum(1 for v in results.values() if v), "G1_total": len(results),
                "G1_failed": sorted(k for k, v in results.items() if v is not True), "G2_violations": g2,
-               "G3_violations": g3, "G4_uncapped_starts": g4}
+               "G3_violations": g3, "G4_uncapped_starts": g4, "G4_ceiling_not_recorded": g4_unrecorded}
     (work / "evaluation.json").write_text(json.dumps({"summary": summary, "checks": results}, indent=1, sort_keys=True))
     print(json.dumps(summary, indent=1))
     return summary
