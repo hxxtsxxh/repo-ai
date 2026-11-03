@@ -1,16 +1,33 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.0, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.1, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.1
+
+- **Security** Linux live runs (Claude, Codex and Bob) hide HOME and the account's home, repo-ai's login stores and
+  the directories where host unix sockets live (`/tmp`, `/run`, `/var/run`, `/var/tmp`, WSLg, LXD, Incus), with
+  their own IPC and UTS namespaces; read-only bind-backs go through a pinned descriptor with bubblewrap 0.10+. Bob's
+  Linux runs had no HOME hiding before. Still reachable: abstract unix sockets and host-network services (see
+  [Security](/repo-ai/docs/security/)). Not live-verified on Linux.
+- **Fixed** the 0.12.0 known limitation: `--agent auto` without `--max-cost-usd` skips Claude and Bob, says so, and
+  picks the next eligible provider (whose cost may be UNKNOWN); with none left, the message names `--max-cost-usd`.
+  Mixed `--allow-unknown-cost` tournaments judge each arm at its own ceiling.
+- **Fixed** a mission run in a container (`--sandbox podman|docker`) can be applied (`apply` re-runs the tests in the
+  same image); 0.12.0 always refused it. Container tournaments count each arm's observed result.
+- **Fixed** tournament differences compare file by file, the same rule as `shortlist`; a stale comparison says to run
+  the tournament again instead of repeating its old next step.
+- **Fixed** a failed mission with provider roles records what the roles spent, and a continuation counts it against
+  the remaining budget.
 
 ## 0.12.0
 
 - **Changed** a provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without
   `--max-cost-usd > 0`. 0.11.9 started it uncapped at the default 0 and refused the result afterwards, after the
-  spend. Known limitation: `--agent auto` at the default 0 can still choose Claude or Bob, and that run is then
-  refused (the message names an eligible provider without a ceiling).
+  spend. Known limitation (resolved in 0.12.1): `--agent auto` at the default 0 could still choose Claude or Bob,
+  and that run was then refused (the message named an eligible provider without a ceiling).
 - **Added** `repo-ai do --sandbox podman --image REF` runs a mission's tests in a local container image (frozen with
   the mission: baseline, candidate, regression, post-apply, continuations). The coding agent itself still runs on the
   host.
