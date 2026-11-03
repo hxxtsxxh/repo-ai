@@ -26,9 +26,10 @@ def _bwrap_works() -> bool:
     return subprocess.run([bwrap, "--ro-bind", "/", "/", "true"], capture_output=True, check=False).returncode == 0
 
 
-if os.environ.get("REPO_AI_EXPECT_BWRAP") == "1" and not _bwrap_works():
+_WORKS = _bwrap_works()
+if os.environ.get("REPO_AI_EXPECT_BWRAP") == "1" and not _WORKS:
     raise RuntimeError("REPO_AI_EXPECT_BWRAP=1 but bubblewrap does not work here: these checks would pass vacuously")
-pytestmark = pytest.mark.skipif(not _bwrap_works(), reason="needs a working bubblewrap (the sandbox-bwrap CI jobs)")
+pytestmark = pytest.mark.skipif(not _WORKS, reason="needs a working bubblewrap (the sandbox-bwrap CI jobs)")
 DOCKER = "/var/run/docker.sock"  # present on GitHub's ubuntu runners, and the runner user may connect to it
 
 PROBE = textwrap.dedent("""
