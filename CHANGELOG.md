@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Security (Linux, live Claude and Codex runs): the run's bubblewrap sandbox now hides the host's unix-socket
+  directories (`/tmp`, `/run`, `/var/run`, `/var/tmp`, `/mnt/wslg`, LXD's and Incus's), as the probe sandbox already
+  did. Before, a networked model with a shell could reach a container engine socket, an ssh-agent under `/tmp` or the
+  session bus. HOME stays hidden; the install directories, the `node` runtime and the resolver configuration
+  (`/etc/resolv.conf`, often a link into `/run`) are bound back read-only, never a directory holding a socket. With
+  bubblewrap 0.10 or later each is bound by a descriptor opened without following symlinks (`--ro-bind-fd`), closing
+  the resolve-to-bind race for live runs as 0.12.0 did for the probe. Residual: abstract unix sockets (the network
+  namespace is shared, since the provider needs the network) stay reachable; not live-verified on Linux.
+
 ## 0.12.0 — missions in containers, Claude never started uncapped, routing journey, tournament differences, security lows
 
 - A provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without one. `run_provider`

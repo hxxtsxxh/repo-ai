@@ -238,8 +238,9 @@ def test_linux_claude_live_hides_home_with_tmpfs(tmp_path, monkeypatch):
                                              live=True, executable=exe, claude_plan=plan)
     assert cmd is not None
     home = str(Path.home().resolve())
-    assert cmd[cmd.index("--tmpfs") + 1] == home
-    assert cmd.index("--tmpfs") < cmd.index(str((tmp_path / "w").resolve()))
+    tmpfs_at = [i for i, a in enumerate(cmd) if a == "--tmpfs"]
+    assert home in {cmd[i + 1] for i in tmpfs_at}  # with the host socket directories (rows 27 and 30)
+    assert max(tmpfs_at) < cmd.index(str((tmp_path / "w").resolve()))
 
 
 def test_claude_stream_records_tool_use_and_permission_denials():

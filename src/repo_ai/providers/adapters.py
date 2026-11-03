@@ -15,6 +15,7 @@ import json
 import math
 import os
 import shutil
+import stat
 import sys
 import re
 import tempfile
@@ -26,8 +27,9 @@ from typing import Any
 from ..security import redact_text, source_contains_secret
 from . import claude_auth, codex_broker, opencode_cfg
 from .acp import AcpClient, AcpResult
-from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _capture, _identity, _inside, _probe_env, _repo_owned,
-                        _sandbox_prefix, executable_name, pinned_fds)
+from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _bwrap_binds_fds, _capture, _close_all, _has_socket,
+                        _hidden_dirs, _identity, _inside, _pin, _PinnedPrefix, _probe_env, _repo_owned, _sandbox_prefix,
+                        executable_name, pinned_fds)
 
 STAGES = (
     "NOT_INSTALLED",
@@ -545,10 +547,12 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                               executable: Path | None = None,
                               claude_plan: claude_auth.ClaudeAuthPlan | None = None,
                               run_marker: str | None = None,
-                              codex_broker_at: tuple[int, Path] | None = None) -> list[str] | None:
+                              codex_broker_at: tuple[int, Path] | None = None,
+                              dry_run: bool = False) -> list[str] | None:
     """Restrict writes strictly to the disposable candidate workspace and scratch dir (plus, for a live Claude
     run with a dedicated login, that login's own state; see ``claude_auth``). `codex_broker_at` (the credential
-    broker's port, the login directory): Codex may reach that one loopback port and can never read the login."""
+    broker's port, the login directory): Codex may reach that one loopback port and can never read the login.
+    `dry_run`: only whether a sandbox can be built (routing): starts no process and pins nothing."""
     claude_live = provider == "claude" and live
     if claude_live:
         claude_plan = claude_plan or claude_auth.plan()
@@ -629,22 +633,20 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                 "/",
                 "/",
             ])
-            if provider == "codex" and live:
-                home = str(Path.home().resolve())
-                cmd.extend(["--tmpfs", home])
-                for root_dir in [*_codex_install_roots(executable), *_node_roots()]:
-                    cmd.extend(["--ro-bind", str(root_dir), str(root_dir)])
-            if claude_live:
-                # hide the whole HOME (credentials, other projects) and re-expose only what Claude needs
-                assert claude_plan is not None
-                home = str(Path.home().resolve())
-                cmd.extend(["--tmpfs", home])
-                if executable is not None:
-                    for root_dir in claude_auth._install_roots(executable):
-                        cmd.extend(["--ro-bind", str(root_dir), str(root_dir)])
-                for node_root in _node_roots():
-                    cmd.extend(["--ro-bind", str(node_root), str(node_root)])
-                if claude_plan.mode == "dedicated_config" and claude_plan.config_dir is not None:
+            fds: list[int] = []
+            if (provider == "codex" and live) or claude_live:
+                # hide the whole HOME (credentials, other projects) and the directories where host unix sockets live
+                # (a container engine, an ssh-agent, the session bus: a networked model with a shell could drive
+                # them), then re-expose only what the provider needs, read-only
+                if claude_live:
+                    assert claude_plan is not None
+                    roots = [*(claude_auth._install_roots(executable) if executable is not None else []), *_node_roots()]
+                else:
+                    roots = [*_codex_install_roots(executable), *_node_roots()]
+                back, fds = _live_linux_binds(bwrap, roots, dry_run=dry_run)
+                cmd.extend(back)
+                if claude_live and claude_plan is not None and claude_plan.mode == "dedicated_config" \
+                        and claude_plan.config_dir is not None:
                     cfg = str(claude_plan.config_dir.resolve())
                     cmd.extend(["--bind", cfg, cfg])
             cmd.extend([
@@ -660,8 +662,58 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                 "/dev",
                 "--",
             ])
-            return cmd
+            return _PinnedPrefix(cmd, fds) if fds else cmd
     return None
+
+
+RESOLV_CONF = "/etc/resolv.conf"  # often a link into /run (systemd-resolved, resolvconf, NetworkManager)
+
+
+def _live_linux_binds(bwrap: str, roots: list[Path], *, dry_run: bool = False) -> tuple[list[str], list[int]]:
+    """bubblewrap arguments for a live run on Linux: tmpfs over HOME and the host socket directories (`/tmp`, `/run`,
+    `/var/run`, `/var/tmp`, ...: `discovery._hidden_dirs`), then `roots` (install directories, the `node` runtime) and
+    the resolver configuration (`/etc/resolv.conf` often links into `/run`) bound back read-only. A directory holding
+    a unix socket is never bound back. With bubblewrap 0.10 or later each path is pinned first (`_pin`: opened without
+    following a symlink), checked through that descriptor and bound by it (`--ro-bind-fd`), so a symlink swapped in
+    after the path was resolved is not bound; the descriptors are returned for `pass_fds`. Older bubblewrap binds by
+    path (the resolve-to-bind race stays open there). Workspace, scratch and login directories are bound afterwards."""
+    home = str(Path.home().resolve())
+    covered = sorted(dict.fromkeys([*_hidden_dirs(), home]), key=lambda d: (d.count("/"), d))
+    tops = [d for d in covered if not any(d != o and d.startswith(o.rstrip("/") + "/") for o in covered)]
+
+    def under(p: str) -> bool:
+        return any(p == d or p.startswith(d.rstrip("/") + "/") for d in tops)
+
+    wanted = [str(Path(r).resolve()) for r in roots]
+    resolv = os.path.realpath(RESOLV_CONF)
+    if os.path.isfile(resolv):
+        wanted.append(resolv)
+    wanted = [p for p in dict.fromkeys(wanted) if under(p) and p not in tops]
+    args = [a for d in tops for a in ("--tmpfs", d)]
+    fds: list[int] = []
+    if wanted and not dry_run and _bwrap_binds_fds(bwrap):
+        pinned = {p: fd for p in wanted if (fd := _pin(p)) is not None}
+        try:
+            kinds = {p: os.fstat(fd).st_mode for p, fd in pinned.items()}
+        except OSError:
+            _close_all(tuple(pinned.values()))
+            pinned, kinds = {}, {}
+        dirs = [p for p in pinned if stat.S_ISDIR(kinds[p]) and not _has_socket(p, fd=pinned[p])]
+        files = [p for p in pinned if stat.S_ISREG(kinds[p])]
+        _close_all(tuple(fd for p, fd in pinned.items() if p not in dirs and p not in files))
+        bind = [(p, ("--ro-bind-fd", str(pinned[p]), p)) for p in (*dirs, *files)]
+        fds = [pinned[p] for p in (*dirs, *files)]
+    else:
+        dirs = [p for p in wanted if os.path.isdir(p) and not os.path.islink(p) and not _has_socket(p)]
+        files = [p for p in wanted if os.path.isfile(p) and not os.path.islink(p)]
+        bind = [(p, ("--ro-bind", p, p)) for p in (*dirs, *files)]
+    # a bound directory brings back its whole host subtree: hide the socket directories inside it again
+    again = [d for d in _hidden_dirs() if any(d.startswith(p.rstrip("/") + "/") for p in dirs)]
+    for p, a in bind:
+        args.extend(a)
+        if p in dirs:
+            args.extend(x for d in again if d.startswith(p.rstrip("/") + "/") for x in ("--tmpfs", d))
+    return args, fds
 
 
 def _unix_socket_rule(scratch: str) -> str:
@@ -875,7 +927,8 @@ def acp_handshake(provider: str, root: Path, executable: Path | str | None = Non
         if provider in OPENCODE_PROVIDERS:
             env.update(opencode_cfg.environment(read_only=True))
         argv = build_invocation(provider, resolved, "", scratch / "work", externally_sandboxed=True)
-        client = AcpClient([*prefix, *argv], scratch / "work", allowed_writes=[], env=env)
+        client = AcpClient([*prefix, *argv], scratch / "work", allowed_writes=[], env=env,
+                           pass_fds=pinned_fds(prefix))
         try:
             out = client.probe(timeout_s)
         finally:
@@ -1287,10 +1340,11 @@ def run_provider(
                 # the ACP client is the parent, outside the sandbox; the agent process runs inside the same prefix.
                 # Its own file edits are not trusted: validate_workspace_edits checks the workspace afterwards.
                 acp_run = AcpClient([*prefix, *argv], workspace, allowed_writes=list(write_paths), env=env,
-                                    cwd=workspace).run(acp_prompt(effective_prompt), bounded_timeout)
+                                    cwd=workspace, pass_fds=pinned_fds(prefix)).run(acp_prompt(effective_prompt),
+                                                                                    bounded_timeout)
             else:
                 result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
-                                  separate_stderr=True,
+                                  separate_stderr=True, pass_fds=pinned_fds(prefix),
                                   max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
         finally:  # also on an exception or Ctrl-C: setsid'd descendants are not in the process group
             cleanup_problems = _reap_provider_run(run_marker) if is_seatbelt else []
@@ -1513,7 +1567,8 @@ def _claude_isolation_probe(prefix: list[str], argv: list[str], workspace: Path,
     zero cost, no model turn, workspace untouched). Returns reasons to refuse (empty means as requested)."""
     probe = [*prefix, argv[0], "--model", ISOLATION_PROBE_MODEL, *argv[1:]]  # right after the executable
     before = _workspace_snapshot(workspace)
-    result = _capture(probe, workspace, env, timeout=60.0, max_timeout=60.0, separate_stderr=True)
+    result = _capture(probe, workspace, env, timeout=60.0, max_timeout=60.0, separate_stderr=True,
+                      pass_fds=pinned_fds(prefix))
     problems: list[str] = []
     if _workspace_snapshot(workspace) != before:
         problems.append("the probe changed the workspace")

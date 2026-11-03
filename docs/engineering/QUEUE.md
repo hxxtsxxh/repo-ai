@@ -48,9 +48,10 @@ Updated 2026-11-02: 0.11.7 published (#68–#75); C18 release review findings fi
 | 24 | C08 v2 corpus | C08 | ready for an eligible person: `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`, pull request against `skill-vet-v2/delivery` (freeze `8f6ae0a`) |
 | 25 | C14 phase 1 authors | C14 | blocked on the owner recruiting three independent authors (S, M, F) (`benchmarks/abc-v5/STATUS-2026-11-02.md`) |
 | 26 | Mission records leave out what roles spent (`state['spend']` only on the role-records path; a continuation reads `provider.cost_usd`) | C06, C12 | open (found in the review of #105; no case reaches it today: a role-exhausted mission is not recoverable) |
-| 27 | `_execution_sandbox_prefix` binds install roots under a hidden HOME by path (the L2 pattern, live runs) | C18 | open |
+| 27 | `_execution_sandbox_prefix` binds install roots under a hidden HOME by path (the L2 pattern, live runs) | C18 | fixed on `fix/linux-live-sockets` (pinned `--ro-bind-fd` with bubblewrap 0.10+; `tests/test_linux_live_sandbox.py`) |
 | 28 | `do --agent auto` at $0 can route to a ceiling-enforcing provider and then refuse (the message names an uncapped alternative) | C06 | open (UX, a known limitation in the 0.12.0 changelog; routing-journey-v1 run 3 gives Claude a ceiling where it expects Claude to run) |
 | 29 | Tournament comparisons: a stale comparison prints its recorded next step; mixed .py and .js edits are SUBSTANTIVE even when the .py part is cosmetic | C12 | open (low; review of #104) |
+| 30 | Linux live runs (Claude, Codex) saw the host's `/tmp`, `/run`, `/var/run` unix sockets (container engine, ssh-agent, session bus); found while fixing row 27 | C18 | fixed on `fix/linux-live-sockets` (hidden as in the probe; `tests/test_linux_live_sockets.py`, CI only). Residual: abstract sockets (shared network namespace); site security page at release |
 | 20 | verify headlined a missing test runner (pytest absent from the interpreter) as "NO NEW FAILURES … already failing at the base" (found by the 0.11.8 smoke install) | C02, C21 | done (#89): such a run is NOT VERIFIED, "the test runner could not start … (pytest is not installed there)", files listed as could not run; never when a file passed at the base or in the same run; prove and missions no longer count it as no new failures |
 
 Decided 2026-10-31:
