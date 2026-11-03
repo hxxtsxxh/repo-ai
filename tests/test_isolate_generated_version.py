@@ -125,9 +125,46 @@ def test_a_copied_version_file_is_not_blamed_on_the_provider(tmp_path):
         assert ws.generated == ["src/pkg/_version.py"]
         (ws.path / "src/pkg/core.py").write_text("def f():\n    return 2\n")  # the provider's edit
         problems = validate_workspace_edits(root, ws.path, ["src/pkg/core.py"], set(), tracked,
-                                            generated=set(ws.generated))
+                                            generated=dict(ws.generated_sha256))
         assert not any("_version.py" in p for p in problems), problems
         (ws.path / "src/pkg/_version.py").write_text("v = 'changed by the provider'\n")
         changed = validate_workspace_edits(root, ws.path, ["src/pkg/core.py"], set(), tracked,
-                                           generated=set(ws.generated))
+                                           generated=dict(ws.generated_sha256))
         assert any("modified a generated version file: src/pkg/_version.py" in p for p in changed), changed
+
+
+@pytest.mark.parametrize("change", ["deleted", "directory", "oversized"])
+def test_a_removed_or_replaced_version_file_is_refused(tmp_path, change):
+    from repo_ai.mission.contracts import MAX_SOURCE_FILE
+    from repo_ai.providers.adapters import validate_workspace_edits
+    files = {**FILES, "src/pkg/core.py": "def f():\n    return 1\n"}
+    root = _repo(tmp_path, HATCH, files)
+    (root / "src/pkg/_version.py").write_text("v = '1.2.3'\n", encoding="utf-8")
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True).stdout.strip()
+    tracked = set(subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True).stdout.split())
+    with isolate.materialize_commit(root, head, label="t-gen2") as ws:
+        (ws.path / "src/pkg/core.py").write_text("def f():\n    return 2\n")
+        target = ws.path / "src/pkg/_version.py"
+        target.unlink()
+        if change == "directory":
+            target.mkdir()
+        elif change == "oversized":
+            target.write_bytes(b"#" * (MAX_SOURCE_FILE + 10))
+        problems = validate_workspace_edits(root, ws.path, ["src/pkg/core.py"], set(), tracked,
+                                            generated=dict(ws.generated_sha256))
+        assert any("modified a generated version file: src/pkg/_version.py" in p for p in problems), problems
+
+
+def test_the_checkouts_version_file_changing_during_the_run_is_not_blamed_on_the_provider(tmp_path):
+    from repo_ai.providers.adapters import validate_workspace_edits
+    files = {**FILES, "src/pkg/core.py": "def f():\n    return 1\n"}
+    root = _repo(tmp_path, HATCH, files)
+    (root / "src/pkg/_version.py").write_text("v = '1.2.3'\n", encoding="utf-8")
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True).stdout.strip()
+    tracked = set(subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True).stdout.split())
+    with isolate.materialize_commit(root, head, label="t-gen3") as ws:
+        (ws.path / "src/pkg/core.py").write_text("def f():\n    return 2\n")
+        (root / "src/pkg/_version.py").write_text("v = '1.2.4.dev1'\n")  # an editable reinstall, say
+        problems = validate_workspace_edits(root, ws.path, ["src/pkg/core.py"], set(), tracked,
+                                            generated=dict(ws.generated_sha256))
+        assert not any("_version.py" in p for p in problems), problems

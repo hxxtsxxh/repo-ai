@@ -8,7 +8,10 @@
     copied version file the provider left unchanged is no longer blamed on it; one the provider changed is refused.
   - A single over-long event line (Claude Code reading a 150 KB source file) went past the 64 KB capture, so the
     run was killed after it had spent and its cost was lost. Live runs now keep 256 KB, and an event line over 32 KB
-    is replaced by a `repo_ai_truncated` placeholder (counted as `truncated_events`) instead of stopping the run.
+    is replaced by a `repo_ai_truncated` placeholder (counted as `truncated_events`) instead of stopping the run,
+    except a terminal, error or rate-limit event, which is kept whole; reading stops after 64 x the kept limit. The
+    version file is compared with the bytes repo-ai copied in (removed, replaced or changed counts as modified).
+  - Once a live run's cost is UNKNOWN under a USD ceiling, no budget is left for a further run in that mission.
 - `coverage`'s per-requirement changed lines credit each run of a shared (session-, package-, module- or
   class-scoped) fixture's setup to the tests whose call ran with that run active (the definitions it actually used:
   the active one and any it extends, what those depend on, and what the test fetched with `getfixturevalue`), not

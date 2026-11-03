@@ -1729,11 +1729,13 @@ def validate_workspace_edits(
     test_files: set[str],
     tracked_files: set[str],
     max_patch: int = 256_000,
-    generated: set[str] | frozenset[str] = frozenset(),
+    generated: dict[str, str] | None = None,
 ) -> list[str]:
     """Validate that a provider adapter modified only approved non-test tracked files without secrets. `generated`:
-    untracked version files repo-ai itself copied into the workspace (`isolate.materialize_commit`); one still
-    byte-identical to the checkout's is not the provider's, and one the provider changed is refused."""
+    untracked version files repo-ai itself copied into the workspace, with the sha256 of the bytes copied
+    (`isolate.Workspace.generated_sha256`); one still holding exactly those bytes is not the provider's, and one
+    changed, removed or replaced by anything but a regular file is refused."""
+    generated = generated or {}
     from ..mission.verification import test_support
     from ..verify import isolate
     from .discovery import _inside as inside_dir
@@ -1807,12 +1809,20 @@ def validate_workspace_edits(
             continue
         rel_posix = path.relative_to(workspace).as_posix()
         if rel_posix in generated and rel_posix not in tracked_files:
-            if isolate.read_inside(workspace, rel_posix, MAX_SOURCE_FILE) != isolate.read_inside(root, rel_posix,
-                                                                                                 MAX_SOURCE_FILE):
-                reasons.append(f"provider modified a generated version file: {rel_posix}")
-            continue
+            continue  # checked below against the bytes repo-ai copied in
         if rel_posix not in tracked_files:
             reasons.append(f"provider created untracked file outside frozen tracked set: {rel_posix}")
+
+    from ..mission.contracts import MAX_SOURCE_FILE as _max_file
+    for rel_posix, copied_sha in sorted(generated.items()):
+        if rel_posix in tracked_files:
+            continue
+        try:
+            data = isolate.read_inside(workspace, rel_posix, _max_file)
+        except Exception:  # noqa: BLE001 - too large or unreadable is a change, never a crash
+            data = None
+        if data is None or hashlib.sha256(data).hexdigest() != copied_sha:
+            reasons.append(f"provider modified a generated version file: {rel_posix}")
 
     if not changed_files:
         reasons.append("provider produced a no-op diff; cannot establish a repair")

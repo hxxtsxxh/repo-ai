@@ -342,6 +342,7 @@ def _copy_generated(ws: Workspace, root: Path, present: set[str]) -> None:
             continue
         ws.files.append(rel)
         ws.generated.append(rel)
+        ws.generated_sha256[rel] = hashlib.sha256(data).hexdigest()
 
 
 def dependency_dirs(root: Path, files: list[str]) -> list[str]:
@@ -426,6 +427,7 @@ class Workspace:
     bytes: int = 0
     origin: str = "working tree"
     generated: list[str] = field(default_factory=list)  # declared, git-ignored version files copied in
+    generated_sha256: dict[str, str] = field(default_factory=dict)  # rel -> sha256 of the bytes copied in
 
     def summary(self) -> dict[str, Any]:
         return {"origin": self.origin, "files": len(self.files), "bytes": self.bytes,

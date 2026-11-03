@@ -695,6 +695,9 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 spend['unknown'] = spend['unknown'] or res.get('cost_status') != 'OBSERVED'
 
         def ceiling_left() -> float:
+            # once a live run's cost is UNKNOWN (e.g. its terminal event was lost), nothing can be shown to remain
+            if is_live_provider and spend['unknown'] and contract.max_cost_usd > 0:
+                return 0.0
             return max(0.0, contract.max_cost_usd - spend['usd']) if is_live_provider else 0.0
 
         def run_role(role: str, prompt: str, setup: Callable[[Path], None] | None = None) -> dict[str, Any]:
@@ -845,7 +848,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         test_set = set(runner.test_files(list(tracked_set)))
                         problems = validate_workspace_edits(
                             root, candidate, list(contract.write_paths), test_set, tracked_set, MAX_PATCH,
-                            generated=set(ws.generated),  # version files repo-ai copied in, not the provider
+                            generated=dict(ws.generated_sha256),  # version files repo-ai copied in
                         )
                         if problems:
                             state['provider']['stage'] = 'FAILED'
