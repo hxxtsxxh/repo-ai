@@ -60,8 +60,8 @@ def main(argv):
     env = dict(os.environ)
     for name in ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy"):
         env[name] = proxy
-    env.pop("NO_PROXY", None)
-    env.pop("no_proxy", None)
+    # the sandbox's loopback is its own namespace: a project's local test server stays direct
+    env["NO_PROXY"] = env["no_proxy"] = "localhost,127.0.0.1,::1"
     child = subprocess.Popen(command, env=env)
     for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
         signal.signal(sig, lambda s, _f: child.send_signal(s))

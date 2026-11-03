@@ -3,13 +3,17 @@
 ## Unreleased
 
 - Security (Linux, opt-in): with `REPO_AI_LINUX_EGRESS_PROXY=1`, a live Claude, Codex or Bob run gets its own
-  network namespace, so host abstract unix sockets (X11/Xwayland, D-Bus) and services on the host's network,
-  loopback included, are out of reach. The provider reaches the internet only through a proxy in the repo-ai
-  process: HTTPS `CONNECT` to port 443, by host name, to addresses that are all public (no loopback, private,
-  link-local, CGNAT or cloud-metadata address), connecting to the address it checked. A forwarder inside the sandbox
-  (run with the system python3) bridges the sandbox's own loopback to the proxy and sets HTTPS_PROXY for the provider;
-  a provider that ignores HTTPS_PROXY cannot reach the network (fails closed). Verified in CI with curl as the
-  provider; not live-verified with the real CLIs, so it is off by default.
+  network namespace, so host abstract unix sockets (X11/Xwayland, D-Bus) and services on the host's own network
+  namespace, loopback included, are out of reach. Its network goes through a proxy in the repo-ai process: `CONNECT`
+  to port 443 by host name, only when every resolved address is public (no loopback, private, link-local,
+  site-local, CGNAT or cloud-metadata address, judged on the IPv4 address an IPv6 form embeds), to an address it
+  checked and never to this host's own address. A forwarder inside the sandbox (run with the system python3) bridges
+  the sandbox's own loopback to the proxy and sets HTTPS_PROXY (NO_PROXY for the sandbox's loopback); the Claude
+  isolation probe goes through it too. Not closed: any TCP to port 443 of a public host is allowed (TLS is not
+  inspected), unix sockets on the filesystem outside the hidden directories (e.g. a Nix daemon socket) and port-443
+  services on other public addresses (every device on an IPv6 LAN has one). A provider that ignores HTTPS_PROXY has
+  no network (fails closed); a network that needs an outbound proxy is not supported. Verified in CI with curl as
+  the provider; not live-verified with the real CLIs, so it is off by default.
 - `repo-ai coverage` lists, per requirement, the changed lines that ran while its own tests ran (pytest missions
   run with a frozen `--requirements` declaration), plus the changed lines run only during undeclared tests and those
   run outside any test (import, collection). When a declaration is frozen, the mission's change-exercise

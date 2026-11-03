@@ -72,3 +72,82 @@ def test_the_live_prefix_gets_its_own_network_namespace(tmp_path, monkeypatch):
     own = adapters._execution_sandbox_prefix(ws, sc, allow_network=True, provider="codex", live=True,
                                              executable=Path("/usr/bin/true"), dry_run=True, own_network=True)
     assert "--unshare-net" not in shared and "--unshare-net" in own
+
+
+@pytest.mark.parametrize("address,public", [
+    ("64:ff9b::a00:1", False),          # NAT64 of 10.0.0.1
+    ("64:ff9b::a9fe:a9fe", False),      # NAT64 of 169.254.169.254
+    ("64:ff9b::5db8:d822", True),       # NAT64 of a public address (DNS64 for an IPv4-only host)
+    ("64:ff9b:1::1", False),            # local-use NAT64
+    ("::127.0.0.1", False),             # IPv4-compatible
+    ("::ffff:10.0.0.1", False),         # IPv4-mapped
+    ("fec0::1", False),                 # site-local
+    ("2002:a00:1::1", False),           # 6to4
+    ("2001:0:4136:e378:8000:63bf:3fff:fdd2", False),  # Teredo
+    ("168.63.129.16", False),           # Azure host-local
+    ("fe80::1%eth0", False),
+])
+def test_public_address_judges_embedded_ipv4(address, public):
+    """Review of #119: these passed `is_global` on some or all Python versions."""
+    assert egress.public_address(address) is public
+
+
+def test_refused_request_lines_are_recorded_printable(tmp_path):
+    proxy = egress.EgressProxy(tmp_path / "x.sock")
+    proxy._note(proxy.refused, "CONNECT \x1b[31mevil:443 HTTP/1.1")
+    assert proxy.summary()["refused"] == ["CONNECT ?[31mevil:443 HTTP/1.1"]
+
+
+def test_the_isolation_probe_runs_through_the_forwarder(tmp_path, monkeypatch):
+    seen = []
+
+    def fake_capture(cmd, *a, **k):
+        seen.append(cmd)
+        from repo_ai.providers.discovery import ProbeResult
+        return ProbeResult(1, "complete", b"", b"")
+    monkeypatch.setattr(adapters, "_capture", fake_capture)
+    head = ["/usr/bin/python3", "-I", "/s/egress_forwarder.py", "/s/egress.sock", "--"]
+    adapters._claude_isolation_probe(["/usr/bin/bwrap", "--"], ["/x/claude", "-p", "hi"], tmp_path, {},
+                                     read_only=False, head=head)
+    cmd = seen[0]
+    assert cmd[2:7] == head and cmd[7:10] == ["/x/claude", "--model", adapters.ISOLATION_PROBE_MODEL]
+
+
+def test_routing_is_not_ready_without_a_system_python(monkeypatch):
+    from repo_ai.providers import registry
+    monkeypatch.setattr(registry.sys, "platform", "linux")
+    monkeypatch.setenv(egress.ENV_FLAG, "1")
+    monkeypatch.setattr(egress, "system_python", lambda: None)
+    assert registry._isolated_ready("codex") is False
+
+
+def test_run_provider_builds_the_live_prefix_with_its_own_network(tmp_path, monkeypatch):
+    """The wiring: with the flag on Linux, run_provider starts the proxy and asks for an own-network prefix."""
+    import contextlib
+
+    class Sentinel(Exception):
+        pass
+
+    @contextlib.contextmanager
+    def dummy_proxy(path):
+        yield type("P", (), {"summary": lambda self: {"connections": 0}})()
+    seen = {}
+
+    def capture_prefix(*a, **k):
+        seen.update(k)
+        raise Sentinel()
+    monkeypatch.setenv(egress.ENV_FLAG, "1")
+    monkeypatch.setattr(adapters.sys, "platform", "linux")
+    monkeypatch.setattr(egress, "system_python", lambda: Path("/usr/bin/python3"))
+    monkeypatch.setattr(egress, "EgressProxy", dummy_proxy)
+    monkeypatch.setattr(adapters, "_execution_sandbox_prefix", capture_prefix)
+    exe = tmp_path / "codex"
+    exe.write_text("#!/bin/sh\nexit 0\n")
+    exe.chmod(0o755)
+    root, ws = tmp_path / "root", tmp_path / "ws"
+    root.mkdir()
+    ws.mkdir()
+    with pytest.raises(Sentinel):
+        adapters.run_provider("codex", root, ws, "Fix", write_paths=["m.py"], executable=exe, simulated=False,
+                              allow_live=True, max_cost_usd=0.0)
+    assert seen.get("own_network") is True

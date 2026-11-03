@@ -9,7 +9,6 @@ import shutil
 import socket
 import subprocess
 import sys
-import threading
 from pathlib import Path
 
 import pytest
@@ -69,12 +68,15 @@ def test_proxied_https_to_a_public_host_works_and_a_direct_connection_does_not(s
     assert direct.returncode != 0, direct.stdout
 
 
-@pytest.mark.parametrize("url", ["https://localhost", "https://127.0.0.1", "https://169.254.169.254"])
-def test_the_proxy_refuses_loopback_and_metadata_targets(sandbox, url):
+@pytest.mark.parametrize("url,why", [("https://localhost", "(not a public address)"),   # resolved, then refused
+                                     ("https://127.0.0.1", "CONNECT 127.0.0.1:443"),     # a literal: refused unparsed
+                                     ("https://169.254.169.254", "CONNECT 169.254.169.254:443")])
+def test_the_proxy_refuses_loopback_and_metadata_targets(sandbox, url, why):
     run, proxy = sandbox
     out = run("curl", "-sS", "--max-time", "10", url)
     assert out.returncode != 0
-    assert proxy.summary()["refused"], proxy.summary()
+    assert any(why in r for r in proxy.summary()["refused"]), proxy.summary()
+    assert not proxy.summary()["allowed_hosts"]
 
 
 def test_host_abstract_socket_and_loopback_service_are_unreachable(sandbox):
@@ -86,7 +88,6 @@ def test_host_abstract_socket_and_loopback_service_are_unreachable(sandbox):
     tcp.bind(("127.0.0.1", 0))
     tcp.listen(1)
     port = tcp.getsockname()[1]
-    stop = threading.Event()
     try:
         probe = ("import socket, sys\nr = []\n"
                  "s = socket.socket(socket.AF_UNIX)\ntry:\n    s.connect('\\0repo-ai-egress-test'); r.append('abstract')\n"
@@ -96,7 +97,6 @@ def test_host_abstract_socket_and_loopback_service_are_unreachable(sandbox):
         out = run(str(egress.system_python()), "-I", "-c", probe, str(port))
         assert out.stdout.strip() == "none", (out.stdout, out.stderr)
     finally:
-        stop.set()
         abstract.close()
         tcp.close()
 

@@ -1305,9 +1305,19 @@ def run_provider(
                     "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
                     "reasons": [f"{egress.ENV_FLAG}=1 needs a system python3 (/usr/bin/python3 or /usr/local/bin/python3) "
                                 "to run the egress forwarder inside the sandbox; none found, so the run was refused"]}
-        proxy = stack.enter_context(egress.EgressProxy(scratch / "egress.sock")) if egress_on else None
-        if proxy is not None:
-            shutil.copy2(egress.FORWARDER, scratch / "egress_forwarder.py")
+        proxy = None
+        if egress_on:
+            try:
+                proxy = stack.enter_context(egress.EgressProxy(scratch / "egress.sock"))
+                shutil.copy2(egress.FORWARDER, scratch / "egress_forwarder.py")
+            except OSError as exc:  # e.g. a socket path too long for AF_UNIX under a long TMPDIR
+                return {"provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+                        "returncode": -1, "capture_status": "no_sandbox", "identity_sha256": identity_before,
+                        "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
+                        "reasons": [f"the egress proxy could not start ({type(exc).__name__}); the run was refused"]}
+        # with the egress proxy, the forwarder (system python, inside the sandbox) is the provider's parent
+        egress_head = ([str(egress_python), "-I", str(scratch / "egress_forwarder.py"), str(scratch / "egress.sock"),
+                        "--"] if proxy is not None and egress_python is not None else [])
         prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run,
                                            executable=resolved, claude_plan=claude_plan, run_marker=run_marker,
                                            codex_broker_at=(broker.port, brokered[2]) if broker and brokered else None,
@@ -1382,7 +1392,8 @@ def run_provider(
         is_seatbelt = prefix[:1] == ["/usr/bin/sandbox-exec"]
         if claude_plan is not None:
             try:
-                unexpected = _claude_isolation_probe(prefix, argv, workspace, env, read_only=not write_paths)
+                unexpected = _claude_isolation_probe(prefix, argv, workspace, env, read_only=not write_paths,
+                                                     head=egress_head)
             finally:  # the probe runs under the same profile and marker: nothing it started may outlive it
                 probe_cleanup = _reap_provider_run(run_marker) if is_seatbelt else []
             unexpected += probe_cleanup
@@ -1397,9 +1408,7 @@ def run_provider(
         limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
         acp_run: AcpResult | None = None
         result: ProbeResult | None = None
-        # with the egress proxy, the forwarder (system python, inside the sandbox) is the provider's parent
-        run_argv = ([str(egress_python), "-I", str(scratch / "egress_forwarder.py"), str(scratch / "egress.sock"),
-                     "--", *argv] if proxy is not None and egress_python is not None else argv)
+        run_argv = [*egress_head, *argv]
         try:
             if contract.event_format == ACP_EVENT_FORMAT:
                 # the ACP client is the parent, outside the sandbox; the agent process runs inside the same prefix.
@@ -1466,6 +1475,12 @@ def run_provider(
             reasons.append(f"codex broker: the upstream refused the login's credential (HTTP {denied[0]})")
         if not broker_summary["requests"]:
             reasons.append("codex broker: Codex sent no request through the broker")
+    if egress_summary is not None and result.returncode != 0:
+        if not egress_summary["connections"]:
+            reasons.append("egress proxy: the provider made no connection through it (does its HTTP client honor "
+                           "HTTPS_PROXY?)")
+        if egress_summary.get("cap_reached"):
+            reasons.append("egress proxy: the per-run connection cap was reached; later connections were closed")
     if not events["valid_jsonl"]:
         reasons.append("provider output did not conform to structured JSONL event contract")
     if not simulated and not events["protocol_valid"]:
@@ -1626,13 +1641,14 @@ def _workspace_snapshot(workspace: Path) -> list[tuple[str, int, int]]:
 
 
 def _claude_isolation_probe(prefix: list[str], argv: list[str], workspace: Path, env: dict[str, str], *,
-                            read_only: bool) -> list[str]:
+                            read_only: bool, head: list[str] | None = None) -> list[str]:
     """Start the exact live invocation with a model name Claude Code rejects before any API request, and read what the
     session loaded from its init event. A login's account can sync plugins, MCP connectors and skills into every
     session (observed: a dedicated login carrying shell and mail connectors); the flags should remove them, and this
     checks that they did before the model ever runs. The probe must also provably stop before inference (error result,
     zero cost, no model turn, workspace untouched). Returns reasons to refuse (empty means as requested)."""
-    probe = [*prefix, argv[0], "--model", ISOLATION_PROBE_MODEL, *argv[1:]]  # right after the executable
+    # right after the executable; `head` (the egress forwarder) runs before it, so the probe sees the same network
+    probe = [*prefix, *(head or []), argv[0], "--model", ISOLATION_PROBE_MODEL, *argv[1:]]
     before = _workspace_snapshot(workspace)
     result = _capture(probe, workspace, env, timeout=60.0, max_timeout=60.0, separate_stderr=True,
                       pass_fds=pinned_fds(prefix))
