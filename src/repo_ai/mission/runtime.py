@@ -1221,13 +1221,21 @@ def partial_progress(state: dict[str, Any]) -> dict[str, Any] | None:
 IMAGE_UNCHECKED = 'container image freshness was not checked by this read-only command'
 
 
+def image_only_verdict(state: dict[str, Any]) -> str | None:
+    """PASS or FAIL as observed, for a mission (never a comparison) whose evidence is not checked only because a
+    read-only command cannot check its container image (pinned by digest in the record; `apply` re-runs the tests in
+    it). None otherwise. Its effective verdict stays INCONCLUSIVE."""
+    verdict = (state.get('passport') or {}).get('verdict')
+    if (state.get('kind') != 'comparison' and state.get('freshness') == 'not checked'
+            and state.get('freshness_reasons') == [IMAGE_UNCHECKED] and verdict in ('PASS', 'FAIL')):
+        return str(verdict)
+    return None
+
+
 def image_only_pass(state: dict[str, Any]) -> bool:
-    """A complete mission whose tests passed and whose evidence is not checked only because a read-only command
-    cannot check its container image (the image is pinned by digest in the record; `apply` re-runs the tests in it).
-    Its effective verdict stays INCONCLUSIVE; this is the one case `apply`, `do --apply` and a tournament arm accept."""
-    return (state.get('state') == 'COMPLETE' and state.get('freshness') == 'not checked'
-            and state.get('freshness_reasons') == [IMAGE_UNCHECKED]
-            and (state.get('passport') or {}).get('verdict') == 'PASS')
+    """A complete mission whose tests passed, not checked only for its container image: the one case `apply` and
+    `do --apply` accept beyond fresh evidence."""
+    return state.get('state') == 'COMPLETE' and image_only_verdict(state) == 'PASS'
 
 
 def stale_comparison_step(comparison: dict[str, Any], freshness: str) -> dict[str, Any]:
