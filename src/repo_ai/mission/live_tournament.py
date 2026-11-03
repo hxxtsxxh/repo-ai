@@ -57,46 +57,64 @@ def _readiness(root: Path, providers: list[str], max_cost_usd: float) -> dict[st
 
 def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths: list[str] | None = None,
                     max_cost_usd: float = 0.0, max_seconds: float = 600.0, command: str = 'python -m pytest',
-                    executables: dict[str, Path] | None = None) -> dict[str, Any]:
-    """Plan only: one plan per arm plus the bounds and readiness. Starts no provider and runs no test."""
+                    executables: dict[str, Path] | None = None, allow_unknown_cost: bool = False,
+                    sandbox: str = 'auto', image: str = '') -> dict[str, Any]:
+    """Plan only: one plan per arm plus the bounds and readiness. Starts no provider and runs no test.
+    `allow_unknown_cost`: with `max_cost_usd`, the ceiling is split among the arms whose CLI enforces it, and the
+    others run with cost UNKNOWN (never counted as $0)."""
+    from ..providers.adapters import contract_for
     root = root.resolve()
     names = _validate(providers)
     if max_seconds < MIN_ARM_SECONDS * len(names):
         raise ValueError(f'max_seconds must allow at least {MIN_ARM_SECONDS:g}s per arm')
-    readiness = {} if executables else _readiness(root, names, max_cost_usd)
+    enforcing = [n for n in names if contract_for(n).enforces_hard_usd_budget]
+    unenforced = [n for n in names if n not in enforcing]
+    if max_cost_usd > 0 and allow_unknown_cost and not enforcing:
+        raise ValueError('none of these providers enforces a USD ceiling, so --max-cost-usd would cap nothing; omit it '
+                         '(their cost is UNKNOWN)')
+    if max_cost_usd > 0 and unenforced and not allow_unknown_cost:
+        raise ValueError(f"cannot enforce a USD ceiling for: {', '.join(unenforced)} (cost would be UNKNOWN); "
+                         'omit --max-cost-usd, choose providers with a hard budget flag, or pass --allow-unknown-cost '
+                         'to cap only the providers that enforce it')
+    if not executables and enforcing and max_cost_usd <= 0:
+        raise ValueError(f"{', '.join(enforcing)} enforce{'s' if len(enforcing) == 1 else ''} a USD ceiling: give "
+                         '--max-cost-usd > 0 (the default 0 authorises no spend; without a ceiling the arm would start '
+                         'uncapped and its result be refused afterwards)')
+    readiness = {} if executables else _readiness(root, names, 0.0 if allow_unknown_cost else max_cost_usd)
     problems = [f"{n}: {'; '.join(r['reasons'])}" for n, r in readiness.items() if not r['eligible']]
     if problems:
         raise ValueError('provider(s) not eligible for a live tournament: ' + ' | '.join(problems))
-    per_arm_usd = round(max_cost_usd / len(names), 6) if max_cost_usd > 0 else 0.0
-    if max_cost_usd > 0:
-        from ..providers.adapters import contract_for
-        unenforced = [n for n in names if not contract_for(n).enforces_hard_usd_budget]
-        if unenforced:
-            raise ValueError(f"cannot enforce a USD ceiling for: {', '.join(unenforced)} (cost would be UNKNOWN); "
-                             'omit --max-cost-usd or choose providers with a hard budget flag')
+    capped = enforcing if allow_unknown_cost else names
+    per_arm_usd = round(max_cost_usd / len(capped), 6) if max_cost_usd > 0 and capped else 0.0
+    per_arm = {n: (per_arm_usd if n in capped else 0.0) for n in names}
     arms: list[dict[str, Any]] = []
     for name in names:
         arm = plan(root, task, agent=name, write_paths=write_paths, execute_local=True, allow_live=True,
-                   max_cost_usd=per_arm_usd, max_seconds=max_seconds / len(names), command=command)
+                   max_cost_usd=per_arm[name], max_seconds=max_seconds / len(names), command=command,
+                   sandbox=sandbox, image=image)
         arms.append({'provider': name, 'plan': arm})
     first = arms[0]['plan']
     if len({a['plan']['source']['fingerprint'] for a in arms}) != 1 or first['decision'] != 'LIVE_SINGLE_AGENT':
         raise ValueError('tournament arms need one clean frozen source: ' + str(first['decision']) + ': ' + first['why'])
     return {'schema': SCHEMA + '.plan', 'providers': names, 'arms': arms,
             'bounds': {'max_seconds_total': max_seconds, 'max_cost_usd_total': max_cost_usd,
-                       'per_arm_cost_usd': per_arm_usd, 'sequential': True,
-                       'cost_semantics': 'USD ceiling enforced per arm' if max_cost_usd > 0 else
-                                         'UNKNOWN unless a provider reports it; never counted as $0'},
+                       'per_arm_cost_usd': per_arm_usd, 'per_arm_cost_usd_by_provider': per_arm, 'sequential': True,
+                       'cost_semantics': ('USD ceiling enforced per arm' if max_cost_usd > 0 and not unenforced else
+                                          f"USD ceiling enforced for {', '.join(capped)}; UNKNOWN for "
+                                          f"{', '.join(unenforced)} (never counted as $0)" if max_cost_usd > 0 else
+                                          'UNKNOWN unless a provider reports it; never counted as $0')},
             'readiness': readiness,
             'rule': 'one distinct passing arm wins; identical passing diffs are equivalent; otherwise abstain'}
 
 
 def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: list[str] | None = None,
                    max_cost_usd: float = 0.0, max_seconds: float = 600.0, command: str = 'python -m pytest',
-                   executables: dict[str, Path] | None = None) -> dict[str, Any]:
+                   executables: dict[str, Path] | None = None, allow_unknown_cost: bool = False,
+                   sandbox: str = 'auto', image: str = '') -> dict[str, Any]:
     root = root.resolve()
     tplan = plan_tournament(root, task, providers, write_paths=write_paths, max_cost_usd=max_cost_usd,
-                            max_seconds=max_seconds, command=command, executables=executables)
+                            max_seconds=max_seconds, command=command, executables=executables,
+                            allow_unknown_cost=allow_unknown_cost, sandbox=sandbox, image=image)
     arms = tplan['arms']
     first = arms[0]['plan']
     if not check_privacy(root, first['contract']):
@@ -126,8 +144,9 @@ def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: 
             abstain.append(f'{name}: aggregate cost ceiling exhausted')
             continue
         planned['contract']['max_seconds'] = round(share, 3)
-        if max_cost_usd > 0:
-            planned['contract']['max_cost_usd'] = round(min(tplan['bounds']['per_arm_cost_usd'], max_cost_usd - spent), 6)
+        if max_cost_usd > 0 and tplan['bounds']['per_arm_cost_usd_by_provider'][name] > 0:
+            planned['contract']['max_cost_usd'] = round(min(tplan['bounds']['per_arm_cost_usd_by_provider'][name],
+                                                            max_cost_usd - spent), 6)
         exe = (executables or {}).get(name)
 
         def run_arm(planned: dict[str, Any] = planned, exe: Path | None = exe) -> dict[str, Any]:
@@ -156,6 +175,7 @@ def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: 
             if row['id'] in col.passed:
                 col.passed.remove(row['id'])
     _collapse_equivalent(col)
+    differences = _differences(root, frozen['head'], col) if len(col.passed) > 1 else None
     if len(col.passed) > 1:
         abstain.append('several distinct passing candidates and no predeclared objective tie-breaker')
     return finalize(
@@ -164,13 +184,14 @@ def run_tournament(root: Path, task: str, providers: list[str], *, write_paths: 
         extra={'tournament': SCHEMA, 'providers': tplan['providers'],
                'cost_usd_observed': round(spent, 6), 'cost_unknown_for': unknown_cost,
                'cost_semantics': 'UNKNOWN for providers without reported cost; the observed sum excludes them',
-               'bounds': tplan['bounds']},
+               'bounds': tplan['bounds'], 'differences': differences},
         limitations=[
             'Winner means the only distinct candidate whose frozen-test observation passed; not a correctness claim',
             'Candidates were generated independently from one frozen commit; no patch blending, no model self-voting',
             "Arms ran sequentially; a provider did not see another provider's output or any hidden grader",
             'Winner is never auto-applied; re-verify after repo-ai apply'],
-        abstain_reasons=abstain)
+        abstain_reasons=abstain,
+        next_step_for=lambda winner, cid: _next_step(winner, cid, col, differences))
 
 
 def _collapse_equivalent(col: Collector) -> None:
@@ -185,6 +206,47 @@ def _collapse_equivalent(col: Collector) -> None:
             row['reasons'] = [*row['reasons'], 'byte-identical to an earlier passing candidate']
             if row['id'] in col.passed:
                 col.passed.remove(row['id'])
+
+
+def _differences(root: Path, base: str, col: Collector) -> dict[str, Any]:
+    """How the distinct passing candidates differ (difference.compare). The decision rule is unchanged: they still
+    abstain. A failure here never loses the comparison: it is recorded as UNKNOWN."""
+    from .difference import compare
+    passing = [r['id'] for r in col.rows if r['id'] in col.passed]
+    try:
+        return compare(root, base, {cid: (status(root, cid).get('diff') or '') for cid in passing})
+    except Exception as exc:  # noqa: BLE001 - recorded, never raised after the arms have run
+        return {'pairs': [{'candidates': [a, b], 'difference': 'UNKNOWN', 'where': [type(exc).__name__]}
+                          for i, a in enumerate(passing) for b in passing[i + 1:]],
+                'groups': [[c] for c in passing], 'error': type(exc).__name__}
+
+
+def _next_step(winner: str | None, comparison: str, col: Collector, differences: dict[str, Any] | None) -> str:
+    """What the developer can do next, from the decision actually made (never a correctness claim)."""
+    passed = list(col.passed)
+    if winner:
+        return (f'review the winner\'s diff (`repo-ai mission status {winner}`), then `repo-ai apply {winner}`, which '
+                'verifies it again on your checkout')
+    if len(passed) == 1:
+        return (f'one candidate passed, but the comparison was not controlled (see its reasons): `repo-ai why '
+                f'{comparison}`; review `repo-ai mission status {passed[0]}` before applying anything')
+    if len(passed) > 1:
+        pairs = (differences or {}).get('pairs', [])
+        if any(p['difference'] == 'UNKNOWN' for p in pairs):
+            return (f'the frozen tests pass on {len(passed)} candidates and repo-ai could not compare their code (a '
+                    'candidate\'s files could not be rebuilt exactly): review each diff (`repo-ai mission status ID`) '
+                    f'or `repo-ai shortlist {comparison}`, and apply the one you choose')
+        if differences and len(differences.get('groups', [])) == 1:
+            return (f'the {len(passed)} passing candidates are the same code (identical files, or the same Python '
+                    'syntax tree: formatting and comments only), so choosing either changes nothing they compute '
+                    f'(except code that reads its own source or line numbers): `repo-ai shortlist {comparison}`, then '
+                    '`repo-ai apply ID` verifies the one you choose on your checkout')
+        where = sorted({w for p in pairs if p['difference'] == 'SUBSTANTIVE' for w in p['where']})
+        shown = ', '.join(where[:4]) + (f' and {len(where) - 4} more' if len(where) > 4 else '')
+        return (f'the frozen tests pass on {len(passed)} candidates that differ in {shown or "their changes"}, so they '
+                'do not decide between them: write a test that pins the intended behaviour there, then run the '
+                f'tournament again; or `repo-ai shortlist {comparison}` and apply the one you choose after review')
+    return 'no candidate passed the frozen tests: read each arm\'s reasons (`repo-ai mission status ID`) before retrying'
 
 
 __all__ = ['SCHEMA', 'plan_tournament', 'run_tournament']

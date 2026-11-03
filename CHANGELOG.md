@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+- A provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without one. `run_provider`
+  refuses it whenever the ceiling left is under $0.0001 (the flag prints four decimals): a missing `--max-cost-usd`,
+  a ceiling an investigator role already used up, a tiny tournament share, or `--provider-executable`. `do`, handoff
+  continuations (before the capsule is claimed) and tournament plans say so up front, naming an eligible provider
+  without a ceiling when routing found one. Before, the default ceiling of 0 started the provider uncapped and refused
+  its result afterwards ("provider reported cost exceeding approved contract ceiling"), after the money was spent.
+- `do --tournament A,B --max-cost-usd X --allow-unknown-cost`: the ceiling is split among the arms whose CLI enforces
+  it, and the others run with cost UNKNOWN (never counted as $0). Without the flag, a ceiling with a provider that
+  cannot enforce it is refused, as before; with it but no enforcing provider, the ceiling would cap nothing and is
+  refused. The flag applies to tournaments only. This is what makes a Claude + Codex tournament possible with a cap.
+- Live tournaments (`do --tournament`): when several distinct candidates pass, the comparison now says how they
+  differ, by rebuilding their files from the frozen commit as `shortlist` does (nothing is run): `IDENTICAL`,
+  `COSMETIC` (the same Python syntax tree), `SUBSTANTIVE` with the differing definitions named (`charge.py:charge`),
+  or `UNKNOWN` when a candidate cannot be rebuilt exactly. Each live comparison carries a `next_step` taken from the
+  decision actually made (apply the winner after review; `repo-ai why` when one passed but the comparison was not
+  controlled; pick either of the same code via `shortlist`; or write a test at the named definitions). The decision
+  rule is unchanged: distinct passing candidates still abstain.
+- `repo-ai do --sandbox {auto,seatbelt,bwrap,podman,docker} [--image REF]`: choose where a mission runs the project's
+  tests. With podman or docker, `--image` (required) names a local image with the project's dependencies (never
+  pulled), and a src-layout project's tests import it through `PYTHONPATH=src`, as `verify` already did. The choice
+  is frozen with the mission contract: the baseline, the candidate, the regression run, `apply`'s post-apply
+  verification and `futures --rehearse` use it, a handoff continuation inherits it, and `--resume` or a continuation
+  given a different one is refused; live tournaments pass it to every arm. The change-exercise measurement stays
+  `UNMEASURED` in a container. This covers repo-ai's own test runs only: the coding agent still runs on the host in
+  its provider sandbox (Codex has a shell there; Claude Code in the isolated mode has file tools only). Before,
+  missions always chose `auto` (the host sandbox first, then a container with the default image). Contracts without
+  the options keep their digests.
+- Routing (found by routing-journey-v1, C06):
+  - An explicitly chosen live provider that hit a quota or rate limit recently is refused before it starts ("cooling
+    down until …"), instead of being called again into the same limit; automatic routing already skipped it. A
+    handoff continuation to such a provider is refused before the capsule is claimed, so it stays usable.
+  - A provider that crashed or broke its event protocol is no longer classified `budget_limit` because it reported no
+    cost; a reported cost over the ceiling still is.
+  - `do --agent auto --allow-live-provider` with no eligible provider says so ("no provider can run this mission
+    (NO_AGENT): …"); it used to say that `--allow-live-provider` was required.
+  - A malformed cooldown or observation time in the project's provider policy is ignored instead of crashing.
 - Security (queue row 19, the open lows from the 0.11.8 release review):
   - Linux probe sandbox, with bubblewrap 0.10 or later (`--ro-bind-fd`): each directory or file bound back from a
     hidden directory is opened one path component at a time without following a symlink, checked for sockets through
