@@ -251,10 +251,11 @@
    "observations": [
     "codex→agy live handoff PASS, hidden oracle 714/714 (0.9.0)",
     "2026-11-01 Claude as handoff target, BLOCKED (auth): replay source mission FAIL/partial_progress (simulated, fixes 1 of 2) -> `handoff --to claude` capsule, accepted by `do --from-handoff --agent claude` (which refuses a stale one; a later re-verify reports stale because the continuation is recorded on the source) -> the continuation carried the partial diff (seed: test_add fixed, test_scale still failing) and stopped at the provider preflight with auth_mode none, recovery provider_unavailable, $0, no model call (docs/engineering/evidence/C13-CLAUDE-HANDOFF-2026-11-01.md)",
-    "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (benchmarks/c13-live-handoff) (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet"
+    "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (benchmarks/c13-live-handoff) (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet",
+    "2026-11-03 live attempt 1 (benchmarks/c13-live-handoff/RESULTS.md): the owner chose the existing dedicated login claude-eval; repo-ai 0.12.1 from PyPI, preflight eligible, partial source and valid capsule, isolation probe passed, then Claude Code failed to authenticate (OAuth token revoked); $0.00 observed, no model turn, mission BLOCKED with the provider's reason. Not a C13 result; needs a fresh dedicated login"
    ],
    "limits": [],
-   "next_action": "owner runs `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login`; then, with 0.12.0 from PyPI, the approved preflight and one live session"
+   "next_action": "owner logs in a dedicated repo-ai login (`CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login`, or re-login claude-eval) and confirms re-running the approved session (attempt 1 made no model call); then run.py live"
   },
   {
    "id": "C14",
