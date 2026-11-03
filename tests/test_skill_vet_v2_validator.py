@@ -42,7 +42,7 @@ def delivery(root: Path, cases: dict = CASES, *, do_freeze: bool = True) -> Path
     for cid, (stratum, files) in cases.items():
         for rel, text in files.items():
             (root / "corpus" / cid / rel).parent.mkdir(parents=True, exist_ok=True)
-            (root / "corpus" / cid / rel).write_text(text)
+            (root / "corpus" / cid / rel).write_text(text, encoding="utf-8")
         harm = "none" if stratum.startswith("B-") else PLACEHOLDER
         labels.append({"id": cid, "stratum": stratum, "intended_harm": harm, "observable_harm": harm})
     (root / "labels.json").write_text(json.dumps({"cases": labels}))
@@ -69,7 +69,7 @@ def test_the_default_counts_are_the_preregistered_eighty():
                                                            "H-plugin": 10, "B-plugin": 10}
 
 
-@pytest.mark.skipif(not shutil.which("shasum"), reason="the brief's command needs shasum")
+@pytest.mark.skipif(not shutil.which("shasum") or sys.platform == "win32", reason="the brief's command needs a POSIX shell and shasum")
 def test_the_briefs_manifest_command_validates(tmp_path):
     root = delivery(tmp_path, do_freeze=False)
     brief = "find corpus labels.json AUTHOR.md -type f -print0 | sort -z | xargs -0 shasum -a 256 > MANIFEST.sha256"
