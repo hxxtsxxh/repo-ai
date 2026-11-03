@@ -33,4 +33,4 @@ shown first. Unknown provider cost stays UNKNOWN, never $0. Approved that day (n
 | C12 tournament-live-v1 | 4 Claude Code + 4 Codex | Claude $6.00 ($1.50 each); Codex UNKNOWN | Claude as above; Codex: ChatGPT plan usage, no USD figure |
 
 Claude Code checks `--max-budget-usd` between turns, so a last turn can overshoot a cap; the reported cost is recorded
-as is. All three wait for the owner's dedicated Claude login.
+as is. All three wait for the owner's dedicated Claude login; C13 and C21 also run from the 0.12.0 release.

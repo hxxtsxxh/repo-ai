@@ -16,12 +16,14 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 - **Missions in containers (C21):** `do --sandbox podman --image REF` (#100) keeps the project's code off the host
   for every test run of a mission (the agent itself still runs on the host).
 - **Routing (C06):** routing-journey-v1 (#102), end to end through the real CLI with stand-in providers: 27 of 27
-  expected decisions after five routing fixes it found; C06 moves to PASS_WITH_LIMITS (stand-ins, injections, macOS).
+  expected decisions on main (run 3, after amendment 2; run 2 had started a Claude stand-in uncapped without noticing,
+  the path #105 closed); five routing fixes it found; C06 moves to PASS_WITH_LIMITS (stand-ins, injections, macOS,
+  two providers end to end).
 - **Spend safety:** a ceiling-enforcing provider (Claude Code, Bob) was started uncapped at the default $0 ceiling and
   its result refused after the spend; it is now never started without a usable ceiling (#105).
 - **Tournaments (C12):** live comparisons say whether distinct passing candidates differ only cosmetically or where
   they differ, with a next step from the decision (#104); the abstention rule is unchanged.
-- **Prepared and approved, not run (all wait for the owner's dedicated Claude login):** C13 one handoff session
+- **Prepared and approved, not run (all wait for the owner's dedicated Claude login; C13 and C21 also for 0.12.0):** C13 one handoff session
   ($0.50), C21 journey-live-v1 (4 sessions, $4.00; preparation run: 4 defects qualify in their containers), C12
   tournament-live-v1 (8 sessions; Claude $6.00, Codex UNKNOWN). C08: brief and validator for an independent person,
   system under test frozen (#103). C14: phase 1 needs three independent authors.
@@ -108,7 +110,7 @@ Every medium is fixed.
 | Does skill vetting block harmful skills on unseen data? | **FAILED** (skill-vet-fresh-v1: SAFE_AUTO would have auto-installed 8 of 30 harmful prose-only skills, and 6 of 10 harmful script skills were rated eligible; fixed, not confirmed on fresh data) |
 | Does verify mislead on real commits? | journey-offline-v2: no false assurance on 7 real fixes (5 flagged as a regression, 2 refused; a small sample, upper bound about 35%); the fix confirmed on 3 of 6; journey-offline-v1 INCONCLUSIVE |
 | Claude context effect | not re-run (the only public split was tuned on; decision recorded, C15) |
-| Does routing behave as specified end to end? | routing-journey-v1: **27 of 27** expected decisions with stand-in providers (run 2; run 1 24 of 27 under the stricter checks); stand-ins and injections, macOS only |
+| Does routing behave as specified end to end? | routing-journey-v1: **27 of 27** expected decisions with stand-in providers on main (run 3; run 1 24 of 27 under the stricter checks; run 2 started one stand-in uncapped, undetected); stand-ins and injections, macOS only |
 
 ### Spend
 
@@ -131,7 +133,7 @@ IN_PROGRESS: C24.
   was stopped by a safety classifier and is not retried.
 - **Claude as a handoff target (C13), live third-party projects (C21), live tournaments (C12):** approved and
   scripted; each needs the owner to run `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth
-  login` once.
+  login` once (C13 and C21 also run from the 0.12.0 release).
 - **Routing over real host states (C06):** an actual quota event and an expired login, once live calls are budgeted.
 - **Requirement coverage (C11):** an independent review found it partly met; its fixes (#94) and a declaration frozen
   with the mission (#96) shipped in 0.11.9. Next: requirement-by-requirement links to the changed code.

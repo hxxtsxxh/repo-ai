@@ -112,8 +112,10 @@ matcher did not detect. Correct abstention 19 of 20; precision 0.68.
 cooldown and observation records with stand-in provider executables (no model call, no real credential) and
 controlled injections (expiry times, a changed binary, the platform name). 13 scenarios, 27 expected decisions.
 Run 1: 27/27 under the preregistered checks; an independent review found the refusal checks too loose (amendment):
-24/27 under the stricter checks (three refusals gave a misleading reason). Run 2 on the fixed build: **27/27**, no
-silent fallback inside a run, unknown cost never recorded as observed. Five routing defects fixed with tests (an
+24/27 under the stricter checks (three refusals gave a misleading reason). Run 2 on the fixed build: 27/27, but its Q1 mission started the
+Claude stand-in with no ceiling (undetected; the path #105 closed). Amendment 2 (ceilings for Q1 and A1, gate G4)
+and **run 3 on main: 27/27**, no silent fallback inside a run, unknown cost never recorded as observed, no uncapped
+start. Five routing defects fixed with tests (an
 explicit provider in cooldown called again; a continuation refused for a cooldown used up its capsule; a crash
 classified `budget_limit`; the `NO_AGENT` refusal's reason; malformed policy times). Limits: stand-ins, injections,
 macOS only. [RESULTS](../../benchmarks/routing-journey-v1/RESULTS.md).
