@@ -29,7 +29,7 @@ from . import claude_auth, codex_broker, opencode_cfg
 from .acp import AcpClient, AcpResult
 from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _bwrap_binds_fds, _capture, _close_all, _has_socket,
                         _hidden_dirs, _homes, _identity, _inside, _pin, _PinnedPrefix, _probe_env, _repo_owned,
-                        _sandbox_prefix, _system, executable_name, pinned_fds)
+                        _sandbox_prefix, executable_name, pinned_fds)
 
 STAGES = (
     "NOT_INSTALLED",
