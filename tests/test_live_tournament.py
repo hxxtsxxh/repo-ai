@@ -47,8 +47,10 @@ def fake(tmp_path: Path, name: str, write: dict[str, str] | None = None, *, exit
 
 
 def run(bug, exes, **kw):
+    # a ceiling-enforcing arm (claude) never runs without a ceiling: cap it, run the others with cost UNKNOWN
     return lt.run_tournament(bug, TASK, list(exes), write_paths=['charge.py'], max_seconds=kw.pop('max_seconds', 240),
-                             executables=exes, **kw)
+                             executables=exes, max_cost_usd=kw.pop('max_cost_usd', 1.0),
+                             allow_unknown_cost=kw.pop('allow_unknown_cost', True), **kw)
 
 
 def rows(report):
