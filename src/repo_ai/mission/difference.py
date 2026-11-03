@@ -7,8 +7,8 @@ not change every file it names, give no reconstruction). Two candidates are IDEN
 same bytes, COSMETIC when every file is byte-identical or a Python file with the same syntax tree
 (`shortlist.code_identity`: comments, formatting and line positions ignored; strict UTF-8; a file with a coding cookie
 or that does not parse counts by its bytes), so a non-Python file changed the same way in both does not hide it,
-SUBSTANTIVE otherwise (the definitions that differ are
-named), and UNKNOWN when either cannot be rebuilt. COSMETIC means no difference in what the code computes, except code
+SUBSTANTIVE otherwise (the definitions that differ
+are named), and UNKNOWN when either cannot be rebuilt. COSMETIC means no difference in what the code computes, except code
 that reads its own source or line numbers (tracebacks, `inspect`, logging) or compile-time warnings.
 """
 from __future__ import annotations
@@ -30,7 +30,10 @@ def _definitions(text: bytes) -> dict[str, str] | None:
         rest: list[ast.stmt] = []
 
         def walk(nodes: Sequence[ast.stmt], prefix: str) -> None:
-            def key(name: str) -> str:  # a property setter, singledispatch `_`, an overload: keep each one
+            def key(name: str) -> str:
+                # a property setter, singledispatch `_`, an overload: keep each one, numbered by position (an extra
+                # same-named definition earlier in one candidate shifts the later numbers: over-inclusive, never
+                # missing a place)
                 n, k = name, 1
                 while n in out:
                     k += 1
