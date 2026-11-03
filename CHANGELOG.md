@@ -2,8 +2,11 @@
 
 ## Unreleased
 
-- `coverage`'s per-requirement changed lines credit a shared (session-, package-, module- or class-scoped)
-  fixture's setup lines to every test that uses it, not only to the first test that triggered it.
+- `coverage`'s per-requirement changed lines credit each run of a shared (session-, package-, module- or
+  class-scoped) fixture's setup to the tests whose call ran with that run active (its override chain, what it depends
+  on, and what the test fetched with `getfixturevalue`), not only to the first test that triggered it. Parametrized
+  and per-class runs stay separate, a skipped test gets nothing, and lines a test ran itself fill the record's cap
+  first. Teardown is still attributed to the test it runs after.
 - Security (Linux, opt-in): with `REPO_AI_LINUX_EGRESS_PROXY=1`, a live Claude, Codex or Bob run gets its own
   network namespace, so host abstract unix sockets (X11/Xwayland, D-Bus) and services on the host's own network
   namespace, loopback included, are out of reach. Its network goes through a proxy in the repo-ai process: `CONNECT`

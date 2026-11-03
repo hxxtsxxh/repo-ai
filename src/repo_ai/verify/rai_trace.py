@@ -21,10 +21,13 @@ also records, per pytest node id, which lines of the watched files ran while
 that test ran (its setup, call and teardown), and separately the watched lines
 that ran outside any test (import, collection). Line events are re-armed for
 all code at each test, which slows large suites. Attribution is by time
-window, except that a shared (session-, package-, module- or class-scoped)
-fixture's setup lines are credited to every test that uses it; its teardown
-belongs to the test it runs after, a thread's work to whichever test is
-running, and child processes are not seen (``spawned`` says so).
+window, except for shared (session-, package-, module- or class-scoped)
+fixtures: each run's setup lines are recorded apart (``fixture_lines``, per
+run, so a parametrized or per-class fixture's runs stay separate) with the
+runs each test's call had active (``fixture_uses``: its override chains and
+what its body fetched). Teardown belongs to the test it runs after, a thread's
+work to whichever test is running, and child processes are not seen
+(``spawned`` says so).
 Older interpreters fall back to ``sys.setprofile``. Code that runs in child
 processes or in threads started before tracing is not seen.
 """
@@ -45,6 +48,47 @@ def _fixture_key(fixturedef):
                            getattr(fixturedef, "scope", ""))
 
 
+def _run_token(fixturedef, runs):
+    return "%s#%d" % (_fixture_key(fixturedef), runs.get(id(fixturedef), 0))
+
+
+def _active_runs(item, runs):
+    """Tokens of the shared fixture runs a test has active: every definition in its closure's override chains and
+    every fixture its request fetched (getfixturevalue), each only while set up (cached_result)."""
+    found = set()
+    try:
+        defs = []
+        info = getattr(item, "_fixtureinfo", None)
+        chains = getattr(info, "name2fixturedefs", None) or {}
+        for name in getattr(item, "fixturenames", ()):
+            defs.extend(chains.get(name) or ())
+        request = getattr(item, "_request", None)
+        defs.extend((getattr(request, "_fixture_defs", None) or {}).values())
+        for chain in (getattr(request, "_arg2fixturedefs", None) or {}).values():  # incl. getfixturevalue chains
+            defs.extend(chain or ())
+        manager = getattr(getattr(item, "session", None), "_fixturemanager", None)
+        seen, queue = set(), list(defs)
+        while queue:  # what those fixtures depend on (set up before their own setup hook runs)
+            fixturedef = queue.pop()
+            if id(fixturedef) in seen:
+                continue
+            seen.add(id(fixturedef))
+            defs.append(fixturedef)
+            for name in getattr(fixturedef, "argnames", ()) or ():
+                try:
+                    chain = manager.getfixturedefs(name, item) if manager is not None else None
+                except Exception:  # signature differs across pytest versions: credit what is known
+                    chain = None
+                queue.extend(chain or ())
+        for fixturedef in defs:
+            if (getattr(fixturedef, "scope", "function") != "function"
+                    and getattr(fixturedef, "cached_result", None) is not None and id(fixturedef) in runs):
+                found.add(_run_token(fixturedef, runs))
+    except Exception:  # an unusual item or pytest internals: credit nothing rather than break the run
+        pass
+    return found
+
+
 def main(argv):
     if "--" not in argv:
         sys.stderr.write("usage: rai_trace.py --out FILE --root DIR -- -m module [args] | script [args]\n")
@@ -59,9 +103,10 @@ def main(argv):
     outside = {}  # watched path -> lines run while no test was running (import, collection)
     current = [None]
     counts = {"collected": 0, "ran": 0, "collection_finished": 0}
-    fixtures = [[]]  # stack of shared (non-function-scoped) fixtures being set up
-    fixture_lines = {}  # shared fixture key -> {watched path -> lines run during its setup}
-    uses = {}  # pytest node id -> keys of the shared fixtures it uses
+    fixtures = [[]]  # stack of shared (non-function-scoped) fixture runs being set up
+    fixture_lines = {}  # shared fixture run token -> {watched path -> lines run during its setup}
+    uses = {}  # pytest node id -> tokens of the shared fixture runs active while its call ran
+    runs = {}  # id(fixturedef) -> its current run number (a parametrized or class/module fixture runs repeatedly)
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
     seen = {}
@@ -91,8 +136,12 @@ def main(argv):
         if path is not None:
             line_hits.setdefault(path, set()).add(line)
             if path in watch:
-                if fixtures[0]:  # inside a shared fixture's setup: credited to every test that uses it
-                    fixture_lines.setdefault(fixtures[0][-1], {}).setdefault(path, set()).add(line)
+                if fixtures[0]:
+                    # inside a shared fixture's setup (and every enclosing one): credited later to each test whose
+                    # call ran with that fixture run active, not to the test that happened to trigger it
+                    for token in fixtures[0]:
+                        fixture_lines.setdefault(token, {}).setdefault(path, set()).add(line)
+                    return
                 test = current[0]
                 if test is None:
                     outside.setdefault(path, set()).add(line)
@@ -140,13 +189,12 @@ def main(argv):
         if want_lines:
             data["lines"] = {k: sorted(v) for k, v in sorted(line_hits.items())}
         if per_test_on:
-            for test, keys in uses.items():  # a shared fixture's setup lines count for each test that uses it
-                for key in keys:
-                    for path, lines in fixture_lines.get(key, {}).items():
-                        if test in per_test or len(per_test) <= MAX_PER_TEST:
-                            per_test.setdefault(test, {}).setdefault(path, set()).update(lines)
             data["per_test"] = {t: {k: sorted(v) for k, v in sorted(files.items())}
                                 for t, files in sorted(per_test.items())}
+            data["fixture_lines"] = {k: {p: sorted(v) for p, v in sorted(files.items())}
+                                     for k, files in sorted(fixture_lines.items())}
+            data["fixture_uses"] = {t: sorted(k for k in keys if k in fixture_lines)
+                                    for t, keys in sorted(uses.items()) if any(k in fixture_lines for k in keys)}
             # every collected test ran (an early stop, -x or --maxfail, leaves some unrun)
             data["per_test_complete"] = (len(per_test) <= MAX_PER_TEST and counts["ran"] >= counts["collected"]
                                          and counts["collection_finished"] == 1)
@@ -225,22 +273,32 @@ def main(argv):
             def pytest_fixture_setup(self, fixturedef, request):
                 shared = getattr(fixturedef, "scope", "function") != "function"
                 if shared:
-                    fixtures[0].append(_fixture_key(fixturedef))
+                    runs[id(fixturedef)] = runs.get(id(fixturedef), 0) + 1
+                    fixtures[0].append(_run_token(fixturedef, runs))
+                    if mon is not None:
+                        mon.restart_events()  # lines an enclosing setup or the test already ran fire again here
                 try:
                     yield
                 finally:
                     if shared:
                         fixtures[0].pop()
+                        if mon is not None:
+                            mon.restart_events()
+
+            @pytest.hookimpl(hookwrapper=True)
+            def pytest_runtest_call(self, item):
+                # only a test whose setup succeeded gets here (a skipped test does not): the shared fixture runs
+                # active now are the ones it ran with; again after the call for those its body requested
+                uses.setdefault(item.nodeid, set()).update(_active_runs(item, runs))
+                try:
+                    yield
+                finally:
+                    uses[item.nodeid].update(_active_runs(item, runs))
 
             @pytest.hookimpl(hookwrapper=True)
             def pytest_runtest_protocol(self, item, nextitem):
                 counts["ran"] += 1
                 current[0] = item.nodeid
-                info = getattr(item, "_fixtureinfo", None)
-                for name in getattr(item, "fixturenames", ()):
-                    chain = info.name2fixturedefs.get(name) if info is not None else None
-                    if chain and getattr(chain[-1], "scope", "function") != "function":  # the active definition
-                        uses.setdefault(item.nodeid, set()).add(_fixture_key(chain[-1]))
                 if mon is not None:
                     mon.restart_events()  # lines disabled after their first hit fire again for this test
                 try:

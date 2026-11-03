@@ -261,3 +261,60 @@ def test_a_shared_fixtures_setup_lines_are_credited_to_every_test_that_uses_it(t
     assert rec['per_test'].get('test_m.py::test_first') == ['m.py:2', 'm.py:3'], rec
     assert rec['per_test'].get('test_m.py::test_req') == ['m.py:2', 'm.py:3'], rec
     assert 'test_m.py::test_unrelated' not in rec['per_test']
+
+
+BRANCH_BEFORE = 'def make(x):\n    return x\n'
+BRANCH_AFTER = 'def make(x):\n    if x == 1:\n        return "one"\n    return "other"\n'
+
+
+def _fixture_case(tmp_path, conftest, tests):
+    (tmp_path / 'conftest.py').write_text('import pytest\nfrom m import make\n\n\n' + conftest)
+    root = _repo(tmp_path, BRANCH_AFTER, tests)
+    return exercise.measure(root, 'python -m pytest -q', _diff('m.py', BRANCH_BEFORE, BRANCH_AFTER), per_test=True)
+
+
+def test_each_run_of_a_parametrized_shared_fixture_is_credited_separately(tmp_path):
+    rec = _fixture_case(tmp_path, '@pytest.fixture(scope="session", params=[1, 2])\ndef app(request):\n'
+                                  '    return make(request.param)\n', 'def test_a(app):\n    assert app\n')
+    assert rec['per_test']['test_m.py::test_a[1]'] == ['m.py:2', 'm.py:3'], rec['per_test']
+    assert rec['per_test']['test_m.py::test_a[2]'] == ['m.py:2', 'm.py:4'], rec['per_test']
+
+
+def test_a_class_scoped_fixture_credits_each_class_its_own_run(tmp_path):
+    rec = _fixture_case(tmp_path, '@pytest.fixture(scope="class")\ndef app(request):\n    return make(request.cls.mode)\n',
+                        'class TestA:\n    mode = 1\n\n    def test_x(self, app):\n        assert app == "one"\n\n\n'
+                        'class TestB:\n    mode = 2\n\n    def test_y(self, app):\n        assert app == "other"\n')
+    assert rec['per_test']['test_m.py::TestA::test_x'] == ['m.py:2', 'm.py:3'], rec['per_test']
+    assert rec['per_test']['test_m.py::TestB::test_y'] == ['m.py:2', 'm.py:4'], rec['per_test']
+
+
+def test_a_skipped_test_is_not_credited_with_a_fixture_it_never_ran_with(tmp_path):
+    rec = _fixture_case(tmp_path, '@pytest.fixture(scope="session")\ndef app():\n    return make(1)\n',
+                        'import pytest\n\n\ndef test_used(app):\n    assert app\n\n\n'
+                        '@pytest.mark.skip(reason="x")\ndef test_skipped(app):\n    pass\n')
+    assert 'test_m.py::test_used' in rec['per_test'] and 'test_m.py::test_skipped' not in rec['per_test']
+
+
+def test_getfixturevalue_and_override_chains_are_credited(tmp_path):
+    rec = _fixture_case(tmp_path, '@pytest.fixture(scope="session")\ndef app():\n    return make(1)\n',
+                        'import pytest\n\n\n@pytest.fixture(scope="module")\ndef app(app):\n    return app\n\n\n'
+                        'def test_override(app):\n    assert app\n\n\n'
+                        'def test_dynamic(request):\n    assert request.getfixturevalue("app")\n')
+    assert rec['per_test'].get('test_m.py::test_override') == ['m.py:2', 'm.py:3'], rec['per_test']
+    assert rec['per_test'].get('test_m.py::test_dynamic') == ['m.py:2', 'm.py:3'], rec['per_test']
+
+
+def test_a_second_shared_fixture_running_the_same_lines_is_still_seen(tmp_path):
+    rec = _fixture_case(tmp_path, '@pytest.fixture(scope="session")\ndef db():\n    return make(1)\n\n\n'
+                                  '@pytest.fixture(scope="module")\ndef client():\n    return make(1)\n',
+                        'def test_1(db, client):\n    assert db\n\n\ndef test_2(client):\n    assert client\n')
+    assert rec['per_test'].get('test_m.py::test_2') == ['m.py:2', 'm.py:3'], rec['per_test']
+
+
+def test_direct_lines_fill_the_cap_before_fixture_credit(monkeypatch):
+    monkeypatch.setattr(exercise, 'MAX_PER_TEST', 2)
+    trace = {'per_test_complete': True, 'per_test': {'t::direct': {'m.py': [2]}},
+             'fixture_lines': {'conftest::app::session#1': {'m.py': [3]}},
+             'fixture_uses': {f't::user{i}': ['conftest::app::session#1'] for i in range(5)}}
+    out, complete = exercise._per_test(trace, {'m.py': {2, 3}})
+    assert out['t::direct'] == ['m.py:2'] and len(out) == 2 and complete is False

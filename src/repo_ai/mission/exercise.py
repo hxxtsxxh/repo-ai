@@ -114,17 +114,35 @@ def _per_test(trace: dict[str, Any], eligible: dict[str, set[int]]) -> tuple[dic
     """{pytest node id: the changed executable lines ("path:line") it ran}, for tests that ran at least one."""
     out: dict[str, list[str]] = {}
     complete = trace.get("per_test_complete") is True
-    for test, files in trace["per_test"].items():
+    def changed(files: Any) -> set[str]:
+        return {f"{rel}:{int(n)}" for rel, lines in (files.items() if isinstance(files, dict) else ())
+                if isinstance(lines, list) for n in lines if isinstance(n, int) and n in eligible.get(rel, set())}
+
+    for test, files in trace["per_test"].items():  # lines each test ran itself come first (they fill the cap)
         if not isinstance(test, str) or not isinstance(files, dict) or len(test) > 1000:
             complete = False
             continue
-        ran = sorted(f"{rel}:{int(n)}" for rel, lines in files.items() if isinstance(lines, list)
-                     for n in lines if isinstance(n, int) and n in eligible.get(rel, set()))
+        ran = changed(files)
         if ran:
             if len(out) >= MAX_PER_TEST:
                 complete = False
                 break
-            out[test] = ran[:MAX_LISTED]
+            out[test] = sorted(ran)[:MAX_LISTED]
+    # then each shared fixture run's setup lines, for the tests whose call ran with that run active
+    raw_runs, raw_uses = trace.get("fixture_lines"), trace.get("fixture_uses")
+    runs: dict[str, Any] = raw_runs if isinstance(raw_runs, dict) else {}
+    uses: dict[str, Any] = raw_uses if isinstance(raw_uses, dict) else {}
+    by_run = {k: changed(v) for k, v in runs.items()}
+    for test, tokens in uses.items():
+        if not isinstance(test, str) or not isinstance(tokens, list) or len(test) > 1000:
+            continue
+        credited = set().union(*(by_run.get(k, set()) for k in tokens if isinstance(k, str))) if tokens else set()
+        if not credited:
+            continue
+        if test not in out and len(out) >= MAX_PER_TEST:
+            complete = False
+            continue
+        out[test] = sorted(set(out.get(test, [])) | credited)[:MAX_LISTED]
     return out, complete
 
 
