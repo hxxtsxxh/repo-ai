@@ -6,8 +6,10 @@
   0.12.0: their evidence always reads `not checked` (a read-only command cannot check the image), so `apply`, `do
   --apply` and tournament arms treated them as not passing. A mission that completed with passing tests and whose
   only open point is the image now: can be applied (`apply` re-runs the tests in the same image, refused if the
-  image tag now names another digest, and restores every file if they fail); is applied by `do --apply` (exit 0
-  when applied); counts as a passing tournament arm; and gets a recovery action naming `repo-ai apply ID`. Its
+  image tag now names another digest, and restores every file if they fail); is applied by `do --apply` and `do
+  --from-handoff --apply` (exit 0 when applied); gets a recovery action naming `repo-ai apply ID`; and, in a
+  tournament, counts as the PASS or FAIL it observed (so a container tournament with one passing arm has a winner).
+  A comparison is never applied this way: apply its winning candidate. Its
   verdict still reads INCONCLUSIVE, `not checked`. Such a tournament reads `not checked` rather than stale and keeps
   its recorded next step with that caveat.
 - When `--agent auto` skips a ceiling-enforcing provider, the route names it (and that the provider picked instead

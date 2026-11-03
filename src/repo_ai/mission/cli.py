@@ -170,15 +170,9 @@ def cmd_do(args) -> int:
             image=getattr(args, 'image', None),
         )
         if getattr(args, 'apply', False) and (value.get('effective_verdict') == 'PASS' or image_only_pass(value)):
-            apply_res = apply_mission(root, value['id'])
-            value['applied_to_source'] = apply_res['applied_to_source']
-            value['apply_result'] = apply_res
-            if value.get('provider') and apply_res.get('provider_verification_label'):
-                value['provider']['verification_label'] = apply_res['provider_verification_label']
-            if value.get('provider') and apply_res.get('provider_verification_label'):
-                value['provider']['verification_label'] = apply_res['provider_verification_label']
+            _record_apply(value, apply_mission(root, value['id']))
         _emit(value, args)
-        return 0 if value.get('effective_verdict') == 'PASS' else 2
+        return 0 if value.get('effective_verdict') == 'PASS' or 'apply_result' in value else 2
 
     if not args.task:
         raise ValueError('supply an outcome, --from-handoff FILE, or --resume ID')
@@ -251,14 +245,22 @@ def cmd_do(args) -> int:
                                               or image_only_pass(value)):
             target_id = value.get('winner') if value.get('schema') == 'repo-ai.candidate-comparison/1' else value.get('id')
             if target_id:
-                apply_res = apply_mission(root, target_id)
-                value['applied_to_source'] = apply_res['applied_to_source']
-                value['apply_result'] = apply_res
-                if value.get('provider') and apply_res.get('provider_verification_label'):
-                    value['provider']['verification_label'] = apply_res['provider_verification_label']
+                _record_apply(value, apply_mission(root, target_id))
     _emit(value, args)
-    passed = value.get('effective_verdict', value.get('verdict')) == 'PASS' or bool(value.get('applied_to_source'))
+    passed = value.get('effective_verdict', value.get('verdict')) == 'PASS' or 'apply_result' in value
     return 0 if not args.run or passed else 2
+
+
+def _record_apply(value: dict, apply_res: dict) -> None:
+    """An apply made by this command (its post-apply verification passed): recorded on the emitted value, whose
+    recovery no longer points to `repo-ai apply`."""
+    value['applied_to_source'] = apply_res['applied_to_source']
+    value['apply_result'] = apply_res
+    if value.get('provider') and apply_res.get('provider_verification_label'):
+        value['provider']['verification_label'] = apply_res['provider_verification_label']
+    if isinstance(value.get('recovery'), dict):
+        value['recovery'] = {**value['recovery'], 'category': 'none', 'recoverable': False,
+                             'action': 'none; applied, and the post-apply verification passed'}
 
 
 def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = None, root: Path | None = None) -> None:

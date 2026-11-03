@@ -221,3 +221,4 @@ def test_do_apply_applies_a_container_mission(shop, tmp_path, recorded, image_un
     out = json.loads(capsys.readouterr().out)
     assert out['applied_to_source'] is True and out['apply_result']['post_apply_verdict'] == 'PASS'
     assert code == 0
+    assert 'repo-ai apply' not in out['recovery']['action'] and 'applied' in out['recovery']['action']

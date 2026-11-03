@@ -417,3 +417,22 @@ def test_a_container_tournament_reads_not_checked_not_stale(bug, tmp_path, monke
     assert 'this comparison is stale' not in state['comparison']['next_step']
     assert state['comparison']['next_step'].startswith('the container image was not checked')
     assert state['comparison']['next_step'].endswith(recorded)
+
+
+def test_a_container_tournament_with_one_failing_arm_has_a_winner(bug, tmp_path, monkeypatch):
+    """Re-review: a failing container arm (observed FAIL, image not re-checkable) must count as FAIL, so the passing
+    arm wins as it does on the host. The comparison itself is never treated as an applicable image-only pass."""
+    from repo_ai.mission import runtime
+    from repo_ai.verify import cache
+    real = cache.static_environment
+    monkeypatch.setattr(cache, 'static_environment',
+                        lambda executor, runner, links=None: {**real(executor, runner, links), 'unchecked': ['container image']})
+    exes = {'claude': fake(tmp_path, 'claude', {'charge.py': 'def charge(amount, retries):\n    return amount * 2\n'}),
+            'codex': fake(tmp_path, 'codex', {'charge.py': GOOD}, cost=None)}
+    report = run(bug, exes)
+    by = rows(report)
+    assert by['claude']['verdict'] == 'FAIL' and by['codex']['verdict'] == 'PASS', report['candidates']
+    assert report['winner'] == by['codex']['id']
+    comparison = runtime.status(bug, report['id'])
+    assert not runtime.image_only_pass(comparison) and 'repo-ai apply ' + report['id'] not in str(comparison['recovery'])
+    assert runtime.image_only_pass(runtime.status(bug, by['codex']['id']))
