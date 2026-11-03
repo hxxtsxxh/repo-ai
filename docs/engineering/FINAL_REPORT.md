@@ -42,8 +42,10 @@ Contents (each code PR: independent review rounds and a full CI run):
 
 ### Blocked on the owner or other people
 
-- C13, C21, C12 live studies (approved): the dedicated Claude login
-  `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login` does not exist yet.
+- C13, C21, C12 live studies (approved): no working dedicated Claude login. `claude-provider` does not exist; the
+  owner-chosen `claude-eval` login was tried on 2026-11-03 and its OAuth token is revoked (C13 attempt 1: $0, no
+  model turn). Needs `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login` (or a re-login of
+  claude-eval) and the owner's confirmation to re-run C13's approved session.
 - C08: an eligible author per `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`. C14: three independent authors.
 
 Resume directive: verify the public state (tags, PyPI, site), run the
