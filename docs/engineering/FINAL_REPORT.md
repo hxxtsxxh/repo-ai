@@ -32,6 +32,8 @@ wheel from the sdist, SLSA provenance, a fresh install, the live site, and recor
 - #119 (C18, queue row 31) opt-in `REPO_AI_LINUX_EGRESS_PROXY=1`: own network namespace for Linux live runs and a
   CONNECT-only egress proxy to public addresses (two adversarial review rounds; CI-tested with curl as the provider).
   Off by default until a real CLI is live-verified with it.
+- #121 (C11, queue row 32) each run of a shared fixture's setup is credited to the tests whose call ran with it active
+  (per-run, the definitions actually used, getfixturevalue; skipped tests get nothing; three review rounds).
 
 ### Blocked on the owner or other people
 
@@ -42,7 +44,7 @@ wheel from the sdist, SLSA provenance, a fresh install, the live site, and recor
 
 Resume directive: verify the public state (tags, PyPI, site), publish/verify 0.12.1 if its tag exists, run the
 approved C13 → C21 → C12 sessions if the dedicated login exists, else continue the queue (C18 egress default after a
-live check, C11 fixture-scope attribution, C16 only with a new idea).
+live check, C16 only with a new idea).
 
 ### Release 0.12.0 (verified after publication)
 
