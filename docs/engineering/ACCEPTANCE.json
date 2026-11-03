@@ -235,10 +235,13 @@
    "observations": [
     "live abstain + byte-identical tie at 0.9.0",
     "2026-11-02: live comparisons classify how distinct passing candidates differ (IDENTICAL, COSMETIC = same Python syntax tree, SUBSTANTIVE with definitions named, UNKNOWN), rebuilt with shortlist's hardened reconstruction, and carry a next step taken from the decision; the abstention rule is unchanged. Tournaments can cap only the arms that enforce a ceiling (--allow-unknown-cost). tournament-live-v1 preregistered (owner approved 8 sessions); not run yet",
-    "2026-11-03 #113 (queue row 29): candidate differences are compared file by file (shortlist.code_identity, shared with shortlist): an identical non-Python change no longer hides a formatting-only Python difference; a SUBSTANTIVE pair always names a place (duplicate definition names kept, file fallback); a stale comparison never repeats its recorded next step (repo-ai compare, mission status --json)"
+    "2026-11-03 #113 (queue row 29): candidate differences are compared file by file (shortlist.code_identity, shared with shortlist): an identical non-Python change no longer hides a formatting-only Python difference; a SUBSTANTIVE pair always names a place (duplicate definition names kept, file fallback); a stale comparison never repeats its recorded next step (repo-ai compare, mission status --json)",
+    "2026-11-03 tournament-live-v1 (benchmarks/tournament-live-v1/RESULTS.md): 4 live Codex-vs-Claude tournaments on the abc-v5 calibration tasks, main at a2099be; all 8 arms PASS and graded CORRECT by the sealed hidden oracle in a podman container; every tournament abstained with a SUBSTANTIVE difference named and a pinning-test or shortlist next step; T1/T2/T3 0, no winners; R1: 0 of 4 SUBSTANTIVE pairs differed on the oracle (different code, same observed behaviour); Claude $0.2028 observed, Codex UNKNOWN"
    ],
-   "limits": [],
-   "next_action": "run tournament-live-v1 once the owner's dedicated Claude login exists"
+   "limits": [
+    "4 synthetic calibration tasks (no rate); every abstention here was between two correct candidates, so the tie rule cost a human choice each time"
+   ],
+   "next_action": "evidence expansion: a predeclared differential test between abstaining candidates (mission section 5B), evaluated on tasks where candidates truly differ"
   },
   {
    "id": "C13",
