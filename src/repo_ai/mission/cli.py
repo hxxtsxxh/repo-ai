@@ -265,8 +265,8 @@ def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = No
             from ..providers.registry import route as _route
             try:
                 route = _route(root, max_cost_usd=max_cost_usd, run_authorized=True)
-            except (OSError, ValueError):
-                route = None  # the hint is optional; the refusal below is not
+            except Exception:  # noqa: BLE001 - the hint is optional; the refusal below is not
+                route = None
         others = [r['provider'] for r in (route or {}).get('considered', [])
                   if r.get('eligible') and not r.get('hard_usd_budget') and r['provider'] != provider]
         hint = f", or choose a provider whose cost is UNKNOWN instead (--agent {others[0]})" if others else ''

@@ -203,6 +203,22 @@ def _readiness(name: str, prof: dict[str, Any], installed: bool, isolated: bool,
     return "READY" if obs and obs["state"] == "READY" else "INSTALLED_UNPROBED"
 
 
+def _usd(value: float) -> str:
+    return f"{value:.6f}".rstrip("0").rstrip(".") or "0"
+
+
+def _ceiling_clause(needs_ceiling: list[tuple[str, bool]]) -> str:
+    """For a NO_AGENT or NOT_AUTHORIZED message: the providers held back only by the missing ceiling (and consent)."""
+    if not needs_ceiling:
+        return ""
+    names = [n if ok else f"{n} (also not authorized)" for n, ok in needs_ceiling]
+    one = len(names) == 1
+    return (f" ({', '.join(names)} enforce{'s' if one else ''} a USD ceiling: pass --max-cost-usd of at least "
+            f"{_usd(MIN_CEILING_USD)} to use " + ("it" if one else "them")
+            + ("" if all(ok for _, ok in needs_ceiling) else ", and authorize " + ("it" if one else "them")
+               + " with --allow-live-provider or `repo-ai agents authorize NAME`") + ")")
+
+
 def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False,
           preferred: list[str] | None = None, now: float | None = None,
           profiles: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -257,9 +273,10 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
                    and not (max_cost_usd > 0 and not hard_budget))
         if capable and hard_budget and max_cost_usd < MIN_CEILING_USD:
             # it would be refused before it starts (`run_provider` never runs it uncapped), so never route to it
-            given = "none was given" if max_cost_usd <= 0 else f"{max_cost_usd:g} is below the smallest it can enforce"
-            reasons.append(f"enforces a USD ceiling and {given}: pass --max-cost-usd of at least {MIN_CEILING_USD:g} "
-                           "to use it (the default 0 authorizes no spend)")
+            given = ("none was given" if max_cost_usd <= 0 else
+                     f"${_usd(max_cost_usd)} is below the smallest it can enforce")
+            reasons.append(f"enforces a USD ceiling and {given}: pass --max-cost-usd of at least "
+                           f"{_usd(MIN_CEILING_USD)} to use it (the default 0 authorizes no spend)")
             if not consented:
                 reasons.append("not authorized (use --allow-live-provider, or `repo-ai agents authorize " + name + "`)")
             needs_ceiling.append((name, consented))
@@ -283,16 +300,12 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
         why = f"{selected}: first eligible provider in order {', '.join(order[:5])}"
     elif usable:
         outcome, selected = "NOT_AUTHORIZED", None
-        why = "usable provider(s) exist (" + ", ".join(usable) + ") but none is authorized for live execution"
+        why = ("usable provider(s) exist (" + ", ".join(usable) + ") but none is authorized for live execution"
+               + _ceiling_clause(needs_ceiling))
     else:
         outcome, selected = "NO_AGENT", None
-        why = "no installed provider is ready, within the cost policy and not rate-limited; repo-ai continues offline"
-        if needs_ceiling:
-            names = [n if ok else f"{n} (also not authorized)" for n, ok in needs_ceiling]
-            why += (f" ({', '.join(names)} enforce{'s' if len(names) == 1 else ''} a USD ceiling: pass --max-cost-usd "
-                    f"of at least {MIN_CEILING_USD:g} to use " + ("it" if len(names) == 1 else "them")
-                    + ("" if all(ok for _, ok in needs_ceiling) else ", and authorize it with --allow-live-provider "
-                       "or `repo-ai agents authorize NAME`") + ")")
+        why = ("no installed provider is ready, within the cost policy and not rate-limited; repo-ai continues offline"
+               + _ceiling_clause(needs_ceiling))
     return {"schema": "repo-ai.provider-route/1", "outcome": outcome, "selected": selected, "why": why,
             "policy_present": policy["exists"], "considered": considered,
             "not_evaluated": ["authenticated", "quota_remaining", "protocol_validated", "edit_proven"]}

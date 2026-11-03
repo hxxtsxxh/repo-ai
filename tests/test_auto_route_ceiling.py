@@ -73,7 +73,7 @@ def test_a_positive_ceiling_below_the_flag_precision_is_named_as_such(monkeypatc
     profiles = _setup(monkeypatch, ["claude"])
     d = registry.route(tmp_path, max_cost_usd=0.00005, run_authorized=True, preferred=["claude"], profiles=profiles)
     claude = next(r for r in d["considered"] if r["provider"] == "claude")
-    assert any("5e-05 is below the smallest it can enforce" in r for r in claude["reasons"])
+    assert any("$0.00005 is below the smallest it can enforce" in r for r in claude["reasons"])
     assert not any("none was given" in r for r in claude["reasons"])
 
 
@@ -92,3 +92,11 @@ def test_the_ceiling_reason_is_only_given_to_otherwise_usable_providers(monkeypa
         row = next(r for r in d["considered"] if r["provider"] == name)
         assert not any("USD ceiling" in r for r in row["reasons"]), row
 
+
+
+def test_an_authorized_ceiling_provider_is_named_behind_another_providers_not_authorized(monkeypatch, tmp_path):
+    profiles = _setup(monkeypatch, ["claude", "codex"])
+    registry.load_policy(tmp_path)["authorized"] = ["claude"]  # `agents authorize claude`, then no --max-cost-usd
+    d = registry.route(tmp_path, max_cost_usd=0.0, run_authorized=True, preferred=["claude", "codex"], profiles=profiles)
+    assert d["outcome"] == "NOT_AUTHORIZED" and "codex" in d["why"]
+    assert "claude enforces a USD ceiling" in d["why"] and "--max-cost-usd" in d["why"]
