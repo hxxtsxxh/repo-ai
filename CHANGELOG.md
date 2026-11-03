@@ -56,6 +56,15 @@
     not UTF-8 is counted instead of ending the run with an error. New files under paths the base already ignores
     are still not counted.
 
+- `repo-ai shortlist`: a changed Python file too deeply nested to parse made it crash; it now makes no same-code
+  claim for that candidate.
+- Known limitation: with `--agent auto` at the default `--max-cost-usd 0`, routing can still choose Claude (or Bob) and
+  the run is then refused for the missing ceiling; the message names an eligible provider without one (`--agent
+  codex`). Pass `--max-cost-usd` or choose the provider (queued).
+- A failed mission's hint suggests `handoff --to codex` when its live cost was UNKNOWN (a continuation to Claude or
+  Bob then cannot establish a budget), `--to claude` otherwise. A cooldown time too large to be a number is ignored
+  instead of crashing.
+
 ## 0.11.9 — honest verdicts when tests cannot run, pre-registered requirements, coverage review fixes
 
 - `repo-ai do ... --requirements FILE` freezes a requirement-to-test declaration with the mission before it runs.

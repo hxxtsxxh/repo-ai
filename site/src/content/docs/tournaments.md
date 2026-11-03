@@ -25,6 +25,11 @@ frozen tests**. The arms must be independent agents: two transports of one execu
 | Several **distinct** candidates pass | **abstain** (no winner) |
 | A crash, a no-op, or a baseline mismatch | abstain |
 
+A provider whose CLI enforces a USD ceiling (Claude Code, Bob) needs one in a tournament too. With a provider that
+cannot enforce one (Codex, agy), add `--allow-unknown-cost`: `--max-cost-usd` then caps only the enforcing arms and the
+others run with cost UNKNOWN (from 0.12.0), for example `--tournament codex,claude --max-cost-usd 1.50
+--allow-unknown-cost`.
+
 When several distinct candidates pass, the live comparison (`do --tournament`; not the replay `--candidate` one) says
 **how** they differ, without running them. It rebuilds each candidate's files from the frozen commit, as `shortlist`
 does, and reports `IDENTICAL` (same bytes), `COSMETIC` (the same Python syntax tree: comments and formatting only, so
