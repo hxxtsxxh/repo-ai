@@ -435,4 +435,5 @@ def test_a_container_tournament_with_one_failing_arm_has_a_winner(bug, tmp_path,
     assert report['winner'] == by['codex']['id']
     comparison = runtime.status(bug, report['id'])
     assert not runtime.image_only_pass(comparison) and 'repo-ai apply ' + report['id'] not in str(comparison['recovery'])
+    assert comparison['recovery']['category'] == 'none' and 'winning candidate' in comparison['recovery']['action']
     assert runtime.image_only_pass(runtime.status(bug, by['codex']['id']))

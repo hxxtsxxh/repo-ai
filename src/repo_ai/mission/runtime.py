@@ -1278,6 +1278,13 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
     verdict = state.get('effective_verdict') or (state.get('passport') or {}).get('verdict', 'BLOCKED')
     if state.get('state') == 'COMPLETE' and verdict == 'PASS':
         return {'category': 'none', 'recoverable': False, 'action': 'none; mission passed verification', 'reasons': []}
+    if (state.get('kind') == 'comparison' and state.get('freshness') == 'not checked'
+            and state.get('freshness_reasons') == [IMAGE_UNCHECKED]
+            and (state.get('passport') or {}).get('verdict') == 'PASS'):
+        return {'category': 'none', 'recoverable': False,
+                'action': ('its candidates ran in a container whose image a read-only command cannot check; apply the '
+                           'winning candidate with `repo-ai apply CANDIDATE_ID` (it re-runs the tests in that image)'),
+                'reasons': [IMAGE_UNCHECKED]}
     if image_only_pass(state):
         return {'category': 'none', 'recoverable': False,
                 'action': ('the tests passed in a container whose image a read-only command cannot check; '
