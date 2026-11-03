@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Tournament differences: two passing candidates that change a non-Python file identically and a Python file only in
+  formatting or comments are now COSMETIC (before: SUBSTANTIVE whenever any changed file was not Python), and a
+  Python file that differs only cosmetically is no longer listed among the places two candidates differ. A stale
+  comparison (`repo-ai status` of a tournament after HEAD moved or its evidence changed) no longer prints its recorded
+  next step (such as applying the winner); it says to run the tournament again.
 - `--agent auto` (and `agents route`) without a usable `--max-cost-usd` (the default 0, or under $0.0001) no longer
   selects a provider whose CLI enforces a USD ceiling (Claude Code, Bob): its run was then refused for the missing
   ceiling. Routing skips it with the reason and picks the next eligible provider (e.g. Codex, cost UNKNOWN); when none

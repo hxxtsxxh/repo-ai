@@ -173,6 +173,11 @@ def inspect_comparison(root: Path, mission: str) -> dict[str, Any]:
     comp['freshness_reasons'] = list(state.get('freshness_reasons', []))
     comp['verdict'] = state['effective_verdict']
     comp['winner'] = comp.get('winner') if state['freshness'] == 'fresh' and state['effective_verdict'] == 'PASS' else None
+    if state['freshness'] != 'fresh' and comp.get('next_step'):
+        # the recorded step was written for evidence that no longer holds (e.g. "apply the winner"): never repeat it
+        comp['recorded_next_step'] = comp['next_step']
+        comp['next_step'] = ('this comparison is stale (see the invalidation above); run the tournament again on the '
+                             'current commit before acting on any candidate')
     return comp
 
 

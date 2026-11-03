@@ -50,7 +50,7 @@ Updated 2026-11-02: 0.11.7 published (#68–#75); C18 release review findings fi
 | 26 | Mission records leave out what roles spent (`state['spend']` only on the role-records path; a continuation reads `provider.cost_usd`) | C06, C12 | open (found in the review of #105; no case reaches it today: a role-exhausted mission is not recoverable) |
 | 27 | `_execution_sandbox_prefix` binds install roots under a hidden HOME by path (the L2 pattern, live runs) | C18 | open |
 | 28 | `do --agent auto` at $0 can route to a ceiling-enforcing provider and then refuse (the message names an uncapped alternative) | C06 | fixed on `fix/auto-route-ceiling` (routing skips it and names `--max-cost-usd`; `tests/test_auto_route_ceiling.py`; routing-journey-v1 amendment 3 and run 4) |
-| 29 | Tournament comparisons: a stale comparison prints its recorded next step; mixed .py and .js edits are SUBSTANTIVE even when the .py part is cosmetic | C12 | open (low; review of #104) |
+| 29 | Tournament comparisons: a stale comparison prints its recorded next step; mixed .py and .js edits are SUBSTANTIVE even when the .py part is cosmetic | C12 | fixed on `fix/tournament-lows` (per-file comparison; stale comparisons say to re-run; `tests/test_tournament_difference.py`) |
 | 20 | verify headlined a missing test runner (pytest absent from the interpreter) as "NO NEW FAILURES … already failing at the base" (found by the 0.11.8 smoke install) | C02, C21 | done (#89): such a run is NOT VERIFIED, "the test runner could not start … (pytest is not installed there)", files listed as could not run; never when a file passed at the base or in the same run; prove and missions no longer count it as no new failures |
 
 Decided 2026-10-31:
