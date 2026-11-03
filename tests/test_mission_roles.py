@@ -31,8 +31,12 @@ print(json.dumps({{'type': 'result', 'session_id': 's-' + role, 'cost_usd': 0.0,
 """
 
 
-def _cli(tmp_path: Path, *, stance: str = "ACCEPT", investigator_writes: bool = False) -> Path:
-    return _make_fake_cli(tmp_path, "claude", _BODY.format(stance=stance, investigator_writes=investigator_writes))
+def _cli(tmp_path: Path, *, stance: str = "ACCEPT", investigator_writes: bool = False,
+         investigator_cost: float = 0.0) -> Path:
+    body = _BODY.format(stance=stance, investigator_writes=investigator_writes)
+    if investigator_cost:  # the investigator reports a cost; every other process $0
+        body = body.replace("'cost_usd': 0.0", "'cost_usd': (" + repr(investigator_cost) + " if role == 'investigator' else 0.0)")
+    return _make_fake_cli(tmp_path, "claude", body)
 
 
 def _seen(res: dict) -> dict[str, dict]:
@@ -114,12 +118,13 @@ def test_a_failed_mission_with_roles_records_what_they_spent(bug: Path, tmp_path
             raise ValueError("observation failed (injected)")
         return real(*a, **k)
     monkeypatch.setattr(verification, "observe", observe)
-    cli = _cli(tmp_path)
+    cli = _cli(tmp_path, investigator_cost=0.25)
     p = runtime.plan(bug, "Fix duplicate payment charge when retry uncertain again", agent="claude",
                      write_paths=["charge.py"], execute_local=True, roles=["investigator"])
     res = runtime.execute(bug, p, None, provider_executable=cli)
     assert res["effective_verdict"] != "PASS"
-    assert res["spend"] == {"usd_observed_total": 0.0, "any_cost_unknown": False}, res.get("spend")
+    # the investigator's 0.25 is counted (it is over the simulated run's $0 ceiling, so the role itself FAILED)
+    assert res["spend"] == {"usd_observed_total": 0.25, "any_cost_unknown": False}, res.get("spend")
 
 
 def test_a_continuation_counts_role_spend_against_the_remaining_budget() -> None:
@@ -132,3 +137,31 @@ def test_a_continuation_counts_role_spend_against_the_remaining_budget() -> None
                                                              "any_cost_unknown": True}})[1] is True
     assert runtime._prior_spend({"provider": {**live, "cost_status": "UNKNOWN"}})[1] is True
     assert runtime._prior_spend({"provider": {"simulated": True, "cost_usd": 0.5}}) == (0.0, False)
+
+
+
+def test_a_live_continuation_is_refused_when_role_spend_used_up_the_ceiling(tmp_path, monkeypatch) -> None:
+    """The wiring: the continuation budget reads the role-inclusive total (main read only the implementer's cost and
+    would have allowed $0.20 more here). Refused before any provider starts."""
+    from test_mission_partial_handoff import FIX_DISCOUNT, _provider
+    from test_mission_partial_handoff import shop as shop_fixture
+    shop = shop_fixture.__wrapped__(tmp_path)
+    planned = runtime.plan(shop, "Make pricing.py compute percentage discounts and tax correctly", agent="claude",
+                           write_paths=["pricing.py"], execute_local=True)
+    first = runtime.execute(shop, planned, None, provider_executable=_provider(tmp_path, "claude", FIX_DISCOUNT))
+    capsule = tmp_path / "capsule.json"
+    capsule.write_text(json.dumps(runtime.handoff(shop, first["id"], target_provider="claude")))
+    real = runtime.status
+
+    def as_live(root, mid, **kw):  # controlled injection: the first mission as a live run with roles
+        state = real(root, mid, **kw)
+        if mid == first["id"]:
+            state = {**state, "provider": {**state["provider"], "simulated": False, "cost_usd": 0.10,
+                                           "cost_status": "OBSERVED"},
+                     "spend": {"usd_observed_total": 0.50, "any_cost_unknown": False},
+                     "continuation_budget": {"ceiling_usd": 0.50}}  # the contract (and its digest) unchanged
+        return state
+    monkeypatch.setattr(runtime, "status", as_live)
+    monkeypatch.setattr("repo_ai.providers.adapters.run_provider", lambda *a, **k: pytest.fail("no provider may start"))
+    with pytest.raises(ValueError, match="exceeds remaining prior cost budget"):
+        runtime.continue_from_handoff(shop, capsule, agent="claude", allow_live=True, max_cost_usd=0.20)

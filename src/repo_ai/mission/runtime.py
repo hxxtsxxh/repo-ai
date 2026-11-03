@@ -983,7 +983,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                      'scope': digest(contract.to_json()), 'freshness': 'fresh', 'confidence': 'observed'}
                     for k in ('baseline', 'candidate', 'regression')]]).to_json()
                 role_records = {k: nodes[k]['artifact'] for k in ('investigator', 'adversary') if k in nodes}
-                if role_records:
+                if role_records or contract.roles:  # the same condition as the failure path below
                     state['roles'] = {k: {kk: vv for kk, vv in v.items() if kk != 'report'} | {'report_sha256': digest(v.get('report', ''))}
                                       for k, v in role_records.items()}
                     state['role_reports'] = {k: v.get('report', '') for k, v in role_records.items()}
@@ -1031,13 +1031,14 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
 
 def _prior_spend(orig: dict[str, Any]) -> tuple[float, bool]:
     """What a mission spent, for its continuation's budget: the implementer's provider cost, or the total over the
-    implementer and its roles when the record has one (`spend`), whichever is larger; and whether any of it is
-    UNKNOWN. A simulated mission spent nothing."""
+    implementer and its roles when the record has one (`spend`), whichever is larger (the total already includes the
+    implementer); and whether any of it is UNKNOWN. A simulated mission spent nothing."""
     prov = orig.get('provider') or {}
     recorded = orig.get('spend') or {}
     live = not prov.get('simulated', True)
     cost = float(prov.get('cost_usd', 0.0) or 0.0) if live else 0.0
-    cost = max(cost, float(recorded.get('usd_observed_total', 0.0) or 0.0))
+    if live:
+        cost = max(cost, float(recorded.get('usd_observed_total', 0.0) or 0.0))
     unknown = (live and prov.get('cost_status') != 'OBSERVED') or bool(recorded.get('any_cost_unknown') and live)
     return cost, unknown
 
@@ -1651,7 +1652,7 @@ def _continue_verified_handoff(
         'prior_seconds_debited': prior_seconds,
         'inherited_write_paths': inherited_paths,
         'write_paths_added_by_user': added_paths,
-        'prior_cost_usd': prior_cost if prior_provider.get('cost_status') == 'OBSERVED' else None,
+        'prior_cost_usd': None if spent_unknown else prior_cost,  # roles included; None when any part is UNKNOWN
         'partial_patch_transferred': seed is not None,
         'continuation_kind': ('partial_diff_reverified_from_same_frozen_source' if seed is not None
                               else 'fresh_candidate_from_same_frozen_source'),

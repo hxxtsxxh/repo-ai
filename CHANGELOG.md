@@ -4,7 +4,9 @@
 
 - A mission with provider roles (`--role investigator/adversary`) that fails now records what the roles spent
   (`spend`), as a completed one did, and a handoff continuation counts that total, not only the implementer's cost,
-  against the remaining budget.
+  against the remaining budget (also for a role mission that ended with partial progress). A continuation is now
+  also refused ("prior live cost is UNKNOWN") when a role's cost was UNKNOWN under a ceiling, and its provenance
+  records the role-inclusive `prior_cost_usd` (none when any part is UNKNOWN).
 - Security (Linux, live Claude, Codex and Bob runs): the run's bubblewrap sandbox now hides the host's unix-socket
   directories (`/tmp`, `/run`, `/var/run`, `/var/tmp`, `/mnt/wslg`, LXD's and Incus's), as the probe sandbox already
   did, and gives the run its own IPC and UTS namespaces. Before, a networked model with a shell could reach a
