@@ -844,7 +844,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         tracked_set = set(current['files'])
                         test_set = set(runner.test_files(list(tracked_set)))
                         problems = validate_workspace_edits(
-                            root, candidate, list(contract.write_paths), test_set, tracked_set, MAX_PATCH
+                            root, candidate, list(contract.write_paths), test_set, tracked_set, MAX_PATCH,
+                            generated=set(ws.generated),  # version files repo-ai copied in, not the provider
                         )
                         if problems:
                             state['provider']['stage'] = 'FAILED'

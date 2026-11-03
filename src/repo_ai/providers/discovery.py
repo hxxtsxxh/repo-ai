@@ -347,8 +347,10 @@ def _stop(proc: subprocess.Popen[bytes]) -> None:
 def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
              timeout: float = 5.0, output_limit: int = MAX_OUTPUT,
              separate_stderr: bool = False, max_timeout: float = 30.0,
-             pass_fds: tuple[int, ...] = ()) -> ProbeResult:
-    """Bound memory, elapsed time, and process-group lifetime without a shell."""
+             pass_fds: tuple[int, ...] = (), max_line: int = 0) -> ProbeResult:
+    """Bound memory, elapsed time, and process-group lifetime without a shell. `max_line` (a JSONL event stream):
+    a stdout line longer than this is replaced by `{"type":"repo_ai_truncated","bytes":N}` instead of stopping the
+    run (a large tool result or file read); `output_limit` still bounds what is kept."""
     if not 0 < timeout <= max_timeout or not 0 < max_timeout <= 900 or not 0 < output_limit <= MAX_OUTPUT * 4:
         raise ValueError("invalid probe bounds")
     try:
@@ -369,7 +371,15 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
     stop_readers = threading.Event()
     read_failed = threading.Event()
 
-    def read(pipe: Any, destination: bytearray, done: threading.Event) -> None:
+    def keep(destination: bytearray, data: bytes) -> None:
+        remaining = max(0, output_limit - len(destination))
+        destination.extend(data[:remaining])
+        if len(data) > remaining:
+            overflow.set()
+
+    def read(pipe: Any, destination: bytearray, done: threading.Event, lines: int = 0) -> None:
+        line = bytearray()
+        dropped = [0]  # bytes of the line being dropped (0: not dropping)
         try:
             while not stop_readers.is_set():
                 # POSIX pipes may be inherited by detached descendants outside
@@ -379,17 +389,38 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
                 chunk = os.read(pipe.fileno(), 4096)
                 if not chunk:
                     break
-                remaining = max(0, output_limit - len(destination))
-                destination.extend(chunk[:remaining])
-                if len(chunk) > remaining:
-                    overflow.set()
+                if not lines:
+                    keep(destination, chunk)
+                    continue
+                pos = 0
+                while pos < len(chunk):
+                    nl = chunk.find(b"\n", pos)
+                    piece = chunk[pos:nl if nl != -1 else len(chunk)]
+                    if dropped[0]:
+                        dropped[0] += len(piece)
+                    else:
+                        line.extend(piece)
+                        if len(line) > lines:
+                            dropped[0] = len(line)
+                            line.clear()
+                    if nl == -1:
+                        break
+                    if dropped[0]:
+                        keep(destination, b'{"type":"repo_ai_truncated","bytes":%d}\n' % dropped[0])
+                        dropped[0] = 0
+                    else:
+                        keep(destination, bytes(line) + b"\n")
+                        line.clear()
+                    pos = nl + 1
+            if lines and (line or dropped[0]):  # a last line without a newline
+                keep(destination, b'{"type":"repo_ai_truncated","bytes":%d}' % dropped[0] if dropped[0] else bytes(line))
         except OSError:
             read_failed.set()
         finally:
             done.set()
 
     assert proc.stdout is not None
-    reader = threading.Thread(target=read, args=(proc.stdout, output, finished), daemon=True)
+    reader = threading.Thread(target=read, args=(proc.stdout, output, finished, max_line), daemon=True)
     reader.start()
     err_reader = (threading.Thread(target=read, args=(proc.stderr, errout, err_finished), daemon=True)
                   if separate_stderr else None)

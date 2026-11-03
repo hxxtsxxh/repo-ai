@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Live provider runs on real projects (found by journey-live-v1, C21):
+  - A project whose build writes a version file (hatch-vcs / setuptools-scm `version-file`, which git ignores):
+    repo-ai copies that file into the candidate itself, then refused the provider's result for "creating" it. A
+    copied version file the provider left unchanged is no longer blamed on it; one the provider changed is refused.
+  - A single over-long event line (Claude Code reading a 150 KB source file) went past the 64 KB capture, so the
+    run was killed after it had spent and its cost was lost. Live runs now keep 256 KB, and an event line over 32 KB
+    is replaced by a `repo_ai_truncated` placeholder (counted as `truncated_events`) instead of stopping the run.
 - `coverage`'s per-requirement changed lines credit each run of a shared (session-, package-, module- or
   class-scoped) fixture's setup to the tests whose call ran with that run active (the definitions it actually used:
   the active one and any it extends, what those depend on, and what the test fetched with `getfixturevalue`), not
