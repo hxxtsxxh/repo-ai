@@ -135,8 +135,9 @@ class _Recorder:
     seen: dict = {}
     outcome: AcpResult | BaseException = AcpResult(stop_reason="end_turn", session_id="s1", messages=["done"])
 
-    def __init__(self, argv, workspace, *, allowed_writes, env=None, cwd=None):
-        _Recorder.seen = {"argv": argv, "workspace": workspace, "allowed": allowed_writes, "env": env, "cwd": cwd}
+    def __init__(self, argv, workspace, *, allowed_writes, env=None, cwd=None, pass_fds=()):
+        _Recorder.seen = {"argv": argv, "workspace": workspace, "allowed": allowed_writes, "env": env, "cwd": cwd,
+                          "pass_fds": pass_fds}
 
     def run(self, prompt, timeout_s):
         _Recorder.seen.update(prompt=prompt, timeout=timeout_s)

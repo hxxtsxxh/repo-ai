@@ -10,6 +10,24 @@
   definition differs. A stale comparison (`repo-ai compare ID`, `repo-ai mission status ID --json`, after HEAD moved or
   its evidence changed) no longer gives its recorded next step (such as applying the winner); it says to run the
   tournament again and keeps the old one as `recorded_next_step`.
+- Security (Linux, live Claude, Codex and Bob runs): the run's bubblewrap sandbox now hides the host's unix-socket
+  directories (`/tmp`, `/run`, `/var/run`, `/var/tmp`, `/mnt/wslg`, LXD's and Incus's), as the probe sandbox already
+  did, and gives the run its own IPC and UTS namespaces. Before, a networked model with a shell could reach a
+  container engine socket, an ssh-agent under `/tmp` or the session bus. HOME and the account's own home directory are
+  hidden (they differ under `sudo -E` or a service account; before, only HOME), and so are repo-ai's login stores
+  outside HOME (`REPO_AI_HOME`, `REPO_AI_CLAUDE_CONFIG_DIR`, `REPO_AI_CODEX_HOME`) unless one is a top-level directory
+  or holds a home, a system directory, `/var/lib` or the TLS certificates (then it stays readable). Bob live runs on Linux had
+  none of this (not even HOME hidden) and now get the same sandbox. The install directories, the `node` runtime and
+  the resolver configuration (`/etc/resolv.conf`, often a link into `/run`) are bound back read-only; a directory
+  holding a socket (or too large to check) is not, and then only the executable is bound. With bubblewrap 0.10 or
+  later these read-only binds are made through a descriptor opened without following symlinks (`--ro-bind-fd`); the
+  workspace, scratch and dedicated login directories are still bound by path, and with older bubblewrap everything is
+  (the resolve-to-bind race stays open there). Not live-verified on Linux. **Still reachable**, because the provider
+  needs the network and so shares the host's network namespace: abstract unix sockets (on an X11 or Xwayland desktop
+  that grants local same-user access, this can let a model inject input into your session, outside the sandbox) and
+  every service listening on the host's network, loopback included (debugger ports, notebooks, databases, cloud
+  metadata). Unix sockets elsewhere (`/nix/var/nix/daemon-socket`, `/var/lib/...`) also stay reachable. Users known
+  only through nslcd or systemd-homed may not resolve inside the run (their sockets are under `/run`).
 - `--agent auto` (and `agents route`) without a usable `--max-cost-usd` (the default 0, or under $0.0001) no longer
   selects a provider whose CLI enforces a USD ceiling (Claude Code, Bob): its run was then refused for the missing
   ceiling. Routing skips it with the reason and picks the next eligible provider (e.g. Codex, cost UNKNOWN); when none
