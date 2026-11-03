@@ -321,7 +321,7 @@ def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] |
          execute_local: bool = False, max_cost_usd: float = 0, max_parallel: int = 1,
          max_seconds: float = 120, command: str = 'python -m pytest',
          allow_live: bool = False, roles: list[str] | None = None,
-         expect_fix: list[str] | None = None) -> dict[str, Any]:
+         expect_fix: list[str] | None = None, sandbox: str = 'auto', image: str = '') -> dict[str, Any]:
     root = root.resolve()
     if agent not in {'auto', 'none', 'replay', *LIVE_PROVIDERS}:
         raise ValueError('unknown agent')
@@ -373,6 +373,8 @@ def plan(root: Path, task: str, *, agent: str = 'auto', write_paths: list[str] |
         policy_sha256=policy,
         roles=granted_roles,
         expect_fix=sorted(set(expect_fix or [])),
+        sandbox=sandbox,
+        image=image,
     )
     contract.validate()
 
@@ -486,6 +488,18 @@ def proposal(path: Path, root: Path, contract: IntentContract) -> dict[str, Any]
     return raw
 
 
+def cooldown_until(root: Path, provider: str) -> str | None:
+    """When `provider` is cooling down after a quota or rate-limit observation: until when (UTC), else None."""
+    from ..providers.registry import load_policy
+    until = float(load_policy(root)['cooldown'].get(provider, 0.0))
+    if not until > time.time():
+        return None
+    try:
+        return time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(until))
+    except (OverflowError, ValueError, OSError):
+        return 'an unreadable time (the policy file is malformed)'
+
+
 def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None, *,
             resume: bool = False, provider_executable: Path | None = None,
             allow_live: bool = False, seed: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -507,6 +521,14 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
         raise ValueError('only zero-cost offline replay execution is implemented; external providers are planning-only')
     if is_live_provider and contract.max_cost_usd > 0 and not contract_for(contract.provider).enforces_hard_usd_budget:
         raise ValueError(f'{contract.provider} does not enforce a hard USD CLI budget flag; execution blocked')
+    if is_live_provider and not resume:
+        # an explicitly chosen provider that hit a quota or rate limit recently would only hit it again (automatic
+        # routing already skips it while it cools down)
+        cooling = cooldown_until(root, contract.provider)
+        if cooling:
+            raise ValueError(f'{contract.provider} hit a quota or rate limit recently and is cooling down until '
+                             f'{cooling}; another call would hit it again. Wait, or let routing choose another '
+                             'provider (--agent auto)')
     if not check_privacy(root, planned['contract']):
         raise ValueError('zone policy changed or unbound legacy contract; create a fresh plan')
     dag = decode(planned['dag'])
@@ -841,7 +863,10 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 def regression() -> dict[str, Any]:
                     layout = resolve_layout(candidate, load_config(candidate))
                     vp, change = engine.build_plan(candidate, layout, command=contract.acceptance[0], use_runtime=False)
-                    executor = get_executor(candidate, 'auto', vp.runner.language, interpreter_root=root)
+                    from .verification import container_layout
+                    container_layout(candidate, vp.runner, engine.repo_files(candidate), contract.sandbox)
+                    executor = get_executor(candidate, contract.sandbox, vp.runner.language, interpreter_root=root,
+                                            image=contract.image)
                     try:
                         return engine.run_plan(candidate, layout, vp, change, executor,
                                                full=True, reuse=False, workers=1,
@@ -887,9 +912,11 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                             'claim': 'static relationships are hypotheses, not runtime observations'}
 
                 actions = {'context': lambda: planned['context'],
-                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
+                           'baseline': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root,
+                                                       sandbox_preference=contract.sandbox, image=contract.image),
                            'edit': edit_candidate,
-                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root),
+                           'candidate': lambda: observe(candidate, contract.acceptance[0], timeout_s=remaining(), project_root=root,
+                                                        sandbox_preference=contract.sandbox, image=contract.image),
                            'review': regression}
                 if any(n['id'] == 'impact' for n in planned['dag']['nodes']):
                     actions.update(impact=impact_investigation, acceptance=acceptance_inventory)
@@ -940,7 +967,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                     from .exercise import measure as measure_exercise
                     try:
                         state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining(),
-                                                             project_root=root)
+                                                             project_root=root, sandbox_preference=contract.sandbox,
+                                                             image=contract.image)
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}
@@ -1221,7 +1249,15 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
                 'action': 'switch provider via handoff --to <provider> and continue with do --from-handoff <capsule.json>',
                 'reasons': negatives,
             }
-    if any(k in joined for k in ('time budget', 'cost', 'three-attempt', 'parallel budget', 'budget exhausted')):
+    # a provider that crashed or broke its event protocol also has no reported cost: that missing cost is not a
+    # budget limit (a reported cost over the ceiling always is)
+    crashed = any(k in joined for k in ('provider process exited with code', 'did not conform to structured jsonl',
+                                        'lacks a consistent terminal event'))
+    cost_reasons = [n.lower() for n in negatives if 'cost' in n.lower()]
+    only_missing_cost = all('did not report cost' in n or 'unknown cost cannot satisfy' in n for n in cost_reasons)
+    if any(k in joined for k in ('time budget', 'three-attempt', 'parallel budget', 'budget exhausted',
+                                 'exceeding approved contract ceiling')) or (
+            cost_reasons and not (crashed and only_missing_cost)):
         return {
             'category': 'budget_limit',
             'recoverable': False,
@@ -1440,6 +1476,8 @@ def continue_from_handoff(
     max_cost_usd: float | None = None,
     extra_write_paths: list[str] | None = None,
     expect_fix: list[str] | None = None,
+    sandbox: str | None = None,
+    image: str | None = None,
 ) -> dict[str, Any]:
     """Continue an interrupted or provider-blocked mission using a verified HandoffCapsule.
 
@@ -1466,14 +1504,15 @@ def continue_from_handoff(
             return _continue_verified_handoff(root, capsule_data, agent=agent, replay_path=replay_path,
                                               provider_executable=provider_executable,
                                               allow_live=allow_live, max_cost_usd=max_cost_usd,
-                                              extra_write_paths=extra_write_paths, expect_fix=expect_fix)
+                                              extra_write_paths=extra_write_paths, expect_fix=expect_fix,
+                                              sandbox=sandbox, image=image)
 
 
 def _continue_verified_handoff(
     root: Path, capsule_data: dict[str, Any], *, agent: str | None,
     replay_path: Path | None, provider_executable: Path | None,
     allow_live: bool, max_cost_usd: float | None, extra_write_paths: list[str] | None = None,
-    expect_fix: list[str] | None = None,
+    expect_fix: list[str] | None = None, sandbox: str | None = None, image: str | None = None,
 ) -> dict[str, Any]:
     ver = verify_handoff(root, capsule_data)
     if not ver['valid']:
@@ -1483,6 +1522,10 @@ def _continue_verified_handoff(
     if expect_fix and sorted(set(expect_fix)) != sorted(orig_contract.get('expect_fix') or []):
         raise ValueError('a continuation keeps the original --expect-fix scope exactly; '
                          f"it was {sorted(orig_contract.get('expect_fix') or []) or 'none'}")
+    frozen_env = (str(orig_contract.get('sandbox') or 'auto'), str(orig_contract.get('image') or ''))
+    if (sandbox is not None and sandbox != frozen_env[0]) or (image is not None and image != frozen_env[1]):
+        raise ValueError('a continuation keeps the test environment frozen with the original mission '
+                         f"(sandbox {frozen_env[0]}{', image ' + frozen_env[1] if frozen_env[1] else ''})")
     if orig.get('continuation_started'):
         raise ValueError('continuation already attempted; inspect recorded child or create a fresh approved plan')
     recovery = classify_recovery(orig)
@@ -1532,7 +1575,20 @@ def _continue_verified_handoff(
             raise ValueError('continuation exceeds remaining prior cost budget; create a newly approved plan')
     if target_agent == 'replay':
         eff_cost = 0.0
+    if allow_live and target_agent in LIVE_PROVIDERS:
+        from ..providers.adapters import MIN_CEILING_USD, contract_for
+        if contract_for(target_agent).enforces_hard_usd_budget and eff_cost < MIN_CEILING_USD:
+            # refused before the continuation is claimed: the capsule stays usable
+            raise ValueError(f'{target_agent} enforces a USD ceiling and no budget remains from the original mission: '
+                             + ('its live cost cannot establish one, so create a newly approved plan'
+                                if prior_live else 'give --max-cost-usd > 0 for the continuation')
+                             + '; the capsule is still unused')
 
+    if allow_live and target_agent in LIVE_PROVIDERS and (cooling := cooldown_until(root, target_agent)):
+        # refused before the continuation is claimed: the capsule stays usable once the cooldown has passed
+        raise ValueError(f'{target_agent} hit a quota or rate limit recently and is cooling down until {cooling}; '
+                         'the capsule is still unused. Wait and run this again, or continue with another provider '
+                         '(--agent <provider>, or export a new capsule with `repo-ai handoff ID --to <provider>`)')
     inherited_paths = list(orig_contract['write_paths'])
     added_paths = [p for p in dict.fromkeys(extra_write_paths or []) if p not in inherited_paths]
     planned = plan(
@@ -1547,6 +1603,8 @@ def _continue_verified_handoff(
         command=orig_contract['acceptance'][0],
         allow_live=allow_live and target_agent in LIVE_PROVIDERS,
         expect_fix=list(orig_contract.get('expect_fix') or []),  # a continuation keeps the declared scope exactly
+        sandbox=str(orig_contract.get('sandbox') or 'auto'),  # and the frozen test environment
+        image=str(orig_contract.get('image') or ''),
     )
     # Claim the attempt durably before any external side effect. A crash requires
     # inspecting the child; re-exporting cannot replay the parent's allowance.
