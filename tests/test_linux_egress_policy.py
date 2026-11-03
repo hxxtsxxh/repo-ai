@@ -86,6 +86,7 @@ def test_the_live_prefix_gets_its_own_network_namespace(tmp_path, monkeypatch):
     ("2001:0:4136:e378:8000:63bf:3fff:fdd2", False),  # Teredo
     ("168.63.129.16", False),           # Azure host-local
     ("fe80::1%eth0", False),
+    ("::ffff:0:a00:1", False),          # IPv4-translated (SIIT)
 ])
 def test_public_address_judges_embedded_ipv4(address, public):
     """Review of #119: these passed `is_global` on some or all Python versions."""

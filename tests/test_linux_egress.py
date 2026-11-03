@@ -73,7 +73,8 @@ def test_proxied_https_to_a_public_host_works_and_a_direct_connection_does_not(s
                                      ("https://169.254.169.254", "CONNECT 169.254.169.254:443")])
 def test_the_proxy_refuses_loopback_and_metadata_targets(sandbox, url, why):
     run, proxy = sandbox
-    out = run("curl", "-sS", "--max-time", "10", url)
+    # --noproxy "": the forwarder's NO_PROXY (the sandbox's own loopback) would otherwise send these direct
+    out = run("curl", "-sS", "--noproxy", "", "--max-time", "10", url)
     assert out.returncode != 0
     assert any(why in r for r in proxy.summary()["refused"]), proxy.summary()
     assert not proxy.summary()["allowed_hosts"]

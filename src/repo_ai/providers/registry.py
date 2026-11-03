@@ -168,7 +168,8 @@ def classify_failure(reasons: list[str]) -> str | None:
 
 def _isolated_ready(provider: str) -> bool:
     from . import egress
-    if (sys.platform.startswith("linux") and egress.enabled() and provider in ("claude", "codex", "bob")
+    from .adapters import EGRESS_PROVIDERS
+    if (sys.platform.startswith("linux") and egress.enabled() and provider in EGRESS_PROVIDERS
             and egress.system_python() is None):
         return False  # run_provider would refuse it: the egress forwarder needs a system python3
     with tempfile.TemporaryDirectory(prefix="repo-ai-route-") as d:

@@ -1409,6 +1409,7 @@ def run_provider(
         acp_run: AcpResult | None = None
         result: ProbeResult | None = None
         run_argv = [*egress_head, *argv]
+        probe_connections = proxy.summary()["connections"] if proxy is not None else 0  # the probe's, not the run's
         try:
             if contract.event_format == ACP_EVENT_FORMAT:
                 # the ACP client is the parent, outside the sandbox; the agent process runs inside the same prefix.
@@ -1476,7 +1477,7 @@ def run_provider(
         if not broker_summary["requests"]:
             reasons.append("codex broker: Codex sent no request through the broker")
     if egress_summary is not None and result.returncode != 0:
-        if not egress_summary["connections"]:
+        if not egress_summary["connections"] - probe_connections:
             reasons.append("egress proxy: the provider made no connection through it (does its HTTP client honor "
                            "HTTPS_PROXY?)")
         if egress_summary.get("cap_reached"):

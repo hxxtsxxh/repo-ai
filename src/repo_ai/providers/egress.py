@@ -10,7 +10,7 @@ namespace), and the provider reaches the internet only through this module:
   (bound into the sandbox). It accepts only `CONNECT host:443`, resolves the host once, refuses unless every address is
   public (no loopback, private, link-local, site-local, CGNAT, multicast or reserved address, cloud metadata at
   169.254.169.254 included, judged on the IPv4 address an IPv6 form embeds), connects to an address it checked (so a
-  DNS answer cannot change between the check and the connection) and never to this host's own address. The tunnel
+  DNS answer cannot change between the check and the connection) and never to an address on this host's interfaces. The tunnel
   carries any TCP to port 443 of a public host: TLS is not inspected, so sending data to, or being controlled from, a
   public host on 443 is possible by design. It also resolves any name the model asks for (DNS can carry data out).
 - `FORWARDER` runs inside the sandbox as the provider's parent: it listens on the sandbox's own 127.0.0.1, forwards
@@ -19,8 +19,9 @@ namespace), and the provider reaches the internet only through this module:
 A provider whose HTTP client ignores HTTPS_PROXY cannot reach the network at all with this on (it fails closed), and a
 network that requires an outbound proxy is not supported (the proxy connects directly). Not closed by this: unix
 sockets on the filesystem outside the hidden directories (e.g. a Nix daemon socket), and services on port 443 of
-another host's public address (on an IPv6 LAN every device has one). Not live-verified with the real Claude Code,
-Codex or Bob CLIs on Linux.
+another host's public address (on an IPv6 LAN every device has one), a host's own public address reached through
+1:1 NAT, and a private IPv4 address behind an operator-specific NAT64 prefix. Not live-verified with the real Claude
+Code, Codex or Bob CLIs on Linux.
 """
 from __future__ import annotations
 
@@ -72,6 +73,7 @@ _CGNAT = ipaddress.ip_network("100.64.0.0/10")
 _NAT64 = ipaddress.ip_network("64:ff9b::/96")              # DNS64 synthesis: the embedded IPv4 address decides
 _NAT64_LOCAL = ipaddress.ip_network("64:ff9b:1::/48")      # local-use NAT64: refused
 _V4_COMPAT = ipaddress.ip_network("::/96")
+_V4_TRANSLATED = ipaddress.ip_network("::ffff:0:0:0/96")  # SIIT: refused
 _HOST_LOCAL_V4 = frozenset({ipaddress.ip_address("168.63.129.16")})  # Azure's host-local WireServer
 
 
@@ -95,7 +97,7 @@ def public_address(text: str) -> bool:
         return False
     if address in _NAT64:
         return _public_v4(ipaddress.IPv4Address(int(address) & 0xFFFFFFFF))
-    if address in _V4_COMPAT:  # IPv4-compatible (deprecated), ::, ::1
+    if address in _V4_COMPAT or address in _V4_TRANSLATED:  # IPv4-compatible, ::, ::1; IPv4-translated
         return False
     if address.sixtofour is not None or address.teredo is not None:
         return False  # tunnels that embed an IPv4 endpoint: refused rather than second-guessed
@@ -139,8 +141,12 @@ class EgressProxy:
 
     def __enter__(self) -> EgressProxy:
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        server.bind(str(self.path))  # in the run's 0700 scratch directory
-        os.chmod(self.path, 0o600)   # only this user may connect (the sandboxed provider runs as this user)
+        try:
+            server.bind(str(self.path))  # in the run's 0700 scratch directory
+            os.chmod(self.path, 0o600)   # only this user may connect (the sandboxed provider runs as this user)
+        except OSError:
+            server.close()
+            raise
         server.listen(64)
         server.settimeout(0.5)
         self._server = server
@@ -248,9 +254,13 @@ class EgressProxy:
 
     def _connect(self, infos: list[tuple[Any, ...]]) -> socket.socket | None:
         """The first checked address that accepts, in resolver order (a broken IPv6 route falls back to IPv4); never
-        one of this host's own addresses (the proxy runs in the host's network namespace)."""
+        an address on this host's interfaces (the proxy runs in the host's network namespace). A public address the
+        host reaches only through 1:1 NAT (a cloud VM's public IP) is not recognised as its own."""
         for family, kind, proto, _, address in infos:
-            upstream = socket.socket(family, kind, proto)
+            try:
+                upstream = socket.socket(family, kind, proto)  # an address family the host lacks: try the next
+            except OSError:
+                continue
             upstream.settimeout(self._connect_timeout)
             try:
                 upstream.connect(address)
