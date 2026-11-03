@@ -16,9 +16,9 @@ observed for exactly those test IDs. Per requirement:
 
 Besides the declared requirements, the report names the obligations nothing declared covers: changed executable
 lines no frozen test ran (the mission's change-exercise measurement), and failures a scoped mission accepted as
-pre-existing. For pytest missions it also maps each requirement to the changed lines its own tests ran (per-test
-line record), names changed lines only tests outside the declaration ran, and treats a verified change requirement
-whose tests ran none of the changed lines as an obligation. Either keeps the headline below ACCEPTANCE_MAPPED_ALL. A test named by a bare suffix and one test
+pre-existing. For pytest missions run with a frozen declaration it also lists, informationally, the changed lines
+that ran while each requirement's own tests ran (by time window, so import-time and shared-fixture code is not
+credited to a test) and those only undeclared tests ran. Either keeps the headline below ACCEPTANCE_MAPPED_ALL. A test named by a bare suffix and one test
 mapped to several requirements are flagged.
 
 The headline is ACCEPTANCE_MAPPED_ALL only if every requirement is verified. It is never a task-correctness claim:
@@ -185,17 +185,18 @@ def _row(req: dict[str, Any], known: set[str], baseline: dict[str, str], candida
     return {**req, 'status': status, 'detail': detail, 'observed': observed}
 
 
-def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str, Any] | None, verified: set[str],
-                                  obligations: list[str]) -> dict[str, Any]:
-    """Requirement by requirement, which changed executable lines its mapped tests ran (the exercise measurement's
-    per-test record, pytest only). A change requirement verified by tests that ran none of the changed lines is an
-    obligation: what flipped its tests is not the code this mission changed (or not code repo-ai measured)."""
+def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str, Any] | None) -> dict[str, Any]:
+    """Requirement by requirement, which changed executable lines ran while its mapped tests ran (the exercise
+    measurement's per-test record: pytest missions with a frozen declaration). Informational only, never an
+    obligation or a status: attribution is by time window, so a line that runs at import, in a shared fixture set up
+    by an earlier test, in a child process or in another test's thread is not credited to the test it serves."""
     per_test = (exercise or {}).get('per_test')
     total = int((exercise or {}).get('changed_lines') or 0)
-    if not isinstance(per_test, dict) or total <= 0:
-        why = ('no executable line changed' if isinstance(per_test, dict) else
-               'not measured (only pytest missions record which changed lines each test ran)')
-        return {'measured': False, 'reason': why}
+    if not isinstance(per_test, dict):
+        return {'measured': False, 'reason': 'not measured (recorded for pytest missions run with a frozen '
+                                             '--requirements declaration)'}
+    if total <= 0:
+        return {'measured': False, 'reason': 'no executable line changed'}
     complete = (exercise or {}).get('per_test_complete') is True
     claimed: set[str] = set()
     for r in rows:
@@ -206,15 +207,15 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
         claimed.update(ran)
         r['changed_lines_run'] = ran[:20]
         r['changed_lines_run_count'] = len(ran)
-        if not ran and complete and r['kind'] == 'change' and r['status'] in verified:
-            r['tests_ran_no_changed_line'] = True
-            obligations.append(f"requirement {json.dumps(r['text'], ensure_ascii=True)}: its tests ran none of the "
-                               f"{total} changed executable lines, so what made them pass is not code this mission "
-                               'changed (or not code repo-ai measured)')
     every = {line for lines in per_test.values() if isinstance(lines, list) for line in lines if isinstance(line, str)}
     unclaimed = sorted(every - claimed)
+    outside = [x for x in ((exercise or {}).get('changed_outside_tests') or []) if isinstance(x, str)]
     return {'measured': True, 'complete': complete, 'changed_lines': total,
-            'run_by_tests_of_no_requirement': unclaimed[:20], 'run_by_tests_of_no_requirement_count': len(unclaimed)}
+            'run_outside_any_test': outside[:20],
+            'run_by_tests_of_no_requirement': unclaimed[:20], 'run_by_tests_of_no_requirement_count': len(unclaimed),
+            'note': ('attribution is by time window: lines run at import, in a shared fixture set up by an earlier '
+                     'test, in a child process or in another test\'s thread are not credited to the test they serve; '
+                     'informational, never part of a status or the headline')}
 
 
 def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, str], *,
@@ -256,7 +257,7 @@ def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, 
                            f"{changed_code.get('changed_lines', 0)} changed executable lines: {shown})")
     elif level not in {'FULL', 'NO_EXECUTABLE_CHANGE'}:
         obligations.append('whether the frozen tests ran the changed code was not measured for this mission')
-    per_requirement = _changed_lines_by_requirement(rows, exercise, verified, obligations)
+    per_requirement = _changed_lines_by_requirement(rows, exercise)
     if pre_existing:
         obligations.append('failures accepted as pre-existing in this scoped mission: '
                            + ', '.join(display_test_id(t) for t in pre_existing[:8]))
@@ -359,11 +360,16 @@ def render(report: dict[str, Any]) -> str:
     for item in report.get('other_obligations') or []:
         lines.append('Not covered by any requirement: ' + item)
     by_req = report.get('changed_lines_by_requirement') or {}
-    if by_req.get('measured') and by_req.get('run_by_tests_of_no_requirement_count'):
-        lines.append(f"Changed lines run only by tests no requirement names "
-                     f"({by_req['run_by_tests_of_no_requirement_count']}): "
-                     + ', '.join(by_req['run_by_tests_of_no_requirement'][:8]))
-    elif by_req and not by_req.get('measured'):
+    if by_req.get('measured'):
+        if by_req.get('run_by_tests_of_no_requirement_count'):
+            lines.append(f"Changed lines run only while tests no requirement names ran "
+                         f"({by_req['run_by_tests_of_no_requirement_count']}): "
+                         + ', '.join(by_req['run_by_tests_of_no_requirement'][:8]))
+        if by_req.get('run_outside_any_test'):
+            lines.append('Changed lines run outside any test (import, collection): '
+                         + ', '.join(by_req['run_outside_any_test'][:8]))
+        lines.append('Changed lines by requirement: ' + str(by_req.get('note', '')))
+    elif by_req:
         lines.append('Changed lines by requirement: ' + str(by_req.get('reason', 'not measured')))
     for test, reqs in (report.get('shared_tests') or {}).items():
         lines.append(f'One test, {len(reqs)} requirements: {test} cannot show each of them separately')

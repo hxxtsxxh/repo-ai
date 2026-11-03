@@ -15,10 +15,17 @@ values, environment or output.
 
 Python 3.12+ uses ``sys.monitoring`` and disables each code location after
 its first start, so the overhead is one callback per function, not per call.
+Older interpreters fall back to ``sys.setprofile`` (and ``sys.settrace`` for
+lines).
 
 ``--per-test --watch a.py,b.py`` (with ``--lines``, for ``-m pytest`` only)
-also records, per pytest node id, which lines of the watched files ran during
-that test (setup, call and teardown): line events are re-armed at each test.
+also records, per pytest node id, which lines of the watched files ran while
+that test ran (its setup, call and teardown), and separately the watched lines
+that ran outside any test (import, collection). Line events are re-armed for
+all code at each test, which slows large suites. Attribution is by time
+window: a shared fixture's setup belongs to the first test that triggers it,
+a thread's work to whichever test is running, and child processes are not
+seen (``spawned`` says so).
 Older interpreters fall back to ``sys.setprofile``. Code that runs in child
 processes or in threads started before tracing is not seen.
 """
@@ -45,6 +52,7 @@ def main(argv):
     per_test_on = want_lines and "--per-test" in opts and target[:2] == ["-m", "pytest"]
     watch = set(opts[opts.index("--watch") + 1].split(",")) if per_test_on and "--watch" in opts else set()
     per_test = {}  # pytest node id -> {watched path -> lines run during that test}
+    outside = {}  # watched path -> lines run while no test was running (import, collection)
     current = [None]
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
@@ -74,9 +82,12 @@ def main(argv):
         path = rel(code.co_filename)
         if path is not None:
             line_hits.setdefault(path, set()).add(line)
-            test = current[0]
-            if test is not None and path in watch and len(per_test) <= MAX_PER_TEST:
-                per_test.setdefault(test, {}).setdefault(path, set()).add(line)
+            if path in watch:
+                test = current[0]
+                if test is None:
+                    outside.setdefault(path, set()).add(line)
+                elif len(per_test) <= MAX_PER_TEST:
+                    per_test.setdefault(test, {}).setdefault(path, set()).add(line)
 
     spawned = []
 
@@ -121,6 +132,7 @@ def main(argv):
             data["per_test"] = {t: {k: sorted(v) for k, v in sorted(files.items())}
                                 for t, files in sorted(per_test.items())}
             data["per_test_complete"] = len(per_test) <= MAX_PER_TEST
+            data["outside_tests"] = {k: sorted(v) for k, v in sorted(outside.items())}
         tmp = out + ".tmp"
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(data, fh)

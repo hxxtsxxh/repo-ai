@@ -128,7 +128,8 @@ def _per_test(trace: dict[str, Any], eligible: dict[str, set[int]]) -> tuple[dic
 
 
 def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.0,
-            project_root: Path | None = None, sandbox_preference: str = "auto", image: str = "") -> dict[str, Any]:
+            project_root: Path | None = None, sandbox_preference: str = "auto", image: str = "",
+            per_test: bool = False) -> dict[str, Any]:
     """Run `command` once more over a pristine copy of `workspace` (the verified candidate) under a
     line tracer and compare with the lines `diff` added. Never raises: failure is ``UNMEASURED``."""
     from . import verification
@@ -162,7 +163,7 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                 argv = ["python", f"{inside}/{RUN_DIR}/rai_trace.py", "--lines", "--out", f"{inside}/{RUN_DIR}/trace.json",
                         "--root", inside]
                 watched = sorted(p for p in changed if p.endswith(".py") and "," not in p)
-                if runner.kind == "pytest" and watched:  # which changed lines each test ran (requirement mapping)
+                if per_test and runner.kind == "pytest" and watched:  # which changed lines each test ran (coverage)
                     argv += ["--per-test", "--watch", ",".join(watched)]
                 argv += ["--", *runner.full[1:]]
             res = bound.run(argv, cwd=runner.cwd, env=env, timeout_s=timeout_s, toolchain=runner.language)
@@ -205,7 +206,13 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
             total = 0
             eligible_by_file = {rel: lines_added & exec_by_file.get(rel, set()) for rel, lines_added in changed.items()}
             if isinstance(trace, dict) and isinstance(trace.get("per_test"), dict):
-                record["per_test"], record["per_test_complete"] = _per_test(trace, eligible_by_file)
+                record["per_test"], complete = _per_test(trace, eligible_by_file)
+                # a child process runs code this run cannot see, and an early stop leaves tests unrun
+                record["per_test_complete"] = complete and not trace.get("spawned") and res.exit_code in (0, 1)
+                outside = trace.get("outside_tests") if isinstance(trace.get("outside_tests"), dict) else {}
+                record["changed_outside_tests"] = sorted(
+                    f"{rel}:{int(n)}" for rel, lines in outside.items() if isinstance(lines, list)
+                    for n in lines if isinstance(n, int) and n in eligible_by_file.get(rel, set()))[:MAX_LISTED]
             for rel in sorted(changed):
                 eligible = eligible_by_file[rel]
                 missed = eligible & never_by_file.get(rel, set())
