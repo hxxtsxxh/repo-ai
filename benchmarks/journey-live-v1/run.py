@@ -303,7 +303,7 @@ def control(work: Path, names: list[str], exe: str, log: Log) -> None:
                 argv += ["--expect-fix", test]
             res = repo_ai(exe, ctl, *argv, timeout=2400)
         rec = res["record"] or {}
-        verdict = rec.get("effective_verdict", rec.get("verdict"))
+        verdict = observed_verdict(rec)
         log(name, "control", **res, verdict=verdict, ok=verdict in ("PASS", "PASS_WITH_PRE_EXISTING_FAILURES"))
         shutil.rmtree(ctl, ignore_errors=True)
 
@@ -348,7 +348,7 @@ def run(work: Path, names: list[str], exe: str, log: Log) -> None:
         rec = mission["record"] or {}
         prov = rec.get("provider") or {}
         log(name, "live-mission", **mission, cost_usd=prov.get("cost_usd"), cost_status=prov.get("cost_status"))
-        mid, verdict = rec.get("id"), rec.get("effective_verdict", rec.get("verdict"))
+        mid, verdict = rec.get("id"), observed_verdict(rec)
         diff = rec.get("diff") or ""
         if mid and diff:
             oracle(work, name, d, repo, check, diff, tag, verdict, log)
@@ -373,6 +373,22 @@ def run(work: Path, names: list[str], exe: str, log: Log) -> None:
         sessions_without_observed_cost=unknown, total_status="UNKNOWN" if unknown else "OBSERVED",
         cost_statuses=sorted({str(r.get("cost_status")) for r in spent}),
         timed_out=[r["defect"] for r in spent if r.get("timed_out")])
+
+
+IMAGE_UNCHECKED = "container image freshness was not checked by this read-only command"
+
+
+def observed_verdict(rec: dict) -> str | None:
+    """The mission's verdict as observed (amendment, 2026-11-03, before any session): a run in a container always
+    reads freshness `not checked` (a read-only command cannot check the image), so its effective verdict is
+    INCONCLUSIVE even when it completed and passed. When that is the only open point, the passport verdict is the
+    observation (repo-ai 0.12.1's own `image_only_pass` rule, which `apply` also uses)."""
+    effective = rec.get("effective_verdict", rec.get("verdict"))
+    passport = (rec.get("passport") or {}).get("verdict")
+    if (effective == "INCONCLUSIVE" and rec.get("state") == "COMPLETE" and rec.get("freshness") == "not checked"
+            and rec.get("freshness_reasons") == [IMAGE_UNCHECKED] and passport in ("PASS", "FAIL")):
+        return rec.get("standing") or passport if passport == "PASS" else passport
+    return effective
 
 
 def oracle(work: Path, name: str, d: dict, repo: Path, check: dict, diff: str, tag: str, verdict: str | None,
@@ -446,7 +462,7 @@ def recovery(work: Path, exe: str, log: Log) -> None:
                       "--allow-write", target, "--sandbox", "podman", "--image", "localhost/journey-no-pytest:1",
                       "--json")
     rec = res["record"] or {}
-    log(name, "failure-recovery", **res, verdict=rec.get("effective_verdict", rec.get("verdict")),
+    log(name, "failure-recovery", **res, verdict=observed_verdict(rec),
         reasons=rec.get("reasons"), recovery=rec.get("recovery"))
 
 
