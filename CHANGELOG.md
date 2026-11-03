@@ -17,6 +17,11 @@
   `--max-cost-usd` split among the capped arms leaves any under $0.0001 is refused up front with the total needed
   (before, each arm was refused when it ran). A continuation refused for a ceiling under $0.0001 now says which
   ceiling.
+- A mission with provider roles (`--role investigator/adversary`) that fails now records what the roles spent
+  (`spend`), as a completed one did, and a handoff continuation counts that total, not only the implementer's cost,
+  against the remaining budget (also for a role mission that ended with partial progress). A continuation is now
+  also refused ("prior live cost is UNKNOWN") when a role's cost was UNKNOWN under a ceiling, and its provenance
+  records the role-inclusive `prior_cost_usd` (none when any part is UNKNOWN).
 - Tournament differences and `repo-ai shortlist` now compare file by file: two passing candidates whose changed files
   are each byte-identical or have the same Python syntax tree are COSMETIC (and shortlisted as the same code), so an
   identical non-Python change, or an identical file with a coding cookie, no longer makes a formatting-only Python
