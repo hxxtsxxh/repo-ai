@@ -31,3 +31,34 @@ The owner asked the agent to build the corpus. The agent's briefing of an author
 (the second stop on this task); following the rule above it was not retried, reworded or handed to another agent,
 and the partly launched author wrote nothing. The unblock is unchanged: a person-written corpus, or an external,
 legitimately published benchmark, run once on CI (attack-like fixtures are never written on the development host).
+
+## Status (2026-11-02): ready for an independent person (deviations declared before any v2 case exists)
+
+The protocol above is kept verbatim. These deviations were declared before any v2 case existed:
+
+- **Author:** a person, not an agent ([AUTHOR-BRIEF.md](AUTHOR-BRIEF.md)). Eligibility: no prior exposure to repo-ai's
+  vetting code, tests, security or skills documentation, changelog, earlier corpora or results; the maintainer is not
+  eligible. While writing, the author reads only the brief and public Claude Code documentation (a stricter form of
+  the do-not-read rule above). The brief carries v1's corpus section (strata, counts, harm kinds, defanging) and the
+  layouts, nothing about v1's outcome or the fix.
+- **Delivery:** the layout `run.py` loads (`labels.json` with `{"cases": [...]}`, `corpus/<id>/`), neutral ids,
+  `AUTHOR.md` (provenance and prior exposure) and a `MANIFEST.sha256` over all of them, delivered as a pull request
+  from the author's own account. [validate_corpus.py](validate_corpus.py) checks a delivery on CI (`skill-vet-v2`
+  workflow, `validate` job): only the delivery's paths changed, structure, counts, labels, manifest, defanged hosts in
+  harmful cases (`example.com` or `.invalid`, as v1). It never runs the vetter.
+- **System under test:** the commit that added this file (`111d519`) is superseded because the vetter changed since
+  (later security fixes). It is frozen instead in [SUT.json](SUT.json): the git tree of `src/repo_ai` (the vetter,
+  `skills vet` and every helper they import), `pyproject.toml`, the harness, the validator and
+  [constraints.txt](constraints.txt) (the one runtime dependency pinned). The **freeze commit** is the commit that adds
+  `SUT.json`, named in the next status entry. The maintainer creates `skill-vet-v2/delivery` from it; the author's
+  pull request targets that branch. The run job (`sut.py --check FREEZE`) refuses if any frozen object differs or
+  anything but the delivery changed since the freeze commit.
+- **Run:** once, by hand (`skill-vet-v2` workflow, `run` job, `workflow_dispatch` with the freeze commit), refused when
+  `results/run-1.json` exists and serialised by a concurrency group; every dispatched run is reported, whatever its
+  outcome (the Actions history lists them). Gates G1–G4, reports R1–R4 and the decision rule above are unchanged.
+
+Nothing in this directory was written as a case, and no case will be written by the maintainer's agent.
+
+## Status (2026-11-02): frozen
+
+Freeze commit `8f6ae0ac7b287e287b0fbb6df7d7fb08ec260e62` (adds SUT.json). Branch `skill-vet-v2/delivery` was created at it for the author's pull request.
