@@ -413,14 +413,15 @@
     "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)",
     "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 (5 detected as regression, 2 refused; small sample, ~35% 95% bound); J2 fix 3/6 as selected-passed (pyjwt jwks tests pre-existing, likely network; more-itertools no trusted test command, likely an 'unknown' framework); J3 uninstall left no tracked or untracked difference 7/7; deviation: one clone per project, not fresh",
     "2026-11-01 #51: `from unittest import TestCase` marks a unittest suite (more-itertools gap from journey-offline-v2 closed; confirmed on real commits by CI diagnose)",
-    "2026-11-02: owner approved journey-live-v1 (4 MIT upstream defects, project code only in podman, at most 4 Claude sessions, $4.00); `do --sandbox podman --image` added so missions keep project code off the host; preregistration, harness and no-model preparation committed (all 4 defects qualify in their containers); a no-model check showed verify in podman sees pytest-9 subtest failures"
+    "2026-11-02: owner approved journey-live-v1 (4 MIT upstream defects, project code only in podman, at most 4 Claude sessions, $4.00); `do --sandbox podman --image` added so missions keep project code off the host; preregistration, harness and no-model preparation committed (all 4 defects qualify in their containers); a no-model check showed verify in podman sees pytest-9 subtest failures",
+    "2026-11-03 journey-live-v1 (benchmarks/journey-live-v1/RESULTS.md; amendment 3 before any session): repo-ai 0.12.1 from PyPI, Claude Code 2.1.317 on the dedicated login, project code only in podman. Controls: 3 of 4 (marshmallow INCONCLUSIVE, unstable observation; no session). Zero-provider onboarding found the frozen regressions on all three. Live: pyjwt PASS (native frozen ok, hidden upstream oracle no behavioural difference, apply/undo exact); humanize BLOCKED by a repo-ai defect (copied version file blamed on the provider); more-itertools BLOCKED by a repo-ai defect (64 KB capture killed the run, cost UNKNOWN); both fixed in #125. Gates L1, L3, L4, L5: 0; L6: 3 sessions, $0.0875 + one UNKNOWN (capped $1.00)"
    ],
    "limits": [
     "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
     "two repositories; on the published build, one live run (Claude, python-humanize)"
    ],
-   "next_action": "run journey-live-v1 from the 0.12.0 release once the owner's dedicated Claude login exists"
+   "next_action": "re-run the two sessions repo-ai blocked, on a build with #125, with a new approval; investigate the marshmallow control's unstable observation"
   },
   {
    "id": "C22",

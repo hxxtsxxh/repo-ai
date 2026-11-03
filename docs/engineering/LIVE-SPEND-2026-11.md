@@ -34,3 +34,6 @@ shown first. Unknown provider cost stays UNKNOWN, never $0. Approved that day (n
 
 Claude Code checks `--max-budget-usd` between turns, so a last turn can overshoot a cap; the reported cost is recorded
 as is. All three wait for the owner's dedicated Claude login; C13 and C21 also run from the 0.12.0 release.
+| 2026-11-03 | C21 journey-live-v1 humanize | Claude Code | $0.040707 OBSERVED (cap $1.00) |
+| 2026-11-03 | C21 journey-live-v1 more-itertools | Claude Code | UNKNOWN (killed at the capture limit; cap $1.00) |
+| 2026-11-03 | C21 journey-live-v1 pyjwt | Claude Code | $0.046787 OBSERVED (cap $1.00) |
