@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `--agent auto` (and `agents route`) at the default `--max-cost-usd 0` no longer selects a provider whose CLI enforces
+  a USD ceiling (Claude Code, Bob): it was then refused for the missing ceiling. Routing skips it with the reason
+  ("pass --max-cost-usd > 0 to use it") and picks the next eligible provider (Codex, cost UNKNOWN); when it was the
+  only candidate, the `NO_AGENT` message names `--max-cost-usd`. This resolves the 0.12.0 known limitation.
+
 ## 0.12.0 — missions in containers, Claude never started uncapped, routing journey, tournament differences, security lows
 
 - A provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without one. `run_provider`
