@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Security (Linux, opt-in): with `REPO_AI_LINUX_EGRESS_PROXY=1`, a live Claude, Codex or Bob run gets its own
+  network namespace, so host abstract unix sockets (X11/Xwayland, D-Bus) and services on the host's network,
+  loopback included, are out of reach. The provider reaches the internet only through a proxy in the repo-ai
+  process: HTTPS `CONNECT` to port 443, by host name, to addresses that are all public (no loopback, private,
+  link-local, CGNAT or cloud-metadata address), connecting to the address it checked. A forwarder inside the sandbox
+  (run with the system python3) bridges the sandbox's own loopback to the proxy and sets HTTPS_PROXY for the provider;
+  a provider that ignores HTTPS_PROXY cannot reach the network (fails closed). Verified in CI with curl as the
+  provider; not live-verified with the real CLIs, so it is off by default.
 - `repo-ai coverage` lists, per requirement, the changed lines that ran while its own tests ran (pytest missions
   run with a frozen `--requirements` declaration), plus the changed lines run only during undeclared tests and those
   run outside any test (import, collection). When a declaration is frozen, the mission's change-exercise

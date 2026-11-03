@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from ..security import redact_text, source_contains_secret
-from . import claude_auth, codex_broker, opencode_cfg
+from . import claude_auth, codex_broker, egress, opencode_cfg
 from .acp import AcpClient, AcpResult
 from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _bwrap_binds_fds, _capture, _close_all, _has_socket,
                         _hidden_dirs, _homes, _identity, _inside, _pin, _PinnedPrefix, _probe_env, _repo_owned,
@@ -548,11 +548,13 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                               claude_plan: claude_auth.ClaudeAuthPlan | None = None,
                               run_marker: str | None = None,
                               codex_broker_at: tuple[int, Path] | None = None,
-                              dry_run: bool = False) -> list[str] | None:
+                              dry_run: bool = False, own_network: bool = False) -> list[str] | None:
     """Restrict writes strictly to the disposable candidate workspace and scratch dir (plus, for a live Claude
     run with a dedicated login, that login's own state; see ``claude_auth``). `codex_broker_at` (the credential
     broker's port, the login directory): Codex may reach that one loopback port and can never read the login.
-    `dry_run`: only whether a sandbox can be built (routing): starts no process and pins nothing."""
+    `dry_run`: only whether a sandbox can be built (routing): starts no process and pins nothing. `own_network` (Linux,
+    a live run with the egress proxy, `egress.py`): the sandbox gets its own network namespace; the provider reaches
+    the internet only through the proxy's unix socket in `scratch`."""
     claude_live = provider == "claude" and live
     if claude_live:
         claude_plan = claude_plan or claude_auth.plan()
@@ -623,7 +625,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
         bwrap = shutil.which("bwrap", path=os.defpath)
         if bwrap:
             cmd = [bwrap]
-            if not allow_network:
+            if not allow_network or own_network:
                 cmd.append("--unshare-net")
             cmd.extend([
                 "--die-with-parent",
@@ -1132,6 +1134,7 @@ def _acp_run_result(provider: str, run: AcpResult, *, resolved: Path, identity: 
     }
 
 
+EGRESS_PROVIDERS = ("claude", "codex", "bob")  # the Linux live providers whose sandbox can take the egress proxy
 MIN_CEILING_USD = 0.0001  # the ceiling flags carry four decimals; below this they would print as 0
 
 
@@ -1279,6 +1282,7 @@ def run_provider(
 
     bounded_timeout = provider_timeout(timeout, simulated)
     broker_summary: dict[str, Any] | None = None
+    egress_summary: dict[str, Any] | None = None
     with tempfile.TemporaryDirectory(prefix=f"repo-ai-provider-run-{provider}-") as directory, \
             contextlib.ExitStack() as stack:
         scratch = Path(directory).resolve()
@@ -1292,9 +1296,22 @@ def run_provider(
             _seed_live_provider_auth(provider, scratch / "home")
         from .. import sandbox as _sandbox
         run_marker = _sandbox._procs.PREFIX + uuid.uuid4().hex if sys.platform == "darwin" else None
+        egress_on = (live_run and sys.platform.startswith("linux") and egress.enabled()
+                     and provider in EGRESS_PROVIDERS)
+        egress_python = egress.system_python() if egress_on else None
+        if egress_on and egress_python is None:
+            return {"provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
+                    "returncode": -1, "capture_status": "no_sandbox", "identity_sha256": identity_before,
+                    "cost_usd": 0.0, "cost_status": "UNKNOWN", "events": {},
+                    "reasons": [f"{egress.ENV_FLAG}=1 needs a system python3 (/usr/bin/python3 or /usr/local/bin/python3) "
+                                "to run the egress forwarder inside the sandbox; none found, so the run was refused"]}
+        proxy = stack.enter_context(egress.EgressProxy(scratch / "egress.sock")) if egress_on else None
+        if proxy is not None:
+            shutil.copy2(egress.FORWARDER, scratch / "egress_forwarder.py")
         prefix = _execution_sandbox_prefix(workspace, scratch, allow_network=live_run, provider=provider, live=live_run,
                                            executable=resolved, claude_plan=claude_plan, run_marker=run_marker,
-                                           codex_broker_at=(broker.port, brokered[2]) if broker and brokered else None)
+                                           codex_broker_at=(broker.port, brokered[2]) if broker and brokered else None,
+                                           own_network=proxy is not None)
         if prefix is None:
             return {
                 "provider": provider,
@@ -1380,20 +1397,24 @@ def run_provider(
         limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
         acp_run: AcpResult | None = None
         result: ProbeResult | None = None
+        # with the egress proxy, the forwarder (system python, inside the sandbox) is the provider's parent
+        run_argv = ([str(egress_python), "-I", str(scratch / "egress_forwarder.py"), str(scratch / "egress.sock"),
+                     "--", *argv] if proxy is not None and egress_python is not None else argv)
         try:
             if contract.event_format == ACP_EVENT_FORMAT:
                 # the ACP client is the parent, outside the sandbox; the agent process runs inside the same prefix.
                 # Its own file edits are not trusted: validate_workspace_edits checks the workspace afterwards.
-                acp_run = AcpClient([*prefix, *argv], workspace, allowed_writes=list(write_paths), env=env,
+                acp_run = AcpClient([*prefix, *run_argv], workspace, allowed_writes=list(write_paths), env=env,
                                     cwd=workspace, pass_fds=pinned_fds(prefix)).run(acp_prompt(effective_prompt),
                                                                                     bounded_timeout)
             else:
-                result = _capture([*prefix, *argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
+                result = _capture([*prefix, *run_argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
                                   separate_stderr=True, pass_fds=pinned_fds(prefix),
                                   max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
         finally:  # also on an exception or Ctrl-C: setsid'd descendants are not in the process group
             cleanup_problems = _reap_provider_run(run_marker) if is_seatbelt else []
             broker_summary = broker.summary() if broker is not None else None
+            egress_summary = proxy.summary() if proxy is not None else None
         try:
             unchanged = raw.resolve(strict=True) == resolved and _identity(resolved) == identity_before
         except (OSError, RuntimeError, ValueError):
@@ -1476,6 +1497,7 @@ def run_provider(
         "stderr_bytes": len(result.stderr),
         "diagnostic_summary": redact_text(diagnostic)[:240],
         **({"codex_broker": broker_summary} if broker_summary is not None else {}),
+        **({"egress_proxy": egress_summary} if egress_summary is not None else {}),
         "cost_usd": events["cost_usd"],
         "cost_status": events.get("cost_status", "UNKNOWN"),
         "rate_limited": bool(events.get("rate_limited")),
