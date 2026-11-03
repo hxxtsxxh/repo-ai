@@ -140,6 +140,7 @@ class Journey:
         data = data or {}
         prov = data.get("provider") or {}
         return self.log(sc, step, exit=code, mission_id=data.get("id"),
+                        ceiling=(data.get("contract") or {}).get("max_cost_usd"),
                         verdict=data.get("effective_verdict", data.get("verdict")),
                         decision=data.get("decision"), contract_provider=(data.get("contract") or {}).get("provider"),
                         provider={k: prov.get(k) for k in ("name", "stage", "rate_limited", "cost_usd", "cost_status",
@@ -194,13 +195,13 @@ class Journey:
 
         repo, env = self.fixture("Q1-quota", {"claude": stub("limited"), "codex": CODEX_STUB}, token=True)
         self.route("Q1-quota", repo, env)
-        self.mission("Q1-quota", repo, env)
+        self.mission("Q1-quota", repo, env, "auto", "--max-cost-usd", "0.5")
         self.route("Q1-quota", repo, env, step="route-after-rate-limit")
         # Q2: under a USD ceiling, the uncapped provider is no fallback
         self.route("Q2-ceiling-blocks-fallback", repo, env, "--max-cost-usd", "0.5", step="route-with-usd-ceiling")
         self.mission("Q2-ceiling-blocks-fallback", repo, env, "auto", "--max-cost-usd", "0.5")
         self.mission("F1-fallback", repo, env)  # the next run without a ceiling: codex is selected
-        self.mission("A1-explicit-while-cooling", repo, env, "claude")
+        self.mission("A1-explicit-while-cooling", repo, env, "claude", "--max-cost-usd", "0.5")
         path, pol = self.policy(repo)
         self.log("C1-cooldown-expiry", "policy-before", cooldown=pol.get("cooldown"), observations=pol.get("observations"))
         for name in list(pol.get("cooldown", {})):
@@ -300,9 +301,14 @@ def evaluate(work: Path) -> dict:
     # G3: no run of a provider without an enforceable ceiling reports an observed cost
     g3 = [f"{r['scenario']} {r['step']}" for r in rows if "mission" in r["step"]
           and (r.get("provider") or {}).get("name") == "codex" and r["provider"].get("cost_status") == "OBSERVED"]
+    # G4 (amendment 2): a ceiling-enforcing provider (claude) was started without a usable ceiling
+    started_claude = [r for r in rows if "mission" in r["step"] and (r.get("provider") or {}).get("name") == "claude"
+                      and (r.get("provider") or {}).get("capture_status") != "no_cost_ceiling"]
+    g4 = [f"{r['scenario']} {r['step']}" for r in started_claude if "ceiling" in r and float(r["ceiling"] or 0) < 0.0001]
+    g4_unrecorded = [f"{r['scenario']} {r['step']}" for r in started_claude if "ceiling" not in r]
     summary = {"G1_expected": sum(1 for v in results.values() if v), "G1_total": len(results),
                "G1_failed": sorted(k for k, v in results.items() if v is not True), "G2_violations": g2,
-               "G3_violations": g3}
+               "G3_violations": g3, "G4_uncapped_starts": g4, "G4_ceiling_not_recorded": g4_unrecorded}
     (work / "evaluation.json").write_text(json.dumps({"summary": summary, "checks": results}, indent=1, sort_keys=True))
     print(json.dumps(summary, indent=1))
     return summary
@@ -317,7 +323,7 @@ def main() -> int:
     Journey(args.work.resolve(), [sys.executable, "-m", "repo_ai"], args.python).run_all()
     summary = evaluate(args.work.resolve())
     return 0 if summary["G1_expected"] == summary["G1_total"] and not summary["G2_violations"] \
-        and not summary["G3_violations"] else 1
+        and not summary["G3_violations"] and not summary["G4_uncapped_starts"] else 1
 
 
 if __name__ == "__main__":
