@@ -9,10 +9,10 @@
     "command": "repo-ai",
     "requires_python": ">=3.10"
   },
-  "site_version": "0.12.0",
+  "site_version": "0.12.1",
   "release": {
-    "tag": "v0.12.0",
-    "url": "https://github.com/hxxtsxxh/repo-ai/releases/tag/v0.12.0"
+    "tag": "v0.12.1",
+    "url": "https://github.com/hxxtsxxh/repo-ai/releases/tag/v0.12.1"
   },
   "repository": {
     "url": "https://github.com/hxxtsxxh/repo-ai",
@@ -22,12 +22,12 @@
   "pypi": {
     "published": true,
     "distribution": "repo-ai-cli",
-    "version": "0.12.0",
-    "url": "https://pypi.org/project/repo-ai-cli/0.12.0/",
-    "verified_at": "2026-11-03T04:07:21Z",
-    "wheel": "repo_ai_cli-0.12.0-py3-none-any.whl",
-    "wheel_sha256": "3ad4f498c31b1aacf9f5ddea0e137a5e9d0c8b59972e0288bd7e034a24f38ec0",
-    "sdist_sha256": "154096236e7c58c8833bbd734950da6e836db77b32e7255084b145aba5aa8ccf"
+    "version": "0.12.1",
+    "url": "https://pypi.org/project/repo-ai-cli/0.12.1/",
+    "verified_at": "2026-11-03T17:08:37Z",
+    "wheel": "repo_ai_cli-0.12.1-py3-none-any.whl",
+    "wheel_sha256": "c752612facefe82630a24036f422384a23945655df1c3559279cc8e7c53a9dcf",
+    "sdist_sha256": "4fc70dc1fd63b44885698694bac9001ec0a9146041be7a76c1519f151c22c20b"
   },
   "evidence": {
     "updated": "2026-11-01",

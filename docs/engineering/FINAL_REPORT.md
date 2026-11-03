@@ -1,6 +1,6 @@
 # Omniprovider mission — report
 
-Status: **0.12.0 publicly shipped and verified (2026-11-03 UTC)**. **0.12.1 is merged with green CI (#117 at `ecfdc8e`) and waits only for the owner to push its tag** (the agent's tag push was refused by the session's permission check, as a public action); the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.1 publicly shipped and verified (2026-11-03 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
@@ -8,7 +8,16 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 
 ## Current state (2026-11-03 UTC)
 
-### Release 0.12.1 (merged, not yet tagged)
+### Release 0.12.1 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.1` at `ecfdc8e` (#117), pushed with the owner's approval on 2026-11-03; release run 41680549675 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release) |
+| Wheel | `repo_ai_cli-0.12.1-py3-none-any.whl` sha256 `c752612facefe82630a24036f422384a23945655df1c3559279cc8e7c53a9dcf` |
+| sdist | `repo_ai_cli-0.12.1.tar.gz` sha256 `4fc70dc1fd63b44885698694bac9001ec0a9146041be7a76c1519f151c22c20b` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | SLSA v1 attestations verified for both, source `refs/tags/v0.12.1`, signer `release.yml@refs/tags/v0.12.1` |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.1`; `verify --run` caught a regression (exit 1); `agents route` with no provider: `NO_AGENT`, offline |
 
 Contents (each code PR: independent review rounds and a full CI run):
 - #111 `--agent auto` never routes to a ceiling-enforcing provider without `--max-cost-usd` (routing-journey-v1
@@ -19,10 +28,6 @@ Contents (each code PR: independent review rounds and a full CI run):
 - #114 role spend recorded on failure and counted by continuations.
 - #116 pre-release review fixes, including a 0.12.0 bug: missions run in a container could never be applied.
 - #115 docs. The release review of everything since v0.12.0 found nothing blocking.
-
-To publish: `git tag -a v0.12.1 -m "repo-ai 0.12.1" ecfdc8efaa8a533aa7098094c5125ac5f221db34 && git push origin
-refs/tags/v0.12.1` (the release workflow builds, smoke-tests and publishes); then verify PyPI = GitHub = local build =
-wheel from the sdist, SLSA provenance, a fresh install, the live site, and record it here.
 
 ### Merged after 0.12.1 (unreleased)
 
@@ -37,12 +42,11 @@ wheel from the sdist, SLSA provenance, a fresh install, the live site, and recor
 
 ### Blocked on the owner or other people
 
-- Tag push for 0.12.1 (above).
 - C13, C21, C12 live studies (approved): the dedicated Claude login
   `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login` does not exist yet.
 - C08: an eligible author per `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`. C14: three independent authors.
 
-Resume directive: verify the public state (tags, PyPI, site), publish/verify 0.12.1 if its tag exists, run the
+Resume directive: verify the public state (tags, PyPI, site), run the
 approved C13 → C21 → C12 sessions if the dedicated login exists, else continue the queue (C18 egress default after a
 live check, C16 only with a new idea).
 
