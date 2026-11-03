@@ -136,7 +136,7 @@ def _emit(value: dict[str, Any], args) -> None:
 
 
 def cmd_do(args) -> int:
-    from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, plan
+    from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, image_only_pass, plan
     if args.run and args.dry_run:
         raise ValueError('--run and --dry-run are mutually exclusive')
     if getattr(args, 'requirements', None) and (args.resume or getattr(args, 'from_handoff', None)
@@ -169,16 +169,10 @@ def cmd_do(args) -> int:
             sandbox=getattr(args, 'sandbox', None),
             image=getattr(args, 'image', None),
         )
-        if getattr(args, 'apply', False) and value.get('effective_verdict') == 'PASS':
-            apply_res = apply_mission(root, value['id'])
-            value['applied_to_source'] = apply_res['applied_to_source']
-            value['apply_result'] = apply_res
-            if value.get('provider') and apply_res.get('provider_verification_label'):
-                value['provider']['verification_label'] = apply_res['provider_verification_label']
-            if value.get('provider') and apply_res.get('provider_verification_label'):
-                value['provider']['verification_label'] = apply_res['provider_verification_label']
+        if getattr(args, 'apply', False) and (value.get('effective_verdict') == 'PASS' or image_only_pass(value)):
+            _record_apply(value, apply_mission(root, value['id']))
         _emit(value, args)
-        return 0 if value.get('effective_verdict') == 'PASS' else 2
+        return 0 if value.get('effective_verdict') == 'PASS' or 'apply_result' in value else 2
 
     if not args.task:
         raise ValueError('supply an outcome, --from-handoff FILE, or --resume ID')
@@ -226,6 +220,9 @@ def cmd_do(args) -> int:
             )
         elif allow_live and value['contract']['provider'] in LIVE_PROVIDERS:
             _require_ceiling(value['contract']['provider'], args.max_cost_usd, value.get('provider_route'), root)
+            route_why = (value.get('provider_route') or {}).get('why') or ''
+            if args.agent == 'auto' and '; skipped ' in route_why:  # say so before a provider starts (stderr: JSON-safe)
+                print('repo-ai: routed to ' + route_why, file=sys.stderr)
             value = execute(root, value, None, allow_live=True)
         elif allow_live and args.agent == 'auto' and value.get('provider_route'):
             route = value['provider_route']
@@ -244,20 +241,30 @@ def cmd_do(args) -> int:
             raise ValueError(f"mission {value.get('id')} was already recorded without this declaration, so "
                              '--requirements was not frozen; `repo-ai coverage ID --requirements FILE` assesses it '
                              'as supplied after the run')
-        if getattr(args, 'apply', False) and value.get('effective_verdict', value.get('verdict')) == 'PASS':
+        if getattr(args, 'apply', False) and (value.get('effective_verdict', value.get('verdict')) == 'PASS'
+                                              or image_only_pass(value)):
             target_id = value.get('winner') if value.get('schema') == 'repo-ai.candidate-comparison/1' else value.get('id')
             if target_id:
-                apply_res = apply_mission(root, target_id)
-                value['applied_to_source'] = apply_res['applied_to_source']
-                value['apply_result'] = apply_res
-                if value.get('provider') and apply_res.get('provider_verification_label'):
-                    value['provider']['verification_label'] = apply_res['provider_verification_label']
+                _record_apply(value, apply_mission(root, target_id))
     _emit(value, args)
-    return 0 if not args.run or value.get('effective_verdict', value.get('verdict')) == 'PASS' else 2
+    passed = value.get('effective_verdict', value.get('verdict')) == 'PASS' or 'apply_result' in value
+    return 0 if not args.run or passed else 2
+
+
+def _record_apply(value: dict, apply_res: dict) -> None:
+    """An apply made by this command (its post-apply verification passed): recorded on the emitted value, whose
+    recovery no longer points to `repo-ai apply`."""
+    value['applied_to_source'] = apply_res['applied_to_source']
+    value['apply_result'] = apply_res
+    if value.get('provider') and apply_res.get('provider_verification_label'):
+        value['provider']['verification_label'] = apply_res['provider_verification_label']
+    if isinstance(value.get('recovery'), dict):
+        value['recovery'] = {**value['recovery'], 'category': 'none', 'recoverable': False,
+                             'action': 'none; applied, and the post-apply verification passed'}
 
 
 def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = None, root: Path | None = None) -> None:
-    """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorises no spend,
+    """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorizes no spend for it,
     and an uncapped run would spend first and be refused afterwards (`run_provider` also stops it)."""
     from ..providers.adapters import MIN_CEILING_USD, contract_for
     if contract_for(provider).enforces_hard_usd_budget and max_cost_usd < MIN_CEILING_USD:
@@ -271,7 +278,8 @@ def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = No
                   if r.get('eligible') and not r.get('hard_usd_budget') and r['provider'] != provider]
         hint = f", or choose a provider whose cost is UNKNOWN instead (--agent {others[0]})" if others else ''
         raise ValueError(f'{provider} enforces a USD ceiling: give --max-cost-usd > 0{hint} (the default 0 '
-                         'authorizes no spend; without a ceiling the run would start uncapped and its result be '
+                         'authorizes no spend for such a provider; without a ceiling the run would start uncapped and '
+                         'its result be '
                          'refused afterwards)')
 
 

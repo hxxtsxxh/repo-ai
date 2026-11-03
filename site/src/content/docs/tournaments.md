@@ -62,9 +62,14 @@ The table shows, per passing candidate: files touched, lines added and removed, 
 files only that candidate touches. For Python changes it also rebuilds each candidate's files from the base commit
 and compares their syntax trees: candidates that differ only in comments, formatting or layout are reported as
 **the same code**, so you know the choice does not change behaviour (docstrings and other literals still count as
-differences; non-Python files get no such claim). With `--policy smallest-diff` it marks one candidate as `POLICY_PREFERENCE`. That
+differences). From 0.12.1 this is decided file by file: a non-Python file, or a Python file with a coding cookie or
+that does not parse, must be byte-identical; `repo-ai compare` uses the same rule. With `--policy smallest-diff` it marks one candidate as `POLICY_PREFERENCE`. That
 is a **tie rule you chose, not a correctness judgement**; a tie yields no preference. `shortlist` declines when the
-comparison is uncontrolled or stale, and it applies nothing.
+comparison is uncontrolled or stale, and it applies nothing. A stale comparison (`repo-ai compare ID`, after HEAD
+moved or its evidence changed) no longer repeats its recorded next step: it says to run the tournament again and
+keeps the old step as `recorded_next_step`. A tournament run in a container reads `not checked` instead (a read-only
+command cannot check the image): its recorded step is shown with that caveat, and `repo-ai apply CANDIDATE_ID`
+re-runs the tests in the same image before keeping the change.
 
 Each candidate stays individually applicable:
 

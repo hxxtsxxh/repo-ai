@@ -78,7 +78,7 @@ def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths:
                          'to cap only the providers that enforce it')
     if not executables and enforcing and max_cost_usd <= 0:
         raise ValueError(f"{', '.join(enforcing)} enforce{'s' if len(enforcing) == 1 else ''} a USD ceiling: give "
-                         '--max-cost-usd > 0 (the default 0 authorizes no spend; without a ceiling the arm would start '
+                         '--max-cost-usd > 0 (the default 0 authorizes no spend for such a provider; without a ceiling the arm would start '
                          'uncapped and its result be refused afterwards)')
     capped = enforcing if allow_unknown_cost else names
     per_arm_usd = round(max_cost_usd / len(capped), 6) if max_cost_usd > 0 and capped else 0.0
