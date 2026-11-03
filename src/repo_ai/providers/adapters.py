@@ -646,7 +646,7 @@ def _execution_sandbox_prefix(workspace: Path, scratch: Path, *, allow_network: 
                     roots = [*_codex_install_roots(executable), *node]
                 else:
                     if executable is None:
-                        located = shutil.which(provider)
+                        located = shutil.which(provider or "")
                         executable = Path(located) if located else None
                     roots = [*(claude_auth._install_roots(executable) if executable is not None else []), *node]
                 from ..registry import registry_home
