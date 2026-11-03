@@ -1221,6 +1221,15 @@ def partial_progress(state: dict[str, Any]) -> dict[str, Any] | None:
 IMAGE_UNCHECKED = 'container image freshness was not checked by this read-only command'
 
 
+def image_only_pass(state: dict[str, Any]) -> bool:
+    """A complete mission whose tests passed and whose evidence is not checked only because a read-only command
+    cannot check its container image (the image is pinned by digest in the record; `apply` re-runs the tests in it).
+    Its effective verdict stays INCONCLUSIVE; this is the one case `apply`, `do --apply` and a tournament arm accept."""
+    return (state.get('state') == 'COMPLETE' and state.get('freshness') == 'not checked'
+            and state.get('freshness_reasons') == [IMAGE_UNCHECKED]
+            and (state.get('passport') or {}).get('verdict') == 'PASS')
+
+
 def stale_comparison_step(comparison: dict[str, Any], freshness: str) -> dict[str, Any]:
     """A comparison that is no longer fresh never repeats the next step recorded for its old evidence (e.g. "apply
     the winner"): it keeps it as `recorded_next_step` and says to run the tournament again."""
@@ -1245,6 +1254,11 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
     verdict = state.get('effective_verdict') or (state.get('passport') or {}).get('verdict', 'BLOCKED')
     if state.get('state') == 'COMPLETE' and verdict == 'PASS':
         return {'category': 'none', 'recoverable': False, 'action': 'none; mission passed verification', 'reasons': []}
+    if image_only_pass(state):
+        return {'category': 'none', 'recoverable': False,
+                'action': ('the tests passed in a container whose image a read-only command cannot check; '
+                           f"`repo-ai apply {state.get('id', 'ID')}` re-runs them in that image before keeping the "
+                           'change'), 'reasons': [IMAGE_UNCHECKED]}
 
     negatives = [str(x) for x in (state.get('passport') or {}).get('negative', [])]
     joined = ' | '.join(negatives).lower()
@@ -1605,12 +1619,18 @@ def _continue_verified_handoff(
         from ..providers.adapters import MIN_CEILING_USD, contract_for
         if contract_for(target_agent).enforces_hard_usd_budget and eff_cost < MIN_CEILING_USD:
             # refused before the continuation is claimed: the capsule stays usable
-            raise ValueError(f'{target_agent} enforces a USD ceiling and no budget remains from the original mission: '
-                             + (f'${remaining_cost:.6f} is left, under the smallest ceiling the CLI can enforce, so '
-                                'create a newly approved plan' if prior_live and remaining_cost > 0 else
-                                'its live cost cannot establish one, so create a newly approved plan' if prior_live
-                                else 'give --max-cost-usd > 0 for the continuation')
-                             + '; the capsule is still unused')
+            if max_cost_usd is not None and 0 < max_cost_usd < MIN_CEILING_USD:
+                why = (f'--max-cost-usd {max_cost_usd:g} is under the smallest ceiling the CLI can enforce '
+                       f'(${MIN_CEILING_USD:g})')
+            elif prior_live and remaining_cost > 0:
+                why = (f'only ${remaining_cost:.6f} of the original budget is left, under the smallest ceiling the '
+                       'CLI can enforce; create a newly approved plan')
+            elif prior_live:
+                why = ('no budget remains from the original mission and its live cost cannot establish one; '
+                       'create a newly approved plan')
+            else:
+                why = 'no budget remains from the original mission: give --max-cost-usd > 0 for the continuation'
+            raise ValueError(f'{target_agent} enforces a USD ceiling: {why}; the capsule is still unused')
 
     if allow_live and target_agent in LIVE_PROVIDERS and (cooling := cooldown_until(root, target_agent)):
         # refused before the continuation is claimed: the capsule stays usable once the cooldown has passed
