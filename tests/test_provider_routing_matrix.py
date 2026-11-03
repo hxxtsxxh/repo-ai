@@ -53,10 +53,13 @@ def _setup(monkeypatch, states: dict[str, dict], authorized: list[str]):
 
 def _expected_capable(name: str, s: dict, max_cost: float) -> bool:
     over_budget = max_cost > 0 and not contract_for(name).enforces_hard_usd_budget
+    # a provider whose CLI enforces a ceiling is never routed to without a usable one (it would be refused unstarted)
+    no_ceiling = contract_for(name).enforces_hard_usd_budget and max_cost < adapters.MIN_CEILING_USD
     # an observation that expired or was recorded for another binary does not count; an expired cooldown neither
     obs = s["obs"] if s["fresh"] == "fresh" else None
     return (s["installed"] and s["isolated"] and not s["setup"] and s["cooldown"] != "active"
-            and obs not in {"USAGE_LIMITED", "ACCOUNT_INELIGIBLE", "AUTHORIZED_BUT_UNREADY"} and not over_budget)
+            and obs not in {"USAGE_LIMITED", "ACCOUNT_INELIGIBLE", "AUTHORIZED_BUT_UNREADY"} and not over_budget
+            and not no_ceiling)
 
 
 # Providers with no tested live containment anywhere but macOS seatbelt (checked against the adapter below).
@@ -181,7 +184,9 @@ def test_the_first_eligible_provider_in_order_is_selected(tmp_path, monkeypatch)
         states = {n: (blocked if i < first_ok else ready) for i, n in enumerate(order)}
         profiles = _setup(monkeypatch, states, list(states))
         d = registry.route(tmp_path, now=NOW, profiles=profiles)
-        assert d["outcome"] == "SELECTED" and d["selected"] == order[first_ok]
+        # at the default $0 a provider whose CLI enforces a ceiling is skipped: the next ready one in order runs
+        want = next(n for n in order[first_ok:] if not contract_for(n).enforces_hard_usd_budget)
+        assert d["outcome"] == "SELECTED" and d["selected"] == want
     states = {n: blocked for n in order}
     profiles = _setup(monkeypatch, states, list(states))
     assert registry.route(tmp_path, now=NOW, profiles=profiles)["outcome"] == "NO_AGENT"
@@ -191,7 +196,7 @@ def test_a_persisted_allowlist_restricts_the_per_run_flag(tmp_path, monkeypatch)
     ready = {"installed": True, "isolated": True, "setup": False, "cooldown": "none", "obs": "READY", "fresh": "fresh",
              "consent": False}
     profiles = _setup(monkeypatch, {"claude": ready}, ["codex"])  # the project allows only codex
-    d = registry.route(tmp_path, run_authorized=True, now=NOW, profiles=profiles)
+    d = registry.route(tmp_path, max_cost_usd=1.0, run_authorized=True, now=NOW, profiles=profiles)
     assert d["outcome"] == "NOT_AUTHORIZED" and d["selected"] is None
 
 
@@ -211,7 +216,7 @@ def test_preferred_providers_come_first_from_the_argument_and_the_policy(tmp_pat
     names = ["claude", "codex", "opencode"]
     profiles = _setup(monkeypatch, {n: ready for n in names}, names)
     default = registry.route(tmp_path, now=NOW, profiles=profiles)["selected"]
-    other = next(n for n in names if n != default)
+    other = next(n for n in names if n != default and not contract_for(n).enforces_hard_usd_budget)
     assert registry.route(tmp_path, now=NOW, profiles=profiles, preferred=[other])["selected"] == other
     policy = registry.load_policy(tmp_path)
     policy["preferred"] = [other]

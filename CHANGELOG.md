@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- `--agent auto` (and `agents route`) without a usable `--max-cost-usd` (the default 0, or under $0.0001) no longer
+  selects a provider whose CLI enforces a USD ceiling (Claude Code, Bob): its run was then refused for the missing
+  ceiling. Routing skips it with the reason and picks the next eligible provider (e.g. Codex, cost UNKNOWN); when none
+  is left, the `NO_AGENT` message names `--max-cost-usd` (and authorization, when that is missing too: such a host
+  now reports `NO_AGENT` rather than `NOT_AUTHORIZED`). This resolves the 0.12.0 known limitation. An explicit
+  `--agent claude` without a ceiling is still refused before it starts, and now names an eligible alternative.
+- Live tournaments with `--allow-unknown-cost` judge each arm's readiness at the ceiling it will run with (the capped
+  arms at their share, the others at 0), so `--tournament codex,claude --max-cost-usd X --allow-unknown-cost` is
+  not refused by the routing change above.
+
 ## 0.12.0 — missions in containers, Claude never started uncapped, routing journey, tournament differences, security lows
 
 - A provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without one. `run_provider`
