@@ -169,7 +169,8 @@ def classify_failure(reasons: list[str]) -> str | None:
 def _isolated_ready(provider: str) -> bool:
     with tempfile.TemporaryDirectory(prefix="repo-ai-route-") as d:
         base = Path(d)
-        return _execution_sandbox_prefix(base, base, allow_network=True, provider=provider, live=True) is not None
+        return _execution_sandbox_prefix(base, base, allow_network=True, provider=provider, live=True,
+                                         dry_run=True) is not None
 
 
 def setup_problems(provider: str) -> list[str]:
