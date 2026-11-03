@@ -85,8 +85,9 @@ requirement, the changed lines that ran during its own mapped tests (`changed_li
 outside any test (at import or collection: a module constant, a default argument, a decorator argument).
 
 This is **information, never a status**: it changes no row, obligation, headline or exit code. Attribution is by
-time window, so a line that runs at import, in a shared (session- or module-scoped) fixture set up by an earlier test,
-in a child process or in another test's thread is not credited to the test it serves. A record is marked incomplete
+time window, so a line that runs at import, in a shared fixture's teardown, in a child process or in another test's
+thread is not credited to the test it serves; a shared (session-, package-, module- or class-scoped) fixture's setup
+lines are credited to every test that uses it. A record is marked incomplete
 when a test started a child process (subprocess, multiprocessing, fork), the run stopped early (`-x`, `--maxfail`),
 or more tests ran changed lines than are kept. Missions without a frozen declaration, Node missions and container runs
 say `not measured`. The per-test record comes from a second, slower run in the time left after the usual measurement,

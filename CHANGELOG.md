@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `coverage`'s per-requirement changed lines credit a shared (session-, package-, module- or class-scoped)
+  fixture's setup lines to every test that uses it, not only to the first test that triggered it.
 - Security (Linux, opt-in): with `REPO_AI_LINUX_EGRESS_PROXY=1`, a live Claude, Codex or Bob run gets its own
   network namespace, so host abstract unix sockets (X11/Xwayland, D-Bus) and services on the host's own network
   namespace, loopback included, are out of reach. Its network goes through a proxy in the repo-ai process: `CONNECT`

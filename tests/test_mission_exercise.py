@@ -245,3 +245,19 @@ def test_last_failed_in_addopts_does_not_shrink_the_per_test_run(tmp_path):
     # the cache is off in the per-test run, so --lf either runs everything or stops it as a usage error (incomplete)
     assert rec['assurance'] == 'FULL'
     assert rec.get('per_test_complete') is not True or set(rec['per_test']) == {'test_m.py::test_neg', 'test_m.py::test_pick'}
+
+
+def test_a_shared_fixtures_setup_lines_are_credited_to_every_test_that_uses_it(tmp_path):
+    """Queue row 32: a session fixture is set up during the first test that needs it; the second user ran that code
+    too, through the fixture, and is now credited with it."""
+    before = 'def make(x):\n    return x\n'
+    after = 'def make(x):\n    y = x * 2\n    return y\n'
+    (tmp_path / 'conftest.py').write_text('import pytest\nfrom m import make\n\n\n@pytest.fixture(scope="session")\n'
+                                         'def app():\n    return make(2)\n')
+    tests = ('def test_first(app):\n    assert app == 4\n\n\ndef test_req(app):\n    assert app > 0\n\n\n'
+             'def test_unrelated():\n    assert True\n')
+    root = _repo(tmp_path, after, tests)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', before, after), per_test=True)
+    assert rec['per_test'].get('test_m.py::test_first') == ['m.py:2', 'm.py:3'], rec
+    assert rec['per_test'].get('test_m.py::test_req') == ['m.py:2', 'm.py:3'], rec
+    assert 'test_m.py::test_unrelated' not in rec['per_test']
