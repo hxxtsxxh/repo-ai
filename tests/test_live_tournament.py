@@ -396,3 +396,20 @@ def test_substantively_different_passing_candidates_abstain_and_name_where_they_
     from repo_ai.mission.tournament import render_comparison
     shown = render_comparison(report)
     assert 'SUBSTANTIVE: charge.py:charge' in shown and 'Next: ' in shown
+
+
+def test_a_container_tournament_reads_not_checked_not_stale(bug, tmp_path, monkeypatch):
+    """Release review M1: children run in a container read "not checked" (the image cannot be checked read-only);
+    the comparison must say so with its recorded step, not call itself stale and say to run it again."""
+    from repo_ai.mission import runtime
+    from repo_ai.verify import cache
+    real = cache.static_environment
+    monkeypatch.setattr(cache, 'static_environment',
+                        lambda executor, runner, links=None: {**real(executor, runner, links), 'unchecked': ['container image']})
+    report = two_passing(bug, tmp_path)
+    recorded = report.get('next_step')
+    state = runtime.status(bug, report['id'])
+    assert state['freshness'] == 'not checked', state['freshness_reasons']
+    assert not any('stale' in r for r in state['freshness_reasons'])
+    assert 'run the tournament again' not in state['comparison']['next_step']
+    assert state['comparison']['next_step'].endswith(recorded) and 'not checked' in state['comparison']['next_step']

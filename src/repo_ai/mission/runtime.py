@@ -1104,7 +1104,9 @@ def status(root: Path, mission: str, *, _depth: int = 0) -> dict[str, Any]:
                 freshness_reasons.append('comparison child is unavailable or outside the current boundary: ' + candidate_id)
                 continue
             rows = [r for r in state.get('comparison', {}).get('candidates', []) if r.get('id') == candidate_id]
-            if (linked['freshness'] != 'fresh' or len(rows) != 1
+            if linked['freshness'] == 'not checked':  # its container image cannot be checked read-only: not stale
+                unchecked = True
+            if (linked['freshness'] not in ('fresh', 'not checked') or len(rows) != 1
                     or rows[0].get('passport_sha256') != digest(linked.get('passport', {}))
                     or rows[0].get('proposal_sha256') != linked.get('proposal_sha256')):
                 fresh = False
@@ -1117,7 +1119,7 @@ def status(root: Path, mission: str, *, _depth: int = 0) -> dict[str, Any]:
                 freshness_reasons.append(key + ' environment: ' + redact_text(detail))
             unchecked = unchecked or bool((state[key].get('environment_static') or {}).get('unchecked'))
     if unchecked:
-        freshness_reasons.append('container image freshness was not checked by this read-only command')
+        freshness_reasons.append(IMAGE_UNCHECKED)
     state['freshness_reasons'] = freshness_reasons
     state['freshness'] = 'stale' if not fresh else ('not checked' if unchecked else 'fresh')
     if 'reality' in state:
@@ -1216,12 +1218,21 @@ def partial_progress(state: dict[str, Any]) -> dict[str, Any] | None:
     return {'fixed': fixed, 'still_failing': sorted(after), 'diff_sha256': state['diff_sha256']}
 
 
+IMAGE_UNCHECKED = 'container image freshness was not checked by this read-only command'
+
+
 def stale_comparison_step(comparison: dict[str, Any], freshness: str) -> dict[str, Any]:
     """A comparison that is no longer fresh never repeats the next step recorded for its old evidence (e.g. "apply
     the winner"): it keeps it as `recorded_next_step` and says to run the tournament again."""
     if freshness == 'fresh':
         return comparison
     comp = dict(comparison)
+    if freshness == 'not checked':  # e.g. a container image a read-only command cannot check: not stale, not re-run
+        if comp.get('next_step') and 'recorded_next_step' not in comp:
+            comp['recorded_next_step'] = comp['next_step']
+            comp['next_step'] = ('the container image was not checked by this read-only command; the recorded step '
+                                 'assumes it is unchanged: ' + comp['recorded_next_step'])
+        return comp
     if comp.get('next_step') and 'recorded_next_step' not in comp:
         comp['recorded_next_step'] = comp['next_step']
     comp['next_step'] = ('this comparison is stale (freshness_reasons says why); run the tournament again on the '
@@ -1595,8 +1606,10 @@ def _continue_verified_handoff(
         if contract_for(target_agent).enforces_hard_usd_budget and eff_cost < MIN_CEILING_USD:
             # refused before the continuation is claimed: the capsule stays usable
             raise ValueError(f'{target_agent} enforces a USD ceiling and no budget remains from the original mission: '
-                             + ('its live cost cannot establish one, so create a newly approved plan'
-                                if prior_live else 'give --max-cost-usd > 0 for the continuation')
+                             + (f'${remaining_cost:.6f} is left, under the smallest ceiling the CLI can enforce, so '
+                                'create a newly approved plan' if prior_live and remaining_cost > 0 else
+                                'its live cost cannot establish one, so create a newly approved plan' if prior_live
+                                else 'give --max-cost-usd > 0 for the continuation')
                              + '; the capsule is still unused')
 
     if allow_live and target_agent in LIVE_PROVIDERS and (cooling := cooldown_until(root, target_agent)):
