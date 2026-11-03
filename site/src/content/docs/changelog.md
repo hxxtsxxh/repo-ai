@@ -1,9 +1,27 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.11.9, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.0, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.0
+
+- **Changed** a provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without
+  `--max-cost-usd > 0`. 0.11.9 started it uncapped at the default 0 and refused the result afterwards, after the
+  spend. Known limitation: `--agent auto` at the default 0 can still choose Claude or Bob, and that run is then
+  refused (the message names an eligible provider without a ceiling).
+- **Added** `repo-ai do --sandbox podman --image REF` runs a mission's tests in a local container image (frozen with
+  the mission: baseline, candidate, regression, post-apply, continuations). The coding agent itself still runs on the
+  host.
+- **Added** live tournaments say whether distinct passing candidates differ only in formatting or comments, or where
+  they differ, with a next step; `--allow-unknown-cost` caps only the arms that enforce a ceiling.
+- **Fixed** routing: an explicitly chosen provider in a rate-limit cooldown is refused before it starts; a
+  continuation refused for a cooldown keeps its capsule; a crash is no longer classified as a budget limit; the
+  no-provider refusal names the reason.
+- **Security** the Linux probe binds by descriptor with bubblewrap 0.10+; a minified file named LICENSE below a
+  skill's root gets the overlong-line finding again; the coding lab's untracked count ignores ignore files the agent
+  writes.
 
 ## 0.11.9
 
