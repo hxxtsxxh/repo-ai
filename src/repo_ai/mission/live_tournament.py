@@ -80,13 +80,18 @@ def plan_tournament(root: Path, task: str, providers: list[str], *, write_paths:
         raise ValueError(f"{', '.join(enforcing)} enforce{'s' if len(enforcing) == 1 else ''} a USD ceiling: give "
                          '--max-cost-usd > 0 (the default 0 authorises no spend; without a ceiling the arm would start '
                          'uncapped and its result be refused afterwards)')
-    readiness = {} if executables else _readiness(root, names, 0.0 if allow_unknown_cost else max_cost_usd)
-    problems = [f"{n}: {'; '.join(r['reasons'])}" for n, r in readiness.items() if not r['eligible']]
-    if problems:
-        raise ValueError('provider(s) not eligible for a live tournament: ' + ' | '.join(problems))
     capped = enforcing if allow_unknown_cost else names
     per_arm_usd = round(max_cost_usd / len(capped), 6) if max_cost_usd > 0 and capped else 0.0
     per_arm = {n: (per_arm_usd if n in capped else 0.0) for n in names}
+    # each arm is judged at the ceiling it will run with: a capped arm at its share, an UNKNOWN-cost arm at 0
+    readiness: dict[str, dict[str, Any]] = {}
+    if not executables:
+        for ceiling in sorted(set(per_arm.values())):
+            rows = _readiness(root, names, ceiling)
+            readiness.update({n: rows[n] for n in names if per_arm[n] == ceiling and n in rows})
+    problems = [f"{n}: {'; '.join(r['reasons'])}" for n, r in readiness.items() if not r['eligible']]
+    if problems:
+        raise ValueError('provider(s) not eligible for a live tournament: ' + ' | '.join(problems))
     arms: list[dict[str, Any]] = []
     for name in names:
         arm = plan(root, task, agent=name, write_paths=write_paths, execute_local=True, allow_live=True,

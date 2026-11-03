@@ -106,3 +106,16 @@ enforces a USD ceiling as ineligible when no usable ceiling (at least $0.0001) i
 - The route record now includes `why`. G1 counts 29 expected decisions (27 + 2); G2, G3 and G4 are unchanged.
 
 Runs 1 to 3 are kept as the record of 0.12.0. Run 4 is the first run of this harness on the changed code.
+
+**Correction to amendment 3 (review of #111, before run 5; the harness and its checks are unchanged).** The sentence
+"The default order (Claude first) stays checked by `route-with-usd-ceiling`" is wrong: under a ceiling Codex is
+ineligible (it cannot enforce one), so Claude is selected whatever the order. With the two stand-ins (one provider
+that enforces a ceiling, one that cannot), no ceiling makes both eligible at once, so since amendment 3 these checks
+no longer discriminate what they were written for: the Claude-before-Codex default order (M1), `--prefer` (M1
+`route-with-preference`: Codex is selected at $0 with or without it), and fallback after a rate limit (F1, Q1
+`route-after-rate-limit`: Codex is selected at $0 with or without Claude's cooldown; Claude's `USAGE_LIMITED` label
+and F1's PASS with cost `UNKNOWN` still discriminate). Order, preference and fallback between two providers eligible
+at the same ceiling are covered by unit tests (`tests/test_provider_registry.py`,
+`tests/test_provider_routing_matrix.py`), not by this journey; runs 1 to 3 remain its evidence for them. The fixes
+from that review (tournament readiness per arm, messages) change no expected decision. Run 5 is the run of this
+harness on the reviewed code.
