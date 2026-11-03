@@ -129,7 +129,8 @@ class Journey:
         rows = {r["provider"]: {k: r.get(k) for k in ("readiness", "eligible", "cooling_down", "observation_stale",
                                                        "auth_observed", "cost_semantics", "reasons")}
                 for r in data.get("considered", []) if r.get("installed") or r["provider"] in ("claude", "codex")}
-        return self.log(sc, step, outcome=data.get("outcome"), selected=data.get("selected"), providers=rows,
+        return self.log(sc, step, outcome=data.get("outcome"), selected=data.get("selected"), why=data.get("why"),
+                        providers=rows,
                         args=list(extra), stderr=err if not data else "")
 
     def mission(self, sc: str, repo: Path, env: dict[str, str], agent: str = "auto", *extra: str,
@@ -165,26 +166,29 @@ class Journey:
         self.mission("U1-unauthenticated", repo, env, "auto", "--max-cost-usd", "0.5")
 
         repo, env = self.fixture("U2-configured-not-logged-in", {"claude": stub("notloggedin")}, token=False)
-        self.route("U2-configured-not-logged-in", repo, env)
+        self.route("U2-configured-not-logged-in", repo, env, "--max-cost-usd", "0.5")
         self.mission("U2-configured-not-logged-in", repo, env, "auto", "--max-cost-usd", "0.5")
-        self.route("U2-configured-not-logged-in", repo, env, step="route-after-not-logged-in")
+        self.route("U2-configured-not-logged-in", repo, env, "--max-cost-usd", "0.5", step="route-after-not-logged-in")
 
         repo, env = self.fixture("O1-one", {"claude": stub("ok")}, token=True)
-        self.route("O1-one", repo, env)
+        # amendment 3: at the default $0 the one (ceiling-enforcing) provider is not routed to; both say how to use it
+        self.route("O1-one", repo, env, step="route-at-zero")
+        self.mission("O1-one", repo, env, step="mission-at-zero")
+        self.route("O1-one", repo, env, "--max-cost-usd", "0.5")
         self.mission("O1-one", repo, env, "auto", "--max-cost-usd", "0.5")
-        self.route("O1-one", repo, env, step="route-after-success")
+        self.route("O1-one", repo, env, "--max-cost-usd", "0.5", step="route-after-success")
         # E1 (expired readiness), on the same repository: the READY observation expires, then the binary changes
         path, pol = self.policy(repo)
         self.log("E1-expired", "observation-before", observations=pol.get("observations"))
         for obs in pol.get("observations", {}).values():
             obs["until"] = time.time() - 1  # controlled injection: the observation's TTL has passed
         path.write_text(json.dumps(pol))
-        self.route("E1-expired", repo, env, step="route-after-expiry")
+        self.route("E1-expired", repo, env, "--max-cost-usd", "0.5", step="route-after-expiry")
         self.mission("E1-expired", repo, env, "auto", "--max-cost-usd", "0.5", step="mission-after-expiry")
-        self.route("E1-expired", repo, env, step="route-after-second-success")
+        self.route("E1-expired", repo, env, "--max-cost-usd", "0.5", step="route-after-second-success")
         exe = repo.parent / "bin" / "claude"
         exe.write_text(exe.read_text() + "# another build\n")
-        self.route("E1-expired", repo, env, step="route-after-binary-change")
+        self.route("E1-expired", repo, env, "--max-cost-usd", "0.5", step="route-after-binary-change")
 
         repo, env = self.fixture("M1-many", {"claude": stub("ok"), "codex": CODEX_STUB}, token=True)
         self.route("M1-many", repo, env)
@@ -210,11 +214,11 @@ class Journey:
             if obs.get("state") == "USAGE_LIMITED":
                 obs["until"] = time.time() - 1
         path.write_text(json.dumps(pol))
-        self.route("C1-cooldown-expiry", repo, env, step="route-after-cooldown")
+        self.route("C1-cooldown-expiry", repo, env, "--max-cost-usd", "0.5", step="route-after-cooldown")
 
         repo, env = self.fixture("X1-failure", {"claude": stub("crash"), "codex": CODEX_STUB}, token=True)
         self.mission("X1-failure", repo, env, "auto", "--max-cost-usd", "0.5")
-        self.route("X1-failure", repo, env, step="route-after-failure")
+        self.route("X1-failure", repo, env, "--max-cost-usd", "0.5", step="route-after-failure")
 
         # P1 (unsupported platform): in-process, the platform name patched; discovery and routing are real
         repo, env = self.fixture("P1-unsupported-platform", {"claude": stub("ok"), "codex": CODEX_STUB}, token=True)
@@ -264,6 +268,10 @@ EXPECT = {
     ("U2-configured-not-logged-in", "route"): _route("SELECTED", "claude", claude="INSTALLED_UNPROBED"),
     ("U2-configured-not-logged-in", "mission"): _mission("BLOCKED", "claude", recovery="provider_unavailable"),
     ("U2-configured-not-logged-in", "route-after-not-logged-in"): _route("NO_AGENT", claude="AUTHORIZED_BUT_UNREADY"),
+    ("O1-one", "route-at-zero"): lambda r: _route("NO_AGENT", claude="INSTALLED_UNPROBED")(r) and
+        "--max-cost-usd" in (r.get("why") or "") and not r["providers"]["claude"]["eligible"],
+    ("O1-one", "mission-at-zero"): lambda r: _mission(refused=True, says="no provider can run this mission (NO_AGENT)")(r)
+        and "--max-cost-usd" in (r.get("stderr") or ""),
     ("O1-one", "route"): _route("SELECTED", "claude", claude="INSTALLED_UNPROBED"),
     ("O1-one", "mission"): _mission("PASS", "claude", cost_status="OBSERVED"),
     ("O1-one", "route-after-success"): _route("SELECTED", "claude", claude="READY"),
@@ -271,7 +279,9 @@ EXPECT = {
     ("E1-expired", "mission-after-expiry"): _mission("PASS", "claude"),
     ("E1-expired", "route-after-second-success"): _route("SELECTED", "claude", claude="READY"),
     ("E1-expired", "route-after-binary-change"): _route("SELECTED", "claude", claude="INSTALLED_UNPROBED"),
-    ("M1-many", "route"): _route("SELECTED", "claude", claude="INSTALLED_UNPROBED", codex="INSTALLED_UNPROBED"),
+    ("M1-many", "route"): lambda r: _route("SELECTED", "codex", claude="INSTALLED_UNPROBED",
+                                           codex="INSTALLED_UNPROBED")(r) and not r["providers"]["claude"]["eligible"]
+        and any("--max-cost-usd" in x for x in r["providers"]["claude"]["reasons"]),
     ("M1-many", "route-with-usd-ceiling"): lambda r: _route("SELECTED", "claude")(r) and
         r["providers"]["codex"]["eligible"] is False and r["providers"]["codex"]["cost_semantics"].startswith("UNKNOWN"),
     ("M1-many", "route-with-preference"): _route("SELECTED", "codex"),
