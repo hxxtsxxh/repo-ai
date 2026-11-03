@@ -84,6 +84,19 @@ def _post_images(root: Path, base: str, diff: str, files: list[str]) -> dict[str
         return after
 
 
+def code_identity(images: dict[str, bytes]) -> str | None:
+    """Like `code_fingerprint`, file by file: a Python file counts by its syntax tree (comments, formatting and line
+    positions ignored), any other file, or a Python file that declares an encoding or does not parse, by its bytes.
+    Two candidates with the same identity change the same files and differ at most in Python comments or formatting.
+    None when nothing changed."""
+    parts = []
+    for rel in sorted(images):
+        single = code_fingerprint({rel: images[rel]})
+        parts.append(rel + '\0' + (('ast\0' + single) if single else
+                                   ('bytes\0' + hashlib.sha256(images[rel]).hexdigest())))
+    return hashlib.sha256('\0'.join(parts).encode()).hexdigest() if parts else None
+
+
 def code_fingerprint(images: dict[str, bytes]) -> str | None:
     """A digest of the Python syntax trees of every changed file (comments, formatting and line positions
     ignored; docstrings and every other literal included). None when any changed file is not parseable UTF-8
@@ -121,6 +134,7 @@ def _row(root: Path, cand: dict[str, Any]) -> tuple[dict[str, Any] | None, str |
     images = _post_images(root, base, diff, stats['files'])
     return {'id': cid, 'provider': cand.get('provider'), 'diff_sha256': state.get('diff_sha256'),
             **stats, 'code_fingerprint': code_fingerprint(images) if images is not None else None,
+            'code_identity': code_identity(images) if images is not None else None,
             'cost_usd': cand.get('cost_usd'),
             'cost_status': cand.get('cost_status', 'UNKNOWN'),
             'claims': (state.get('claims') or {}).get('headline'),
@@ -181,15 +195,16 @@ def build(root: Path, report: dict[str, Any], policy: str = 'strict') -> dict[st
                    'Review the diffs, then apply one explicitly.')
     groups: dict[str, list[str]] = {}
     for row in rows:
-        if row.get('code_fingerprint'):
-            groups.setdefault(row['code_fingerprint'], []).append(row['id'])
+        if row.get('code_identity'):
+            groups.setdefault(row['code_identity'], []).append(row['id'])
     out['same_code'] = [ids for ids in groups.values() if len(ids) > 1]
     if out['same_code'] and len(out['same_code'][0]) == len(rows):
-        out['note'] += (' All of them have identical Python syntax trees in every changed file: they differ only in '
-                        'comments, formatting or layout, so choosing between them does not change the code.')
+        out['note'] += (' In every changed file they are byte-identical or have identical Python syntax trees: they '
+                        'differ only in comments, formatting or layout, so choosing between them does not change the '
+                        'code.')
     elif out['same_code']:
-        out['note'] += (' Some candidates have identical Python syntax trees (they differ only in comments or '
-                        'formatting): ' + '; '.join(' = '.join(ids) for ids in out['same_code']) + '.')
+        out['note'] += (' Some candidates differ only in Python comments or formatting (every other changed byte is '
+                        'the same): ' + '; '.join(' = '.join(ids) for ids in out['same_code']) + '.')
     out['next'] = 'repo-ai why <candidate-id>  (inspect), then repo-ai apply <candidate-id>'
     if policy == 'smallest-diff' and not blockers:
         best = min(r['changed_lines'] for r in rows)
