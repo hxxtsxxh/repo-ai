@@ -122,3 +122,12 @@ under HOME before the live stage (new frozen and upstream SHAs; its records repl
 Pass rate (missions PASS out of 4) is reported, with no gate: four defects have no power for a rate. One run. A harness
 crash before any model call is fixed and rerun; after a model call, the record is kept as is and no session is
 repeated. Results: `RESULTS.md`, raw records under `results/`.
+
+**Amendment 3 (2026-11-03, before any live session; repo-ai 0.12.1):** the first control stage on 0.12.1 gave
+INCONCLUSIVE for all four defects. Every control had completed with passport PASS, and its only freshness note was
+`container image freshness was not checked by this read-only command`: a run in a container is reported as `not
+checked`, so its effective verdict is INCONCLUSIVE. The harness read the effective verdict, so the control, and later
+every live mission, could never count as passing. It now reads the verdict as observed (`observed_verdict`): when the
+image is the only open point and the mission completed, the passport verdict (or its `standing`) counts. This is the
+rule repo-ai 0.12.1 itself uses for `apply` (`image_only_pass`). The first control stage is kept in the records; the
+control stage is run again under this reading. No defect, task, cap, gate or oracle changed.
