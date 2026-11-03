@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- A provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without one. `run_provider`
+  refuses it whenever the ceiling left is under $0.0001 (the flag prints four decimals): a missing `--max-cost-usd`,
+  a ceiling an investigator role already used up, a tiny tournament share, or `--provider-executable`. `do`, handoff
+  continuations (before the capsule is claimed) and tournament plans say so up front, naming an eligible provider
+  without a ceiling when routing found one. Before, the default ceiling of 0 started the provider uncapped and refused
+  its result afterwards ("provider reported cost exceeding approved contract ceiling"), after the money was spent.
+- `do --tournament A,B --max-cost-usd X --allow-unknown-cost`: the ceiling is split among the arms whose CLI enforces
+  it, and the others run with cost UNKNOWN (never counted as $0). Without the flag, a ceiling with a provider that
+  cannot enforce it is refused, as before; with it but no enforcing provider, the ceiling would cap nothing and is
+  refused. The flag applies to tournaments only. This is what makes a Claude + Codex tournament possible with a cap.
+- Live tournaments (`do --tournament`): when several distinct candidates pass, the comparison now says how they
+  differ, by rebuilding their files from the frozen commit as `shortlist` does (nothing is run): `IDENTICAL`,
+  `COSMETIC` (the same Python syntax tree), `SUBSTANTIVE` with the differing definitions named (`charge.py:charge`),
+  or `UNKNOWN` when a candidate cannot be rebuilt exactly. Each live comparison carries a `next_step` taken from the
+  decision actually made (apply the winner after review; `repo-ai why` when one passed but the comparison was not
+  controlled; pick either of the same code via `shortlist`; or write a test at the named definitions). The decision
+  rule is unchanged: distinct passing candidates still abstain.
 - `repo-ai do --sandbox {auto,seatbelt,bwrap,podman,docker} [--image REF]`: choose where a mission runs the project's
   tests. With podman or docker, `--image` (required) names a local image with the project's dependencies (never
   pulled), and a src-layout project's tests import it through `PYTHONPATH=src`, as `verify` already did. The choice

@@ -94,9 +94,9 @@ def code_fingerprint(images: dict[str, bytes]) -> str | None:
             return None
         try:
             tree = ast.parse(images[rel].decode('utf-8'))
-        except (SyntaxError, UnicodeDecodeError, ValueError):
-            return None
-        parts.append(rel + '\0' + ast.dump(tree, include_attributes=False))
+            parts.append(rel + '\0' + ast.dump(tree, include_attributes=False))
+        except (SyntaxError, UnicodeDecodeError, ValueError, RecursionError, MemoryError):
+            return None  # too deep to parse is no claim either, never a crash
     return hashlib.sha256('\0'.join(parts).encode()).hexdigest() if parts else None
 
 

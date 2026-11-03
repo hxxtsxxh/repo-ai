@@ -236,7 +236,7 @@ def test_live_provider_is_killed_at_mission_budget_and_labeled_failed(tmp_path: 
     script = _make_fake_cli(tmp_path, "claude", _SLOW_CLI.format(sleep=60))
     started = time.monotonic()
     res = run_provider("claude", root, ws, "Fix", write_paths=["charge.py"], executable=script,
-                       timeout=1.5, simulated=False, allow_live=True)
+                       timeout=1.5, simulated=False, allow_live=True, max_cost_usd=0.5)
     elapsed = time.monotonic() - started
     assert elapsed < 20, elapsed
     assert res["capture_status"] != "complete", res
@@ -252,7 +252,7 @@ def test_live_budget_is_not_clamped_to_simulated_cap_but_simulated_is(tmp_path: 
     root, ws = _live_dirs(tmp_path, monkeypatch)
     script = _make_fake_cli(tmp_path, "claude", _SLOW_CLI.format(sleep=2))
     live = run_provider("claude", root, ws, "Fix", write_paths=["charge.py"], executable=script,
-                        timeout=15, simulated=False, allow_live=True)
+                        timeout=15, simulated=False, allow_live=True, max_cost_usd=0.5)
     assert live["capture_status"] == "complete", live
     assert live["stage"] == "READY" and live["verification_label"] == "LIVE_READY", live
     sim = run_provider("claude", root, ws, "Fix", write_paths=["charge.py"], executable=script,
