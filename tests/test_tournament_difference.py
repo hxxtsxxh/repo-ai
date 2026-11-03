@@ -100,3 +100,38 @@ def test_a_file_too_deep_to_parse_is_never_a_crash_or_a_same_code_claim(repo):
     assert pair['difference'] == 'SUBSTANTIVE' and pair['where'] == ['m.py']  # rebuilt, compared by file name
     from repo_ai.mission.shortlist import code_fingerprint
     assert code_fingerprint({'m.py': (BASE + deep).encode()}) is None
+
+
+def test_a_shared_non_python_change_does_not_hide_a_cosmetic_python_difference(repo):
+    """Queue row 29: both candidates edit README.md identically and m.py differently only in formatting."""
+    root, head = repo
+    a = diff(root, {'m.py': BASE.replace('return x + x', 'return x + x  # fixed'), 'README.md': 'fixed\n'})
+    b = diff(root, {'m.py': BASE.replace('return x + x', 'return  (x + x)'), 'README.md': 'fixed\n'})
+    [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
+    assert pair['difference'] == 'COSMETIC'
+
+
+def test_a_non_python_file_changed_differently_is_still_substantive(repo):
+    root, head = repo
+    a = diff(root, {'m.py': BASE + '# a\n', 'README.md': 'one\n'})
+    b = diff(root, {'m.py': BASE + '# b\n', 'README.md': 'two\n'})
+    [pair] = compare(root, head, {'a': a, 'b': b})['pairs']
+    assert pair['difference'] == 'SUBSTANTIVE' and pair['where'] == ['README.md']
+
+
+@pytest.mark.parametrize('freshness', ['fresh', 'stale'])
+def test_a_stale_comparison_never_repeats_its_recorded_next_step(tmp_path, monkeypatch, freshness):
+    """Queue row 29: "apply the winner" written for evidence that no longer holds must not be printed as advice."""
+    from repo_ai.mission import runtime, tournament
+    recorded = 'repo-ai apply m1 (the only distinct passing candidate)'
+    monkeypatch.setattr(runtime, 'status', lambda root, mid: {
+        'kind': 'comparison', 'comparison': {'winner': 'm1', 'next_step': recorded, 'candidates': []},
+        'freshness': freshness, 'freshness_reasons': [] if freshness == 'fresh' else ['HEAD moved'],
+        'effective_verdict': 'PASS'})
+    comp = tournament.inspect_comparison(tmp_path, 'c1')
+    text = tournament.render_comparison(comp)
+    if freshness == 'fresh':
+        assert comp['next_step'] == recorded and 'Next: ' + recorded in text
+    else:
+        assert comp['winner'] is None and comp['recorded_next_step'] == recorded
+        assert recorded not in text and 'run the tournament again' in text

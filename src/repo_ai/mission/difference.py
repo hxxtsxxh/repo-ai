@@ -4,8 +4,9 @@ differently, and where. No candidate code is run here; it is parsed.
 Each candidate's files are rebuilt from the frozen commit with `shortlist`'s reconstruction (scratch directory
 confined from any enclosing repository; created, deleted, renamed, mode-changed or binary files, and a diff that does
 not change every file it names, give no reconstruction). Two candidates are IDENTICAL when the rebuilt files are the
-same bytes, COSMETIC when they have the same Python syntax trees (`shortlist.code_fingerprint`: comments, formatting
-and line positions ignored; strict UTF-8; no coding cookie), SUBSTANTIVE otherwise (the definitions that differ are
+same bytes, COSMETIC when every file is byte-identical or a Python file with the same syntax tree
+(`shortlist.code_fingerprint`: comments, formatting and line positions ignored; strict UTF-8; no coding cookie), so a
+non-Python file changed the same way in both does not hide it, SUBSTANTIVE otherwise (the definitions that differ are
 named), and UNKNOWN when either cannot be rebuilt. COSMETIC means no difference in what the code computes, except code
 that reads its own source or line numbers (tracebacks, `inspect`, logging) or compile-time warnings.
 """
@@ -47,6 +48,20 @@ def _definitions(text: bytes) -> dict[str, str] | None:
         return None
 
 
+def _cosmetic_per_file(a: dict[str, bytes], b: dict[str, bytes]) -> bool:
+    """Same file set, and every file either byte-identical or a Python file with the same syntax tree: a change that
+    also touches a non-Python file the same way in both candidates is still only cosmetic."""
+    if set(a) != set(b):
+        return False
+    for rel in a:
+        if a[rel] == b[rel]:
+            continue
+        fa, fb = code_fingerprint({rel: a[rel]}), code_fingerprint({rel: b[rel]})
+        if fa is None or fa != fb:
+            return False
+    return True
+
+
 def _where(a: dict[str, bytes], b: dict[str, bytes]) -> list[str]:
     where: list[str] = []
     for rel in sorted(a):
@@ -58,7 +73,7 @@ def _where(a: dict[str, bytes], b: dict[str, bytes]) -> list[str]:
             where.append(rel)
             continue
         names = sorted(n for n in set(da) | set(db) if da.get(n) != db.get(n))
-        where += [f"{rel}:{n}" for n in names] or [rel]
+        where += [f"{rel}:{n}" for n in names]  # none: this file differs only cosmetically
     return where
 
 
@@ -86,7 +101,7 @@ def compare(root: Path, base: str, diffs: dict[str, str]) -> dict[str, Any]:
                 kind, where = "SUBSTANTIVE", sorted(set(ia) ^ set(ib))
             elif ia == ib:
                 kind, where = "IDENTICAL", []
-            elif prints[a] is not None and prints[a] == prints[b]:
+            elif (prints[a] is not None and prints[a] == prints[b]) or _cosmetic_per_file(ia, ib):
                 kind, where = "COSMETIC", []
             else:
                 kind, where = "SUBSTANTIVE", _where(ia, ib)
