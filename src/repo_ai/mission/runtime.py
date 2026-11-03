@@ -690,11 +690,16 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
         spend: dict[str, Any] = {'usd': 0.0, 'unknown': False, 'lock': threading.Lock()}
 
         def account(res: dict[str, Any]) -> None:
+            # a run refused before its process started spent nothing: only a started one can leave cost UNKNOWN
+            started = bool(res.get('events')) or res.get('returncode', -1) != -1
             with spend['lock']:
                 spend['usd'] += float(res.get('cost_usd') or 0.0)
-                spend['unknown'] = spend['unknown'] or res.get('cost_status') != 'OBSERVED'
+                spend['unknown'] = spend['unknown'] or (started and res.get('cost_status') != 'OBSERVED')
 
         def ceiling_left() -> float:
+            # once a live run's cost is UNKNOWN (e.g. its terminal event was lost), nothing can be shown to remain
+            if is_live_provider and spend['unknown'] and contract.max_cost_usd > 0:
+                return 0.0
             return max(0.0, contract.max_cost_usd - spend['usd']) if is_live_provider else 0.0
 
         def run_role(role: str, prompt: str, setup: Callable[[Path], None] | None = None) -> dict[str, Any]:
@@ -844,7 +849,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         tracked_set = set(current['files'])
                         test_set = set(runner.test_files(list(tracked_set)))
                         problems = validate_workspace_edits(
-                            root, candidate, list(contract.write_paths), test_set, tracked_set, MAX_PATCH
+                            root, candidate, list(contract.write_paths), test_set, tracked_set, MAX_PATCH,
+                            generated=dict(ws.generated_sha256),  # version files repo-ai copied in
                         )
                         if problems:
                             state['provider']['stage'] = 'FAILED'
