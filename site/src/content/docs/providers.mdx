@@ -128,7 +128,7 @@ command). The model gets file tools only, with no shell, web, MCP, skills or hoo
 starts the session once with a model name Claude Code rejects locally and refuses the run if anything else would load
 (an account can sync plugins and connectors into every login). `--max-cost-usd` maps to Claude's own cap, which is
 checked between turns: one turn of overshoot was observed. From 0.12.0 a live Claude run needs a positive
-`--max-cost-usd` and is refused before it starts without one (the default 0 authorizes it no spend); from 0.12.1
+`--max-cost-usd` and is refused before it starts without one (the default 0 authorizes no spend for it); from 0.12.1
 `--agent auto` skips it without one and says so. Claude is also a **host** (`repo-ai init --agent claude`).
 
 ### OpenCode (local model, macOS only)

@@ -224,11 +224,9 @@ def apply(root: Path, mission: str) -> dict[str, Any]:
         # a run in a container reads "not checked" (a read-only status cannot check the image): apply accepts that
         # alone, because its post-apply verification below runs the tests again in the same frozen image and
         # restores every file if they do not pass
-        image_only = (state.get('freshness') == 'not checked'
-                      and state.get('freshness_reasons') == [runtime.IMAGE_UNCHECKED]
-                      and (state.get('passport') or {}).get('verdict') == 'PASS')
-        if (state.get('state') != 'COMPLETE'
-                or not (image_only or (state.get('effective_verdict') == 'PASS' and state.get('freshness') == 'fresh'))):
+        if not (runtime.image_only_pass(state) or (state.get('state') == 'COMPLETE'
+                                                   and state.get('effective_verdict') == 'PASS'
+                                                   and state.get('freshness') == 'fresh')):
             raise ValueError('refusing to apply: mission lacks fresh complete passing evidence')
         current = runtime.identity(root, require_clean=True)
         if current['fingerprint'] != state['source']['fingerprint']:

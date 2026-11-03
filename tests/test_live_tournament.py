@@ -408,8 +408,12 @@ def test_a_container_tournament_reads_not_checked_not_stale(bug, tmp_path, monke
                         lambda executor, runner, links=None: {**real(executor, runner, links), 'unchecked': ['container image']})
     report = two_passing(bug, tmp_path)
     recorded = report.get('next_step')
+    # both arms passed in the container just now: they are passing rows, not INCONCLUSIVE ones
+    assert {r['provider']: r['verdict'] for r in report['candidates']} == {'claude': 'PASS', 'codex': 'PASS'}, report
+    assert 'no candidate passed' not in recorded and 'differ' in recorded, recorded
     state = runtime.status(bug, report['id'])
     assert state['freshness'] == 'not checked', state['freshness_reasons']
     assert not any('stale' in r for r in state['freshness_reasons'])
-    assert 'run the tournament again' not in state['comparison']['next_step']
-    assert state['comparison']['next_step'].endswith(recorded) and 'not checked' in state['comparison']['next_step']
+    assert 'this comparison is stale' not in state['comparison']['next_step']
+    assert state['comparison']['next_step'].startswith('the container image was not checked')
+    assert state['comparison']['next_step'].endswith(recorded)

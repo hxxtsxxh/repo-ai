@@ -83,6 +83,9 @@ class Collector:
     def _add(self, index: int, result: dict[str, Any], extra: dict[str, Any]) -> None:
         rows = self.rows
         verdict = result['effective_verdict']
+        from .runtime import image_only_pass
+        if verdict != 'PASS' and image_only_pass(result):
+            verdict = 'PASS'  # the arm ran in a container just now; only its image cannot be re-checked read-only
         prop_sha = result.get('proposal_sha256', '')
         row = {'index': index, 'id': result['id'], 'verdict': verdict,
                'proposal_sha256': prop_sha,

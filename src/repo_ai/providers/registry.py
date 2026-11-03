@@ -301,10 +301,13 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
         outcome, selected = "SELECTED", selectable[0]
         why = f"{selected}: first eligible provider in order {', '.join(order[:5])}"
         if any(order.index(n) < order.index(selected) for n, _ in needs_ceiling):
-            skipped = [n for n, _ in needs_ceiling if order.index(n) < order.index(selected)]
-            why += (f"; skipped {', '.join(skipped)} (enforce{'s' if len(skipped) == 1 else ''} a USD ceiling and none "
+            skipped = [(n, ok) for n, ok in needs_ceiling if order.index(n) < order.index(selected)]
+            names = [n if ok else f"{n} (also not authorized)" for n, ok in skipped]
+            why += (f"; skipped {', '.join(names)} (enforce{'s' if len(names) == 1 else ''} a USD ceiling and none "
                     f"was given: pass --max-cost-usd of at least {_usd(MIN_CEILING_USD)} to use "
-                    + ("it" if len(skipped) == 1 else "them") + ")")
+                    + ("it" if len(names) == 1 else "them")
+                    + ("" if all(ok for _, ok in skipped) else ", and authorize " + ("it" if len(names) == 1 else "them"))
+                    + ")")
             if not contract_for(selected).enforces_hard_usd_budget:
                 why += f"; {selected}'s cost is UNKNOWN (it cannot enforce a ceiling)"
     elif usable:

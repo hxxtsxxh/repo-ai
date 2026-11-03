@@ -2,17 +2,19 @@
 
 ## Unreleased
 
-- `apply` (and `do --apply`) of a mission run in a container (`--sandbox podman|docker`) was always refused in
-  0.12.0: its evidence reads `not checked` (a read-only command cannot check the image). `apply` now accepts exactly
-  that case, because its post-apply verification runs the tests again in the same frozen image and restores every
-  file if they fail. A tournament whose arms ran in a container likewise reads `not checked`, not stale, and keeps
-  its recorded next step with that caveat instead of saying to run it again.
-- `--agent auto` names the ceiling-enforcing providers it skipped and, when the one it picked cannot enforce a
-  ceiling, that its cost is UNKNOWN (`agents route`, and on stderr before a `do --run` starts). A live tournament
-  whose `--max-cost-usd` split among the capped arms leaves any under $0.0001 is refused up front with the total
-  needed (before, each arm was refused when it ran).
-- Linux, Bob: live runs now get the bubblewrap sandbox described below; not live-verified, so a Bob login that needs
-  anything beyond `~/.bob/settings` or `BOB_API_KEY` (e.g. a keyring over the session bus under `/run`) will fail.
+- Missions run in a container (`--sandbox podman|docker`, or `auto` falling back to one) could not be applied in
+  0.12.0: their evidence always reads `not checked` (a read-only command cannot check the image), so `apply`, `do
+  --apply` and tournament arms treated them as not passing. A mission that completed with passing tests and whose
+  only open point is the image now: can be applied (`apply` re-runs the tests in the same image, refused if the
+  image tag now names another digest, and restores every file if they fail); is applied by `do --apply` (exit 0
+  when applied); counts as a passing tournament arm; and gets a recovery action naming `repo-ai apply ID`. Its
+  verdict still reads INCONCLUSIVE, `not checked`. Such a tournament reads `not checked` rather than stale and keeps
+  its recorded next step with that caveat.
+- When `--agent auto` skips a ceiling-enforcing provider, the route names it (and that the provider picked instead
+  has UNKNOWN cost) in `agents route` and, on stderr, before a `do --run` starts. A live tournament whose
+  `--max-cost-usd` split among the capped arms leaves any under $0.0001 is refused up front with the total needed
+  (before, each arm was refused when it ran). A continuation refused for a ceiling under $0.0001 now says which
+  ceiling.
 - Tournament differences and `repo-ai shortlist` now compare file by file: two passing candidates whose changed files
   are each byte-identical or have the same Python syntax tree are COSMETIC (and shortlisted as the same code), so an
   identical non-Python change, or an identical file with a coding cookie, no longer makes a formatting-only Python

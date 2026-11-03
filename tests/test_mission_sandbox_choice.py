@@ -191,15 +191,33 @@ def test_a_container_mission_reads_not_checked_and_can_still_be_applied(shop, tm
     done = runtime.execute(shop, planned, None, provider_executable=_provider(tmp_path, 'claude', FIX_BOTH))
     state = runtime.status(shop, done['id'])
     assert state['freshness'] == 'not checked' and state['passport']['verdict'] == 'PASS'
+    assert runtime.image_only_pass(state) and 'repo-ai apply' in state['recovery']['action']
+    before = len(recorded)
     applied = runtime.apply_mission(shop, done['id'])
     assert applied['post_apply_verdict'] == 'PASS' and applied['applied_to_source']
+    assert recorded[before:] and set(recorded[before:]) == {('podman', 'localhost/deps:1')}  # re-run in that image
 
 
 @pytest.mark.skipif(not _host_sandbox(), reason='needs the host sandbox (seatbelt or bwrap)')
 def test_a_stale_container_mission_is_still_refused(shop, tmp_path, recorded, image_unchecked):  # noqa: F811
     planned = runtime.plan(shop, 'Make pricing.py compute percentage discounts and tax correctly', agent='claude',
                            write_paths=['pricing.py'], execute_local=True, sandbox='podman', image='localhost/deps:1')
-    done = runtime.execute(shop, planned, None, provider_executable=_provider(tmp_path, 'claude', FIX_BOTH))
-    (shop / 'pricing.py').write_text((shop / 'pricing.py').read_text() + '\n# edited after the run\n')
-    with pytest.raises(ValueError):
+    exe = _provider(tmp_path, 'claude', FIX_BOTH)
+    done = runtime.execute(shop, planned, None, provider_executable=exe)
+    exe.write_text(exe.read_text() + '\n# another build\n')  # stale for a reason only the gate checks
+    state = runtime.status(shop, done['id'])
+    assert state['freshness'] == 'stale' and not runtime.image_only_pass(state)
+    with pytest.raises(ValueError, match='lacks fresh'):
         runtime.apply_mission(shop, done['id'])
+
+
+@pytest.mark.skipif(not _host_sandbox(), reason='needs the host sandbox (seatbelt or bwrap)')
+def test_do_apply_applies_a_container_mission(shop, tmp_path, recorded, image_unchecked, capsys):  # noqa: F811
+    from repo_ai.cli import main
+    exe = _provider(tmp_path, 'claude', FIX_BOTH)
+    code = main(['do', 'Make pricing.py compute percentage discounts and tax correctly', '-C', str(shop), '--agent',
+                 'claude', '--run', '--allow-write', 'pricing.py', '--sandbox', 'podman', '--image', 'localhost/deps:1',
+                 '--provider-executable', str(exe), '--apply', '--json'])
+    out = json.loads(capsys.readouterr().out)
+    assert out['applied_to_source'] is True and out['apply_result']['post_apply_verdict'] == 'PASS'
+    assert code == 0

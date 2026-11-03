@@ -103,3 +103,28 @@ def test_auto_routing_says_which_ceiling_provider_it_skipped(monkeypatch, tmp_pa
     assert "skipped claude" in d["why"] and "--max-cost-usd" in d["why"] and "cost is UNKNOWN" in d["why"]
     capped = reg.route(tmp_path, run_authorized=True, max_cost_usd=0.5, profiles=profiles)
     assert capped["selected"] == "claude" and "skipped" not in capped["why"]
+
+
+def test_a_skipped_unauthorized_ceiling_provider_is_named_with_both_blockers(monkeypatch, tmp_path):
+    from repo_ai.providers import registry as reg
+    from repo_ai.providers.discovery import PROVIDERS
+    policy = {"exists": True, "preferred": [], "authorized": ["codex"], "cooldown": {}, "observations": {}}
+    monkeypatch.setattr(reg, "load_policy", lambda root: policy)
+    monkeypatch.setattr(reg, "_isolated_ready", lambda name: True)
+    monkeypatch.setattr(reg, "setup_problems", lambda name: [])
+    profiles = [{"provider": p, "stage": "DISCOVERED" if p in ("claude", "codex") else "NOT_INSTALLED",
+                 "status": "DISCOVERED", "identity_sha256": "id-" + p} for p in PROVIDERS]
+    d = reg.route(tmp_path, run_authorized=True, profiles=profiles)
+    assert d["selected"] == "codex" and "claude (also not authorized)" in d["why"] and "authorize it" in d["why"]
+
+
+def test_do_auto_prints_what_it_skipped_before_starting(bug, two_installed, monkeypatch, capsys):
+    from repo_ai.cli import build_parser
+    from repo_ai.mission import runtime
+    monkeypatch.setattr(runtime, "execute", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("stop before start")))
+    args = build_parser().parse_args(["do", "Fix charge", "-C", str(bug), "--agent", "auto", "--allow-live-provider",
+                                      "--run", "--allow-write", "charge.py", "--json"])
+    with pytest.raises(RuntimeError, match="stop before start"):
+        args.func(args)
+    err = capsys.readouterr().err
+    assert "repo-ai: routed to codex" in err and "skipped claude" in err

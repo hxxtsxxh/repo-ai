@@ -136,7 +136,7 @@ def _emit(value: dict[str, Any], args) -> None:
 
 
 def cmd_do(args) -> int:
-    from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, plan
+    from .runtime import LIVE_PROVIDERS, apply_mission, continue_from_handoff, execute, image_only_pass, plan
     if args.run and args.dry_run:
         raise ValueError('--run and --dry-run are mutually exclusive')
     if getattr(args, 'requirements', None) and (args.resume or getattr(args, 'from_handoff', None)
@@ -169,7 +169,7 @@ def cmd_do(args) -> int:
             sandbox=getattr(args, 'sandbox', None),
             image=getattr(args, 'image', None),
         )
-        if getattr(args, 'apply', False) and value.get('effective_verdict') == 'PASS':
+        if getattr(args, 'apply', False) and (value.get('effective_verdict') == 'PASS' or image_only_pass(value)):
             apply_res = apply_mission(root, value['id'])
             value['applied_to_source'] = apply_res['applied_to_source']
             value['apply_result'] = apply_res
@@ -247,7 +247,8 @@ def cmd_do(args) -> int:
             raise ValueError(f"mission {value.get('id')} was already recorded without this declaration, so "
                              '--requirements was not frozen; `repo-ai coverage ID --requirements FILE` assesses it '
                              'as supplied after the run')
-        if getattr(args, 'apply', False) and value.get('effective_verdict', value.get('verdict')) == 'PASS':
+        if getattr(args, 'apply', False) and (value.get('effective_verdict', value.get('verdict')) == 'PASS'
+                                              or image_only_pass(value)):
             target_id = value.get('winner') if value.get('schema') == 'repo-ai.candidate-comparison/1' else value.get('id')
             if target_id:
                 apply_res = apply_mission(root, target_id)
@@ -256,11 +257,12 @@ def cmd_do(args) -> int:
                 if value.get('provider') and apply_res.get('provider_verification_label'):
                     value['provider']['verification_label'] = apply_res['provider_verification_label']
     _emit(value, args)
-    return 0 if not args.run or value.get('effective_verdict', value.get('verdict')) == 'PASS' else 2
+    passed = value.get('effective_verdict', value.get('verdict')) == 'PASS' or bool(value.get('applied_to_source'))
+    return 0 if not args.run or passed else 2
 
 
 def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = None, root: Path | None = None) -> None:
-    """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorizes it no spend,
+    """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorizes no spend for it,
     and an uncapped run would spend first and be refused afterwards (`run_provider` also stops it)."""
     from ..providers.adapters import MIN_CEILING_USD, contract_for
     if contract_for(provider).enforces_hard_usd_budget and max_cost_usd < MIN_CEILING_USD:
