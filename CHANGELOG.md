@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- `repo-ai coverage` lists, per requirement, the changed lines that ran while its own tests ran (pytest missions
+  run with a frozen `--requirements` declaration), plus the changed lines run only during undeclared tests and those
+  run outside any test (import, collection). When a declaration is frozen, the mission's change-exercise
+  measurement does a second, slower run in the time left (line events re-armed at each test, for all code) that
+  records this per test; the first run and its assurance are unchanged, and a timeout only leaves the record out. It
+  is informational: attribution is by time window (shared fixtures, threads and child processes are not credited to
+  the test they serve), so it never changes a row, obligation, headline or exit code; a child process
+  (subprocess, multiprocessing, fork) or an early stop (`-x`, `--maxfail`) marks the record incomplete.
+
 ## 0.12.1 — Linux live-run sandbox, auto routing without a ceiling, container missions applicable, tournament and budget fixes
 
 - Missions run in a container (`--sandbox podman|docker`, or `auto` falling back to one) could not be applied in
