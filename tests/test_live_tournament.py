@@ -396,3 +396,44 @@ def test_substantively_different_passing_candidates_abstain_and_name_where_they_
     from repo_ai.mission.tournament import render_comparison
     shown = render_comparison(report)
     assert 'SUBSTANTIVE: charge.py:charge' in shown and 'Next: ' in shown
+
+
+def test_a_container_tournament_reads_not_checked_not_stale(bug, tmp_path, monkeypatch):
+    """Release review M1: children run in a container read "not checked" (the image cannot be checked read-only);
+    the comparison must say so with its recorded step, not call itself stale and say to run it again."""
+    from repo_ai.mission import runtime
+    from repo_ai.verify import cache
+    real = cache.static_environment
+    monkeypatch.setattr(cache, 'static_environment',
+                        lambda executor, runner, links=None: {**real(executor, runner, links), 'unchecked': ['container image']})
+    report = two_passing(bug, tmp_path)
+    recorded = report.get('next_step')
+    # both arms passed in the container just now: they are passing rows, not INCONCLUSIVE ones
+    assert {r['provider']: r['verdict'] for r in report['candidates']} == {'claude': 'PASS', 'codex': 'PASS'}, report
+    assert 'no candidate passed' not in recorded and 'differ' in recorded, recorded
+    state = runtime.status(bug, report['id'])
+    assert state['freshness'] == 'not checked', state['freshness_reasons']
+    assert not any('stale' in r for r in state['freshness_reasons'])
+    assert 'this comparison is stale' not in state['comparison']['next_step']
+    assert state['comparison']['next_step'].startswith('the container image was not checked')
+    assert state['comparison']['next_step'].endswith(recorded)
+
+
+def test_a_container_tournament_with_one_failing_arm_has_a_winner(bug, tmp_path, monkeypatch):
+    """Re-review: a failing container arm (observed FAIL, image not re-checkable) must count as FAIL, so the passing
+    arm wins as it does on the host. The comparison itself is never treated as an applicable image-only pass."""
+    from repo_ai.mission import runtime
+    from repo_ai.verify import cache
+    real = cache.static_environment
+    monkeypatch.setattr(cache, 'static_environment',
+                        lambda executor, runner, links=None: {**real(executor, runner, links), 'unchecked': ['container image']})
+    exes = {'claude': fake(tmp_path, 'claude', {'charge.py': 'def charge(amount, retries):\n    return amount * 2\n'}),
+            'codex': fake(tmp_path, 'codex', {'charge.py': GOOD}, cost=None)}
+    report = run(bug, exes)
+    by = rows(report)
+    assert by['claude']['verdict'] == 'FAIL' and by['codex']['verdict'] == 'PASS', report['candidates']
+    assert report['winner'] == by['codex']['id']
+    comparison = runtime.status(bug, report['id'])
+    assert not runtime.image_only_pass(comparison) and 'repo-ai apply ' + report['id'] not in str(comparison['recovery'])
+    assert comparison['recovery']['category'] == 'none' and 'winning candidate' in comparison['recovery']['action']
+    assert runtime.image_only_pass(runtime.status(bug, by['codex']['id']))

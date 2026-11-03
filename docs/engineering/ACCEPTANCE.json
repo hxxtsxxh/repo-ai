@@ -347,7 +347,7 @@
    "limits": [
     "Linux live runs share the host network namespace: abstract unix sockets (X11/Xwayland input injection where local same-user access is granted) and host-network services stay reachable (queue row 31)"
    ],
-   "next_action": "seccomp or Landlock unix-socket scoping on Linux; `_execution_sandbox_prefix` install-root binds by path; a release review of 0.12.0"
+   "next_action": "Linux network namespace for live runs (queue row 31: --unshare-net with a userspace network path); a live Linux run of each provider under the 0.12.1 sandbox; Claude file-tool reach of /proc under bwrap (row 11)"
   },
   {
    "id": "C19",

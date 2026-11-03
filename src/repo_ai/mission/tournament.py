@@ -83,6 +83,15 @@ class Collector:
     def _add(self, index: int, result: dict[str, Any], extra: dict[str, Any]) -> None:
         rows = self.rows
         verdict = result['effective_verdict']
+        from .runtime import image_only_verdict
+        observed = image_only_verdict(result)
+        if verdict not in ('PASS', 'FAIL') and observed:
+            # an arm whose tests ran in a container: only its image cannot be re-checked by a read-only status
+            # (apply re-checks the image digest), so its observed PASS or FAIL counts
+            if observed == 'FAIL':
+                verdict = 'FAIL'
+            elif result.get('state') == 'COMPLETE':
+                verdict = 'PASS'
         prop_sha = result.get('proposal_sha256', '')
         row = {'index': index, 'id': result['id'], 'verdict': verdict,
                'proposal_sha256': prop_sha,

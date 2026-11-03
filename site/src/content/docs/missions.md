@@ -48,7 +48,8 @@ Each step needs its own flag. Nothing is implied.
 
 `--agent` chooses the provider: `auto`, `none`, `replay`, `codex`, `claude`, `bob`, `agy`, `opencode` or `opencode-acp`. `auto` routes
 deterministically and returns `SELECTED`, `NOT_AUTHORIZED` or `NO_AGENT`; it never falls back to an unusable
-provider. See [Providers](/repo-ai/docs/providers/) for which ones actually work.
+provider. From 0.12.1, without a `--max-cost-usd` of at least 0.0001 it skips the providers whose CLI enforces a
+USD ceiling (Claude Code, Bob), says which it skipped, and picks the next eligible one (whose cost may be UNKNOWN). See [Providers](/repo-ai/docs/providers/) for which ones actually work.
 
 :::caution[Needs a provider login and explicit consent]
 ```sh

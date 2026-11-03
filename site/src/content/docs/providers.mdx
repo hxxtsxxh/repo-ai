@@ -71,7 +71,10 @@ start without network (its ACP mode runs its own local server) and reports `NO_H
 
 Last live-verified on an earlier pre-release; not re-run on 0.9.0 or 0.10.0, and its account entitlement was not
 re-checked. Install and log in to Bob as its documentation describes. repo-ai passes your `--max-cost-usd` to Bob's own cost cap,
-so a positive ceiling is enforced by the provider; from 0.12.0 a live Bob run without one is refused before it starts. Cost figures are provider-reported, not billing records.
+so a positive ceiling is enforced by the provider; from 0.12.0 a live Bob run without one is refused before it starts,
+and from 0.12.1 `--agent auto` skips it without one. On Linux, from 0.12.1, a live Bob run gets the same bubblewrap
+sandbox as Claude and Codex (HOME, `/run`, `/tmp` and login stores hidden); not live-verified there, so a Bob login
+that needs anything beyond `~/.bob/settings` or `BOB_API_KEY` (a keyring over the session bus) will not work. Cost figures are provider-reported, not billing records.
 repo-ai copies your `~/.bob/settings` directory into the run's scratch HOME and passes `BOB_API_KEY` if it is set;
 both are readable inside the run.
 
@@ -125,7 +128,8 @@ command). The model gets file tools only, with no shell, web, MCP, skills or hoo
 starts the session once with a model name Claude Code rejects locally and refuses the run if anything else would load
 (an account can sync plugins and connectors into every login). `--max-cost-usd` maps to Claude's own cap, which is
 checked between turns: one turn of overshoot was observed. From 0.12.0 a live Claude run needs a positive
-`--max-cost-usd` and is refused before it starts without one (the default 0 authorises no spend). Claude is also a **host** (`repo-ai init --agent claude`).
+`--max-cost-usd` and is refused before it starts without one (the default 0 authorizes no spend for it); from 0.12.1
+`--agent auto` skips it without one and says so. Claude is also a **host** (`repo-ai init --agent claude`).
 
 ### OpenCode (local model, macOS only)
 

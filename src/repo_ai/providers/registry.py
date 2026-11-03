@@ -277,7 +277,8 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
             given = ("none was given" if max_cost_usd <= 0 else
                      f"${_usd(max_cost_usd)} is below the smallest it can enforce")
             reasons.append(f"enforces a USD ceiling and {given}: pass --max-cost-usd of at least "
-                           f"{_usd(MIN_CEILING_USD)} to use it (the default 0 authorizes no spend)")
+                           f"{_usd(MIN_CEILING_USD)} to use it (the default 0 authorizes no spend for a provider that enforces "
+                           "a ceiling)")
             if not consented:
                 reasons.append("not authorized (use --allow-live-provider, or `repo-ai agents authorize " + name + "`)")
             needs_ceiling.append((name, consented))
@@ -299,6 +300,16 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
     if selectable:
         outcome, selected = "SELECTED", selectable[0]
         why = f"{selected}: first eligible provider in order {', '.join(order[:5])}"
+        if any(order.index(n) < order.index(selected) for n, _ in needs_ceiling):
+            skipped = [(n, ok) for n, ok in needs_ceiling if order.index(n) < order.index(selected)]
+            names = [n if ok else f"{n} (also not authorized)" for n, ok in skipped]
+            why += (f"; skipped {', '.join(names)} (enforce{'s' if len(names) == 1 else ''} a USD ceiling and none "
+                    f"was given: pass --max-cost-usd of at least {_usd(MIN_CEILING_USD)} to use "
+                    + ("it" if len(names) == 1 else "them")
+                    + ("" if all(ok for _, ok in skipped) else ", and authorize " + ("it" if len(names) == 1 else "them"))
+                    + ")")
+            if not contract_for(selected).enforces_hard_usd_budget:
+                why += f"; {selected}'s cost is UNKNOWN (it cannot enforce a ceiling)"
     elif usable:
         outcome, selected = "NOT_AUTHORIZED", None
         why = ("usable provider(s) exist (" + ", ".join(usable) + ") but none is authorized for live execution"
