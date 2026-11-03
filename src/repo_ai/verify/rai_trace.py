@@ -15,6 +15,7 @@ values, environment or output.
 
 Python 3.12+ uses ``sys.monitoring`` and disables each code location after
 its first start, so the overhead is one callback per function, not per call.
+
 ``--per-test --watch a.py,b.py`` (with ``--lines``, for ``-m pytest`` only)
 also records, per pytest node id, which lines of the watched files ran while
 that test ran (its setup, call and teardown), and separately the watched lines
@@ -51,7 +52,7 @@ def main(argv):
     per_test = {}  # pytest node id -> {watched path -> lines run during that test}
     outside = {}  # watched path -> lines run while no test was running (import, collection)
     current = [None]
-    counts = {"collected": 0, "ran": 0}
+    counts = {"collected": 0, "ran": 0, "collection_finished": 0}
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
     seen = {}
@@ -131,7 +132,8 @@ def main(argv):
             data["per_test"] = {t: {k: sorted(v) for k, v in sorted(files.items())}
                                 for t, files in sorted(per_test.items())}
             # every collected test ran (an early stop, -x or --maxfail, leaves some unrun)
-            data["per_test_complete"] = len(per_test) <= MAX_PER_TEST and counts["ran"] >= counts["collected"]
+            data["per_test_complete"] = (len(per_test) <= MAX_PER_TEST and counts["ran"] >= counts["collected"]
+                                         and counts["collection_finished"] == 1)
             data["outside_tests"] = {k: sorted(v) for k, v in sorted(outside.items())}
         tmp = out + ".tmp"
         with open(tmp, "w", encoding="utf-8") as fh:
@@ -201,6 +203,7 @@ def main(argv):
         class _PerTest:
             def pytest_collection_finish(self, session):
                 counts["collected"] = len(session.items)
+                counts["collection_finished"] = 1
 
             @pytest.hookimpl(hookwrapper=True)
             def pytest_runtest_protocol(self, item, nextitem):
