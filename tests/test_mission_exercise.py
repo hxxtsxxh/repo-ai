@@ -222,3 +222,26 @@ def test_an_early_stop_makes_the_per_test_record_incomplete(tmp_path):
     root = _repo(tmp_path, PY_AFTER, failing_first)
     rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
     assert rec['per_test_complete'] is False, rec
+
+
+def test_an_exception_in_the_per_test_run_keeps_the_assurance(tmp_path, monkeypatch):
+    """Final check of #118: anything the second run raises (e.g. an oversized record) only leaves the record out."""
+    root = _repo(tmp_path, PY_AFTER, PY_TEST_BOTH)
+    real = exercise.isolate.read_inside
+
+    def oversized(base, rel, limit):
+        if rel.endswith('trace-per-test.json'):
+            raise ValueError('record too large')
+        return real(base, rel, limit)
+    monkeypatch.setattr(exercise.isolate, 'read_inside', oversized)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['assurance'] == 'FULL' and 'per_test' not in rec and rec['per_test_reason'].startswith('the per-test run failed')
+
+
+def test_last_failed_in_addopts_does_not_shrink_the_per_test_run(tmp_path):
+    (tmp_path / 'pytest.ini').write_text('[pytest]\naddopts = --lf\n')
+    root = _repo(tmp_path, PY_AFTER, PY_TEST_BOTH)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    # the cache is off in the per-test run, so --lf either runs everything or stops it as a usage error (incomplete)
+    assert rec['assurance'] == 'FULL'
+    assert rec.get('per_test_complete') is not True or set(rec['per_test']) == {'test_m.py::test_neg', 'test_m.py::test_pick'}
