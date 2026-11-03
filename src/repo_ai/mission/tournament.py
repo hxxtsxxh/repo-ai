@@ -88,7 +88,10 @@ class Collector:
         if verdict not in ('PASS', 'FAIL') and observed:
             # an arm whose tests ran in a container: only its image cannot be re-checked by a read-only status
             # (apply re-checks the image digest), so its observed PASS or FAIL counts
-            verdict = 'PASS' if observed == 'PASS' and result.get('state') == 'COMPLETE' else 'FAIL'
+            if observed == 'FAIL':
+                verdict = 'FAIL'
+            elif result.get('state') == 'COMPLETE':
+                verdict = 'PASS'
         prop_sha = result.get('proposal_sha256', '')
         row = {'index': index, 'id': result['id'], 'verdict': verdict,
                'proposal_sha256': prop_sha,
