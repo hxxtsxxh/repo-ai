@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — missions in containers, Claude never started uncapped, routing journey, tournament differences, security lows
 
 - A provider whose CLI enforces a USD ceiling (Claude Code, Bob) is never started live without one. `run_provider`
   refuses it whenever the ceiling left is under $0.0001 (the flag prints four decimals): a missing `--max-cost-usd`,
