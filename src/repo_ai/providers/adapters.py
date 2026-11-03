@@ -259,6 +259,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     lines = [line.strip() for line in output.decode("utf-8", "replace").splitlines() if line.strip()]
     events_count = 0
     non_json_lines = 0
+    truncated_events = 0
     session_id: str | None = None
     turns = 0
     cost_usd = 0.0
@@ -298,6 +299,9 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
             non_json_lines += 1
             continue
         events_count += 1
+        if obj.get("type") == "repo_ai_truncated":  # an over-long line repo-ai's capture replaced (not the provider's)
+            truncated_events += 1
+            continue
         raw_stats = obj.get("stats")
         stats: dict[str, Any] = raw_stats if isinstance(raw_stats, dict) else {}
         sid = (
@@ -494,6 +498,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         "protocol_errors": protocol_errors[:10],
         "events_count": events_count,
         "non_json_lines": non_json_lines,
+        "truncated_events": truncated_events,
         "session_id": session_id,
         "turns": max(turns, 1 if events_count > 0 else 0),
         "tool_calls": tool_calls[:32],
@@ -1134,6 +1139,7 @@ def _acp_run_result(provider: str, run: AcpResult, *, resolved: Path, identity: 
     }
 
 
+MAX_EVENT_LINE = 32_768  # a longer event line (a big tool result) is replaced by a repo_ai_truncated placeholder
 EGRESS_PROVIDERS = ("claude", "codex", "bob")  # the Linux live providers whose sandbox can take the egress proxy
 MIN_CEILING_USD = 0.0001  # the ceiling flags carry four decimals; below this they would print as 0
 
@@ -1404,8 +1410,10 @@ def run_provider(
                     "cost_usd": 0.0, "cost_status": "UNKNOWN", "auth_mode": claude_plan.mode, "auth_env_vars": list(claude_plan.env_vars), "events": {},
                     "reasons": unexpected,
                 }
-        # OpenCode's events embed whole tool inputs/outputs (observed 68 KB for a 28-edit local run)
-        limit = MAX_OUTPUT * 4 if provider == "opencode" else MAX_OUTPUT
+        # events embed whole tool inputs/outputs (OpenCode: 68 KB for a 28-edit local run; Claude Code: one Read of a
+        # 150 KB source file, journey-live-v1): keep 4x the usual capture, and replace an over-long event line by a
+        # placeholder rather than stopping a live run that has already spent
+        limit = MAX_OUTPUT * 4
         acp_run: AcpResult | None = None
         result: ProbeResult | None = None
         run_argv = [*egress_head, *argv]
@@ -1419,7 +1427,7 @@ def run_provider(
                                                                                     bounded_timeout)
             else:
                 result = _capture([*prefix, *run_argv], workspace, env, timeout=bounded_timeout, output_limit=limit,
-                                  separate_stderr=True, pass_fds=pinned_fds(prefix),
+                                  separate_stderr=True, pass_fds=pinned_fds(prefix), max_line=MAX_EVENT_LINE,
                                   max_timeout=LIVE_TIMEOUT_CAP if not simulated else SIMULATED_TIMEOUT_CAP)
         finally:  # also on an exception or Ctrl-C: setsid'd descendants are not in the process group
             cleanup_problems = _reap_provider_run(run_marker) if is_seatbelt else []
@@ -1721,8 +1729,13 @@ def validate_workspace_edits(
     test_files: set[str],
     tracked_files: set[str],
     max_patch: int = 256_000,
+    generated: dict[str, str] | None = None,
 ) -> list[str]:
-    """Validate that a provider adapter modified only approved non-test tracked files without secrets."""
+    """Validate that a provider adapter modified only approved non-test tracked files without secrets. `generated`:
+    untracked version files repo-ai itself copied into the workspace, with the sha256 of the bytes copied
+    (`isolate.Workspace.generated_sha256`); one still holding exactly those bytes is not the provider's, and one
+    changed, removed or replaced by anything but a regular file is refused."""
+    generated = generated or {}
     from ..mission.verification import test_support
     from ..verify import isolate
     from .discovery import _inside as inside_dir
@@ -1795,8 +1808,21 @@ def validate_workspace_edits(
         if path.is_dir():
             continue
         rel_posix = path.relative_to(workspace).as_posix()
+        if rel_posix in generated and rel_posix not in tracked_files:
+            continue  # checked below against the bytes repo-ai copied in
         if rel_posix not in tracked_files:
             reasons.append(f"provider created untracked file outside frozen tracked set: {rel_posix}")
+
+    from ..mission.contracts import MAX_SOURCE_FILE as _max_file
+    for rel_posix, copied_sha in sorted(generated.items()):
+        if rel_posix in tracked_files:
+            continue
+        try:
+            data = isolate.read_inside(workspace, rel_posix, _max_file)
+        except Exception:  # noqa: BLE001 - too large or unreadable is a change, never a crash
+            data = None
+        if data is None or hashlib.sha256(data).hexdigest() != copied_sha:
+            reasons.append(f"provider modified a generated version file: {rel_posix}")
 
     if not changed_files:
         reasons.append("provider produced a no-op diff; cannot establish a repair")
