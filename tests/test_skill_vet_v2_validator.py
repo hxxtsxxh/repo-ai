@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -162,7 +163,7 @@ def test_defanged_text_is_clean(text):
 
 def test_the_command_line_refuses_without_the_fixture_flag(tmp_path):
     proc = subprocess.run([sys.executable, str(HERE / "validate_corpus.py"), str(tmp_path)], capture_output=True,
-                          text=True, env={"PATH": "/usr/bin:/bin"})
+                          text=True, env={k: v for k, v in os.environ.items() if k != "REPO_AI_SECURITY_FIXTURES"})
     assert proc.returncode == 2 and "REPO_AI_SECURITY_FIXTURES=1" in proc.stderr
 
 
