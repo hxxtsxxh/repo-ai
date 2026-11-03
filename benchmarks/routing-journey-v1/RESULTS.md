@@ -16,6 +16,13 @@ ceiling-enforcing provider); run 2's records do not carry the ceiling, so G4 lis
 recorded (the harness at `bf49f2a` passed `--max-cost-usd 0.5` to U2, O1, E1 and X1 and none to Q1). **Run 3** (`7f769bc`,
 main after #99–#106, results in `results/run-3*`): **G1 27 of 27, G2 0, G3 0, G4 0.**
 
+**Run 4** (2026-11-03 UTC, `46aac5c` on `fix/auto-route-ceiling`, amendment 3, results in `results/run-4*`):
+**G1 29 of 29, G2 0, G3 0, G4 0.** At the default $0, M1 (Claude and Codex installed) selected Codex, with Claude not
+eligible: "enforces a USD ceiling and none was given: pass --max-cost-usd > 0 to use it"; O1 (Claude only) routed
+`NO_AGENT` naming `--max-cost-usd`, and `do --agent auto` was refused with that advice and no provider started. With
+`--max-cost-usd 0.5` every Claude expectation of runs 1 to 3 held unchanged. Runs 1 to 3 remain the record of 0.12.0,
+where the same $0 route selected Claude and its mission was then refused.
+
 | scenario | what happened |
 |---|---|
 | Z1 zero providers | `NO_AGENT`; `do --agent auto` exited 1 with no provider started |
