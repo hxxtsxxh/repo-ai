@@ -96,8 +96,10 @@ untouched until `repo-ai apply`. The residual risks, stated plainly:
   (`/nix/var/nix/daemon-socket`, `/var/lib/...`) also stay reachable. Not live-verified on Linux; run agents on a
   machine or account without such services, or in a container or VM. Unreleased, opt-in (`REPO_AI_LINUX_EGRESS_PROXY=1`):
   the run gets its own network namespace and reaches the internet only through a repo-ai proxy that allows HTTPS to
-  public addresses, which closes the abstract-socket and host-network paths; a provider that ignores HTTPS_PROXY then
-  has no network. Verified in CI with curl, not with the real CLIs.
+  public addresses, which closes the abstract-socket and host-network paths (not filesystem sockets outside the hidden
+  directories, and not port 443 of other public addresses, such as devices on an IPv6 LAN); any TCP to port 443 of a
+  public host is allowed by design. A provider that ignores HTTPS_PROXY then has no network. Verified in CI with curl,
+  not with the real CLIs.
 - **OpenCode on macOS, "loopback only":** measured on a CI runner (`benchmarks/seatbelt-loopback/`), the rule
   denies every other host (another machine on the local network, the internet; IPv4 measured, IPv6 not). But seatbelt can name hosts only as
   `*` or `localhost`, and `localhost` also matches your machine's own network addresses, so the agent can reach
