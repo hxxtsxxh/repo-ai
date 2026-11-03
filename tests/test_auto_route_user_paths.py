@@ -87,3 +87,19 @@ def test_the_explicit_agent_refusal_survives_a_failing_route(bug, monkeypatch):
     monkeypatch.setattr(registry, "route", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
     with pytest.raises(ValueError, match="enforces a USD ceiling"):
         mcli._require_ceiling("claude", 0, None, bug)
+
+
+def test_auto_routing_says_which_ceiling_provider_it_skipped(monkeypatch, tmp_path):
+    from repo_ai.providers import registry as reg
+    from repo_ai.providers.discovery import PROVIDERS
+    policy = {"exists": True, "preferred": [], "authorized": [], "cooldown": {}, "observations": {}}
+    monkeypatch.setattr(reg, "load_policy", lambda root: policy)
+    monkeypatch.setattr(reg, "_isolated_ready", lambda name: True)
+    monkeypatch.setattr(reg, "setup_problems", lambda name: [])
+    profiles = [{"provider": p, "stage": "DISCOVERED" if p in ("claude", "codex") else "NOT_INSTALLED",
+                 "status": "DISCOVERED", "identity_sha256": "id-" + p} for p in PROVIDERS]
+    d = reg.route(tmp_path, run_authorized=True, profiles=profiles)
+    assert d["selected"] == "codex"
+    assert "skipped claude" in d["why"] and "--max-cost-usd" in d["why"] and "cost is UNKNOWN" in d["why"]
+    capped = reg.route(tmp_path, run_authorized=True, max_cost_usd=0.5, profiles=profiles)
+    assert capped["selected"] == "claude" and "skipped" not in capped["why"]

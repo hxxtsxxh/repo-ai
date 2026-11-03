@@ -169,3 +169,37 @@ def test_a_continuation_refuses_a_different_environment(shop, tmp_path, recorded
 def test_resume_refuses_a_sandbox_choice(shop):  # noqa: F811
     proc = run_cli(shop, 'do', '--resume', 'abc', '--sandbox', 'podman')
     assert proc.returncode != 0 and 'frozen with the mission' in proc.stderr
+
+
+@pytest.fixture
+def image_unchecked(monkeypatch):
+    """As with a real container: the evidence records that its image cannot be re-checked by path."""
+    from repo_ai.verify import cache
+    real = cache.static_environment
+
+    def static(executor, runner, links=None):
+        return {**real(executor, runner, links), 'unchecked': ['container image']}
+    monkeypatch.setattr(cache, 'static_environment', static)
+
+
+@pytest.mark.skipif(not _host_sandbox(), reason='needs the host sandbox (seatbelt or bwrap)')
+def test_a_container_mission_reads_not_checked_and_can_still_be_applied(shop, tmp_path, recorded, image_unchecked):  # noqa: F811
+    """0.12.0 refused to apply any mission run in a container: its evidence always reads "not checked" (the image
+    cannot be checked read-only). apply accepts exactly that, because it re-runs the tests in the same image."""
+    planned = runtime.plan(shop, 'Make pricing.py compute percentage discounts and tax correctly', agent='claude',
+                           write_paths=['pricing.py'], execute_local=True, sandbox='podman', image='localhost/deps:1')
+    done = runtime.execute(shop, planned, None, provider_executable=_provider(tmp_path, 'claude', FIX_BOTH))
+    state = runtime.status(shop, done['id'])
+    assert state['freshness'] == 'not checked' and state['passport']['verdict'] == 'PASS'
+    applied = runtime.apply_mission(shop, done['id'])
+    assert applied['post_apply_verdict'] == 'PASS' and applied['applied_to_source']
+
+
+@pytest.mark.skipif(not _host_sandbox(), reason='needs the host sandbox (seatbelt or bwrap)')
+def test_a_stale_container_mission_is_still_refused(shop, tmp_path, recorded, image_unchecked):  # noqa: F811
+    planned = runtime.plan(shop, 'Make pricing.py compute percentage discounts and tax correctly', agent='claude',
+                           write_paths=['pricing.py'], execute_local=True, sandbox='podman', image='localhost/deps:1')
+    done = runtime.execute(shop, planned, None, provider_executable=_provider(tmp_path, 'claude', FIX_BOTH))
+    (shop / 'pricing.py').write_text((shop / 'pricing.py').read_text() + '\n# edited after the run\n')
+    with pytest.raises(ValueError):
+        runtime.apply_mission(shop, done['id'])

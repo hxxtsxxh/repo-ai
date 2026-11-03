@@ -226,6 +226,9 @@ def cmd_do(args) -> int:
             )
         elif allow_live and value['contract']['provider'] in LIVE_PROVIDERS:
             _require_ceiling(value['contract']['provider'], args.max_cost_usd, value.get('provider_route'), root)
+            route_why = (value.get('provider_route') or {}).get('why') or ''
+            if args.agent == 'auto' and '; skipped ' in route_why:  # say so before a provider starts (stderr: JSON-safe)
+                print('repo-ai: routed to ' + route_why, file=sys.stderr)
             value = execute(root, value, None, allow_live=True)
         elif allow_live and args.agent == 'auto' and value.get('provider_route'):
             route = value['provider_route']
@@ -257,7 +260,7 @@ def cmd_do(args) -> int:
 
 
 def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = None, root: Path | None = None) -> None:
-    """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorises no spend,
+    """A provider whose CLI enforces a USD ceiling is never started without one: the default 0 authorizes it no spend,
     and an uncapped run would spend first and be refused afterwards (`run_provider` also stops it)."""
     from ..providers.adapters import MIN_CEILING_USD, contract_for
     if contract_for(provider).enforces_hard_usd_budget and max_cost_usd < MIN_CEILING_USD:
@@ -271,7 +274,8 @@ def _require_ceiling(provider: str, max_cost_usd: float, route: dict | None = No
                   if r.get('eligible') and not r.get('hard_usd_budget') and r['provider'] != provider]
         hint = f", or choose a provider whose cost is UNKNOWN instead (--agent {others[0]})" if others else ''
         raise ValueError(f'{provider} enforces a USD ceiling: give --max-cost-usd > 0{hint} (the default 0 '
-                         'authorizes no spend; without a ceiling the run would start uncapped and its result be '
+                         'authorizes no spend for such a provider; without a ceiling the run would start uncapped and '
+                         'its result be '
                          'refused afterwards)')
 
 
