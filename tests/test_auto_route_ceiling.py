@@ -67,3 +67,28 @@ def test_unauthorized_ceiling_provider_is_not_reported_as_usable(monkeypatch, tm
     profiles = _setup(monkeypatch, ["claude"])
     d = registry.route(tmp_path, max_cost_usd=0.0, run_authorized=False, preferred=["claude"], profiles=profiles)
     assert d["outcome"] == "NO_AGENT"
+
+
+def test_a_positive_ceiling_below_the_flag_precision_is_named_as_such(monkeypatch, tmp_path):
+    profiles = _setup(monkeypatch, ["claude"])
+    d = registry.route(tmp_path, max_cost_usd=0.00005, run_authorized=True, preferred=["claude"], profiles=profiles)
+    claude = next(r for r in d["considered"] if r["provider"] == "claude")
+    assert any("5e-05 is below the smallest it can enforce" in r for r in claude["reasons"])
+    assert not any("none was given" in r for r in claude["reasons"])
+
+
+def test_an_unauthorized_ceiling_provider_names_both_blockers(monkeypatch, tmp_path):
+    profiles = _setup(monkeypatch, ["claude"])
+    d = registry.route(tmp_path, max_cost_usd=0.0, run_authorized=False, preferred=["claude"], profiles=profiles)
+    assert "--max-cost-usd" in d["why"] and "also not authorized" in d["why"] and "authorize" in d["why"]
+    claude = next(r for r in d["considered"] if r["provider"] == "claude")
+    assert any(r.startswith("not authorized") for r in claude["reasons"])
+
+
+def test_the_ceiling_reason_is_only_given_to_otherwise_usable_providers(monkeypatch, tmp_path):
+    profiles = _setup(monkeypatch, ["codex"])  # claude and bob are not installed
+    d = registry.route(tmp_path, max_cost_usd=0.0, run_authorized=True, profiles=profiles)
+    for name in ("claude", "bob"):
+        row = next(r for r in d["considered"] if r["provider"] == name)
+        assert not any("USD ceiling" in r for r in row["reasons"]), row
+

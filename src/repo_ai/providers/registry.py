@@ -222,7 +222,7 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
     considered: list[dict[str, Any]] = []
     usable: list[str] = []
     selectable: list[str] = []
-    needs_ceiling: list[str] = []  # capable but for the missing USD ceiling its CLI would enforce
+    needs_ceiling: list[tuple[str, bool]] = []  # (name, consented): capable but for the ceiling its CLI enforces
     for name in order:
         prof = by_name.get(name) or {}
         contract = contract_for(name)
@@ -243,11 +243,6 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
         hard_budget = bool(contract.enforces_hard_usd_budget)
         if max_cost_usd > 0 and not hard_budget:
             reasons.append("cannot enforce a USD ceiling (cost is not capped by the CLI)")
-        no_ceiling = hard_budget and max_cost_usd < MIN_CEILING_USD
-        if no_ceiling:
-            # it would be refused before it starts (`run_provider` never runs it uncapped), so never route to it
-            reasons.append("enforces a USD ceiling and none was given: pass --max-cost-usd > 0 to use it "
-                           "(the default 0 authorises no spend)")
         if run_authorized:
             # a per-run flag authorizes any provider unless the project persisted an allowlist
             consented = not policy["authorized"] or name in policy["authorized"]
@@ -260,8 +255,14 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
             reasons.append(f"recent live observation: {obs['state']}")
         capable = (installed and ready and not limited and readiness not in _BLOCKING
                    and not (max_cost_usd > 0 and not hard_budget))
-        if capable and no_ceiling:
-            needs_ceiling.append(name)
+        if capable and hard_budget and max_cost_usd < MIN_CEILING_USD:
+            # it would be refused before it starts (`run_provider` never runs it uncapped), so never route to it
+            given = "none was given" if max_cost_usd <= 0 else f"{max_cost_usd:g} is below the smallest it can enforce"
+            reasons.append(f"enforces a USD ceiling and {given}: pass --max-cost-usd of at least {MIN_CEILING_USD:g} "
+                           "to use it (the default 0 authorizes no spend)")
+            if not consented:
+                reasons.append("not authorized (use --allow-live-provider, or `repo-ai agents authorize " + name + "`)")
+            needs_ceiling.append((name, consented))
             capable = False
         if capable:
             usable.append(name)
@@ -287,8 +288,11 @@ def route(root: Path, *, max_cost_usd: float = 0.0, run_authorized: bool = False
         outcome, selected = "NO_AGENT", None
         why = "no installed provider is ready, within the cost policy and not rate-limited; repo-ai continues offline"
         if needs_ceiling:
-            why += (f" ({', '.join(needs_ceiling)} enforce{'s' if len(needs_ceiling) == 1 else ''} a USD ceiling: pass "
-                    "--max-cost-usd > 0 to use " + ("it" if len(needs_ceiling) == 1 else "them") + ")")
+            names = [n if ok else f"{n} (also not authorized)" for n, ok in needs_ceiling]
+            why += (f" ({', '.join(names)} enforce{'s' if len(names) == 1 else ''} a USD ceiling: pass --max-cost-usd "
+                    f"of at least {MIN_CEILING_USD:g} to use " + ("it" if len(names) == 1 else "them")
+                    + ("" if all(ok for _, ok in needs_ceiling) else ", and authorize it with --allow-live-provider "
+                       "or `repo-ai agents authorize NAME`") + ")")
     return {"schema": "repo-ai.provider-route/1", "outcome": outcome, "selected": selected, "why": why,
             "policy_present": policy["exists"], "considered": considered,
             "not_evaluated": ["authenticated", "quota_remaining", "protocol_validated", "edit_proven"]}
