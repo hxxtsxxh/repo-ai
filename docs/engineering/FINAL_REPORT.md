@@ -1,14 +1,25 @@
 # Omniprovider mission — report
 
-Status: **0.11.9 publicly shipped and verified (2026-11-02)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.0 publicly shipped and verified (2026-11-03 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
-## Current state (2026-11-02)
+## Current state (2026-11-03 UTC)
 
-### After 0.11.9 (the 0.12.0 cycle, same day)
+### Release 0.12.0 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.0` at `1822c34` (#109), release run 41575685786 |
+| Wheel | `repo_ai_cli-0.12.0-py3-none-any.whl` sha256 `3ad4f498c31b1aacf9f5ddea0e137a5e9d0c8b59972e0288bd7e034a24f38ec0` |
+| sdist | `repo_ai_cli-0.12.0.tar.gz` sha256 `154096236e7c58c8833bbd734950da6e836db77b32e7255084b145aba5aa8ccf` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | SLSA v1 attestations verified for both, source `refs/tags/v0.12.0` |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.0`; an uncapped Claude run refused before start; `verify --run` caught a regression in the sandbox |
+
+### The 0.12.0 cycle (2026-11-02)
 
 - **Security (C18):** queue row 19 closed (#99): the Linux probe binds what it checked by descriptor with bubblewrap
   0.10+ (path binds, and the race, remain on older bubblewrap); a minified file named LICENSE below the root gets the
