@@ -1,0 +1,72 @@
+# skill-vet-fresh-v2 (benchmarks/skill-vet-fresh-v2/PREREGISTRATION.md): an independently written corpus of defanged
+# attack-like skills and plugins. Read only on this disposable runner (REPO_AI_SECURITY_FIXTURES=1), never on a
+# developer's machine. `validate` checks a delivery; `run` is the preregistered one-shot run, started by hand.
+name: skill-vet-v2
+
+on:
+  pull_request:
+    paths: ["benchmarks/skill-vet-fresh-v2/corpus/**", "benchmarks/skill-vet-fresh-v2/labels.json",
+            "benchmarks/skill-vet-fresh-v2/AUTHOR.md", "benchmarks/skill-vet-fresh-v2/MANIFEST.sha256"]
+  workflow_dispatch:
+    inputs:
+      freeze:
+        description: "the freeze commit (adds SUT.json); dispatch on a branch cut from it with only the delivery added"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: a delivery pull request changes nothing but the delivery
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch -q --depth=1 origin "${{ github.event.pull_request.base.sha }}"
+          bad=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD | grep -v -E '^benchmarks/skill-vet-fresh-v2/(corpus/|labels\.json$|AUTHOR\.md$|MANIFEST\.sha256$)' || true)
+          if [ -n "$bad" ]; then echo "not part of a delivery:"; echo "$bad"; exit 1; fi
+      - name: validate the delivery
+        env:
+          REPO_AI_SECURITY_FIXTURES: "1"
+        run: python benchmarks/skill-vet-fresh-v2/validate_corpus.py benchmarks/skill-vet-fresh-v2
+
+  run:
+    # the single preregistered run: only by hand, only once (refused when results exist), only on the frozen vetter
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    concurrency:
+      group: skill-vet-v2-run
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -c benchmarks/skill-vet-fresh-v2/constraints.txt . && python -m pip freeze
+      - name: refuse a second run
+        run: test ! -e benchmarks/skill-vet-fresh-v2/results/run-1.json
+      - name: the system under test is the frozen one
+        env:
+          FREEZE: ${{ inputs.freeze }}
+        run: python benchmarks/skill-vet-fresh-v2/sut.py --check "$FREEZE"
+      - name: skill-vet-fresh-v2
+        env:
+          REPO_AI_SECURITY_FIXTURES: "1"
+        run: python benchmarks/skill-vet-fresh-v2/run.py --out results-run-1.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skill-vet-fresh-v2-run-1
+          path: results-run-1.json
