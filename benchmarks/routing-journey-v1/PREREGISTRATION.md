@@ -87,3 +87,22 @@ those missions are now refused for the missing ceiling, so run 2's result does n
 gives Claude a ceiling in Q1 and A1 (F1 stays without one, so Codex remains the fallback) and adds **G4: missions
 that started a ceiling-enforcing provider without a usable ceiling = 0**. Run 2 is re-evaluated with G4 and kept;
 run 3 is the first run of this harness on main. All three runs are reported.
+
+## Amendment 3 before run 4 (2026-11-03 UTC, queue row 28)
+
+Runs 1 to 3 describe 0.12.0, where `--agent auto` at the default `--max-cost-usd 0` could select Claude and the
+mission was then refused for the missing ceiling (the 0.12.0 known limitation). Routing now treats a provider whose CLI
+enforces a USD ceiling as ineligible when no usable ceiling (at least $0.0001) is given, says why, and names
+`--max-cost-usd`. Written before run 4, with no run of the changed code through this harness:
+
+- The route steps that check Claude's readiness or selection (U2 both, O1 `route` and `route-after-success`, E1 all
+  three, C1, X1) now pass `--max-cost-usd 0.5`, as their missions already did. Their expectations are unchanged.
+- M1 `route` (at $0, Claude and Codex installed): expected **Codex** selected, Claude not eligible with a reason naming
+  `--max-cost-usd`, both `INSTALLED_UNPROBED`. The default order (Claude first) stays checked by
+  `route-with-usd-ceiling`.
+- New O1 steps at $0, before the ceilinged route: `route-at-zero` expects `NO_AGENT`, Claude `INSTALLED_UNPROBED` and
+  not eligible, and a `why` naming `--max-cost-usd`; `mission-at-zero` expects the refusal "no provider can run this
+  mission (NO_AGENT)" naming `--max-cost-usd`, with no provider started.
+- The route record now includes `why`. G1 counts 29 expected decisions (27 + 2); G2, G3 and G4 are unchanged.
+
+Runs 1 to 3 are kept as the record of 0.12.0. Run 4 is the first run of this harness on the changed code.

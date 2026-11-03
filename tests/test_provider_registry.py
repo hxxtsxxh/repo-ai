@@ -51,18 +51,20 @@ def test_persisted_policy_authorizes_without_run_flag_and_revoke_removes_it(repo
 
 def test_many_providers_order_is_deterministic_and_preference_wins(repo: Path) -> None:
     prof = _profiles("bob", "codex", "agy")
-    assert registry.route(repo, run_authorized=True, profiles=prof)["selected"] == "bob"
+    # default order: bob first when a ceiling is given; at the default $0 it is skipped (its CLI enforces one)
+    assert registry.route(repo, run_authorized=True, max_cost_usd=1.0, profiles=prof)["selected"] == "bob"
+    assert registry.route(repo, run_authorized=True, profiles=prof)["selected"] == "codex"
     registry.authorize(repo, "agy", prefer=True)
-    registry.authorize(repo, "bob")
+    registry.authorize(repo, "codex")
     assert registry.route(repo, run_authorized=True, profiles=prof)["selected"] == "agy"
-    assert registry.route(repo, run_authorized=True, profiles=prof, preferred=["bob"])["selected"] == "bob"
+    assert registry.route(repo, run_authorized=True, profiles=prof, preferred=["codex"])["selected"] == "codex"
 
 
 def test_rate_limited_provider_is_skipped_until_cooldown_expires(repo: Path) -> None:
-    registry.note_rate_limited(repo, "bob", now=1000.0)
-    prof = _profiles("bob", "codex")
-    assert registry.route(repo, run_authorized=True, profiles=prof, now=1500.0)["selected"] == "codex"
-    assert registry.route(repo, run_authorized=True, profiles=prof, now=1000.0 + registry.COOLDOWN_SECONDS + 1)["selected"] == "bob"
+    registry.note_rate_limited(repo, "codex", now=1000.0)
+    prof = _profiles("codex", "agy")
+    assert registry.route(repo, run_authorized=True, profiles=prof, now=1500.0)["selected"] == "agy"
+    assert registry.route(repo, run_authorized=True, profiles=prof, now=1000.0 + registry.COOLDOWN_SECONDS + 1)["selected"] == "codex"
 
 
 def test_usd_ceiling_excludes_providers_that_cannot_enforce_it(repo: Path) -> None:
@@ -83,10 +85,10 @@ def test_absent_sandbox_means_not_ready(repo: Path, monkeypatch: pytest.MonkeyPa
 def test_corrupt_or_foreign_policy_is_treated_as_absent(repo: Path) -> None:
     path = registry.policy_path(repo)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text('{"schema": "other", "authorized": ["bob"]}')
+    path.write_text('{"schema": "other", "authorized": ["codex"]}')
     assert registry.load_policy(repo)["authorized"] == []
     path.write_text("not json")
-    assert registry.route(repo, profiles=_profiles("bob"))["outcome"] == "NOT_AUTHORIZED"
+    assert registry.route(repo, profiles=_profiles("codex"))["outcome"] == "NOT_AUTHORIZED"
 
 
 def test_unknown_provider_names_are_rejected_and_ignored(repo: Path) -> None:
@@ -122,8 +124,8 @@ def _prof(*installed: str, identity: str = "id1") -> list[dict]:
 def test_readiness_matrix_zero_one_many(repo: Path) -> None:
     none = registry.route(repo, run_authorized=True, profiles=_profiles())
     assert {c["readiness"] for c in none["considered"]} == {"NOT_INSTALLED"}
-    one = registry.route(repo, profiles=_prof("bob"))
-    assert _row(one, "bob")["readiness"] == "AVAILABLE_BUT_UNAUTHORIZED" and one["outcome"] == "NOT_AUTHORIZED"
+    one = registry.route(repo, profiles=_prof("codex"))
+    assert _row(one, "codex")["readiness"] == "AVAILABLE_BUT_UNAUTHORIZED" and one["outcome"] == "NOT_AUTHORIZED"
     many = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex", "agy"))
     assert {_row(many, n)["readiness"] for n in ("bob", "codex", "agy")} == {"INSTALLED_UNPROBED"}
     assert _row(many, "claude")["readiness"] == "NOT_INSTALLED"
@@ -150,11 +152,11 @@ def test_untrusted_executable_is_isolation_blocked(repo: Path) -> None:
 def test_observed_states_block_selection_until_they_expire(repo: Path) -> None:
     for state, expected in (("USAGE_LIMITED", "USAGE_LIMITED"), ("ACCOUNT_INELIGIBLE", "ACCOUNT_INELIGIBLE"),
                             ("AUTHORIZED_BUT_UNREADY", "AUTHORIZED_BUT_UNREADY")):
-        registry.note_observation(repo, "bob", state, "id1", now=1000.0)
-        blocked = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex"), now=1100.0)
-        assert _row(blocked, "bob")["readiness"] == expected and blocked["selected"] == "codex", state
-        later = registry.route(repo, run_authorized=True, profiles=_prof("bob", "codex"), now=1000.0 + 10 ** 6)
-        assert _row(later, "bob")["readiness"] == "INSTALLED_UNPROBED" and later["selected"] == "bob", state
+        registry.note_observation(repo, "codex", state, "id1", now=1000.0)
+        blocked = registry.route(repo, run_authorized=True, profiles=_prof("codex", "agy"), now=1100.0)
+        assert _row(blocked, "codex")["readiness"] == expected and blocked["selected"] == "agy", state
+        later = registry.route(repo, run_authorized=True, profiles=_prof("codex", "agy"), now=1000.0 + 10 ** 6)
+        assert _row(later, "codex")["readiness"] == "INSTALLED_UNPROBED" and later["selected"] == "codex", state
 
 
 def test_ready_observation_is_bound_to_the_binary_and_expires(repo: Path) -> None:
@@ -286,7 +288,7 @@ def test_claude_with_a_token_or_dedicated_login_is_selectable(repo: Path, monkey
                                                              tmp_path: Path) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "t")
-    r = registry.route(repo, run_authorized=True, profiles=_profiles("claude"))
+    r = registry.route(repo, run_authorized=True, max_cost_usd=0.5, profiles=_profiles("claude"))
     row = r["considered"][0] if r["considered"][0]["provider"] == "claude" else \
         next(c for c in r["considered"] if c["provider"] == "claude")
     if not row["isolated_ready"]:
@@ -296,4 +298,4 @@ def test_claude_with_a_token_or_dedicated_login_is_selectable(repo: Path, monkey
     (tmp_path / "login").mkdir()
     monkeypatch.setenv("REPO_AI_CLAUDE_CONFIG_DIR", str(tmp_path / "login"))
     monkeypatch.setenv("USER", "someone")
-    assert registry.route(repo, run_authorized=True, profiles=_profiles("claude"))["selected"] == "claude"
+    assert registry.route(repo, run_authorized=True, max_cost_usd=0.5, profiles=_profiles("claude"))["selected"] == "claude"
