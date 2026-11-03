@@ -1,12 +1,48 @@
 # Omniprovider mission — report
 
-Status: **0.12.0 publicly shipped and verified (2026-11-03 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.0 publicly shipped and verified (2026-11-03 UTC)**. **0.12.1 is merged with green CI (#117 at `ecfdc8e`) and waits only for the owner to push its tag** (the agent's tag push was refused by the session's permission check, as a public action); the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.1 (merged, not yet tagged)
+
+Contents (each code PR: independent review rounds and a full CI run):
+- #111 `--agent auto` never routes to a ceiling-enforcing provider without `--max-cost-usd` (routing-journey-v1
+  amendment 3, runs 4 and 5: 29 of 29; its correction records which checks no longer discriminate).
+- #112 Linux live-run sandbox: host socket directories, both homes and repo-ai's login stores hidden; Bob's Linux runs
+  (previously unisolated) included; read-only binds pinned with bubblewrap 0.10+ (two adversarial review rounds).
+- #113 tournament differences file by file (shared with `shortlist`); stale comparisons say to re-run.
+- #114 role spend recorded on failure and counted by continuations.
+- #116 pre-release review fixes, including a 0.12.0 bug: missions run in a container could never be applied.
+- #115 docs. The release review of everything since v0.12.0 found nothing blocking.
+
+To publish: `git tag -a v0.12.1 -m "repo-ai 0.12.1" ecfdc8efaa8a533aa7098094c5125ac5f221db34 && git push origin
+refs/tags/v0.12.1` (the release workflow builds, smoke-tests and publishes); then verify PyPI = GitHub = local build =
+wheel from the sdist, SLSA provenance, a fresh install, the live site, and record it here.
+
+### Merged after 0.12.1 (unreleased)
+
+- #118 (C11) `coverage` lists, per requirement, the changed lines that ran while its own tests ran (pytest, frozen
+  declaration). Informational only: the first version's obligation fired falsely (import-time lines, shared fixtures,
+  subprocess tests) and was removed after review.
+- #119 (C18, queue row 31) opt-in `REPO_AI_LINUX_EGRESS_PROXY=1`: own network namespace for Linux live runs and a
+  CONNECT-only egress proxy to public addresses (two adversarial review rounds; CI-tested with curl as the provider).
+  Off by default until a real CLI is live-verified with it.
+
+### Blocked on the owner or other people
+
+- Tag push for 0.12.1 (above).
+- C13, C21, C12 live studies (approved): the dedicated Claude login
+  `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth login` does not exist yet.
+- C08: an eligible author per `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`. C14: three independent authors.
+
+Resume directive: verify the public state (tags, PyPI, site), publish/verify 0.12.1 if its tag exists, run the
+approved C13 → C21 → C12 sessions if the dedicated login exists, else continue the queue (C18 egress default after a
+live check, C11 fixture-scope attribution, C16 only with a new idea).
 
 ### Release 0.12.0 (verified after publication)
 
