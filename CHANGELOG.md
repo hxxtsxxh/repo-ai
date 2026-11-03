@@ -2,14 +2,23 @@
 
 ## Unreleased
 
-- Security (Linux, live Claude and Codex runs): the run's bubblewrap sandbox now hides the host's unix-socket
+- Security (Linux, live Claude, Codex and Bob runs): the run's bubblewrap sandbox now hides the host's unix-socket
   directories (`/tmp`, `/run`, `/var/run`, `/var/tmp`, `/mnt/wslg`, LXD's and Incus's), as the probe sandbox already
-  did. Before, a networked model with a shell could reach a container engine socket, an ssh-agent under `/tmp` or the
-  session bus. HOME stays hidden; the install directories, the `node` runtime and the resolver configuration
-  (`/etc/resolv.conf`, often a link into `/run`) are bound back read-only, never a directory holding a socket. With
-  bubblewrap 0.10 or later each is bound by a descriptor opened without following symlinks (`--ro-bind-fd`), closing
-  the resolve-to-bind race for live runs as 0.12.0 did for the probe. Residual: abstract unix sockets (the network
-  namespace is shared, since the provider needs the network) stay reachable; not live-verified on Linux.
+  did, and gives the run its own IPC and UTS namespaces. Before, a networked model with a shell could reach a
+  container engine socket, an ssh-agent under `/tmp` or the session bus. Every home directory is hidden (HOME and the
+  account's own, which differ under `sudo -E` or a service account; before, only HOME), and so are repo-ai's login
+  stores outside HOME (`REPO_AI_HOME`, `REPO_AI_CLAUDE_CONFIG_DIR`, `REPO_AI_CODEX_HOME`). Bob live runs on Linux had
+  none of this (not even HOME hidden) and now get the same sandbox. The install directories, the `node` runtime and
+  the resolver configuration (`/etc/resolv.conf`, often a link into `/run`) are bound back read-only; a directory
+  holding a socket (or too large to check) is not, and then only the executable is bound. With bubblewrap 0.10 or
+  later these read-only binds are made through a descriptor opened without following symlinks (`--ro-bind-fd`); the
+  workspace, scratch and dedicated login directories are still bound by path, and with older bubblewrap everything is
+  (the resolve-to-bind race stays open there). Not live-verified on Linux. **Still reachable**, because the provider
+  needs the network and so shares the host's network namespace: abstract unix sockets (on an X11 or Xwayland desktop
+  that grants local same-user access, this can let a model inject input into your session, outside the sandbox) and
+  every service listening on the host's network, loopback included (debugger ports, notebooks, databases, cloud
+  metadata). Unix sockets elsewhere (`/nix/var/nix/daemon-socket`, `/var/lib/...`) also stay reachable. Users known
+  only through nslcd or systemd-homed may not resolve inside the run (their sockets are under `/run`).
 
 ## 0.12.0 — missions in containers, Claude never started uncapped, routing journey, tournament differences, security lows
 

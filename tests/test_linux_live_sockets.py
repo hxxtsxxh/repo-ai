@@ -26,12 +26,15 @@ def _bwrap_works() -> bool:
     return subprocess.run([bwrap, "--ro-bind", "/", "/", "true"], capture_output=True, check=False).returncode == 0
 
 
+if os.environ.get("REPO_AI_EXPECT_BWRAP") == "1" and not _bwrap_works():
+    raise RuntimeError("REPO_AI_EXPECT_BWRAP=1 but bubblewrap does not work here: these checks would pass vacuously")
 pytestmark = pytest.mark.skipif(not _bwrap_works(), reason="needs a working bubblewrap (the sandbox-bwrap CI jobs)")
+DOCKER = "/var/run/docker.sock"  # present on GitHub's ubuntu runners, and the runner user may connect to it
 
 PROBE = textwrap.dedent("""
     import json, os, socket, sys
     out = {}
-    for name, path in (("tmp_socket", sys.argv[1]), ("home_socket", sys.argv[2])):
+    for name, path in (("tmp_socket", sys.argv[1]), ("home_socket", sys.argv[2]), ("docker", sys.argv[5])):
         s = socket.socket(socket.AF_UNIX)
         try:
             s.connect(path)
@@ -46,7 +49,11 @@ PROBE = textwrap.dedent("""
     except OSError as e:
         out["dns"] = type(e).__name__
     out["install_readable"] = os.path.isfile(sys.argv[4])
-    out["run_entries"] = sorted(os.listdir("/run"))[:5]
+    out["run_entries"] = sorted(os.listdir("/run"))
+    # descriptors open in the provider process: only stdio (and the one listing them); a leaked pinned descriptor
+    # would name a host directory on a writable mount
+    out["fd_targets"] = sorted(os.readlink("/proc/self/fd/" + f) for f in os.listdir("/proc/self/fd")
+                               if f not in ("0", "1", "2") and os.path.exists("/proc/self/fd/" + f))
     print(json.dumps(out))
 """)
 
@@ -66,7 +73,18 @@ def _resolves(host: str) -> bool:
         return False
 
 
-@pytest.mark.parametrize("provider", ["codex", "claude"])
+def _host_connects(path: str) -> bool:
+    s = socket.socket(socket.AF_UNIX)
+    try:
+        s.connect(path)
+        return True
+    except OSError:
+        return False
+    finally:
+        s.close()
+
+
+@pytest.mark.parametrize("provider", ["codex", "claude", "bob"])
 def test_host_sockets_are_unreachable_and_the_resolver_works(provider, tmp_path):
     home = Path.home().resolve()
     host_tmp = Path(tempfile.mkdtemp(prefix="rai-live-sock-", dir="/tmp"))
@@ -92,12 +110,19 @@ def test_host_sockets_are_unreachable_and_the_resolver_works(provider, tmp_path)
         script.write_text(PROBE)
         host = "github.com"
         result = d._capture([*prefix, sys.executable, "-I", str(script), str(host_tmp / "s"), str(home_dir / "s"),
-                             host, str(marker)], workspace, d._probe_env(scratch), pass_fds=d.pinned_fds(prefix))
+                             host, str(marker), DOCKER], workspace, d._probe_env(scratch), timeout=30.0,
+                            max_timeout=60.0, pass_fds=d.pinned_fds(prefix))
         assert result.returncode == 0, result.output[-2000:]
         import json
         out = json.loads(result.output.decode().strip().splitlines()[-1])
         assert out["tmp_socket"] != "connected" and out["home_socket"] != "connected", out
         assert out["install_readable"] is True, out
+        resolv = os.path.realpath("/etc/resolv.conf")
+        allowed = [resolv.split("/")[2]] if resolv.startswith("/run/") else []
+        assert out["run_entries"] == allowed, out  # /run is a tmpfs holding at most the resolver file's path
+        assert not [f for f in out["fd_targets"] if str(install) in f or str(home) in f], out
+        if _host_connects(DOCKER):
+            assert out["docker"] != "connected", out
         if _resolves(host):
             assert out["dns"] == "ok", out  # hiding /run must not take the resolver configuration with it
     finally:
