@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- When a provider rejects its credential inside repo-ai's isolation, the recovery advice now gives the exact step
+  instead of `repo-ai agents setup <provider>`: for Claude's dedicated login, the `CLAUDE_CONFIG_DIR=... claude auth
+  login` command (noting that `claude auth status` checks only locally and can still report a revoked login as
+  logged in); for a rejected token, `claude setup-token`; for other providers, their own `agents setup` command.
+  Found when the dedicated login was revoked server-side before the journey-live-v1 re-run (both sessions BLOCKED,
+  $0, no model turn).
 - A Claude Code run's event record now says which path each refused or failed tool call concerned:
   `denied_targets` (from the result's permission denials) and `tool_error_targets` (any tool result marked as an
   error, matched to its call, or `<unmatched>` when the call was never seen), as `Tool path` (`Glob path pattern
