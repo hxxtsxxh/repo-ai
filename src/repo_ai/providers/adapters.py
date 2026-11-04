@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from ..security import redact_text, sanitize_provider_text, source_contains_secret
+from ..security import redact_text, source_contains_secret
 from . import claude_auth, codex_broker, egress, opencode_cfg
 from .acp import AcpClient, AcpResult
 from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _bwrap_binds_fds, _capture, _close_all, _has_socket,
@@ -250,19 +250,42 @@ def build_invocation(
 MAX_EVENT_LINES = 4000  # provider event lines parsed per run (repo-ai placeholders excluded); more fails closed
 
 
-# The keys a Claude Code file tool names its target with; Glob and Grep read "<pattern> in <path>".
-_TARGET_KEYS = ("pattern", "file_path", "notebook_path", "path")
+# Which /proc entries a target may name verbatim: `/proc`, `/proc/<self|thread-self|pid>` and one entry below it,
+# except the entries that lead back into the file system (root, cwd, exe, fd, map_files, ...).
+_PROC_RE = re.compile(r"/proc(?:/(?:self|thread-self|[0-9]{1,9})(?:/[A-Za-z0-9_.-]{1,40})?)?")
+_PROC_ESCAPES = frozenset({"root", "cwd", "exe", "fd", "fdinfo", "map_files", "task", "ns", "attr"})
+UNMATCHED_CALL = "<unmatched>"  # a tool result whose call was never seen (dropped by the capture, or never sent)
+
+
+def _target_path(raw: str) -> str:
+    """An allowlist, not a scrubber: a relative path without `..`, or a short /proc path (see _PROC_RE), is kept;
+    anything else (absolute, `~`, traversal, a drive letter) becomes `<path>/<file name>` or `<path>`, so no
+    directory above the file (a username, a project location) is ever recorded."""
+    value = raw[:1024]
+    parts = [p for p in re.split(r"[\\/]+", value) if p]
+    absolute = value.startswith(("/", "\\", "~")) or re.match(r"^[A-Za-z]:", value) is not None
+    if not absolute and ".." not in parts:
+        return redact_text(value)[:120]
+    if _PROC_RE.fullmatch(value) and not (len(parts) == 3 and parts[2] in _PROC_ESCAPES):
+        return value
+    leaf = parts[-1] if len(parts) >= 3 and parts[-1] not in {".", ".."} else ""
+    return f"<path>/{redact_text(leaf)[:80]}" if leaf else "<path>"
 
 
 def _tool_target(name: str, tool_input: object) -> str:
-    """`Tool target` for a refused or failed tool call: which path it concerned, never its content. Secrets are
-    masked and absolute local paths collapse to `<path>/<file name>` (`/proc/...` is kept: it names no person)."""
-    label = redact_text(name)[:40] or "tool"
-    if isinstance(tool_input, dict):
-        parts = [str(tool_input[k]) for k in _TARGET_KEYS if isinstance(tool_input.get(k), str) and tool_input[k]]
-        if parts:
-            label += " " + " in ".join(sanitize_provider_text(p)[:120] for p in parts[:2])
-    return label[:200]
+    """`Tool path` (or `Glob path pattern`) for a refused or failed tool call: which path it concerned, never its
+    content. Grep's pattern is search text, so only its path is kept. Untrusted model output, never a boundary."""
+    label = redact_text(name)[:80] or "tool"
+    if not isinstance(tool_input, dict):
+        return label
+    path = next((tool_input[k] for k in ("file_path", "notebook_path", "path")
+                 if isinstance(tool_input.get(k), str) and tool_input[k]), None)
+    if path is not None:
+        label += " " + _target_path(path)
+    pattern = tool_input.get("pattern")
+    if name == "Glob" and isinstance(pattern, str) and pattern:
+        label += " pattern " + _target_path(pattern)[:60]
+    return label[:240]
 
 
 def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
@@ -289,7 +312,7 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     denied_actions: list[str] = []
     denied_targets: list[str] = []
     tool_error_targets: list[str] = []
-    claude_calls: dict[str, tuple[str, object]] = {}
+    claude_calls: dict[str, str] = {}  # tool_use id -> its target label (never the tool's input)
     errors: list[str] = []
     rate_limited = False
     summary = ""
@@ -437,7 +460,8 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                 err_low = str(body.get("error", "")).lower()
                 if any(k in err_low for k in ("quota", "rate limit", "usage limit", "resource exhausted", "billing")):
                     rate_limited = True
-                for d in body.get("denied_actions") or []:
+                agy_denied = body.get("denied_actions")
+                for d in agy_denied if isinstance(agy_denied, list) else []:
                     if isinstance(d, dict):
                         denied_actions.append(redact_text(str(d.get("display_name") or d.get("action") or "action"))[:80])
                 usage_body = body.get("usage")
@@ -462,17 +486,18 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                     if isinstance(block, dict) and block.get("type") == "tool_use" and isinstance(block.get("name"), str):
                         tool_calls.append(redact_text(block["name"])[:80])
                         if isinstance(block.get("id"), str) and len(claude_calls) < 4096:
-                            claude_calls[block["id"]] = (block["name"], block.get("input"))
+                            claude_calls[block["id"]] = _tool_target(block["name"], block.get("input"))
             if etype == "user" and isinstance(content, list):
                 for block in content:
                     if isinstance(block, dict) and block.get("type") == "tool_result" and block.get("is_error") is True:
-                        name, tool_input = claude_calls.get(str(block.get("tool_use_id")), ("tool", None))
-                        tool_error_targets.append(_tool_target(name, tool_input))
+                        tool_error_targets.append(claude_calls.get(str(block.get("tool_use_id")), UNMATCHED_CALL))
             if etype == "result":
-                for d in obj.get("permission_denials") or []:
+                denials = obj.get("permission_denials")
+                for d in denials if isinstance(denials, list) else []:
                     if isinstance(d, dict):
-                        denied_actions.append(redact_text(str(d.get("tool_name") or "tool"))[:80])
-                        denied_targets.append(_tool_target(str(d.get("tool_name") or "tool"), d.get("tool_input")))
+                        tool = d.get("tool_name") if isinstance(d.get("tool_name"), str) else "tool"
+                        denied_actions.append(redact_text(tool or "tool")[:80])
+                        denied_targets.append(_tool_target(tool or "tool", d.get("tool_input")))
 
         if provider == "opencode":
             raw_part = obj.get("part")
