@@ -139,3 +139,20 @@ def test_first_difference_uses_the_whole_output():
     assert pr._first_difference(long_a, long_b)['line'] == 3001
     assert pr._first_difference('ok\n', 'ok')['what'] == 'line endings or a trailing newline only'
     assert pr._first_difference('same', 'same')['what'] == 'exit status only'
+
+
+def test_a_diff_that_creates_and_deletes_files_is_checked_and_applied(tmp_path):
+    """Re-review of #133: a deletion (`+++ /dev/null`) was read as the path /dev/null and always refused."""
+    import subprocess
+    ws = tmp_path / 'ws'
+    ws.mkdir()
+    (ws / 'a.txt').write_text('one\n')
+    (ws / 'b.txt').write_text('gone\n')
+    diff = ('diff --git a/a.txt b/a.txt\n--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-one\n+two\n'
+            'diff --git a/b.txt b/b.txt\ndeleted file mode 100644\n--- a/b.txt\n+++ /dev/null\n@@ -1 +0,0 @@\n-gone\n'
+            'diff --git a/c.txt b/c.txt\nnew file mode 100644\n--- /dev/null\n+++ b/c.txt\n@@ -0,0 +1 @@\n+new\n')
+    assert pr._expected(diff) == {'a.txt': 'modified', 'b.txt': 'deleted', 'c.txt': 'created'}
+    assert pr._apply(ws, diff) is None
+    assert (ws / 'a.txt').read_text() == 'two\n' and not (ws / 'b.txt').exists() and (ws / 'c.txt').read_text() == 'new\n'
+    assert pr._expected('--- a/../x\n+++ b/../x\n') is None and pr._expected('--- /etc/x\n+++ /etc/x\n') is None
+    subprocess.run(['true'])

@@ -41,27 +41,55 @@ def read_probe(path: Path) -> bytes:
     return data
 
 
+def _expected(diff: str) -> dict[str, str] | None:
+    """{path: 'created' | 'deleted' | 'modified'} from each file's `---`/`+++` lines; None when a name cannot be
+    checked safely (quoted, absolute or with `..`), and then the diff is not trusted."""
+    out: dict[str, str] = {}
+    old: str | None = None
+    for line in diff.splitlines():
+        if line.startswith('--- '):
+            old = line[4:].split('\t')[0]
+        elif line.startswith('+++ ') and old is not None:
+            new = line[4:].split('\t')[0]
+            if new == '/dev/null' and old.startswith('a/'):
+                rel, kind = old[2:], 'deleted'
+            elif old == '/dev/null' and new.startswith('b/'):
+                rel, kind = new[2:], 'created'
+            elif new.startswith('b/') and old.startswith('a/'):
+                rel, kind = new[2:], 'modified'
+            else:
+                return None
+            if not rel or rel.startswith('/') or '..' in rel.split('/') or rel.startswith('"'):
+                return None
+            out[rel] = kind
+            old = None
+    return out
+
+
 def _apply(ws_path: Path, diff: str) -> str | None:
     """Apply a recorded candidate diff to a disposable base checkout. git is confined to the workspace (the ceiling is
     its parent: an enclosing checkout around the workspaces directory would otherwise make `git apply` skip every path
-    and still exit 0), and every file the diff names must actually change."""
-    from .shortlist import _git_env, diff_stats
-    files = diff_stats(diff)['files']
-    if not files:
-        return 'the candidate diff names no files'
+    and still exit 0), and every file the diff names must end up as it says: created, deleted or changed."""
+    from .shortlist import _git_env
+    expected = _expected(diff)
+    if not expected:
+        return 'the candidate diff names no file that can be checked safely'
 
     def state(rel: str) -> str | None:
         target = ws_path / rel
         return hashlib.sha256(target.read_bytes()).hexdigest() if target.is_file() and not target.is_symlink() else None
 
-    before = {rel: state(rel) for rel in files}
+    before = {rel: state(rel) for rel in expected}
     done = subprocess.run([gitbin.git(), 'apply', '--whitespace=nowarn', '-'], cwd=ws_path, input=diff.encode(),
                           capture_output=True, timeout=60, env=_git_env(ws_path.parent))
     if done.returncode != 0:
         return 'the candidate diff does not apply to the base: ' + \
             redact_text(done.stderr.decode('utf-8', 'replace'))[:300]
-    if any(state(rel) == before[rel] for rel in files):
-        return 'the candidate diff did not change every file it names; it was not applied as recorded'
+    for rel, kind in expected.items():
+        now = state(rel)
+        if (kind == 'deleted' and (now is not None or (ws_path / rel).is_symlink())) \
+                or (kind == 'created' and now is None) or (kind == 'modified' and (now is None or now == before[rel])):
+            return 'the candidate diff did not change every file it names; it was not applied as recorded'
     return None
 
 
