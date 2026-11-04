@@ -9,12 +9,15 @@
     removed or replaced is refused ("provider modified a generated version file").
   - The event capture no longer kills a run that has already spent. It keeps 256 KB (for every provider run,
     simulated ones included); an event line over 32 KB, and once the capture nears its limit any ordinary event (a
-    tool result), is replaced by a `repo_ai_truncated` placeholder (counted in the record as `truncated_events`),
-    while init, terminal, error and rate-limit events are kept whole, so the result and its cost still arrive.
-    Reading stops after 64 x the kept limit. Before, one 150 KB file read, or a dozen medium ones, killed the run
-    and lost its cost.
+    tool result), is replaced by a `repo_ai_truncated` placeholder (one per run of consecutive dropped lines, with
+    their count; the record's `truncated_events` counts the lines), while init, terminal, error, rate-limit and
+    OpenCode step-cost events are kept whole, so the result and its cost still arrive. Reading stops after 64 x the
+    kept limit. The parser reads up to 4000 provider event lines for every provider (0.12.1: 500, OpenCode 4000),
+    not counting placeholders; a longer stream still fails closed. Before, one 150 KB file read, or a dozen medium
+    ones, killed the run and lost its cost.
   - Once a started live run's cost is UNKNOWN under a USD ceiling, no budget is left for a further run in that
-    mission, and the refusal says why; a run refused before its process started leaves no UNKNOWN cost.
+    mission, and the refusal says why; within a mission, a run refused before its process started leaves no UNKNOWN
+    cost (a continuation still counts a refused implementer's cost as UNKNOWN).
 - `repo-ai coverage` lists, per requirement, the changed lines that ran while its own tests ran (pytest missions run
   with a frozen `--requirements` declaration), plus the changed lines run only during undeclared tests and those run
   outside any test (import, collection). The mission's change-exercise measurement records this in a second, slower
