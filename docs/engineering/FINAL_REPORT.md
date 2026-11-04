@@ -1,12 +1,55 @@
 # Omniprovider mission — report
 
-Status: **0.12.1 publicly shipped and verified (2026-11-03 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.2 publicly shipped and verified (2026-11-03 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.2 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.2` at `f661ebb` (#129), pushed with the owner's approval on 2026-11-03; release run 41757207196 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release) |
+| Wheel | `repo_ai_cli-0.12.2-py3-none-any.whl` sha256 `52e6f4b96e2faca6bed64c061c06193c68ede37696dbe89a6a3e411c348529e4` |
+| sdist | `repo_ai_cli-0.12.2.tar.gz` sha256 `cc2051b6845ee48976d4d1a3b0030ddc3aeaa46e062228ba642197534ecd412b` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | SLSA v1 attestations verified for both, source `refs/tags/v0.12.2` at `f661ebb` |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.2`; `verify --run` caught a regression (exit 1); `do --run --allow-live-provider --agent claude` without `--max-cost-usd` refused before start ($0) |
+| Site | deployed from `f661ebb`: changelog shows 0.12.2, 21 of 21 sitemap URLs 200, a missing page 404 |
+
+Contents (each code PR: independent review rounds and a full CI run):
+- #125 (C21 findings, from the first real-project Claude sessions): a version file the build writes and repo-ai copies
+  is no longer blamed on the provider; over-long event lines no longer kill a run that has spent; no budget is left
+  after a started run's UNKNOWN cost.
+- #118, #121 (C11) `coverage` per-requirement changed lines, with shared-fixture attribution; informational only.
+- #119 (C18, row 31) opt-in `REPO_AI_LINUX_EGRESS_PROXY=1` (off by default; CI-tested with curl, not with the real CLIs).
+- #128 release-review fixes: the terminal event is never crowded out of the capture (the review's high finding: many
+  medium tool results still filled the 256 KB total); one placeholder per run of dropped lines; a 4000-line parse
+  bound without placeholders (a re-review found a >500-event run lost its result and cost); init and OpenCode step
+  costs kept whole (a re-review found the fix had made OpenCode's summed cost under-report); clearer refusals after an
+  UNKNOWN cost. The same PR first truncated CHANGELOG.md to its newest section by mistake; caught before merge and
+  restored byte for byte. Final re-review: ship, no blocking/high/medium.
+
+### Live studies (2026-11-03, the owner's dedicated Claude login)
+
+- C13 (PASS_WITH_LIMITS): first live cross-provider handoff to Claude, PASS at $0.039 (`benchmarks/c13-live-handoff/RESULTS.md`).
+- C21: pyjwt PASS end to end; humanize and more-itertools were blocked by two repo-ai defects, fixed in #125 and
+  shipped in 0.12.2; the marshmallow control was inconclusive (`benchmarks/journey-live-v1/RESULTS.md`).
+- C12: 8 of 8 arms CORRECT on the hidden oracle, 4 abstentions with named differences (`benchmarks/tournament-live-v1/RESULTS.md`).
+- Spend: [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md).
+
+### Blocked on the owner or other people
+
+- Re-running C21's two sessions that repo-ai's own defects blocked (now fixed in 0.12.2) needs a new spend approval.
+- C08: an eligible author per `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`. C14: three independent authors.
+- Making the Linux egress proxy the default needs a live Linux check with a real CLI.
+
+Resume directive: verify the public state (tags, PyPI, site), then continue the queue: the marshmallow control's
+unstable observation (C21), C12 evidence expansion, the C18 egress default after a live check, C16 only with a new
+idea; ask before any further paid live run.
 
 ### Release 0.12.1 (verified after publication)
 
@@ -28,27 +71,6 @@ Contents (each code PR: independent review rounds and a full CI run):
 - #114 role spend recorded on failure and counted by continuations.
 - #116 pre-release review fixes, including a 0.12.0 bug: missions run in a container could never be applied.
 - #115 docs. The release review of everything since v0.12.0 found nothing blocking.
-
-### Merged after 0.12.1 (unreleased)
-
-- #118 (C11) `coverage` lists, per requirement, the changed lines that ran while its own tests ran (pytest, frozen
-  declaration). Informational only: the first version's obligation fired falsely (import-time lines, shared fixtures,
-  subprocess tests) and was removed after review.
-- #119 (C18, queue row 31) opt-in `REPO_AI_LINUX_EGRESS_PROXY=1`: own network namespace for Linux live runs and a
-  CONNECT-only egress proxy to public addresses (two adversarial review rounds; CI-tested with curl as the provider).
-  Off by default until a real CLI is live-verified with it.
-- #121 (C11, queue row 32) each run of a shared fixture's setup is credited to the tests whose call ran with it active
-  (per-run, the definitions actually used, getfixturevalue; skipped tests get nothing; three review rounds).
-
-### Blocked on the owner or other people
-
-- C13 done on 2026-11-03 (PASS, $0.039, `benchmarks/c13-live-handoff/RESULTS.md`) with the new dedicated login; C21 and
-  C12 (approved) run next.
-- C08: an eligible author per `benchmarks/skill-vet-fresh-v2/AUTHOR-BRIEF.md`. C14: three independent authors.
-
-Resume directive: verify the public state (tags, PyPI, site), run the
-approved C13 → C21 → C12 sessions if the dedicated login exists, else continue the queue (C18 egress default after a
-live check, C16 only with a new idea).
 
 ### Release 0.12.0 (verified after publication)
 
@@ -174,8 +196,8 @@ subscription login. CI on the public repository is free.
 
 ### Gates
 
-PASS: C01, C02, C03, C20. PASS_WITH_LIMITS: C04, C06, C09, C10, C17, C19. PASS_AT_0.9.0: C23. EXPERIMENTAL: C05,
-C07, C08, C11, C12, C13, C18, C21, C22. NEGATIVE_RESULT: C16. NEGATIVE_RESULT_HISTORICAL: C15. NOT_YET_DEMONSTRATED: C14.
+PASS: C01, C02, C03, C20. PASS_WITH_LIMITS: C04, C06, C09, C10, C13, C17, C19. PASS_AT_0.9.0: C23. EXPERIMENTAL: C05,
+C07, C08, C11, C12, C18, C21, C22. NEGATIVE_RESULT: C16. NEGATIVE_RESULT_HISTORICAL: C15. NOT_YET_DEMONSTRATED: C14.
 IN_PROGRESS: C24.
 
 ### Not proven, and what would prove it
@@ -184,9 +206,9 @@ IN_PROGRESS: C24.
   budget request.
 - **Skill-vetting on an unseen corpus (C08):** a person-written v2 corpus per `AUTHOR-BRIEF.md`; an agent-authored one
   was stopped by a safety classifier and is not retried.
-- **Claude as a handoff target (C13), live third-party projects (C21), live tournaments (C12):** approved and
-  scripted; each needs the owner to run `CLAUDE_CONFIG_DIR=$HOME/.local/share/repo-ai/claude-provider claude auth
-  login` once (C13 and C21 also run from the 0.12.0 release).
+- **Live third-party projects (C21), live tournaments (C12):** so far one real project passed end to end (pyjwt) and
+  one tournament batch ran; next, more projects and providers, and the two C21 sessions blocked by repo-ai defects
+  re-run on 0.12.2 (needs a new spend approval). C13 passed once live (PASS_WITH_LIMITS: one task, one provider pair).
 - **Routing over real host states (C06):** an actual quota event and an expired login, once live calls are budgeted.
 - **Requirement coverage (C11):** an independent review found it partly met; its fixes (#94) and a declaration frozen
   with the mission (#96) shipped in 0.11.9. Next: requirement-by-requirement links to the changed code.
