@@ -250,6 +250,52 @@ def build_invocation(
 MAX_EVENT_LINES = 4000  # provider event lines parsed per run (repo-ai placeholders excluded); more fails closed
 
 
+# Which /proc entries a target may name verbatim: `/proc`, `/proc/<self|thread-self|pid>` and one entry below it,
+# except the entries that lead back into the file system (root, cwd, exe, fd, map_files, ...).
+_PROC_RE = re.compile(r"/proc(?:/(?:self|thread-self|[0-9]{1,9})(?:/[A-Za-z0-9_.-]{1,40})?)?")
+_PROC_ESCAPES = frozenset({"root", "cwd", "exe", "fd", "fdinfo", "map_files", "task", "ns", "attr"})
+UNMATCHED_CALL = "<unmatched>"  # a tool result whose call was never seen (dropped by the capture, or never sent)
+
+
+_RELATIVE_RE = re.compile(r"[A-Za-z0-9_.@+*?\[\]{}-][!-~]*")  # printable ASCII, no leading separator or space
+_HOME_PARENTS = frozenset({"users", "home"})
+
+
+def _target_path(raw: str, *, file_name: bool = True) -> str:
+    """An allowlist, not a scrubber: a printable-ASCII relative path without `..`, `:` or `\\`, or a short /proc
+    path (see _PROC_RE), is kept; anything else becomes `<path>/<file name>` (`file_name`, and only when the name is
+    not a home directory such as `/Users/<name>`) or `<path>`, so no directory (a username, a project location)
+    is ever recorded."""
+    value = raw[:1024]
+    parts = [p for p in re.split(r"[\\/]+", value) if p]
+    if _RELATIVE_RE.fullmatch(value) and ".." not in parts and ":" not in value and "\\" not in value:
+        return redact_text(value)[:120]
+    if _PROC_RE.fullmatch(value) and not {".", ".."} & set(parts) and \
+            not (len(parts) == 3 and parts[2] in _PROC_ESCAPES):
+        return value
+    leaf = parts[-1] if parts else ""
+    if not file_name or len(parts) < 3 or leaf in {".", ".."} or parts[-2].lower() in _HOME_PARENTS \
+            or not _RELATIVE_RE.fullmatch(leaf):
+        return "<path>"
+    return f"<path>/{redact_text(leaf)[:80]}"
+
+
+def _tool_target(name: str, tool_input: object) -> str:
+    """`Tool path` (or `Glob path pattern`) for a refused or failed tool call: which path it concerned, never its
+    content. Grep's pattern is search text, so only its path is kept. Untrusted model output, never a boundary."""
+    label = redact_text(name)[:80] or "tool"
+    if not isinstance(tool_input, dict):
+        return label
+    key = next((k for k in ("file_path", "notebook_path", "path") if isinstance(tool_input.get(k), str)
+                and tool_input[k]), None)
+    if key is not None:  # a directory (`path`) is never named, only a file's own name
+        label += " " + _target_path(tool_input[key], file_name=key != "path")
+    pattern = tool_input.get("pattern")
+    if name == "Glob" and isinstance(pattern, str) and pattern:
+        label += " pattern " + _target_path(pattern, file_name=False)[:60]
+    return label[:240]
+
+
 def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     """Parse structured JSONL events from a provider run with strict redaction.
 
@@ -272,6 +318,9 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     tool_calls: list[str] = []
     tool_errors: list[str] = []
     denied_actions: list[str] = []
+    denied_targets: list[str] = []
+    tool_error_targets: list[str] = []
+    claude_calls: dict[str, str] = {}  # tool_use id -> its target label (never the tool's input)
     errors: list[str] = []
     rate_limited = False
     summary = ""
@@ -419,7 +468,8 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                 err_low = str(body.get("error", "")).lower()
                 if any(k in err_low for k in ("quota", "rate limit", "usage limit", "resource exhausted", "billing")):
                     rate_limited = True
-                for d in body.get("denied_actions") or []:
+                agy_denied = body.get("denied_actions")
+                for d in agy_denied if isinstance(agy_denied, list) else []:
                     if isinstance(d, dict):
                         denied_actions.append(redact_text(str(d.get("display_name") or d.get("action") or "action"))[:80])
                 usage_body = body.get("usage")
@@ -443,10 +493,19 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                 for block in content:
                     if isinstance(block, dict) and block.get("type") == "tool_use" and isinstance(block.get("name"), str):
                         tool_calls.append(redact_text(block["name"])[:80])
+                        if isinstance(block.get("id"), str) and len(claude_calls) < 4096:
+                            claude_calls[block["id"]] = _tool_target(block["name"], block.get("input"))
+            if etype == "user" and isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "tool_result" and block.get("is_error") is True:
+                        tool_error_targets.append(claude_calls.get(str(block.get("tool_use_id")), UNMATCHED_CALL))
             if etype == "result":
-                for d in obj.get("permission_denials") or []:
+                denials = obj.get("permission_denials")
+                for d in denials if isinstance(denials, list) else []:
                     if isinstance(d, dict):
-                        denied_actions.append(redact_text(str(d.get("tool_name") or "tool"))[:80])
+                        tool = d.get("tool_name") if isinstance(d.get("tool_name"), str) else "tool"
+                        denied_actions.append(redact_text(tool or "tool")[:80])
+                        denied_targets.append(_tool_target(tool or "tool", d.get("tool_input")))
 
         if provider == "opencode":
             raw_part = obj.get("part")
@@ -515,6 +574,8 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         "tool_calls": tool_calls[:32],
         "tool_errors": tool_errors[:32],
         "denied_actions": denied_actions[:32],
+        "denied_targets": denied_targets[:32],
+        "tool_error_targets": tool_error_targets[:32],
         "tokens": {"input_tokens": input_tokens, "output_tokens": output_tokens},
         "cost_usd": round(cost_usd, 6),
         "cost_reported": cost_reported,
@@ -941,6 +1002,8 @@ def acp_events(provider: str, run: AcpResult, *, cost_basis: str) -> dict[str, A
         "tool_calls": tool_calls[:32],
         "tool_errors": tool_errors[:32],
         "denied_actions": denied[:32],
+        "denied_targets": [],
+        "tool_error_targets": [],
         "refused": [redact_text(r)[:200] for r in run.refused[:32]],
         "acp_writes": run.writes[:32],
         "timed_out": run.timed_out,
