@@ -71,8 +71,24 @@ def _test_inputs(root: Path, files: list[str], universe: list[str]) -> dict[str,
     return out
 
 
+def config_excluded(root: Path, runner: TestRunner, files: list[str]) -> set[str]:
+    """Discovered pytest files the project's own `norecursedirs` keeps out of a full run (verify's narrow static
+    reading, `pytestcfg.skipped_by_config`). It removes nothing by itself: such a file may be absent from pytest's
+    collection without making the observation incomplete, and only when pytest did not collect it. The configuration
+    is a pinned test input, so a candidate cannot change it without failing comparability."""
+    if runner.kind != "pytest":
+        return set()
+    from ..verify.pytestcfg import skipped_by_config
+    try:
+        _cfg, _other, skipped = skipped_by_config(root, files, runner.cwd, argv=[*runner.full, *runner.options],
+                                                  paths=runner.paths)
+    except (OSError, ValueError):
+        return set()
+    return {f for group in skipped.values() for f in group}
+
+
 def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
-              att: results.Attribution) -> tuple[dict[str, str], list[str]]:
+              att: results.Attribution, excluded: set[str] | None = None) -> tuple[dict[str, str], list[str]]:
     # Use the existing bounded, no-symlink reader and the same attribution mapper
     # as results.parse; do not add an unsafe second JSON reader for mission data.
     events, problem = results._events(report)
@@ -122,7 +138,7 @@ def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
     if runner.kind == "pytest":
         if not att.collected or any(not att.complete(f) for f in att.collected):
             reasons.append("not every collected test completed")
-        if not set(files) <= att.modules:
+        if not set(files) - (excluded or set()) <= att.modules:
             reasons.append("not every discovered test file was collected")
     elif not set(files) <= att.finished:
         reasons.append("not every discovered node test file completed")
@@ -162,7 +178,7 @@ def observe(root: Path, command: str, timeout_s: float = 60,
         "test_ids": [], "outcomes": {}, "ran": 0, "failed": 0, "skipped": 0,
         "reasons": [], "environment_static": None, "environment_key": "",
         "environment_unchanged": False, "executor": {}, "pin": {},
-        "integrity": {"unchanged": False}, "cleanup_confirmed": False,
+        "integrity": {"unchanged": False}, "cleanup_confirmed": False, "config_excluded": [],
         "exit_code": None, "timed_out": False, "stdout_sha256": None, "stderr_sha256": None,
     }
     reasons = observation["reasons"]
@@ -214,7 +230,9 @@ def observe(root: Path, command: str, timeout_s: float = 60,
                                stderr_sha256=_hash(result.stderr.encode("utf-8", "replace")))
             att = results.parse(report, runner, files, bound.inside_root,
                                 exit_code=result.exit_code, timed_out=result.timed_out)
-            outcomes, report_problems = _outcomes(report, runner, files, bound.inside_root, att)
+            excluded = config_excluded(root, runner, files)
+            outcomes, report_problems = _outcomes(report, runner, files, bound.inside_root, att, excluded)
+            observation["config_excluded"] = sorted(f for f in excluded if f not in att.modules)
             reasons.extend(report_problems)
             if not att.trusted:
                 reasons.append(att.reason or "untrusted test report")
@@ -300,14 +318,34 @@ def _problems(record: object, label: str) -> list[str]:
     return [f"{label}: {reason}" for reason in problems]
 
 
+def _id_difference(base: list[str], cand: list[str]) -> str:
+    """Name what differs, so a test whose ID changes from run to run (a parameter taken from the clock or a random
+    value: journey-live-v1, marshmallow) is visible as such."""
+    only_base, only_cand = sorted(set(base) - set(cand)), sorted(set(cand) - set(base))
+    if not only_base and not only_cand:
+        return " (same tests in a different order)"
+    def show(ids: list[str]) -> str:
+        return ", ".join(redact_text(i)[:160] for i in ids[:2]) + (f" and {len(ids) - 2} more" if len(ids) > 2 else "")
+    parts = [f"{len(only_base)} only at the baseline ({show(only_base)})" if only_base else "",
+             f"{len(only_cand)} only in the candidate ({show(only_cand)})" if only_cand else ""]
+    return ": " + "; ".join(p for p in parts if p) + ("; a test ID that changes between runs (a parameter from the "
+                                                     "clock or a random value) can never be compared"
+                                                     if only_base and only_cand else "")
+
+
 def comparability(baseline: dict, candidate: dict) -> list[str]:
     """Validate an experiment independently of whether either candidate passes."""
     reasons = _problems(baseline, "baseline") + _problems(candidate, "candidate")
     if reasons:
         return reasons
-    for key in ("test_ids", "environment_static", "environment_key", "executor", "repo_ai_version"):
+    if baseline["test_ids"] != candidate["test_ids"]:
+        reasons.append("baseline and candidate have different test_ids" + _id_difference(baseline["test_ids"],
+                                                                                         candidate["test_ids"]))
+    for key in ("environment_static", "environment_key", "executor", "repo_ai_version"):
         if baseline[key] != candidate[key]:
             reasons.append(f"baseline and candidate have different {key}")
+    if baseline.get("config_excluded") != candidate.get("config_excluded"):
+        reasons.append("baseline and candidate leave out different test files")
     for key in ("command", "runner", "test_inputs"):
         if baseline["pin"].get(key) != candidate["pin"].get(key):
             reasons.append(f"baseline and candidate have different pinned {key}")
