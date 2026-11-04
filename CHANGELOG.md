@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.4 — JavaScript tournament probes
 
 - `shortlist --probe` also takes a JavaScript probe (`.js`, `.mjs`, `.cjs`) for a `node --test` mission, run with
   `node` in the mission's test sandbox; a probe in another language than the mission's tests is refused (0.12.3 ran

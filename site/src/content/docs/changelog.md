@@ -1,9 +1,15 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.3, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.4, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.4
+
+- **Added** `shortlist --probe` takes a JavaScript probe (`.js`, `.mjs`, `.cjs`) for a `node --test` mission, run
+  with `node` in the mission's test sandbox. A probe in another language than the mission's tests is refused. See
+  [Tournaments](/repo-ai/docs/tournaments/).
 
 ## 0.12.3
 
