@@ -257,19 +257,27 @@ _PROC_ESCAPES = frozenset({"root", "cwd", "exe", "fd", "fdinfo", "map_files", "t
 UNMATCHED_CALL = "<unmatched>"  # a tool result whose call was never seen (dropped by the capture, or never sent)
 
 
-def _target_path(raw: str) -> str:
-    """An allowlist, not a scrubber: a relative path without `..`, or a short /proc path (see _PROC_RE), is kept;
-    anything else (absolute, `~`, traversal, a drive letter) becomes `<path>/<file name>` or `<path>`, so no
-    directory above the file (a username, a project location) is ever recorded."""
+_RELATIVE_RE = re.compile(r"[A-Za-z0-9_.@+*?\[\]{}-][!-~]*")  # printable ASCII, no leading separator or space
+_HOME_PARENTS = frozenset({"users", "home"})
+
+
+def _target_path(raw: str, *, file_name: bool = True) -> str:
+    """An allowlist, not a scrubber: a printable-ASCII relative path without `..`, `:` or `\\`, or a short /proc
+    path (see _PROC_RE), is kept; anything else becomes `<path>/<file name>` (`file_name`, and only when the name is
+    not a home directory such as `/Users/<name>`) or `<path>`, so no directory (a username, a project location)
+    is ever recorded."""
     value = raw[:1024]
     parts = [p for p in re.split(r"[\\/]+", value) if p]
-    absolute = value.startswith(("/", "\\", "~")) or re.match(r"^[A-Za-z]:", value) is not None
-    if not absolute and ".." not in parts:
+    if _RELATIVE_RE.fullmatch(value) and ".." not in parts and ":" not in value and "\\" not in value:
         return redact_text(value)[:120]
-    if _PROC_RE.fullmatch(value) and not (len(parts) == 3 and parts[2] in _PROC_ESCAPES):
+    if _PROC_RE.fullmatch(value) and not {".", ".."} & set(parts) and \
+            not (len(parts) == 3 and parts[2] in _PROC_ESCAPES):
         return value
-    leaf = parts[-1] if len(parts) >= 3 and parts[-1] not in {".", ".."} else ""
-    return f"<path>/{redact_text(leaf)[:80]}" if leaf else "<path>"
+    leaf = parts[-1] if parts else ""
+    if not file_name or len(parts) < 3 or leaf in {".", ".."} or parts[-2].lower() in _HOME_PARENTS \
+            or not _RELATIVE_RE.fullmatch(leaf):
+        return "<path>"
+    return f"<path>/{redact_text(leaf)[:80]}"
 
 
 def _tool_target(name: str, tool_input: object) -> str:
@@ -278,13 +286,13 @@ def _tool_target(name: str, tool_input: object) -> str:
     label = redact_text(name)[:80] or "tool"
     if not isinstance(tool_input, dict):
         return label
-    path = next((tool_input[k] for k in ("file_path", "notebook_path", "path")
-                 if isinstance(tool_input.get(k), str) and tool_input[k]), None)
-    if path is not None:
-        label += " " + _target_path(path)
+    key = next((k for k in ("file_path", "notebook_path", "path") if isinstance(tool_input.get(k), str)
+                and tool_input[k]), None)
+    if key is not None:  # a directory (`path`) is never named, only a file's own name
+        label += " " + _target_path(tool_input[key], file_name=key != "path")
     pattern = tool_input.get("pattern")
     if name == "Glob" and isinstance(pattern, str) and pattern:
-        label += " pattern " + _target_path(pattern)[:60]
+        label += " pattern " + _target_path(pattern, file_name=False)[:60]
     return label[:240]
 
 
