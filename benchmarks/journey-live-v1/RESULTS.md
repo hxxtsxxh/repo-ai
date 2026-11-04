@@ -54,5 +54,20 @@ The two failed sessions were repo-ai's fault, not Claude's:
 - a large tool result killed the run.
 
 Both now have fixes and tests (#125), which also rules out the false PASS that a lenient fix might have introduced.
-The marshmallow control's unstable observation is an open finding. These results describe repo-ai 0.12.1. Rerunning
-with the fixes would be a new, separately approved run, not a correction of this one.
+These results describe repo-ai 0.12.1. Rerunning with the fixes would be a new, separately approved run, not a
+correction of this one.
+
+**Follow-up (2026-11-04, no model call): the marshmallow control.** The control was re-created exactly as the
+harness does it (same work clone, upstream fix as a replay, same podman image) and kept its records this time. It
+had two causes:
+1. **A repo-ai defect.** marshmallow's `norecursedirs` keeps `tests/mypy_test_cases/test_*.py` out of pytest's
+   full run. The mission observation still counted them as discovered and called both observations incomplete, even
+   though verify already handles this. That is fixed in the follow-up PR (`config_excluded`, with tests); with the
+   fix, both observations are complete (1104 tests, baseline 1 failure, candidate 0).
+2. **A property of the project.** `test_invalid_datetime_deserialization` is parametrized with the current time, so
+   its test IDs differ between any two runs, and a baseline and candidate can never have the same tests. repo-ai's
+   refusal is correct; its message now names the differing IDs.
+
+So marshmallow stays INCONCLUSIVE by design, for a reason that is now visible and stated, not hidden behind an
+incomplete-observation message. The original records are unchanged; this was not a new session and changed no
+verdict above.
