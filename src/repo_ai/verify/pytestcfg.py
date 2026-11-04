@@ -1,11 +1,13 @@
-"""Which name-matched test files pytest's `norecursedirs` keeps out of a full run, for a note only.
+"""Which name-matched test files pytest's `norecursedirs` keeps out of a full run.
 
 verify matches pytest test files by name until `repo-ai verify --record` has captured pytest's own collection, and it
 never removes a file on a static reading of the configuration (a wrong reading would hide a test). But a targeted run
 names files on pytest's command line, and pytest collects a named file even inside a `norecursedirs` directory; a
 full run, which recurses, does not. So a targeted and a full run of one state can disagree (speed-v1: marshmallow's
 `tests/mypy_test_cases`). This module reads `norecursedirs` from the configuration file pytest would use, to name
-such files in the plan's uncertainty.
+such files in the plan's uncertainty. A mission observation (`mission.verification.config_excluded`) also uses it,
+narrower still, to accept such a file as absent from pytest's collection, only when pytest indeed did not collect it
+and both runs of the comparison leave out the same files; it never removes a file pytest would run.
 
 Deliberately narrow, so that a note is right when it appears: only `norecursedirs` (not `testpaths`, whose use
 depends on how pytest is invoked); no note when the command chooses the configuration or rootdir itself (`-c`,
