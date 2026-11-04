@@ -92,7 +92,8 @@ compared):
 
 The script's sha256 is reported with the result. No model runs, the script is never shown to a provider (the
 candidates already exist), nothing is applied, and the comparison's verdict is unchanged. `--probe-timeout` sets the
-limit per run (default 60 seconds).
+limit per run (default 60 seconds). Run it with the same repo-ai version that ran the tournament: after an upgrade the
+recorded evidence is stale and `shortlist` declines (re-run the tournament first).
 
 Each candidate stays individually applicable:
 
