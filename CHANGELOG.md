@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.3 — tournament probes; missions honor the project's norecursedirs; differing test IDs named
 
 - `repo-ai shortlist ID --probe SCRIPT` (C12, mission 5B): after a tournament abstains because several distinct
   candidates pass the same frozen tests, a Python script you write (edge-case inputs, a property) runs, from where the
