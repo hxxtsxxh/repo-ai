@@ -1,12 +1,32 @@
 # Omniprovider mission — report
 
-Status: **0.12.3 publicly shipped and verified (2026-11-04 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.4 publicly shipped and verified (2026-11-04 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.4 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.4` at `3c1b999` (#139), pushed with the owner's approval on 2026-11-04; release run 41918248372 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release) |
+| Wheel | `repo_ai_cli-0.12.4-py3-none-any.whl` sha256 `6d3ca8444f983aeab612aa2206aa353197e020d5a4896ff030105622f8eb709e` |
+| sdist | `repo_ai_cli-0.12.4.tar.gz` sha256 `8774504c516eb317943d417344c8fc5df1a8cb0e8d84e993e5053078058bc6ca` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | SLSA attestations verified for both (`gh attestation verify`, exit 0) |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.4`; `shortlist --help` documents `--probe` for `.py` and JavaScript probes; `init` in a scratch repository; an invalid mission ID refused |
+| Site | deployed from `3c1b999`: changelog shows 0.12.4, 21 of 21 sitemap URLs 200, a missing page 404; the release facts move to 0.12.4 with this record |
+
+Contents:
+- #137 (C12) `shortlist --probe` takes a JavaScript probe (`.js`, `.mjs`, `.cjs`) for a `node --test` mission, run with
+  `node` in the mission's test sandbox; a probe in another language than the tests is refused. The probe tests run in
+  the Linux bwrap CI job. Review findings (CI gap, `.mjs`, refusal runs nothing, docs) fixed before merge.
+- #138 (C12 evidence, $0) predeclared JavaScript probes on tournament-live-v1's two Node abstentions: SAME on every
+  probed input, consistent with the oracle. With the Python results (DIFFER on one input each, both outside the
+  prompt), all four real abstentions are now probed.
 
 ### Release 0.12.3 (verified after publication)
 
