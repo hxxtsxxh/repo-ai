@@ -60,3 +60,27 @@ def test_an_endless_run_of_dropped_lines_stops_at_the_read_cap(tmp_path):
     res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
                    output_limit=4096, separate_stderr=True, max_line=1024)
     assert res.status == "output_limit"
+
+
+def test_many_medium_tool_results_do_not_crowd_out_the_terminal_event(tmp_path):
+    """Release review of 0.12.2 (H1): fifteen 20 KB tool results each fit the line cap but together filled the total
+    and killed the run before its result event. Near the limit they now become placeholders."""
+    script = ("import json\n"
+              "print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': 's'}))\n"
+              "for i in range(15):\n"
+              "    print(json.dumps({'type': 'user', 'session_id': 's', 'content': 'x' * 20000}))\n"
+              "print(json.dumps({'type': 'result', 'session_id': 's', 'total_cost_usd': 0.07, 'is_error': False}))\n")
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=262_144, separate_stderr=True, max_line=32_768)
+    ev = adapters.parse_event_stream("claude", res.output)
+    assert res.status == "complete", res.status
+    assert ev["terminal_observed"] and ev["cost_usd"] == 0.07 and ev["truncated_events"] >= 1, ev
+
+
+def test_a_large_init_event_is_kept_whole(tmp_path):
+    script = ("import json\n"
+              "print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': 's', 'tools': ['T' * 40000]}))\n"
+              "print(json.dumps({'type': 'result', 'session_id': 's', 'total_cost_usd': 0.01, 'is_error': False}))\n")
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=262_144, separate_stderr=True, max_line=32_768)
+    assert b'"subtype": "init"' in res.output and b"repo_ai_truncated" not in res.output
