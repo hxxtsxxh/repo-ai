@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- Missions on pytest projects whose own `norecursedirs` keeps name-matched files out of a full run (marshmallow's
+  `tests/mypy_test_cases`) were always INCONCLUSIVE: every observation, even of the upstream fix, was "not every
+  discovered test file was collected" (found by the journey-live-v1 marshmallow control, C21). Such a file now does
+  not make the observation incomplete when the project's `norecursedirs` explains it and pytest indeed did not collect
+  it (verify's reading of the configuration, `pytestcfg`, counted only where it is confirmed: an ini file, `setup.cfg`
+  or `[tool.pytest.ini_options]`, no `addopts`, relative patterns); the observation lists it as `config_excluded`, and
+  a baseline and candidate that leave out different files are not comparable. The configuration is a pinned test
+  input, so a candidate that changes it is not comparable with its baseline.
+- When a baseline and candidate ran different tests, the refusal now names up to two of each. A test whose ID changes
+  between runs, such as a parameter taken from the clock (marshmallow's `test_invalid_datetime_deserialization`), can
+  never be compared, and the message says that this may be the cause.
+
 ## 0.12.2 — real-project live runs: version files, event capture and unknown cost; coverage per requirement; opt-in Linux egress isolation
 
 - Live provider runs on real projects (found by the first real-project Claude sessions, journey-live-v1, C21):
