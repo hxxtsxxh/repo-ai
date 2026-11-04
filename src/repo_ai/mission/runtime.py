@@ -49,6 +49,19 @@ MAX_PATCH = 256_000
 
 LIVE_PROVIDERS = frozenset(PROVIDERS)
 
+_EVENT_TEXT_KEYS = frozenset({'report', 'summary'})
+_EVENT_LIST_KEYS = frozenset({'errors', 'denied_targets', 'tool_error_targets'})
+
+
+def sanitize_events(events: dict, known_paths: dict[str, str]) -> dict:
+    """A provider's parsed events before they are kept in mission state: the free text and the per-refusal paths
+    get this checkout's repository, workspace and home prefixes replaced (the parser could not know them)."""
+    return {k: (sanitize_provider_text(v, known_paths) if isinstance(v, str) and k in _EVENT_TEXT_KEYS
+                else [sanitize_provider_text(e, known_paths) for e in v if isinstance(e, str)]
+                if k in _EVENT_LIST_KEYS and isinstance(v, list)
+                else v)
+            for k, v in events.items()}
+
 
 def privacy_binding(root: Path) -> tuple[str, str]:
     """Read existing enrollment only; planning never creates registry state."""
@@ -821,10 +834,7 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         account(run_res)
                         known_paths = local_path_map(root, candidate)
                         run_res['reasons'] = [sanitize_provider_text(r, known_paths) for r in run_res['reasons']]
-                        run_res['events'] = {k: (sanitize_provider_text(v, known_paths) if isinstance(v, str) and k in {'report', 'summary'}
-                                                 else [sanitize_provider_text(e, known_paths) for e in v] if k == 'errors' and isinstance(v, list)
-                                                 else v)
-                                             for k, v in (run_res.get('events') or {}).items()}
+                        run_res['events'] = sanitize_events(run_res.get('events') or {}, known_paths)
                         state['provider'].update(
                             stage=run_res['stage'],
                             verification_label=run_res.get('verification_label', state['provider'].get('verification_label')),
