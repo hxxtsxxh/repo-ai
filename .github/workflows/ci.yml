@@ -197,7 +197,7 @@ jobs:
       - name: missions and providers (need the bwrap sandbox; skipped elsewhere)
         env:
           REPO_AI_EXPECT_BWRAP: "1"
-        run: python -m pytest -q tests/test_mission_*.py tests/test_provider_*.py tests/test_handoff_integrity.py tests/test_eval_integrity.py tests/test_acp_conformance.py tests/test_review_row19_lows.py tests/test_live_ceiling.py tests/test_routing_journey_fixes.py tests/test_live_tournament.py tests/test_linux_live_sandbox.py tests/test_linux_live_sockets.py tests/test_linux_egress_policy.py tests/test_linux_egress.py
+        run: python -m pytest -q tests/test_mission_*.py tests/test_provider_*.py tests/test_handoff_integrity.py tests/test_eval_integrity.py tests/test_acp_conformance.py tests/test_review_row19_lows.py tests/test_live_ceiling.py tests/test_routing_journey_fixes.py tests/test_live_tournament.py tests/test_tournament_probe.py tests/test_tournament_probe_node.py tests/test_linux_live_sandbox.py tests/test_linux_live_sockets.py tests/test_linux_egress_policy.py tests/test_linux_egress.py
 
   sandbox-bwrap-fd:
     # the probe sandbox's descriptor binds (`--ro-bind-fd`, bubblewrap 0.10+): the runner's bubblewrap is older, so
