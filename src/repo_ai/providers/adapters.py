@@ -247,6 +247,9 @@ def build_invocation(
     return argv
 
 
+MAX_EVENT_LINES = 4000  # provider event lines parsed per run (repo-ai placeholders excluded); more fails closed
+
+
 def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     """Parse structured JSONL events from a provider run with strict redaction.
 
@@ -280,12 +283,19 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     except UnicodeDecodeError:
         protocol_errors.append("event stream is not valid UTF-8")
 
-    max_lines = 4000 if provider == "opencode" else 500
-    if len(lines) > max_lines:
-        non_json_lines += 1
-        errors.append(f"provider event stream exceeded {max_lines}-line bound")
+    # The capture already bounds the bytes; this bounds the parse work. repo-ai's own placeholders (one per run of
+    # dropped lines) do not count, so a long run whose tool results were dropped still has its terminal event read.
+    max_lines = MAX_EVENT_LINES
+    seen = 0
+    for cut, line in enumerate(lines):
+        seen += not line.startswith('{"type":"repo_ai_truncated"')
+        if seen > max_lines:
+            non_json_lines += 1
+            errors.append(f"provider event stream exceeded {max_lines}-line bound")
+            lines = lines[:cut]
+            break
 
-    for line in lines[:max_lines]:
+    for line in lines:
         try:
             obj = json.loads(line)
         except json.JSONDecodeError:
@@ -299,8 +309,9 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
             non_json_lines += 1
             continue
         events_count += 1
-        if obj.get("type") == "repo_ai_truncated":  # an over-long line repo-ai's capture replaced (not the provider's)
-            truncated_events += 1
+        if obj.get("type") == "repo_ai_truncated":  # lines repo-ai's capture replaced (not the provider's)
+            dropped_lines = obj.get("lines", 1)
+            truncated_events += dropped_lines if isinstance(dropped_lines, int) and dropped_lines > 0 else 1
             continue
         raw_stats = obj.get("stats")
         stats: dict[str, Any] = raw_stats if isinstance(raw_stats, dict) else {}
