@@ -344,7 +344,9 @@ def _stop(proc: subprocess.Popen[bytes]) -> None:
         pass
 
 
-KEEP_WHOLE_TYPES = frozenset({"result", "turn.completed", "turn.failed", "text", "error", "rate_limit_event"})
+KEEP_WHOLE_TYPES = frozenset({"result", "turn.completed", "turn.failed", "text", "error", "rate_limit_event",
+                              "system"})
+HEADROOM_FRACTION = 4  # in line mode, the last 1/4 of output_limit is kept for the types above
 MAX_READ_FACTOR = 64
 _TYPE_PREFIX = re.compile(rb'^\s*\{\s*"type"\s*:\s*"([A-Za-z_.]{1,40})"')
 
@@ -361,8 +363,9 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
              pass_fds: tuple[int, ...] = (), max_line: int = 0) -> ProbeResult:
     """Bound memory, elapsed time, and process-group lifetime without a shell. `max_line` (a JSONL event stream):
     a stdout line longer than this is replaced by `{"type":"repo_ai_truncated","bytes":N}` instead of stopping the
-    run (a large tool result or file read), unless its type is one repo-ai must see whole (terminal, error, rate
-    limit: `KEEP_WHOLE_TYPES`); `output_limit` still bounds what is kept, and reading stops after
+    run (a large tool result or file read), unless its type is one repo-ai must see whole (init, terminal, error,
+    rate limit: `KEEP_WHOLE_TYPES`). Once kept output nears `output_limit`, ordinary lines become placeholders too,
+    so the last quarter stays for the kept types (the terminal event and its cost); reading stops after
     `MAX_READ_FACTOR` x `output_limit` bytes in all."""
     if not 0 < timeout <= max_timeout or not 0 < max_timeout <= 900 or not 0 < output_limit <= MAX_OUTPUT * 4:
         raise ValueError("invalid probe bounds")
@@ -429,6 +432,12 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
                     if dropped[0]:
                         keep(destination, b'{"type":"repo_ai_truncated","bytes":%d}\n' % dropped[0])
                         dropped[0] = 0
+                    elif (not _keep_whole(line)
+                          and len(destination) + len(line) > output_limit - output_limit // HEADROOM_FRACTION):
+                        # near the limit, an ordinary event (a tool result) becomes a placeholder so that the
+                        # terminal event and its cost still fit; only kept types can then fill the rest
+                        keep(destination, b'{"type":"repo_ai_truncated","bytes":%d}\n' % len(line))
+                        line.clear()
                     else:
                         keep(destination, bytes(line) + b"\n")
                         line.clear()

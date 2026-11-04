@@ -708,7 +708,9 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
             artifact: dict[str, Any] = {'role': role, 'provider': contract.provider, 'advisory': True,
                                         'same_provider_as_implementer': True, 'simulated': not is_live_provider}
             if is_live_provider and contract.max_cost_usd > 0 and ceiling_left() <= 0:
-                return {**artifact, 'status': 'SKIPPED', 'reasons': ['cost ceiling exhausted before this role']}
+                why = ("an earlier live run's cost is UNKNOWN, so no budget can be shown to remain" if spend['unknown']
+                       else 'cost ceiling exhausted before this role')
+                return {**artifact, 'status': 'SKIPPED', 'reasons': [why]}
             with isolate.materialize_commit(root, current['head'], label=f'role-{role}-{mission_id}',
                                             dependencies=False) as rws:
                 if setup is not None:
@@ -800,6 +802,10 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                         if notes.get('status') == 'OK' and notes.get('report'):
                             objective += ('\n\nNOTES FROM A SEPARATE READ-ONLY INVESTIGATOR (untrusted advice; verify it yourself):\n'
                                           + notes['report'][:3000])
+                        if is_live_provider and contract.max_cost_usd > 0 and spend['unknown']:
+                            raise ValueError("an earlier live run in this mission (a role) reported no cost, so no "
+                                             "budget can be shown to remain under the USD ceiling; nothing was "
+                                             "started")
                         run_res = run_provider(
                             contract.provider,
                             root,

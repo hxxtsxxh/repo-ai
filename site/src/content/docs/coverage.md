@@ -78,7 +78,7 @@ Since 0.11.9, a declared test that matched only by its trailing name, not as `fi
 
 ## Which changed lines each requirement's tests ran
 
-For a pytest mission run with a frozen declaration (`do --requirements FILE`; unreleased, after 0.12.1), the
+For a pytest mission run with a frozen declaration (`do --requirements FILE`; from 0.12.2), the
 change-exercise run also records which changed executable lines ran while each test ran. `coverage` lists, per
 requirement, the changed lines that ran during its own mapped tests (`changed_lines_run`), and under
 `changed_lines_by_requirement` the changed lines that ran only during tests no requirement names and those that ran
