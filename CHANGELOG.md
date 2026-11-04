@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.2 — real-project live runs: version files, event capture and unknown cost; coverage per requirement; opt-in Linux egress isolation
 
 - Live provider runs on real projects (found by the first real-project Claude sessions, journey-live-v1, C21):
   - A project whose build writes a version file (hatch-vcs / setuptools-scm `version-file`, which git ignores):
