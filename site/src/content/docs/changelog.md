@@ -1,9 +1,21 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.2, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.3, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.3
+
+- **Added** `repo-ai shortlist ID --probe SCRIPT`: when a tournament abstains because several distinct candidates pass
+  the same tests, a Python script you write runs against the base and each candidate in the mission's sandbox, and
+  repo-ai reports whether their output is the `SAME` or where it `DIFFER`s. No model runs and nothing is applied. See
+  [Tournaments](/repo-ai/docs/tournaments/).
+- **Fixed** missions on pytest projects whose own `norecursedirs` keeps some name-matched files out of a full run
+  (for example `tests/mypy_test_cases`) were always INCONCLUSIVE; such files are now accepted as left out when the
+  configuration explains it.
+- **Changed** when a baseline and candidate ran different tests, the refusal names them; a test whose ID changes
+  between runs (a parameter from the clock) can never be compared.
 
 ## 0.12.2
 
