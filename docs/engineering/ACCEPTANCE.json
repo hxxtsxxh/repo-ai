@@ -236,12 +236,13 @@
     "live abstain + byte-identical tie at 0.9.0",
     "2026-11-02: live comparisons classify how distinct passing candidates differ (IDENTICAL, COSMETIC = same Python syntax tree, SUBSTANTIVE with definitions named, UNKNOWN), rebuilt with shortlist's hardened reconstruction, and carry a next step taken from the decision; the abstention rule is unchanged. Tournaments can cap only the arms that enforce a ceiling (--allow-unknown-cost). tournament-live-v1 preregistered (owner approved 8 sessions); not run yet",
     "2026-11-03 #113 (queue row 29): candidate differences are compared file by file (shortlist.code_identity, shared with shortlist): an identical non-Python change no longer hides a formatting-only Python difference; a SUBSTANTIVE pair always names a place (duplicate definition names kept, file fallback); a stale comparison never repeats its recorded next step (repo-ai compare, mission status --json)",
-    "2026-11-03 tournament-live-v1 (benchmarks/tournament-live-v1/RESULTS.md): 4 live Codex-vs-Claude tournaments on the abc-v5 calibration tasks, main at a2099be; all 8 arms PASS and graded CORRECT by the sealed hidden oracle in a podman container; every tournament abstained with a SUBSTANTIVE difference named and a pinning-test or shortlist next step; T1/T2/T3 0, no winners; R1: 0 of 4 SUBSTANTIVE pairs differed on the oracle (different code, same observed behaviour); Claude $0.2028 observed, Codex UNKNOWN"
+    "2026-11-03 tournament-live-v1 (benchmarks/tournament-live-v1/RESULTS.md): 4 live Codex-vs-Claude tournaments on the abc-v5 calibration tasks, main at a2099be; all 8 arms PASS and graded CORRECT by the sealed hidden oracle in a podman container; every tournament abstained with a SUBSTANTIVE difference named and a pinning-test or shortlist next step; T1/T2/T3 0, no winners; R1: 0 of 4 SUBSTANTIVE pairs differed on the oracle (different code, same observed behaviour); Claude $0.2028 observed, Codex UNKNOWN",
+    "0.12.3 (#133): `shortlist --probe SCRIPT`, the mission-5B evidence expansion: a developer-written probe runs against the base (twice, determinism check) and each distinct passing candidate in the mission's sandbox; SAME / DIFFER (first differing line) / INCONCLUSIVE. Tested offline (fake providers and replay); smoke from PyPI on a replay tournament reported DIFFER. Not yet evaluated on real abstaining live candidates"
    ],
    "limits": [
     "4 synthetic calibration tasks (no rate); every abstention here was between two correct candidates, so the tie rule cost a human choice each time"
    ],
-   "next_action": "evidence expansion: a predeclared differential test between abstaining candidates (mission section 5B), evaluated on tasks where candidates truly differ"
+   "next_action": "evaluate `shortlist --probe` on real abstaining live candidates (tournament-live-v1's abstentions; needs their recorded missions or a new approved batch)"
   },
   {
    "id": "C13",
@@ -383,7 +384,7 @@
    "title": "Distribution/release",
    "status": "PASS",
    "owner": "principal",
-   "code_sha": "f661ebb",
+   "code_sha": "27fa6a3",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
@@ -400,7 +401,8 @@
     "0.11.9 published 2026-11-02 (tag v0.11.9 pushed by the agent with the owner's authorization for this release, at merge 26f3988 after #97's green CI incl. the dispatched macOS full suite at d4c94ac and an independent release-level review whose findings were fixed before the merge, in two rounds): PyPI = GitHub release = local clean build (wheel ca3bc35f…, sdist 2dddc525…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.9 at 26f3988), smoke install from PyPI on macOS PASS (repo-ai 0.11.9 from the default index, no direct_url.json, index wheel hash matching; init; with pytest absent from the interpreter, verify --run reported NOT VERIFIED: the test runner could not start, the 0.11.8 smoke finding fixed)",
     "2026-11-03 (UTC) 0.12.0 published: tag v0.12.0 at 1822c34, release run 41575685786 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release); wheel 3ad4f498c31b1aacf9f5ddea0e137a5e9d0c8b59972e0288bd7e034a24f38ec0, sdist 154096236e7c58c8833bbd734950da6e836db77b32e7255084b145aba5aa8ccf; PyPI = GitHub = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA provenance verified for both; fresh install from PyPI: 0.12.0, uncapped Claude refused before start, verify --run caught a regression",
     "0.12.1 published 2026-11-03 (UTC) (tag at ecfdc8e pushed by the agent with the owner's approval; release run 41680549675): wheel c752612facefe82630a24036f422384a23945655df1c3559279cc8e7c53a9dcf, sdist 4fc70dc1fd63b44885698694bac9001ec0a9146041be7a76c1519f151c22c20b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.1); fresh install from PyPI reports 0.12.1, verify --run catches a regression",
-    "0.12.2 published 2026-11-03 (UTC) (tag at f661ebb pushed by the agent with the owner's approval; release run 41757207196): wheel 52e6f4b96e2faca6bed64c061c06193c68ede37696dbe89a6a3e411c348529e4, sdist cc2051b6845ee48976d4d1a3b0030ddc3aeaa46e062228ba642197534ecd412b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.2); fresh install from PyPI reports 0.12.2, verify --run catches a regression, an uncapped live Claude run is refused before start; site deployed from f661ebb (21/21 sitemap URLs 200, real 404)"
+    "0.12.2 published 2026-11-03 (UTC) (tag at f661ebb pushed by the agent with the owner's approval; release run 41757207196): wheel 52e6f4b96e2faca6bed64c061c06193c68ede37696dbe89a6a3e411c348529e4, sdist cc2051b6845ee48976d4d1a3b0030ddc3aeaa46e062228ba642197534ecd412b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.2); fresh install from PyPI reports 0.12.2, verify --run catches a regression, an uncapped live Claude run is refused before start; site deployed from f661ebb (21/21 sitemap URLs 200, real 404)",
+    "0.12.3 published 2026-11-04 (UTC) (tag at 27fa6a3 pushed by the agent with the owner's approval; release run 41806360967): wheel 9531fe530b212b78c38a79121ff57d88fe9c041b0bb919957da832170ea2e4a2, sdist 47517f4650db85625960dd8a9459450bcdd0194ac9a9fe63f3fb0ef2ccd4cb56; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.3); fresh install from PyPI reports 0.12.3, a replay tournament + shortlist --probe reports DIFFER, an uncapped live Claude run is refused before start; site deployed from 27fa6a3 (21/21 sitemap URLs 200, real 404)"
    ],
    "limits": [],
    "next_action": "next release"

@@ -1,12 +1,33 @@
 # Omniprovider mission — report
 
-Status: **0.12.2 publicly shipped and verified (2026-11-03 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.3 publicly shipped and verified (2026-11-04 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.3 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.3` at `27fa6a3` (#134), pushed with the owner's approval on 2026-11-04; release run 41806360967 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release) |
+| Wheel | `repo_ai_cli-0.12.3-py3-none-any.whl` sha256 `9531fe530b212b78c38a79121ff57d88fe9c041b0bb919957da832170ea2e4a2` |
+| sdist | `repo_ai_cli-0.12.3.tar.gz` sha256 `47517f4650db85625960dd8a9459450bcdd0194ac9a9fe63f3fb0ef2ccd4cb56` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | SLSA v1 attestations verified for both, source `refs/tags/v0.12.3` at `27fa6a3` |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.3`; a replay tournament of two passing candidates abstained and `shortlist --probe` reported DIFFER at line 3 (`-5 -5` vs `-5 0`), source untouched; an uncapped live Claude run refused before start ($0) |
+| Site | deployed from `27fa6a3`: changelog shows 0.12.3, the tournaments page documents `--probe`, 21 of 21 sitemap URLs 200, a missing page 404 |
+
+Contents:
+- #131 (C21) missions honor the project's confirmed `norecursedirs` (`config_excluded`); a refusal for different
+  test IDs names them. Found by the journey-live-v1 marshmallow control: its INCONCLUSIVE had a repo-ai cause (fixed)
+  and a project cause (test IDs from the clock; correctly not comparable). Review and re-check.
+- #133 (C12, mission 5B) `repo-ai shortlist ID --probe SCRIPT`: a developer-written probe run against the base
+  (twice) and each distinct passing candidate in the mission's sandbox; SAME / DIFFER / INCONCLUSIVE. The review found
+  two false-SAME bugs (a probe failing at the base; diffs silently not applied inside an enclosing checkout) and a
+  deletion check bug, all fixed before merge. Not yet evaluated on real abstaining live candidates.
 
 ### Release 0.12.2 (verified after publication)
 
