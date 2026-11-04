@@ -131,3 +131,23 @@ every live mission, could never count as passing. It now reads the verdict as ob
 image is the only open point and the mission completed, the passport verdict (or its `standing`) counts. This is the
 rule repo-ai 0.12.1 itself uses for `apply` (`image_only_pass`). The first control stage is kept in the records; the
 control stage is run again under this reading. No defect, task, cap, gate or oracle changed.
+
+**Amendment 4 (2026-11-04, before any re-run session; repo-ai 0.12.4): re-running the two blocked sessions.** Two of
+the four sessions on 2026-11-03 ended BLOCKED by repo-ai defects, not by the agent: humanize (repo-ai's own copy of
+the declared version file was counted as a provider-created file) and more-itertools (one Read result went past the
+64 KB event capture, so the run was killed and its cost lost). Both are fixed in 0.12.2 (#125, #128). The owner
+approved a re-run on 2026-11-04 with this scope: **humanize and more-itertools only, at most 2 Claude sessions, each
+capped at `--max-budget-usd 1.00`, $2.00 in total** (Claude Code's reported `total_cost_usd`; on the subscription
+login it is metered against the plan, and an unreported cost is UNKNOWN, never zero). Everything else is as above:
+the same pinned bases, tasks, write paths, frozen tests, positive control, hidden oracle, apply/undo, recovery and
+gates (L6 for the re-run: ≤ 2 sessions / ≤ $2.00).
+
+- repo-ai 0.12.4, installed fresh from PyPI into its own virtualenv; Claude Code on the dedicated login.
+- A new work directory under HOME (`journey-live-v1-rerun`), so the 2026-11-03 records stay as they are; prep and the
+  positive control are run again there for the two defects before any session. Sessions are counted from that
+  directory's records, and `run --max-sessions 2` refuses a third (the harness change committed with this amendment;
+  the default stays 4).
+- One run. As before, a harness crash before a model call is fixed and rerun; after a model call nothing is
+  repeated. A session that ends BLOCKED, FAIL or INCONCLUSIVE again is reported as such, with its cause.
+- Results are added to `RESULTS.md` as a separate re-run section with raw records under `results/`; the 2026-11-03
+  verdicts are not replaced. pyjwt (PASS) and marshmallow (INCONCLUSIVE by design) are not re-run.
