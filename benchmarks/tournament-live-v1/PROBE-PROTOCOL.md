@@ -53,3 +53,31 @@ on its first line, with no model call. Neither difference contradicts the oracle
 probe does not choose: whether a size parser should accept non-ASCII digits is the developer's call. Small sample
 (two tasks, one pair of providers, probes by the same person who built the feature); the Node abstentions were out
 of scope.
+
+## Amendment 2 (2026-11-04, before any Node probe was run or any Node candidate diff was read)
+
+The two Node abstentions (`cal-node-roman`, comparison `62fd53c2…`; `cal-node-chunk`, comparison `2dabef0b…`) are
+added now that `--probe` takes JavaScript (#137). Same method as amendment 1: the recorded Codex and Claude diffs are
+re-submitted as replay proposals in a fresh clone of each frozen task repository (`--test-command "node --test"`),
+then the probes `probes/cal-node-roman.js` and `probes/cal-node-chunk.js`, committed with this amendment and written
+from the prompts alone, run through `shortlist --probe` with repo-ai built from the #137 branch (or the release that
+contains it). Same reporting and classification rules.
+
+## Results of amendment 2 (2026-11-04, repo-ai from the #137 branch, no model call, $0)
+
+Raw records: `results/probe-node-2026-11-04.jsonl`. Both replay re-submissions reproduced the live outcome (two PASS
+arms, abstained).
+
+| Task | Probe | Lines | Lines where the candidates differ from the base | Codex vs Claude |
+|---|---|---|---|---|
+| cal-node-roman | SAME | 60 (including a 1..3999 round trip: 3999 ok) | 37 | identical output and exit status |
+| cal-node-chunk | SAME | 30 (including input-unchanged and new-array checks) | 18 | identical output and exit status |
+
+**What this shows.** The live comparison classified both Node pairs as SUBSTANTIVE (their code differs), and the
+probes found no behavioural difference on the spec's edge cases and the inputs just outside it, while both candidates
+clearly differ from the buggy base. SAME is not equivalence: other inputs could still separate them.
+
+**All four abstentions together:** the probes separated the two Python pairs, each on exactly one input outside the
+prompt (non-ASCII digits; int vs float), and found the two Node pairs behaving identically on everything they asked.
+In every case the probe's answer agreed with the hidden oracle's CORRECT for all eight candidates. Same caveats:
+four tasks, one provider pair, probes written by the feature's author.
