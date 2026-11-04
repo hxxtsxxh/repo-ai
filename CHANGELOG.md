@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- `repo-ai shortlist ID --probe SCRIPT` (C12, mission 5B): after a tournament abstains because several distinct
+  candidates pass the same frozen tests, a Python script you write (edge-case inputs, a property) runs, from where the
+  tests run and with their environment, against the base (twice) and each distinct passing candidate, each in a
+  disposable checkout in the mission's test sandbox (same sandbox kind and image reference, network denied). It
+  compares stdout and exit status and reports `SAME`, `DIFFER` with the first differing line, or `INCONCLUSIVE` (the
+  probe did not exit 0 with output at the base, a run failed or timed out, or its output changes between two runs of
+  the base). The script's sha256 is reported; no model runs, nothing is applied, and the comparison's verdict is
+  unchanged. `SAME` is not equivalence and `DIFFER` does not say which candidate is right.
 - Missions on pytest projects whose own `norecursedirs` keeps name-matched files out of a full run (marshmallow's
   `tests/mypy_test_cases`) were always INCONCLUSIVE: every observation, even of the upstream fix, was "not every
   discovered test file was collected" (found by the journey-live-v1 marshmallow control, C21). Such a file now does
