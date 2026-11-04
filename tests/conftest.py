@@ -135,7 +135,7 @@ _MISSION_NEEDS_SANDBOX = {
     "test_mission_after_init_review", "test_mission_project_interpreter",
     "test_workspace_export_attributes", "test_workspace_state_paths",
     "test_provider_opencode_acp", "test_provider_acp_runtime", "test_provider_acp_live_prefix",
-    "test_tournament_probe",
+    "test_tournament_probe", "test_tournament_probe_node",
 }
 _MISSION_POSIX_ONLY = _MISSION_NEEDS_SANDBOX | {
     "test_eval_integrity", "test_mission_real_project_edges", "test_mission_apply_transaction",
