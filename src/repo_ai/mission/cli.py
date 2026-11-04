@@ -327,10 +327,17 @@ def cmd_shortlist(args) -> int:
     from .tournament import inspect_comparison
     root = _root(args)
     sl = build(root, inspect_comparison(root, args.id), args.policy)
+    if getattr(args, 'probe', None):
+        from .probe import render as render_probe
+        from .probe import run_probe
+        sl['probe'] = run_probe(root, sl, Path(args.probe), timeout_s=args.probe_timeout)
     if args.json:
         print(json.dumps(sl, indent=2, sort_keys=True))
     else:
         print(render(sl))
+        if sl.get('probe'):
+            print()
+            print(render_probe(sl['probe']))
     return 0
 
 
@@ -678,6 +685,12 @@ def register(sub, common) -> None:
     p.add_argument('id', help='tournament comparison ID')
     p.add_argument('--policy', choices=['strict', 'smallest-diff'], default='strict',
                    help='strict (default) only lists candidates; smallest-diff additionally marks a POLICY_PREFERENCE')
+    p.add_argument('--probe', metavar='SCRIPT',
+                   help='a Python script you wrote (edge-case inputs, a property) run against the base and each distinct '
+                        'passing candidate in the mission\'s test sandbox; reports whether their output is the SAME or '
+                        'where it DIFFERs. Runs no model and applies nothing')
+    p.add_argument('--probe-timeout', type=float, default=60, metavar='SECONDS',
+                   help='per run of the probe (default 60, at most 600)')
     p.add_argument('--json', action='store_true', help='machine-readable JSON output')
     p.set_defaults(func=cmd_shortlist)
     p = sub.add_parser('coverage', parents=[common], help='map developer-declared requirements to the tests that observed them; no execution, never a correctness claim')

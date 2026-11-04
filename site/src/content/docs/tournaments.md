@@ -71,6 +71,29 @@ keeps the old step as `recorded_next_step`. A tournament run in a container read
 command cannot check the image): its recorded step is shown with that caveat, and `repo-ai apply CANDIDATE_ID`
 re-runs the tests in the same image before keeping the change.
 
+### Ask a question the tests did not: `--probe` (unreleased)
+
+```sh
+repo-ai shortlist COMPARISON_ID --probe edge_cases.py   # run your script against each distinct passing candidate
+```
+
+When the frozen tests cannot tell two candidates apart, write a short Python script that prints what matters, for
+example the function's result on edge-case inputs, and pass it as `--probe`. repo-ai copies it into each disposable
+checkout as `repo-ai-probe.py` and runs it from where your tests run, with their environment, against the base
+(twice) and against each distinct passing candidate, in the mission's test sandbox (the same sandbox kind and image
+reference, network denied). Then it compares what each printed on stdout and its exit status (stderr is not
+compared):
+
+| Probe result | Meaning |
+|---|---|
+| `SAME` | every candidate printed the same thing on these inputs; not proof that they are equivalent |
+| `DIFFER` | they behave differently; the first differing line is shown, and you decide which is right |
+| `INCONCLUSIVE` | the probe did not exit 0 with some output at the base (an import error, a crash), a run failed or timed out, or it printed different output on two runs of the same base (time, randomness or addresses in its output) |
+
+The script's sha256 is reported with the result. No model runs, the script is never shown to a provider (the
+candidates already exist), nothing is applied, and the comparison's verdict is unchanged. `--probe-timeout` sets the
+limit per run (default 60 seconds).
+
 Each candidate stays individually applicable:
 
 ```sh
