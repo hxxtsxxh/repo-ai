@@ -308,7 +308,7 @@ def control(work: Path, names: list[str], exe: str, log: Log) -> None:
         shutil.rmtree(ctl, ignore_errors=True)
 
 
-def run(work: Path, names: list[str], exe: str, log: Log) -> None:
+def run(work: Path, names: list[str], exe: str, log: Log, max_sessions: int = 4) -> None:
     version = checked_build(exe, log)
     for name in names:
         d = DEFECTS[name]
@@ -317,8 +317,8 @@ def run(work: Path, names: list[str], exe: str, log: Log) -> None:
         if any(r["defect"] == name for r in started):
             log(name, "skipped", why="a live session was already started for this defect (never repeated)")
             continue
-        if len(started) >= 4:
-            log(name, "skipped", why="the 4 approved Claude sessions are used")
+        if len(started) >= max_sessions:
+            log(name, "skipped", why=f"the {max_sessions} approved Claude sessions are used")
             continue
         check, image = last(work, name, "native-check"), last(work, name, "image")
         controls = [r for r in history if r["defect"] == name and r["step"] == "control"]
@@ -472,6 +472,8 @@ def main() -> int:
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--repo-ai", dest="exe")
     ap.add_argument("--only", action="append")
+    # amendment 4: the re-run is approved for 2 sessions in its own work directory (sessions counted from its records)
+    ap.add_argument("--max-sessions", type=int, default=4, choices=range(1, 5))
     args = ap.parse_args()
     args.work.mkdir(parents=True, exist_ok=True)
     log = Log(args.work)
@@ -486,7 +488,8 @@ def main() -> int:
         if args.stage == "control":
             control(args.work, names, args.exe, log)
         elif args.stage == "run":
-            run(args.work, names, args.exe, log)
+            log("all", "session-limit", max_sessions=args.max_sessions)
+            run(args.work, names, args.exe, log, args.max_sessions)
         else:
             recovery(args.work, args.exe, log)
     return 0

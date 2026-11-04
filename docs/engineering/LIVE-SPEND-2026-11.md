@@ -42,3 +42,11 @@ as is. All three wait for the owner's dedicated Claude login; C13 and C21 also r
 | 2026-11-03 | C21 journey-live-v1 pyjwt | Claude Code | $0.046787 OBSERVED (cap $1.00) |
 | 2026-11-03 | C12 tournament-live-v1 (4 Claude arms) | Claude Code | $0.2028 OBSERVED (cap $1.50 per arm) |
 | 2026-11-03 | C12 tournament-live-v1 (4 Codex arms) | Codex | UNKNOWN (ChatGPT plan usage) |
+
+## 2026-11-04: C21 re-run approved
+
+The owner approved, after seeing the call count, upper bound and accounting basis (none run yet, **$0 spent** on it):
+
+| batch | sessions | upper bound | accounting |
+|---|---|---|---|
+| C21 journey-live-v1 re-run (humanize, more-itertools; amendment 4) | at most 2 Claude Code | $2.00 ($1.00 each) | Claude Code's reported `total_cost_usd`; on the subscription login metered against the plan; unreported cost is UNKNOWN |
