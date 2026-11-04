@@ -71,15 +71,18 @@ keeps the old step as `recorded_next_step`. A tournament run in a container read
 command cannot check the image): its recorded step is shown with that caveat, and `repo-ai apply CANDIDATE_ID`
 re-runs the tests in the same image before keeping the change.
 
-### Ask a question the tests did not: `--probe` (unreleased)
+### Ask a question the tests did not: `--probe` (from 0.12.3)
 
 ```sh
 repo-ai shortlist COMPARISON_ID --probe edge_cases.py   # run your script against each distinct passing candidate
 ```
 
-When the frozen tests cannot tell two candidates apart, write a short Python script that prints what matters, for
-example the function's result on edge-case inputs, and pass it as `--probe`. repo-ai copies it into each disposable
-checkout as `repo-ai-probe.py` and runs it from where your tests run, with their environment, against the base
+When the frozen tests cannot tell two candidates apart, write a short script that prints what matters, for example
+the function's result on edge-case inputs, and pass it as `--probe`: Python (`.py`) for a pytest mission, JavaScript
+(`.js`, `.mjs`, `.cjs`; unreleased) for a `node --test` mission; a probe in the other language is refused. A `.js`
+probe follows the project's package.json `"type"` like its tests; `.mjs` or `.cjs` chooses the module system. repo-ai
+copies it into each disposable checkout as `repo-ai-probe` plus its own extension and runs it with `python` or `node`
+from where your tests run, with their environment, against the base
 (twice) and against each distinct passing candidate, in the mission's test sandbox (the same sandbox kind and image
 reference, network denied). Then it compares what each printed on stdout and its exit status (stderr is not
 compared):

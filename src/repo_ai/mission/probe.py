@@ -25,19 +25,36 @@ from ..security import redact_text
 SCHEMA = 'repo-ai.tournament-probe/1'
 MAX_PROBE_BYTES = 64_000
 MAX_SHOWN = 4_000  # characters of each output kept in the report (its sha256 covers all of it)
-PROBE_NAME = 'repo-ai-probe.py'
+PROBE_NAME = 'repo-ai-probe'  # + the probe's own extension
+
+
+LANGUAGES = {'.py': 'python', '.js': 'node', '.mjs': 'node', '.cjs': 'node'}
+
+
+def probe_language(path: Path) -> str:
+    language = LANGUAGES.get(path.suffix.lower())
+    if language is None:
+        raise ValueError('a probe is a Python (.py) or JavaScript (.js, .mjs, .cjs) file')
+    return language
 
 
 def read_probe(path: Path) -> bytes:
     if path.is_symlink() or not path.is_file():
         raise ValueError(f'probe must be a regular file: {path}')
+    language = probe_language(path)
     data = path.read_bytes()
     if len(data) > MAX_PROBE_BYTES:
         raise ValueError(f'probe is larger than {MAX_PROBE_BYTES} bytes')
-    try:
-        compile(data, str(path), 'exec')
-    except (SyntaxError, ValueError) as exc:
-        raise ValueError(f'probe is not valid Python: {exc}') from exc
+    if language == 'python':
+        try:
+            compile(data, str(path), 'exec')
+        except (SyntaxError, ValueError) as exc:
+            raise ValueError(f'probe is not valid Python: {exc}') from exc
+    else:
+        try:
+            data.decode('utf-8')
+        except UnicodeDecodeError as exc:
+            raise ValueError('probe is not UTF-8 text') from exc
     return data
 
 
@@ -94,7 +111,7 @@ def _apply(ws_path: Path, diff: str) -> str | None:
 
 
 def _run_one(root: Path, base: str, diff: str | None, probe: bytes, contract: dict[str, Any],
-             timeout_s: float) -> dict[str, Any]:
+             timeout_s: float, suffix: str = '.py') -> dict[str, Any]:
     from ..verify import isolate
     from ..verify.execute import get_executor, release
     from ..verify.runner import parse_command
@@ -107,24 +124,26 @@ def _run_one(root: Path, base: str, diff: str | None, probe: bytes, contract: di
             problem = _apply(ws.path, diff)
             if problem:
                 return {'error': problem}
-        # run as `python repo-ai-probe.py` from where the tests run (their working directory and environment)
+        # run as `python repo-ai-probe.py` (or `node repo-ai-probe.mjs`) from where the tests run (their working
+        # directory and environment)
+        language, name = LANGUAGES[suffix], PROBE_NAME + suffix
         where = (ws.path / runner.cwd if runner.cwd else ws.path).resolve()
         inside = ws.path.resolve()
         if where != inside and inside not in where.parents or not where.is_dir():
             return {'error': f'the tests\' directory ({runner.cwd}) is not a directory inside the checkout'}
         try:
-            fd = os.open(where / PROBE_NAME, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+            fd = os.open(where / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, 'O_NOFOLLOW', 0), 0o600)
         except OSError:
-            return {'error': f'cannot place the probe where the tests run ({runner.cwd or "."}/{PROBE_NAME})'}
+            return {'error': f'cannot place the probe where the tests run ({runner.cwd or "."}/{name})'}
         with os.fdopen(fd, 'wb') as handle:
             handle.write(probe)
-        container_layout(ws.path, runner, list(ws.files), sandbox_pref)
-        executor = get_executor(ws.path, sandbox_pref, 'python', timeout_s=timeout_s, interpreter_root=root,
+        if language == 'python':
+            container_layout(ws.path, runner, list(ws.files), sandbox_pref)
+        executor = get_executor(ws.path, sandbox_pref, language, timeout_s=timeout_s, interpreter_root=root,
                                 image=image)
         try:
             bound = executor.in_workspace(ws)
-            res = bound.run(['python', PROBE_NAME], cwd=runner.cwd,
-                            env=runner.env, timeout_s=timeout_s, toolchain='python')
+            res = bound.run([language, name], cwd=runner.cwd, env=runner.env, timeout_s=timeout_s, toolchain=language)
         finally:
             release([executor])
         stdout = res.stdout or ''
@@ -160,6 +179,7 @@ def run_probe(root: Path, shortlist: dict[str, Any], probe_path: Path, timeout_s
     if not 0 < timeout_s <= 600:
         raise ValueError('probe timeout must be between 0 and 600 seconds')
     probe = read_probe(probe_path)
+    suffix = probe_path.suffix.lower()
     report: dict[str, Any] = {'schema': SCHEMA, 'probe_sha256': hashlib.sha256(probe).hexdigest(),
                               'probe': str(probe_path), 'verdict': 'INCONCLUSIVE', 'reasons': [],
                               'base': None, 'candidates': [], 'groups': [], 'applies_nothing': True,
@@ -185,12 +205,18 @@ def run_probe(root: Path, shortlist: dict[str, Any], probe_path: Path, timeout_s
                                      'longer holds a complete result')
             return report
     contract, base = contracts[0], str(contracts[0].get('base') or '')
+    from ..verify.runner import parse_command
+    tests_language = parse_command(str((contract.get('acceptance') or ['python -m pytest'])[0])).language
+    if LANGUAGES[suffix] != tests_language:
+        report['reasons'].append(f'a {LANGUAGES[suffix]} probe cannot run in this mission\'s {tests_language} test '
+                                 'environment; write the probe in the language the tests run')
+        return report
 
     def attempt(diff: str | None) -> dict[str, Any]:
         from .. import sandbox
         from ..verify import isolate
         try:
-            return _run_one(root, base, diff, probe, contract, timeout_s)
+            return _run_one(root, base, diff, probe, contract, timeout_s, suffix)
         except (sandbox.SandboxUnavailable, isolate.IsolationError, OSError, ValueError,
                 subprocess.TimeoutExpired) as exc:
             return {'error': redact_text(str(exc))[:300]}
