@@ -60,3 +60,68 @@ def test_an_endless_run_of_dropped_lines_stops_at_the_read_cap(tmp_path):
     res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
                    output_limit=4096, separate_stderr=True, max_line=1024)
     assert res.status == "output_limit"
+
+
+def test_many_medium_tool_results_do_not_crowd_out_the_terminal_event(tmp_path):
+    """Release review of 0.12.2 (H1): fifteen 20 KB tool results each fit the line cap but together filled the total
+    and killed the run before its result event. Near the limit they now become placeholders."""
+    script = ("import json\n"
+              "print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': 's'}))\n"
+              "for i in range(15):\n"
+              "    print(json.dumps({'type': 'user', 'session_id': 's', 'content': 'x' * 20000}))\n"
+              "print(json.dumps({'type': 'result', 'session_id': 's', 'total_cost_usd': 0.07, 'is_error': False}))\n")
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=262_144, separate_stderr=True, max_line=32_768)
+    ev = adapters.parse_event_stream("claude", res.output)
+    assert res.status == "complete", res.status
+    assert ev["terminal_observed"] and ev["cost_usd"] == 0.07 and ev["truncated_events"] >= 1, ev
+
+
+def test_a_large_init_event_is_kept_whole(tmp_path):
+    script = ("import json\n"
+              "print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': 's', 'tools': ['T' * 40000]}))\n"
+              "print(json.dumps({'type': 'result', 'session_id': 's', 'total_cost_usd': 0.01, 'is_error': False}))\n")
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=262_144, separate_stderr=True, max_line=32_768)
+    assert b'"subtype": "init"' in res.output and b"repo_ai_truncated" not in res.output
+
+
+def test_a_long_run_past_the_reserved_quarter_still_reports_its_result(tmp_path):
+    """Re-review of 0.12.2 (H1-b): ~200 KB of tool results then 500 small events used to pass the 500-line parse
+    bound, so the result line was captured but never parsed (cost UNKNOWN). Dropped lines now share one placeholder
+    that does not count toward the bound."""
+    script = ("import json\n"
+              "print(json.dumps({'type': 'system', 'subtype': 'init', 'session_id': 's'}))\n"
+              "for i in range(10):\n"
+              "    print(json.dumps({'type': 'user', 'session_id': 's', 'content': 'x' * 20000}))\n"
+              "for i in range(3000):\n"
+              "    print(json.dumps({'type': 'assistant', 'session_id': 's', 'message': {'content': []}}))\n"
+              "print(json.dumps({'type': 'result', 'session_id': 's', 'total_cost_usd': 0.9, 'is_error': False}))\n")
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=262_144, separate_stderr=True, max_line=32_768)
+    ev = adapters.parse_event_stream("claude", res.output)
+    assert res.status == "complete", res.status
+    assert ev["terminal_observed"] and ev["protocol_valid"] and ev["cost_usd"] == 0.9, ev
+    assert res.output.count(b"repo_ai_truncated") <= 2 and ev["truncated_events"] >= 2500  # some fit before the threshold
+
+
+def test_opencode_step_costs_are_never_dropped(tmp_path):
+    """Re-review of 0.12.2: OpenCode's cost is the sum of its step_finish events, so they are kept whole."""
+    script = ("import json\n"
+              "for i in range(250):\n"
+              "    print(json.dumps({'type': 'tool_use', 'sessionID': 's', 'part': {'tool': 'read', 'out': 'x' * 1200}}))\n"
+              "    print(json.dumps({'type': 'step_finish', 'sessionID': 's', 'part': {'cost': 0.01}}))\n"
+              "print(json.dumps({'type': 'text', 'sessionID': 's', 'part': {'text': 'done'}}))\n")
+    res = _capture([sys.executable, "-c", script], tmp_path, {"PATH": "/usr/bin:/bin"}, timeout=20, max_timeout=30,
+                   output_limit=262_144, separate_stderr=True, max_line=32_768)
+    ev = adapters.parse_event_stream("opencode", res.output)
+    assert res.status == "complete" and ev["terminal_observed"], ev
+    assert ev["truncated_events"] > 0 and round(ev["cost_usd"], 6) == 2.5, ev
+
+
+def test_a_run_of_dropped_lines_is_one_placeholder_with_its_count():
+    lines = "\n".join([json.dumps({"type": "system", "session_id": "s"}),
+                       '{"type":"repo_ai_truncated","bytes":900,"lines":7}',
+                       json.dumps({"type": "result", "session_id": "s", "total_cost_usd": 0.1})])
+    ev = adapters.parse_event_stream("claude", lines.encode())
+    assert ev["truncated_events"] == 7 and ev["protocol_valid"], ev

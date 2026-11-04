@@ -17,8 +17,8 @@ observed for exactly those test IDs. Per requirement:
 Besides the declared requirements, the report names the obligations nothing declared covers: changed executable
 lines no frozen test ran (the mission's change-exercise measurement), and failures a scoped mission accepted as
 pre-existing. For pytest missions run with a frozen declaration it also lists, informationally, the changed lines
-that ran while each requirement's own tests ran (by time window, so import-time and shared-fixture code is not
-credited to a test) and those only undeclared tests ran. Either keeps the headline below ACCEPTANCE_MAPPED_ALL. A test named by a bare suffix and one test
+that ran while each requirement's own tests ran (by time window; a shared fixture's setup run is credited to each
+test whose call ran with it active) and those only undeclared tests ran. Either keeps the headline below ACCEPTANCE_MAPPED_ALL. A test named by a bare suffix and one test
 mapped to several requirements are flagged.
 
 The headline is ACCEPTANCE_MAPPED_ALL only if every requirement is verified. It is never a task-correctness claim:
@@ -194,8 +194,9 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
     per_test = (exercise or {}).get('per_test')
     total = int((exercise or {}).get('changed_lines') or 0)
     if not isinstance(per_test, dict):
-        return {'measured': False, 'reason': 'not measured (recorded for pytest missions run with a frozen '
-                                             '--requirements declaration)'}
+        why = (exercise or {}).get('per_test_reason')
+        return {'measured': False, 'reason': f'not measured: {why}' if isinstance(why, str) and why else
+                'not measured (recorded for pytest missions run with a frozen --requirements declaration)'}
     if total <= 0:
         return {'measured': False, 'reason': 'no executable line changed'}
     complete = (exercise or {}).get('per_test_complete') is True
