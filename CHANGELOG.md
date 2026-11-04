@@ -5,8 +5,9 @@
 - A Claude Code run's event record now says which path each refused or failed tool call concerned:
   `denied_targets` (from the result's permission denials) and `tool_error_targets` (any tool result marked as an
   error, matched to its call, or `<unmatched>` when the call was never seen), as `Tool path` (`Glob path pattern
-  glob`). Only a relative path without `..` or a short `/proc/<self|pid>/<entry>` (not `root`, `cwd`, `fd`, ...) is
-  kept; anything else becomes `<path>/<file name>`, so no directory above the file is recorded. Grep's search pattern,
+  glob`). Only a printable-ASCII relative path without `..` or a short `/proc/<self|pid>/<entry>` (not `root`, `cwd`,
+  `fd`, ...) is kept; any other file becomes `<path>/<file name>` and any other directory, or a home directory such
+  as `/Users/<name>`, just `<path>`, so no directory name (a username, a project location) is recorded. Grep's search pattern,
   tool content and tool results are never recorded. An error is not necessarily a refusal (a missing file is one too),
   and a call that succeeded leaves no target: absence from these lists is not evidence that a path was refused. This is
   what the open Linux isolation check (QUEUE row 11) needs to record. A truthy non-list `permission_denials` (or

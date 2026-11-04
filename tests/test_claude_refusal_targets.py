@@ -61,11 +61,31 @@ def test_permission_denials_name_the_path_they_concerned():
     ("~someone/.netrc", "<path>"),
     ("/home/someone", "<path>"),
     ("/home/someone/", "<path>"),
+    ("/proc/self/root/home/someone", "<path>"),
+    ("C:\\Users\\someone", "<path>"),
+    ("C:/Users/someone", "<path>"),
+    ("/mnt/c/Users/someone", "<path>"),
+    ("/var/home/someone", "<path>"),
+    ("/System/Volumes/Data/Users/someone", "<path>"),
+    ("../../home/someone", "<path>"),
+    (" /Users/someone/.ssh/id", "<path>/id"),
+    ("\t/home/someone/x", "<path>/x"),
+    ("file:///Users/someone/x.txt", "<path>/x.txt"),
+    ("\uff0fhome\uff0fsomeone\uff0fx", "<path>"),
+    ("/proc/self/..", "<path>"),
 ])
 def test_only_relative_and_short_proc_paths_are_kept(path, expected):
     out = _denied(("Read", {"file_path": path}))
     assert out["denied_targets"] == [f"Read {expected}"]
     assert "someone" not in json.dumps(out["denied_targets"])
+
+
+def test_a_directory_is_never_named_only_a_files_own_name():
+    out = _denied(("Grep", {"pattern": "x", "path": "/Users/someone/projects/acme"}),
+                  ("Glob", {"pattern": "/Users/someone/**", "path": "/home/someone/work"}),
+                  ("Read", {"file_path": "/Users/someone/projects/acme/README.md"}))
+    assert out["denied_targets"] == ["Grep <path>", "Glob <path> pattern <path>", "Read <path>/README.md"]
+    assert "someone" not in json.dumps(out) and "acme" not in json.dumps(out)
 
 
 def test_grep_patterns_are_search_text_and_never_recorded():
