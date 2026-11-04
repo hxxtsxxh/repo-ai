@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `shortlist --probe` also takes a JavaScript probe (`.js`, `.mjs`, `.cjs`) for a `node --test` mission, run with
+  `node` in the mission's test sandbox; a probe in another language than the mission's tests is refused (0.12.3 ran
+  Python probes only, so tournament-live-v1's Node abstentions could not be probed).
+
 ## 0.12.3 — tournament probes; missions honor the project's norecursedirs; differing test IDs named
 
 - `repo-ai shortlist ID --probe SCRIPT` (C12, mission 5B): after a tournament abstains because several distinct

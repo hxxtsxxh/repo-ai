@@ -77,9 +77,10 @@ re-runs the tests in the same image before keeping the change.
 repo-ai shortlist COMPARISON_ID --probe edge_cases.py   # run your script against each distinct passing candidate
 ```
 
-When the frozen tests cannot tell two candidates apart, write a short Python script that prints what matters, for
-example the function's result on edge-case inputs, and pass it as `--probe`. repo-ai copies it into each disposable
-checkout as `repo-ai-probe.py` and runs it from where your tests run, with their environment, against the base
+When the frozen tests cannot tell two candidates apart, write a short script that prints what matters, for example
+the function's result on edge-case inputs, and pass it as `--probe`: Python (`.py`) for a pytest mission, JavaScript
+(`.js`, `.mjs`, `.cjs`; unreleased) for a `node --test` mission. repo-ai copies it into each disposable checkout as
+`repo-ai-probe.py` (or `.js`, ...) and runs it with `python` (or `node`) from where your tests run, with their environment, against the base
 (twice) and against each distinct passing candidate, in the mission's test sandbox (the same sandbox kind and image
 reference, network denied). Then it compares what each printed on stdout and its exit status (stderr is not
 compared):
