@@ -93,3 +93,49 @@ def test_shortlist_probe_from_the_command_line(bug, tmp_path, capsys):
     code = main(['shortlist', report['id'], '-C', str(bug), '--probe', str(probe), '--json'])
     out = json.loads(capsys.readouterr().out)
     assert code == 0 and out['probe']['verdict'] == 'DIFFER' and out['applies_nothing'], out['probe']
+
+
+def test_a_probe_that_fails_at_the_base_is_inconclusive_not_same(bug, tmp_path):
+    """Review of #133 (B1): a probe that cannot import or crashes everywhere made every candidate look alike."""
+    out = _shortlist(bug, tmp_path, CLAMP)
+    rep = pr.run_probe(bug, out, _probe(tmp_path, 'import no_such_module_for_this_probe\n'))
+    assert rep['verdict'] == 'INCONCLUSIVE' and any('did not run cleanly at the base' in r for r in rep['reasons']), rep
+    silent = pr.run_probe(bug, out, _probe(tmp_path, 'charge(1, 1)\n'))
+    assert silent['verdict'] == 'INCONCLUSIVE' and any('no output' in r for r in silent['reasons']), silent
+
+
+def test_diffs_are_applied_when_the_workspaces_sit_inside_another_checkout(bug, tmp_path, monkeypatch):
+    """Review of #133 (B2): an enclosing repository made `git apply` skip every path and exit 0 (a false SAME)."""
+    out = _shortlist(bug, tmp_path, CLAMP)
+    outer = tmp_path / 'outer'
+    (outer / 'ws').mkdir(parents=True)
+    (outer / 'ws').chmod(0o700)
+    _git_init(outer)
+    monkeypatch.setenv('REPO_AI_WORKSPACES', str(outer / 'ws'))
+    rep = pr.run_probe(bug, out, _probe(tmp_path, 'print(charge(-5, 1))\n'))
+    assert rep['verdict'] == 'DIFFER', rep['reasons']
+
+
+def _git_init(path):
+    import subprocess
+    subprocess.run(['git', 'init', '-q', str(path)], check=True)
+
+
+def test_a_row_whose_recorded_diff_changed_is_refused(bug, tmp_path):
+    out = _shortlist(bug, tmp_path, CLAMP)
+    out['candidates'][1] = dict(out['candidates'][1], diff_sha256='0' * 64)
+    rep = pr.run_probe(bug, out, _probe(tmp_path, 'print(charge(-5, 1))\n'))
+    assert rep['verdict'] == 'INCONCLUSIVE' and 'not the one the shortlist listed' in rep['reasons'][0], rep
+
+
+def test_a_blocked_shortlist_runs_no_probe(tmp_path):
+    rep = pr.run_probe(tmp_path, {'candidates': [{'id': 'a'}, {'id': 'b'}], 'blockers': ['uncontrolled']},
+                       _probe(tmp_path, 'print(1)\n'))
+    assert rep['verdict'] == 'INCONCLUSIVE' and rep['candidates'] == []
+
+
+def test_first_difference_uses_the_whole_output():
+    long_a, long_b = 'x\n' * 3000 + 'a\n', 'x\n' * 3000 + 'b\n'
+    assert pr._first_difference(long_a, long_b)['line'] == 3001
+    assert pr._first_difference('ok\n', 'ok')['what'] == 'line endings or a trailing newline only'
+    assert pr._first_difference('same', 'same')['what'] == 'exit status only'
