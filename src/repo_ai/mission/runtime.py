@@ -1298,6 +1298,24 @@ def stale_comparison_step(comparison: dict[str, Any], freshness: str) -> dict[st
     return comp
 
 
+def _reauthenticate_action(prov: dict[str, Any]) -> str:
+    """What to do when the provider rejected its credential inside repo-ai's isolation. For Claude, the exact step:
+    its local `claude auth status` cannot see a server-side revocation, so only a new login (or token) fixes it."""
+    name = re.sub(r'[^A-Za-z0-9_.-]', '', str(prov.get('name') or '')) or '<provider>'
+    tail = ('retrying will fail the same way. Or switch provider via handoff --to <provider> and continue with '
+            'do --from-handoff <capsule.json>')
+    if name == 'claude' and prov.get('auth_mode') == 'dedicated_config':
+        from ..providers import claude_auth
+        return ('Claude Code rejected repo-ai\'s dedicated login (expired or revoked; `claude auth status` checks '
+                'only locally and can still report it as logged in). Log in again once with '
+                f'`{claude_auth.login_command(claude_auth.default_config_dir())}`, then start a new mission; ' + tail)
+    if name == 'claude' and prov.get('auth_mode') == 'token_env':
+        return ('Claude Code rejected the token repo-ai passed (CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY): create '
+                'a new one (`claude setup-token`), set it, then start a new mission; ' + tail)
+    return (f'the provider is not authenticated inside repo-ai\'s isolation (see `repo-ai agents setup {name}`); '
+            + tail)
+
+
 def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
     """Classify mission state into one of the 7 bounded recovery categories (or 'none')."""
     verdict = state.get('effective_verdict') or (state.get('passport') or {}).get('verdict', 'BLOCKED')
@@ -1375,9 +1393,7 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
         return {
             'category': 'provider_unavailable',
             'recoverable': True,
-            'action': ('the provider is not authenticated inside repo-ai\'s isolation; retrying will fail the same way. '
-                       'See `repo-ai agents setup <provider>`, or switch provider via handoff --to <provider> and '
-                       'continue with do --from-handoff <capsule.json>'),
+            'action': _reauthenticate_action(prov),
             'reasons': negatives,
         }
     if pstage == 'NOT_INSTALLED':
