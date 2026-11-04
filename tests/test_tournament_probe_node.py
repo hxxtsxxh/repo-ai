@@ -65,6 +65,7 @@ def test_a_probe_in_another_language_than_the_tests_is_refused(tmp_path, capsys)
     probe.write_text('print(1)\n')
     rep = pr.run_probe(root, out, probe)
     assert rep['verdict'] == 'INCONCLUSIVE' and 'cannot run in this mission' in rep['reasons'][0], rep
+    assert rep['base'] is None and rep['candidates'] == [], 'nothing ran'
 
 
 def test_an_unknown_probe_extension_is_refused(tmp_path):
@@ -72,3 +73,12 @@ def test_an_unknown_probe_extension_is_refused(tmp_path):
     probe.write_text('puts 1\n')
     with pytest.raises(ValueError, match='Python'):
         pr.read_probe(probe)
+
+
+def test_an_mjs_probe_runs_as_an_es_module(tmp_path, capsys):
+    root, out = _tournament(tmp_path, capsys)
+    probe = tmp_path / 'probe.mjs'
+    probe.write_text("import { createRequire } from 'node:module';\nconst { charge } = createRequire(import.meta.url)('./charge.js');\n"
+                     "console.log(charge(-5, 1));\n")
+    rep = pr.run_probe(root, out, probe)
+    assert rep['verdict'] == 'DIFFER', rep['reasons']

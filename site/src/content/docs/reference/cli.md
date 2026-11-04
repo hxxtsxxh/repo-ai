@@ -845,7 +845,7 @@ evidence table for an abstained tournament; optional labelled policy preference;
 | `-q`, `--quiet` | less output |
 | `id` | tournament comparison ID |
 | `--policy` `POLICY` | strict (default) only lists candidates; smallest-diff additionally marks a POLICY_PREFERENCE (one of `strict`, `smallest-diff`) |
-| `--probe` `SCRIPT` | a script you wrote (.py, or .js/.mjs/.cjs for a Node project; edge-case inputs, a property) run against the base and each distinct passing candidate in the mission's test sandbox; reports whether their output is the SAME or where it DIFFERs. Runs no model and applies nothing |
+| `--probe` `SCRIPT` | a script you wrote (.py for a pytest mission, .js/.mjs/.cjs for a node --test mission; edge-case inputs) run against the base and each distinct passing candidate in the mission's test sandbox; reports whether their output is the SAME or where it DIFFERs. Runs no model and applies nothing |
 | `--probe-timeout` `SECONDS` | per run of the probe (default 60, at most 600) |
 | `--json` | machine-readable JSON output |
 
