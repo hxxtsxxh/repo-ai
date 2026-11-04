@@ -9,8 +9,14 @@ from __future__ import annotations
 import hashlib
 import math
 import re
+import sys
 from pathlib import Path
 from typing import Any
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # pragma: no cover - 3.10
+    import tomli as tomllib
 
 from .. import __version__, sandbox
 from ..security import redact_text
@@ -72,19 +78,30 @@ def _test_inputs(root: Path, files: list[str], universe: list[str]) -> dict[str,
 
 
 def config_excluded(root: Path, runner: TestRunner, files: list[str]) -> set[str]:
-    """Discovered pytest files the project's own `norecursedirs` keeps out of a full run (verify's narrow static
-    reading, `pytestcfg.skipped_by_config`). It removes nothing by itself: such a file may be absent from pytest's
-    collection without making the observation incomplete, and only when pytest did not collect it. The configuration
-    is a pinned test input, so a candidate cannot change it without failing comparability."""
+    """Discovered pytest files the project's own `norecursedirs` keeps out of a full run, by verify's static reading
+    (`pytestcfg.skipped_by_config`), counted only where that reading is confirmed for pytest 8 and 9 alike: an ini
+    file, `setup.cfg` or pyproject's `[tool.pytest.ini_options]` (not pytest.toml or a native `[tool.pytest]`, which
+    pytest 8 ignores), no `addopts` (it can override or add to collection), and only relative patterns (pytest matches
+    an absolute one against the real filesystem path). It removes nothing by itself: such a file may be absent from
+    pytest's collection without making the observation incomplete, and only when pytest did not collect it. The
+    configuration is a pinned test input, so a candidate that changes it is not comparable with its baseline."""
     if runner.kind != "pytest":
         return set()
     from ..verify.pytestcfg import skipped_by_config
     try:
-        _cfg, _other, skipped = skipped_by_config(root, files, runner.cwd, argv=[*runner.full, *runner.options],
-                                                  paths=runner.paths)
-    except (OSError, ValueError):
+        cfg, other, skipped = skipped_by_config(root, files, runner.cwd, argv=[*runner.full, *runner.options],
+                                                paths=runner.paths)
+        name = Path(cfg).name
+        if not cfg or "addopts" in other or name in {"pytest.toml", ".pytest.toml"}:
+            return set()
+        if name == "pyproject.toml":
+            data = isolate.read_inside(root, cfg, 1_000_000)
+            table = tomllib.loads(data.decode("utf-8", "replace")) if data is not None else {}
+            if not isinstance(((table.get("tool") or {}).get("pytest") or {}).get("ini_options"), dict):
+                return set()
+    except (OSError, ValueError, RecursionError, MemoryError, OverflowError, AttributeError):
         return set()
-    return {f for group in skipped.values() for f in group}
+    return {f for reason, group in skipped.items() if not reason.startswith("norecursedirs /") for f in group}
 
 
 def _outcomes(report: Path, runner: TestRunner, files: list[str], inside: str,
@@ -328,8 +345,8 @@ def _id_difference(base: list[str], cand: list[str]) -> str:
         return ", ".join(redact_text(i)[:160] for i in ids[:2]) + (f" and {len(ids) - 2} more" if len(ids) > 2 else "")
     parts = [f"{len(only_base)} only at the baseline ({show(only_base)})" if only_base else "",
              f"{len(only_cand)} only in the candidate ({show(only_cand)})" if only_cand else ""]
-    return ": " + "; ".join(p for p in parts if p) + ("; a test ID that changes between runs (a parameter from the "
-                                                     "clock or a random value) can never be compared"
+    return ": " + "; ".join(p for p in parts if p) + ("; this may be a test ID that changes between runs (a parameter "
+                                                     "from the clock or a random value), which can never be compared"
                                                      if only_base and only_cand else "")
 
 
@@ -344,7 +361,7 @@ def comparability(baseline: dict, candidate: dict) -> list[str]:
     for key in ("environment_static", "environment_key", "executor", "repo_ai_version"):
         if baseline[key] != candidate[key]:
             reasons.append(f"baseline and candidate have different {key}")
-    if baseline.get("config_excluded") != candidate.get("config_excluded"):
+    if (baseline.get("config_excluded") or []) != (candidate.get("config_excluded") or []):
         reasons.append("baseline and candidate leave out different test files")
     for key in ("command", "runner", "test_inputs"):
         if baseline["pin"].get(key) != candidate["pin"].get(key):

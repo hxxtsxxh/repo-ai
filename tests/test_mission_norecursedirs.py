@@ -96,4 +96,36 @@ def test_different_test_ids_are_named(tmp_path, monkeypatch):
     reasons = verification.comparability(dict(base, test_ids=[a], outcomes={a: "pass"}),
                                          dict(base, test_ids=[b], outcomes={b: "pass"}))
     text = next(r for r in reasons if r.startswith("baseline and candidate have different test_ids"))
-    assert a in text and b in text and "changes between runs" in text, text
+    assert a in text and b in text and "may be a test ID that changes between runs" in text, text
+
+
+def _gap(tmp_path, monkeypatch, config: str) -> dict:
+    repo = _repo(tmp_path, config)
+    _executor(monkeypatch)
+    return verification.observe(repo, "python -m pytest")
+
+
+def test_only_readings_confirmed_for_pytest_8_and_9_count(tmp_path, monkeypatch):
+    """Review of #131: an absolute pattern (pytest matches it against the real path), `addopts` (it can override
+    collection) and a native [tool.pytest] table (pytest 8 ignores it) leave the gap incomplete, as before."""
+    for i, config in enumerate(['[tool.pytest.ini_options]\nnorecursedirs = "/tests/typecheck"\n',
+                                '[tool.pytest.ini_options]\nnorecursedirs = "tests/typecheck"\naddopts = "-q"\n',
+                                '[tool.pytest]\nnorecursedirs = ["tests/typecheck"]\n']):
+        obs = _gap(tmp_path / str(i), monkeypatch, config)
+        assert not obs["complete"] and obs["config_excluded"] == [], (config, obs["reasons"])
+
+
+def test_an_unexplained_missing_file_is_still_incomplete(tmp_path, monkeypatch):
+    repo = _repo(tmp_path, '[tool.pytest.ini_options]\nnorecursedirs = ".git tests/typecheck"\n')
+    (repo / "tests" / "test_other.py").write_text("def test_other():\n    pass\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-qm", "another test file pytest will not report")
+    _executor(monkeypatch)
+    obs = verification.observe(repo, "python -m pytest")
+    assert not obs["complete"] and "not every discovered test file was collected" in obs["reasons"]
+
+
+def test_an_older_record_without_the_field_compares_as_leaving_nothing_out(tmp_path, monkeypatch):
+    base = _gap(tmp_path, monkeypatch, '[tool.pytest.ini_options]\naddopts = "-q"\n')
+    old = {k: v for k, v in base.items() if k != "config_excluded"}
+    assert not any("leave out" in r for r in verification.comparability(dict(base, complete=True), dict(old, complete=True)))
