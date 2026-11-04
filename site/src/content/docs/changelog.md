@@ -1,9 +1,25 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.1, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.2, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.2
+
+- **Fixed** live runs on real projects (found by the first real-project Claude sessions, C21): a version file the
+  build writes (hatch-vcs / setuptools-scm) and repo-ai copies into the candidate is no longer blamed on the
+  provider while it still holds the copied bytes; a changed one is still refused.
+- **Fixed** the event capture no longer kills a run that has already spent: over-long event lines, and ordinary
+  events once the 256 KB capture nears its limit, become a counted placeholder, while init, result, error and
+  rate-limit events are kept whole, so the result and its cost still arrive.
+- **Fixed** once a started live run's cost is UNKNOWN under a USD ceiling, the mission starts no further run and
+  says why; a run refused before it started leaves no UNKNOWN cost.
+- **Added** `repo-ai coverage` lists, per declared requirement, the changed lines that ran while its own tests ran
+  (informational: it never changes a verdict or exit code). See [Coverage](/repo-ai/docs/coverage/).
+- **Security** (Linux, opt-in, off by default) `REPO_AI_LINUX_EGRESS_PROXY=1` gives live Claude, Codex and Bob runs
+  their own network namespace, with network only through a port-443 `CONNECT` proxy to public host names. Verified
+  in CI with curl as the provider, not with the real CLIs. Residuals in [Security](/repo-ai/docs/security/).
 
 ## 0.12.1
 
