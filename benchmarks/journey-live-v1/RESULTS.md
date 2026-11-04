@@ -73,3 +73,38 @@ had two causes:
 So marshmallow stays INCONCLUSIVE by design, for a reason that is now visible and stated, not hidden behind an
 incomplete-observation message. The original records are unchanged; this was not a new session and changed no
 verdict above.
+
+## Re-run under amendment 4 (2026-11-04 UTC): BLOCKED again, by a revoked login ($0, no model turn)
+
+Owner-approved scope: humanize and more-itertools, at most 2 Claude sessions, $1.00 cap each. repo-ai 0.12.4 fresh
+from PyPI, Claude Code 2.1.318, the dedicated login, a new work directory. Raw records (paths redacted, mission
+records summarised as above): [results/rerun-2026-11-04.jsonl](results/rerun-2026-11-04.jsonl).
+
+- **prep (no model):** both defects qualified again (frozen tests fail at the base, pass with the upstream fix, in
+  dependencies-only images).
+- **control (no model):** both PASS as observed (exit 2 only because a container image is reported `not checked`,
+  the amendment-3 reading).
+- **First `run` attempt (no model call):** the harness refused both defects: two repo-ai workspaces were left in the
+  shared workspace directory outside HOME. They came from a local test run of repo-ai's own suite that had been
+  stopped midway (toy `charge.py` fixtures, creating process gone), not from this study. They were removed and the
+  stage re-run, as the protocol allows before any model call. The guard did its job.
+- **Second `run` attempt: 2 sessions started, both BLOCKED before any model turn.** Claude Code reported
+  `authentication_failed`: "OAuth token revoked. Please log in again". Reported cost $0.00 for each (OBSERVED), no
+  tool call, no candidate. `claude auth status` on the same login still says `loggedIn: true` (expiry 2026-12-02):
+  it checks only locally. The credential file's access-token expiry was set to 0 by the CLI at the failure; the
+  refresh token is still dated 2026-12-02 locally, so the revocation was server-side. Nothing points to repo-ai's
+  sandbox as the cause (the config directory and keychain files stay writable for refreshes, and the CLI did write
+  the file).
+
+| defect | verdict | reported cost | what happened |
+|---|---|---|---|
+| humanize | BLOCKED | $0.00 (OBSERVED) | provider error `authentication_failed` (OAuth token revoked) before any model turn |
+| more-itertools | BLOCKED | $0.00 (OBSERVED) | the same |
+
+Gates: L1 0 (no PASS), L3 not reached, L4 0, L6 2 sessions / $0.00. repo-ai handled it correctly as far as it
+goes: BLOCKED, never a pass, cost observed. Its recovery advice was generic (`repo-ai agents setup <provider>`); the
+exact re-login step is added in #143. No session was repeated. The two defects' live journeys on a fixed repo-ai
+remain undemonstrated: a further attempt needs the owner to log the dedicated login in again
+(`CLAUDE_CONFIG_DIR=~/.local/share/repo-ai/claude-provider claude auth login`) and a decision on whether the
+approval for these 2 sessions (none of which reached a model) covers one more attempt.
+
