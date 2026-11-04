@@ -73,11 +73,11 @@ def test_priority_a_version_accurate_invocations_and_unknown_cost_fail_closed(tm
     assert unreported["cost_reported"] is False
     assert unreported["cost_status"] == "UNKNOWN"
 
-    # >500 lines fails closed instead of silently truncating
-    overflow_stream = ("\n".join(json.dumps({"type": "step"}) for _ in range(505))).encode("utf-8")
+    # >4000 provider lines fails closed instead of silently truncating
+    overflow_stream = ("\n".join(json.dumps({"type": "step"}) for _ in range(4005))).encode("utf-8")
     overflow_parsed = parse_event_stream("codex", overflow_stream)
     assert overflow_parsed["valid_jsonl"] is False
-    assert any("500-line bound" in e for e in overflow_parsed["errors"])
+    assert any("4000-line bound" in e for e in overflow_parsed["errors"])
 
     # Live provider run with max_cost_usd > 0 fails closed if provider does not report cost
     root = tmp_path / "repo"

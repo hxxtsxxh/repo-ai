@@ -344,7 +344,9 @@ def _stop(proc: subprocess.Popen[bytes]) -> None:
         pass
 
 
-KEEP_WHOLE_TYPES = frozenset({"result", "turn.completed", "turn.failed", "text", "error", "rate_limit_event"})
+KEEP_WHOLE_TYPES = frozenset({"result", "turn.completed", "turn.failed", "text", "error", "rate_limit_event",
+                              "system", "step_finish"})  # step_finish: OpenCode's per-step cost, summed by the parser
+HEADROOM_FRACTION = 4  # in line mode, the last 1/4 of output_limit is kept for the types above
 MAX_READ_FACTOR = 64
 _TYPE_PREFIX = re.compile(rb'^\s*\{\s*"type"\s*:\s*"([A-Za-z_.]{1,40})"')
 
@@ -361,8 +363,9 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
              pass_fds: tuple[int, ...] = (), max_line: int = 0) -> ProbeResult:
     """Bound memory, elapsed time, and process-group lifetime without a shell. `max_line` (a JSONL event stream):
     a stdout line longer than this is replaced by `{"type":"repo_ai_truncated","bytes":N}` instead of stopping the
-    run (a large tool result or file read), unless its type is one repo-ai must see whole (terminal, error, rate
-    limit: `KEEP_WHOLE_TYPES`); `output_limit` still bounds what is kept, and reading stops after
+    run (a large tool result or file read), unless its type is one repo-ai must see whole (init, terminal, error,
+    rate limit: `KEEP_WHOLE_TYPES`). Once kept output nears `output_limit`, ordinary lines become placeholders too,
+    so the last quarter stays for the kept types (the terminal event and its cost); reading stops after
     `MAX_READ_FACTOR` x `output_limit` bytes in all."""
     if not 0 < timeout <= max_timeout or not 0 < max_timeout <= 900 or not 0 < output_limit <= MAX_OUTPUT * 4:
         raise ValueError("invalid probe bounds")
@@ -394,6 +397,21 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
         line = bytearray()
         dropped = [0]  # bytes of the line being dropped (0: not dropping)
         total = 0
+        run = [-1, 0, 0]  # the placeholder just written: [its offset, bytes, lines]; -1: the last write was not one
+
+        def placeholder(size: int, end: bytes = b"\n") -> None:
+            # consecutive dropped lines share one placeholder, so placeholders cannot fill the reserved quarter
+            if run[0] >= 0:
+                del destination[run[0]:]
+                run[1] += size
+                run[2] += 1
+            else:
+                run[:] = [len(destination), size, 1]
+            keep(destination, b'{"type":"repo_ai_truncated","bytes":%d,"lines":%d}' % (run[1], run[2]) + end)
+
+        def kept(data: bytes) -> None:
+            run[0] = -1
+            keep(destination, data)
         try:
             while not stop_readers.is_set():
                 # POSIX pipes may be inherited by detached descendants outside
@@ -427,14 +445,22 @@ def _capture(argv: list[str], cwd: Path, env: dict[str, str], *,
                     if nl == -1:
                         break
                     if dropped[0]:
-                        keep(destination, b'{"type":"repo_ai_truncated","bytes":%d}\n' % dropped[0])
+                        placeholder(dropped[0])
                         dropped[0] = 0
+                    elif (not _keep_whole(line)
+                          and len(destination) + len(line) > output_limit - output_limit // HEADROOM_FRACTION):
+                        # near the limit, an ordinary event (a tool result) becomes a placeholder so that the
+                        # terminal event and its cost still fit; only kept types can then fill the rest
+                        placeholder(len(line))
+                        line.clear()
                     else:
-                        keep(destination, bytes(line) + b"\n")
+                        kept(bytes(line) + b"\n")
                         line.clear()
                     pos = nl + 1
-            if lines and (line or dropped[0]):  # a last line without a newline
-                keep(destination, b'{"type":"repo_ai_truncated","bytes":%d}' % dropped[0] if dropped[0] else bytes(line))
+            if lines and dropped[0]:  # a last line without a newline
+                placeholder(dropped[0], b"")
+            elif lines and line:
+                kept(bytes(line))
         except OSError:
             read_failed.set()
         finally:
