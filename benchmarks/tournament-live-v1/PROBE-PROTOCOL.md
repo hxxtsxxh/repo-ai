@@ -53,3 +53,12 @@ on its first line, with no model call. Neither difference contradicts the oracle
 probe does not choose: whether a size parser should accept non-ASCII digits is the developer's call. Small sample
 (two tasks, one pair of providers, probes by the same person who built the feature); the Node abstentions were out
 of scope.
+
+## Amendment 2 (2026-11-04, before any Node probe was run or any Node candidate diff was read)
+
+The two Node abstentions (`cal-node-roman`, comparison `62fd53c2…`; `cal-node-chunk`, comparison `2dabef0b…`) are
+added now that `--probe` takes JavaScript (#137). Same method as amendment 1: the recorded Codex and Claude diffs are
+re-submitted as replay proposals in a fresh clone of each frozen task repository (`--test-command "node --test"`),
+then the probes `probes/cal-node-roman.js` and `probes/cal-node-chunk.js`, committed with this amendment and written
+from the prompts alone, run through `shortlist --probe` with repo-ai built from the #137 branch (or the release that
+contains it). Same reporting and classification rules.
