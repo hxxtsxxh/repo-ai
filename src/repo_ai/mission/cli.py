@@ -686,9 +686,9 @@ def register(sub, common) -> None:
     p.add_argument('--policy', choices=['strict', 'smallest-diff'], default='strict',
                    help='strict (default) only lists candidates; smallest-diff additionally marks a POLICY_PREFERENCE')
     p.add_argument('--probe', metavar='SCRIPT',
-                   help='a Python script you wrote (edge-case inputs, a property) run against the base and each distinct '
-                        'passing candidate in the mission\'s test sandbox; reports whether their output is the SAME or '
-                        'where it DIFFERs. Runs no model and applies nothing')
+                   help='a script you wrote (.py for a pytest mission, .js/.mjs/.cjs for a node --test mission; edge-case inputs) run '
+                        'against the base and each distinct passing candidate in the mission\'s test sandbox; reports '
+                        'whether their output is the SAME or where it DIFFERs. Runs no model and applies nothing')
     p.add_argument('--probe-timeout', type=float, default=60, metavar='SECONDS',
                    help='per run of the probe (default 60, at most 600)')
     p.add_argument('--json', action='store_true', help='machine-readable JSON output')
