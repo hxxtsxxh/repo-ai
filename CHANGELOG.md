@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- A Claude Code run's event record now says which path each refused or failed tool call concerned:
+  `denied_targets` (from the result's permission denials) and `tool_error_targets` (a tool result marked as an error,
+  matched to its call), as `Tool path` or `Tool pattern in path`. Secrets are masked and absolute local paths collapse
+  to `<path>/<file name>`; tool content and results are never recorded. This is what the open Linux isolation check
+  (QUEUE row 11: can the file tools reach `/proc/self/environ` or the login's credentials file) needs to record.
+
 ## 0.12.4 — JavaScript tournament probes
 
 - `shortlist --probe` also takes a JavaScript probe (`.js`, `.mjs`, `.cjs`) for a `node --test` mission, run with

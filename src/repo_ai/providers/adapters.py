@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from ..security import redact_text, source_contains_secret
+from ..security import redact_text, sanitize_provider_text, source_contains_secret
 from . import claude_auth, codex_broker, egress, opencode_cfg
 from .acp import AcpClient, AcpResult
 from .discovery import (MAX_OUTPUT, PROVIDERS, ProbeResult, _bwrap_binds_fds, _capture, _close_all, _has_socket,
@@ -250,6 +250,21 @@ def build_invocation(
 MAX_EVENT_LINES = 4000  # provider event lines parsed per run (repo-ai placeholders excluded); more fails closed
 
 
+# The keys a Claude Code file tool names its target with; Glob and Grep read "<pattern> in <path>".
+_TARGET_KEYS = ("pattern", "file_path", "notebook_path", "path")
+
+
+def _tool_target(name: str, tool_input: object) -> str:
+    """`Tool target` for a refused or failed tool call: which path it concerned, never its content. Secrets are
+    masked and absolute local paths collapse to `<path>/<file name>` (`/proc/...` is kept: it names no person)."""
+    label = redact_text(name)[:40] or "tool"
+    if isinstance(tool_input, dict):
+        parts = [str(tool_input[k]) for k in _TARGET_KEYS if isinstance(tool_input.get(k), str) and tool_input[k]]
+        if parts:
+            label += " " + " in ".join(sanitize_provider_text(p)[:120] for p in parts[:2])
+    return label[:200]
+
+
 def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     """Parse structured JSONL events from a provider run with strict redaction.
 
@@ -272,6 +287,9 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
     tool_calls: list[str] = []
     tool_errors: list[str] = []
     denied_actions: list[str] = []
+    denied_targets: list[str] = []
+    tool_error_targets: list[str] = []
+    claude_calls: dict[str, tuple[str, object]] = {}
     errors: list[str] = []
     rate_limited = False
     summary = ""
@@ -443,10 +461,18 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
                 for block in content:
                     if isinstance(block, dict) and block.get("type") == "tool_use" and isinstance(block.get("name"), str):
                         tool_calls.append(redact_text(block["name"])[:80])
+                        if isinstance(block.get("id"), str) and len(claude_calls) < 4096:
+                            claude_calls[block["id"]] = (block["name"], block.get("input"))
+            if etype == "user" and isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "tool_result" and block.get("is_error") is True:
+                        name, tool_input = claude_calls.get(str(block.get("tool_use_id")), ("tool", None))
+                        tool_error_targets.append(_tool_target(name, tool_input))
             if etype == "result":
                 for d in obj.get("permission_denials") or []:
                     if isinstance(d, dict):
                         denied_actions.append(redact_text(str(d.get("tool_name") or "tool"))[:80])
+                        denied_targets.append(_tool_target(str(d.get("tool_name") or "tool"), d.get("tool_input")))
 
         if provider == "opencode":
             raw_part = obj.get("part")
@@ -515,6 +541,8 @@ def parse_event_stream(provider: str, output: bytes) -> dict[str, Any]:
         "tool_calls": tool_calls[:32],
         "tool_errors": tool_errors[:32],
         "denied_actions": denied_actions[:32],
+        "denied_targets": denied_targets[:32],
+        "tool_error_targets": tool_error_targets[:32],
         "tokens": {"input_tokens": input_tokens, "output_tokens": output_tokens},
         "cost_usd": round(cost_usd, 6),
         "cost_reported": cost_reported,
@@ -941,6 +969,8 @@ def acp_events(provider: str, run: AcpResult, *, cost_basis: str) -> dict[str, A
         "tool_calls": tool_calls[:32],
         "tool_errors": tool_errors[:32],
         "denied_actions": denied[:32],
+        "denied_targets": [],
+        "tool_error_targets": [],
         "refused": [redact_text(r)[:200] for r in run.refused[:32]],
         "acp_writes": run.writes[:32],
         "timed_out": run.timed_out,
