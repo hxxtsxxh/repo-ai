@@ -5,7 +5,10 @@ Found by journey-live-v1 amendment 4 (2026-11-04): the dedicated Claude login wa
 `repo-ai agents setup <provider>`."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
+
+import pytest
 
 from repo_ai.mission import runtime
 from repo_ai.providers import claude_auth
@@ -82,6 +85,7 @@ def test_a_provider_name_cannot_inject_text_into_the_advice():
     assert "`repo-ai agents setup codexthenecho`" in rec["action"]
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX shell form; Windows shows the path as is")
 def test_login_commands_are_pasteable_and_show_no_account_path(tmp_path):
     home = Path.home()
     assert claude_auth.login_command(home / ".local/share/repo-ai/claude-provider") == \
@@ -92,6 +96,7 @@ def test_login_commands_are_pasteable_and_show_no_account_path(tmp_path):
     assert claude_auth.shell_path(home / "a b") == "~/'a b'"
 
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX shell form; Windows shows the path as is")
 def test_no_tilde_form_when_home_is_root_or_empty(monkeypatch):
     for value in ("/", ""):
         monkeypatch.setenv("HOME", value)
@@ -101,3 +106,8 @@ def test_no_tilde_form_when_home_is_root_or_empty(monkeypatch):
 def test_the_config_source_is_recorded_without_the_path():
     assert claude_auth.config_source({claude_auth.CONFIG_DIR_ENV: "/somewhere"}) == "env"
     assert claude_auth.config_source({}) == "default"
+
+
+def test_windows_shows_the_path_as_is(monkeypatch):
+    monkeypatch.setattr(claude_auth.os, "name", "nt")
+    assert claude_auth.shell_path(Path("C:/Users/x/cfg dir")) == str(Path("C:/Users/x/cfg dir"))
