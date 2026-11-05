@@ -223,7 +223,7 @@
     "test-id resolution: a bare name matched by suffix is flagged, not refused; node and parametrized ids with '::' can match partially; a leaf name never matches a `describe > leaf` id",
     "one test mapped to several requirements is flagged (shared_tests), not refused: all of them can still reach ACCEPTANCE_MAPPED_ALL"
    ],
-   "next_action": "Node per test file; a rule on the mapping only after an independent review of fixture-scope attribution on real projects"
+   "next_action": "per-requirement lines for container runs; an independent review of fixture-scope (pytest) and per-file (node) attribution on real projects before any rule depends on the mapping"
   },
   {
    "id": "C12",
