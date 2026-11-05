@@ -3,9 +3,10 @@ or the project's own full suite as one process, whichever is expected to
 finish first. Both run in the same sandbox, in disposable copies, with the
 same checks; only the shape of the run differs.
 
-The full suite runs every selected test and more, so when it is not
-expected to be slower it is the better choice: more evidence for the same
-wait. It is also the only run when the plan requires the full suite anyway
+The full suite runs every test the project's own command collects (a
+selected file it leaves out runs on its own afterwards, `engine.unreached`),
+so when it is not expected to be slower it is the better choice: more
+evidence for the same wait. It is also the only run when the plan requires the full suite anyway
 (running the selection first would execute the same tests twice).
 
 **Cost model** (seconds of wall time, measured, never assumed):
@@ -30,7 +31,10 @@ differently between calls on estimates a few tenths of a second apart).
 The two shapes are not equally informative: the full suite also reports
 failing test files outside the selection (which can make the verdict a
 regression) and can conclude `selected-and-full-suite-passed`; the
-selection can do neither. So steadiness only ever leans toward the full
+selection can do neither. (A selected file the project's own command does
+not collect, pytest's `norecursedirs` say, is run on its own after the full
+suite, see `engine.unreached`, and a full suite that left one out is not
+remembered.) So steadiness only ever leans toward the full
 suite and never trades its evidence away:
 - a full suite chosen before for the same test files in the same
   environment (`cache.suite_key`, kept in `Timings`) is kept unless the
@@ -190,7 +194,8 @@ def decide(runner: TestRunner, selected: list[str], universe: list[str], duratio
     if est_f <= est_t + TIE_MARGIN_S:
         return Decision("full", f"the full suite ({src} {est_f:.1f}s as one process) is expected to be no "
                                 f"slower than the selection (~{est_t:.1f}s in {len(batches)} process(es)); "
-                                "it also runs every other test", [], est_t, est_f, src, "compared", prev)
+                                "it also runs every other test the project's own command collects", [], est_t,
+                        est_f, src, "compared", prev)
     targeted_reason = (f"the selection (~{est_t:.1f}s in {len(batches)} process(es)) is expected to be faster "
                        f"than the full suite ({src} {est_f:.1f}s)")
     if prev != "full":
@@ -203,8 +208,8 @@ def decide(runner: TestRunner, selected: list[str], universe: list[str], duratio
     return Decision("full", f"the full suite chosen before for these unchanged test files and environment is kept "
                             f"({src} {est_f:.1f}s as one process): the selection (~{est_t:.1f}s in {len(batches)} "
                             f"process(es)) is {ahead:.2f}s faster, not more than the {need:.2f}s needed to replace "
-                            "it; the full suite also runs every other test", [], est_t, est_f, src, "kept", prev,
-                    need)
+                            "it; the full suite also runs every other test the project's own command collects", [],
+                    est_t, est_f, src, "kept", prev, need)
 
 
 def process_limit(estimate: float | None, cap: float, explicit: bool, floor: float = 30.0) -> float:

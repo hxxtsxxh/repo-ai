@@ -239,10 +239,17 @@ in disposable copies, with the same integrity checks.
 
 **The shape:**
 - **The full suite as one process** when it is not expected to be slower
-  than the selection. It runs every selected test and more, so it is the
-  better choice at the same wait. It is also the only run when the change
-  requires the full suite: the selection is not run first, so nothing runs
-  twice.
+  than the selection. It runs every test the project's own command collects,
+  so it is the better choice at the same wait. It is also the only run when
+  the change requires the full suite: the selection is not run first, so
+  nothing runs twice.
+  - **A selected file the full suite did not run** (pytest's
+    `norecursedirs`, a unittest package whose `load_tests` hides it): its
+    per-test report shows no outcome for the file, so it runs on its own
+    afterwards, and its result counts like the selection's. Without a
+    per-test report from a passing full suite, every selected file runs on
+    its own. If that cannot happen (no time left in `--deadline`), the run
+    is "not verified", never a pass.
 - **The selected files**, otherwise: balanced into at most `--workers`
   processes (unittest and pytest), or one `node --test` invocation (Node runs
   each file in its own child process).
@@ -261,7 +268,8 @@ in disposable copies, with the same integrity checks.
   unless the selection is faster by more than 0.25 s plus 0.25 s or 20% of
   the full suite's estimate, whichever is larger. A selection chosen before
   never holds the full suite back, and a selection run only because nothing
-  was measured yet is not remembered. Close estimates a few tenths of a
+  was measured yet is not remembered. A full suite is remembered only after
+  a run whose own report reached every selected file. Close estimates a few tenths of a
   second apart therefore stop flipping the shape once the full suite has
   been chosen; the cost is time only (a kept full suite can be up to that
   much slower). A required full suite, `--full`, a full suite whose result

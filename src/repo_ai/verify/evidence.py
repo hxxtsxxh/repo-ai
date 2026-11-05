@@ -124,6 +124,12 @@ def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected
         return "regression"  # whatever else happened, these failures are new and reproduced
     if incomplete:
         return f"not verified: {incomplete}"
+    not_reached = [r for r in results if r.get("not_reached")]
+    if not_reached:
+        # the full suite's own collection left these selected files out and they could not run on their own:
+        # its pass (or its pre-existing failures) says nothing about them
+        return (f"not verified: {len(not_reached)} selected test file(s) were not run by the full suite and "
+                "could not be run on their own")
     if (full is not None and full.get("status") not in {"pass", "not-run"} and not full.get("attributed")
             and not full.get("advisory")):
         return "full-suite-failed"

@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Fixed (found reviewing #152; older than it, present in 0.12.5 and earlier): `verify --run` could report
+  `selected-and-full-suite-passed` for a selected test file the full suite never ran. When the project's own command
+  leaves a file out (pytest's `norecursedirs`, a unittest package whose `load_tests` hides its modules), the full
+  suite's per-test report still listed the file with an empty outcome, which read as "defines no test", so a NEW
+  failing test file there passed whenever the full suite ran (`--full`, the tie rule, a remembered full suite) while
+  the selection alone reported `regression`; an existing file there could end `selected-and-full-suite-passed` or
+  `not verified`. Now any selected file the full suite's report never reached (no test outcome, and the runner never
+  said it collected or finished it), or every selected file when the passing full suite gave no per-test report, is
+  run on its own after the full suite, one more process or a few and only when there is one; its result replaces
+  the full suite's row and is compared with the base as usual (`not_reached_by_full_suite` on the row,
+  `full_suite.not_reached`). When that cannot happen (the runner cannot run single files, or the time budget is
+  spent), the verdict is `not verified: N selected test file(s) were not run by the full suite and could not be run
+  on their own`, never a pass. A runner that cannot run single files (`npm test`, `make test`) gives no per-file
+  report at all and is unchanged.
 - `verify --run` keeps its run shape steady for an unchanged suite, only ever toward the full suite. speed-v1 run 5
   recorded the same state choosing `targeted` on one call and `full` on the next on estimates a few tenths of a
   second apart (C16). The shapes are not equally informative (the full suite also reports failing test files outside
@@ -10,7 +24,8 @@
   selection, every test file by content, the worker count) in the same environment is kept unless the selection is
   faster by more than 0.25 s plus the larger of 0.25 s and 20% of the full suite's estimate; a selection chosen
   before never holds the full suite back (the existing rule decides), and a selection run only because nothing was
-  measured yet is not remembered. A required full suite, `--full`, a full suite whose result cannot be attributed,
+  measured yet is not remembered; a full suite is remembered (and kept) only after a run whose own report reached
+  every selected file, recorded after the run. A required full suite, `--full`, a full suite whose result cannot be attributed,
   an empty selection and a command that cannot be split or run whole still decide on their own. The evidence's
   `strategy` now records `basis` (`forced`, `no-estimates`, `compared`, `kept`, `switched`), `previous` and
   `margin_s` (how much faster the selection had to be), and the `--json` summary `strategy_basis`. Not re-measured:
