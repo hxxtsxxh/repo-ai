@@ -129,12 +129,17 @@ def _script(url, ranges):
          'ranges': [{'startOffset': s, 'endOffset': e, 'count': c} for s, e, c in ranges]}]}
 
 
+def _fold(tmp_path, ident, text='x = 1', **kw):
+    return v8.fold(tmp_path, COV, ident, str(tmp_path), {'m.js': text}, **kw)
+
+
 def test_reports_are_read_from_the_directory_prepared_for_them(tmp_path):
     ident = v8.prepare(tmp_path, COV)
     url = (tmp_path / 'm.js').as_uri()
     _report(tmp_path, 'coverage-1.json', {'result': [_script(url, [(0, 5, 1)]), _script('node:fs', [(0, 1, 1)])]})
-    assert v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'}) == {'m.js': [((0, 5, 1),)]}
-    assert v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'other.js'}) == {}
+    folded = _fold(tmp_path, ident, present={'other.js'})
+    assert folded.seen == {'m.js'} and folded.accumulators['m.js'].entries == 1
+    assert folded.accumulators['m.js'].line_status() == ({1}, {1})
 
 
 @pytest.mark.parametrize('content, reason', [
@@ -147,7 +152,7 @@ def test_a_malformed_coverage_file_is_unavailable(tmp_path, content, reason):
     ident = v8.prepare(tmp_path, COV)
     _report(tmp_path, 'coverage-1.json', content)
     with pytest.raises(v8.Unavailable, match=reason):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident)
 
 
 @pytest.mark.parametrize('ranges', [
@@ -169,7 +174,7 @@ def test_a_malformed_entry_for_a_watched_file_is_unavailable_and_others_are_igno
 def test_no_coverage_written_is_unavailable_not_an_empty_record(tmp_path):
     ident = v8.prepare(tmp_path, COV)
     with pytest.raises(v8.Unavailable, match='no coverage was written'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident)
 
 
 def test_oversized_coverage_is_unavailable(tmp_path, monkeypatch):
@@ -177,21 +182,23 @@ def test_oversized_coverage_is_unavailable(tmp_path, monkeypatch):
     _report(tmp_path, 'coverage-1.json', {'result': [], 'pad': 'x' * 400})
     monkeypatch.setattr(v8, 'MAX_FILE_BYTES', 100)
     with pytest.raises(v8.Unavailable, match='larger than'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident)
     monkeypatch.setattr(v8, 'MAX_FILE_BYTES', 1000)
-    monkeypatch.setattr(v8, 'MAX_TOTAL_BYTES', 600)
+    monkeypatch.setattr(v8, 'MAX_TOTAL_BYTES', 600)  # (2 GiB in use: each file is folded and dropped in turn)
     _report(tmp_path, 'coverage-2.json', {'result': [], 'pad': 'x' * 400})
     with pytest.raises(v8.Unavailable, match='coverage output is larger'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident)
 
 
 def test_too_many_coverage_files_is_unavailable(tmp_path, monkeypatch):
     ident = v8.prepare(tmp_path, COV)
-    monkeypatch.setattr(v8, 'MAX_FILES', 2)
     for n in range(3):
         _report(tmp_path, f'coverage-{n}.json', {'result': []})
     with pytest.raises(v8.Unavailable, match='more than 2 coverage files'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident, max_files=2)
+    assert _fold(tmp_path, ident, max_files=3).seen == set()
+    assert v8.files_allowed(1) == v8.MAX_FILES and v8.files_allowed(1000) == 4016
+    assert v8.files_allowed(10 ** 6) == v8.MAX_FILES_CEILING
 
 
 @pytest.mark.skipif(not hasattr(os, 'symlink'), reason='needs symbolic links')
@@ -200,7 +207,7 @@ def test_a_symbolic_link_in_the_coverage_output_is_refused(tmp_path):
     (tmp_path / 'elsewhere.json').write_text('{"result": []}')
     os.symlink(tmp_path / 'elsewhere.json', tmp_path / COV / 'coverage-1.json')
     with pytest.raises(v8.Unavailable, match='symbolic link'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident)
 
 
 @pytest.mark.skipif(not hasattr(os, 'symlink'), reason='needs symbolic links')
@@ -212,20 +219,20 @@ def test_a_coverage_directory_replaced_by_a_link_or_another_directory_is_refused
     shutil.rmtree(tmp_path / COV)
     os.symlink(other, tmp_path / COV)
     with pytest.raises(v8.Unavailable, match='not a directory'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident)
     os.unlink(tmp_path / COV)
     (tmp_path / COV).mkdir()
     (tmp_path / COV / 'coverage-1.json').write_text('{"result": []}')
     if v8._dir_identity(tmp_path, COV) != ident:  # a filesystem may reuse the inode
         with pytest.raises(v8.Unavailable, match='replaced during the run'):
-            v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+            _fold(tmp_path, ident)
 
 
 def test_something_other_than_a_coverage_file_in_the_directory_is_refused(tmp_path):
     ident = v8.prepare(tmp_path, COV)
     (tmp_path / COV / 'sub').mkdir()
     with pytest.raises(v8.Unavailable, match='something other than coverage files'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident)
 
 
 def test_a_directory_that_already_holds_files_is_not_prepared(tmp_path):
@@ -266,10 +273,10 @@ def test_real_v8_coverage_maps_to_the_expected_lines(tmp_path):
     out = subprocess.run(['node', '--test', 'm.test.js'], cwd=tmp_path, env=env, capture_output=True, timeout=60)
     assert out.returncode == 0, out.stdout + out.stderr
     root = str(tmp_path.resolve())
-    scripts = v8.read_scripts(tmp_path, COV, ident, root, {'m.js', 'e.mjs', 'm.test.js'})
-    assert set(scripts) == {'m.js', 'e.mjs', 'm.test.js'}
-    assert v8.line_status(cjs, scripts['m.js']) == ({2, 3, 4, 5, 7, 9, 10}, {2, 3, 4, 7})
-    assert v8.line_status(esm, scripts['e.mjs']) == ({1, 2, 3, 4, 6}, {1, 2, 3, 4, 6})
+    folded = v8.fold(tmp_path, COV, ident, root, {'m.js': cjs, 'e.mjs': esm}, present={'m.test.js'})
+    assert folded.seen == {'m.js', 'e.mjs', 'm.test.js'}
+    assert folded.accumulators['m.js'].line_status() == ({2, 3, 4, 5, 7, 9, 10}, {2, 3, 4, 7})
+    assert folded.accumulators['e.mjs'].line_status() == ({1, 2, 3, 4, 6}, {1, 2, 3, 4, 6})
 
 
 # -- review of #146: bounded work on hostile input, parser robustness, one definition of an executable line --------
@@ -296,13 +303,20 @@ def test_hostile_ranges_and_duplicate_entries_are_bounded_and_fast(tmp_path):
     assert time.monotonic() - started < 1.0
 
 
-def test_more_distinct_entries_than_allowed_is_unavailable(tmp_path, monkeypatch):
-    monkeypatch.setattr(v8, 'MAX_ENTRIES', 3)
+def test_many_entries_fold_into_one_map_and_total_ranges_are_bounded(tmp_path, monkeypatch):
+    """Re-review of #146: a whole suite writes one entry per test-file process (counts differ, so entries differ);
+    the per-entry range bound must not add up over entries, and memory must not grow with them."""
     ident = v8.prepare(tmp_path, COV)
     url = (tmp_path / 'm.js').as_uri()
-    _report(tmp_path, 'coverage-1.json', {'result': [_script(url, [(0, 9, c)]) for c in range(5)]})
-    with pytest.raises(v8.Unavailable, match='more than 3 distinct script entries'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+    text = 'a;\nb;\n'
+    for n in range(100):  # 100 processes: each ran line 1, every 10th also line 2
+        _report(tmp_path, f'coverage-{n}.json', {'result': [_script(url, [(0, 6, 1 + n), (3, 6, int(n % 10 == 0))])]})
+    acc = _fold(tmp_path, ident, text).accumulators['m.js']
+    assert acc.entries == 100 and acc.line_status() == ({1, 2}, {1, 2}) and len(acc._patterns) == 2
+    assert v8.line_status(text, [((0, 6, n), (3, 6, 0)) for n in range(1, 200)]) == ({1, 2}, {1})
+    monkeypatch.setattr(v8, 'MAX_TOTAL_RANGES', 150)
+    with pytest.raises(v8.Unavailable, match='more than 150 ranges'):
+        _fold(tmp_path, ident, text)
 
 
 def test_a_passed_deadline_stops_reading_and_mapping(tmp_path):
@@ -310,7 +324,7 @@ def test_a_passed_deadline_stops_reading_and_mapping(tmp_path):
     ident = v8.prepare(tmp_path, COV)
     _report(tmp_path, 'coverage-1.json', {'result': []})
     with pytest.raises(v8.Unavailable, match='no time was left'):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'}, deadline=time.monotonic() - 1)
+        _fold(tmp_path, ident, deadline=time.monotonic() - 1)
     with pytest.raises(v8.Unavailable, match='no time was left'):
         v8.line_status('a;\n', [((0, 3, 1),)], deadline=time.monotonic() - 1)
 
@@ -326,9 +340,11 @@ def test_a_lenient_read_skips_malformed_files_and_entries(tmp_path):
     url = (tmp_path / 'm.js').as_uri()
     _report(tmp_path, 'coverage-1.json', '{')
     _report(tmp_path, 'coverage-2.json', {'result': [{'url': url, 'functions': 'nope'}, _script(url, [(0, 3, 1)])]})
-    assert v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'}, lenient=True) == {'m.js': [((0, 3, 1),)]}
+    _report(tmp_path, 'coverage-3.json', {'result': [_script(url, [(0, 99, 1)])]})  # does not fit the text: skipped
+    acc = _fold(tmp_path, ident, 'a;\n', lenient=True).accumulators['m.js']
+    assert acc.entries == 1 and acc.never_run() == ({1}, set())
     with pytest.raises(v8.Unavailable):
-        v8.read_scripts(tmp_path, COV, ident, str(tmp_path), {'m.js'})
+        _fold(tmp_path, ident, 'a;\n')
 
 
 def test_a_postfix_increment_before_a_slash_is_a_division_and_cannot_open_a_fake_comment():
@@ -349,3 +365,15 @@ def test_never_run_is_the_block_precise_view_with_the_same_executable_lines():
     assert v8.never_run(text, []) == ({1, 2, 3, 4}, {1, 2, 3, 4}), 'a file no entry covers never ran'
     # an entry that does not match the text is skipped (only more lines can read as never run), not trusted
     assert v8.never_run(text, [((0, u16(text) + 5, 1),)])[1] == {1, 2, 3, 4}
+
+
+def test_a_regex_right_after_a_condition_is_not_a_division_but_after_other_parentheses_it_is():
+    """Re-review of #146: `if (x) /[/*]/.test(s)` read as division plus a comment hid lines up to the next `*/`."""
+    text = ('if (x) /[/*]/.test(s);\n'         # 1: a regex after the condition's `)`
+            'const a = 1;\n'                   # 2: must stay visible
+            'const b = (a) / 2; /* c */\n'     # 3: a division after an ordinary `)`, then a comment
+            'while (f(a)) /x/.exec(s);\n'      # 4: nested parentheses inside the condition
+            'const d = (g(1)) / 3 / 4;\n'      # 5
+            'const e = 5; // */\n')            # 6
+    assert v8.executable_lines(text) == {1, 2, 3, 4, 5, 6}
+    assert sum(v8.code_mask(text)[text.index('/* c */'):text.index('/* c */') + 7]) == 0

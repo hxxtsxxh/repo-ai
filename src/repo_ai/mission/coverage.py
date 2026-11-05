@@ -247,6 +247,12 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
             r['changed_lines_test_files'] = files
         else:
             keys = [o['test'].partition('::')[2] for o in r['observed']]
+            raw_cut = (exercise or {}).get('per_test_truncated')
+            cut = raw_cut if isinstance(raw_cut, dict) else {}
+            dropped = {k: 'its changed lines were cut from the record' for k in keys
+                       if k in cut and k not in per_test}
+            if dropped:
+                r['changed_lines_unavailable'] = dropped
         ran = sorted({line for k in keys for line in (per_test.get(k) or []) if isinstance(line, str)}, key=line_key)
         claimed.update(ran)
         r['changed_lines_run'] = ran[:20]
@@ -411,6 +417,8 @@ def render(report: dict[str, Any]) -> str:
                     lines.append(f'      changed lines unavailable for its test file {f}: {why}')
             else:
                 lines.append(f"      its tests ran {row['changed_lines_run_count']} changed line(s){shown}")
+                for test, why in (row.get('changed_lines_unavailable') or {}).items():
+                    lines.append(f'      changed lines unavailable for its test {test}: {why}')
     if report['follow_up_test_needed']:
         lines.append('Follow-up acceptance test needed for: ' + '; '.join(json.dumps(t, ensure_ascii=True)
                                                                          for t in report['follow_up_test_needed']))
