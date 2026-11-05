@@ -52,3 +52,5 @@ The owner approved, after seeing the call count, upper bound and accounting basi
 | C21 journey-live-v1 re-run (humanize, more-itertools; amendment 4) | at most 2 Claude Code | $2.00 ($1.00 each) | Claude Code's reported `total_cost_usd`; on the subscription login metered against the plan; unreported cost is UNKNOWN |
 | 2026-11-04 | C21 journey-live-v1 re-run humanize (amendment 4) | Claude Code | $0.00 OBSERVED (authentication_failed before any model turn; cap $1.00) |
 | 2026-11-04 | C21 journey-live-v1 re-run more-itertools (amendment 4) | Claude Code | $0.00 OBSERVED (the same) |
+| 2026-11-05 | C21 journey-live-v1 retry more-itertools (amendment 5) | Claude Code | $0.084002 OBSERVED (cap $1.00) |
+| 2026-11-05 | C21 journey-live-v1 retry humanize (amendment 5) | Claude Code | $0.039266 OBSERVED (cap $1.00) |

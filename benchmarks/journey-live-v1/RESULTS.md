@@ -108,3 +108,28 @@ remain undemonstrated: a further attempt needs the owner to log the dedicated lo
 (`CLAUDE_CONFIG_DIR=~/.local/share/repo-ai/claude-provider claude auth login`) and a decision on whether the
 approval for these 2 sessions (none of which reached a model) covers one more attempt.
 
+## Retry under amendment 5 (2026-11-05 UTC): both journeys PASS end to end ($0.1233)
+
+After the owner logged the dedicated login in again: repo-ai 0.12.4 (PyPI), Claude Code 2.1.318, a third work
+directory, prep and positive controls PASS again. Raw records (paths redacted, mission records summarised):
+[results/retry-2026-11-05.jsonl](results/retry-2026-11-05.jsonl).
+
+| defect | mission | reported cost | L1 (native, frozen) | hidden oracle | apply / undo |
+|---|---|---|---|---|---|
+| more-itertools | PASS (Grep, Grep, Edit) | $0.084002 (OBSERVED) | 0 frozen still failing, 0 new failures vs upstream | 0 behavioural differences | applied (post-apply PASS, 595 tests in the container); undo byte-identical |
+| humanize | PASS (Read, Edit) | $0.039266 (OBSERVED) | 0 / 0 | 0 differences (this defect's oracle equals its frozen tests: no independent holdout) | applied; undo byte-identical |
+
+- Both missions exit 2 only because the container image is reported `not checked` (amendment-3 reading; the
+  passport is PASS and `apply` re-runs the tests in that image).
+- The first `run` invocation started more-itertools but refused humanize before any model call: one repo-ai workspace
+  existed at that moment in the shared workspace directory, from a concurrent local test run of repo-ai's own suite.
+  humanize was run once the directory stayed empty, as the protocol allows before a model call. Session count from
+  the records: 2 of 2.
+- Gates for this retry: L1 0, L3 0 (2 successful applies, both undone byte-identically outside `.repo-ai/`), L4 0,
+  L6 2 sessions / $0.1233 of $2.00. L5 (failure recovery) was not re-run: the harness runs it only after all four
+  defects were started or skipped in the work directory, and amendments 4 and 5 leave pyjwt and marshmallow out; the
+  2026-11-03 recovery result stands.
+- With the 2026-11-03 run, three of the four defects (pyjwt, more-itertools, humanize) now have a live Claude journey
+  that passed every gate on a released repo-ai; marshmallow stays INCONCLUSIVE by design. The upstream fixes predate
+  the model's training data, so a candidate matching upstream may be recall (a stated limit of this study).
+
