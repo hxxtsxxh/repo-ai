@@ -12,6 +12,19 @@
   and a call that succeeded leaves no target: absence from these lists is not evidence that a path was refused. This is
   what the open Linux isolation check (QUEUE row 11) needs to record. A truthy non-list `permission_denials` (or
   agy `denied_actions`) no longer aborts the parse of an otherwise valid stream.
+- `repo-ai coverage ID` now lists the changed lines each requirement's tests ran for `node --test` missions too, per
+  test FILE (C11). A mission run with a frozen `--requirements` declaration runs each test file once more, alone
+  (`node --test FILE`), in the same sandbox and environment and in a fresh copy of the workspace, with
+  `NODE_V8_COVERAGE` pointing at a directory repo-ai created. Every changed executable line the file ran (module load
+  included) is credited to every test in that file, so a requirement can be credited with lines another test in its
+  file ran. The output says `per test file` and the record carries `per_test_granularity: "file"`. V8's offsets are
+  UTF-16 code units: CRLF, non-ASCII text and the byte-order mark that a CommonJS module keeps and an ES module drops
+  are all handled, and a script whose length does not match the file is refused. A line counts as run when any code
+  on it ran, and an executable line is one with a word character outside comments. The coverage output comes from the
+  untrusted test process, so it is read with bounded size and file count, never through a symbolic link, and
+  validated field by field. A file that times out, fails alone, or whose coverage is missing or malformed is shown as
+  unavailable, with the reason, never as having run nothing. Like the pytest mapping, this is informational only and
+  never changes a status or the headline. Container runs are still not measured.
 
 ## 0.12.4 — JavaScript tournament probes
 

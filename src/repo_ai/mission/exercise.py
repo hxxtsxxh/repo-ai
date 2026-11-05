@@ -11,6 +11,11 @@ Levels (never a correctness claim):
   PARTIAL     some executable changed lines never ran (listed as ``path:line``)
   NO_EXECUTABLE_CHANGE  the diff changed no executable line (comments, whitespace, deletions only)
   UNMEASURED  the measurement could not be completed (reason recorded); nothing is implied
+
+With ``per_test`` (a mission run with a frozen requirements declaration) a second, informational record says which
+changed lines each test ran: per pytest test (``per_test_granularity: "test"``, a time-window tracer), or per
+``node --test`` test FILE (``"file"``: each test file runs alone in its own sandboxed process under V8 coverage, and
+the lines it ran, module load included, belong to that file, so to every test in it). It never changes the level.
 """
 from __future__ import annotations
 
@@ -21,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from ..verify import execute, isolate
+from ..verify.execute import Executor
 from ..verify.testmap import MAX_RECORD_BYTES, RUN_DIR, TRACER, _node_scripts
 
 SCHEMA = "repo-ai.change-exercise/1"
@@ -169,6 +175,7 @@ def _per_test_run(record: dict[str, Any], bound: Any, ws: Any, runner: Any, env:
                                      else "the per-test run produced no record")
         return
     record["per_test"], complete = _per_test(per_trace, eligible_by_file)
+    record["per_test_granularity"] = "test"
     # a child process runs code this run cannot see, and an early stop leaves tests unrun
     record["per_test_complete"] = complete and not per_trace.get("spawned") and per_res.exit_code in (0, 1)
     raw_outside = per_trace.get("outside_tests")
@@ -176,6 +183,106 @@ def _per_test_run(record: dict[str, Any], bound: Any, ws: Any, runner: Any, env:
     record["changed_outside_tests"] = sorted(
         f"{rel}:{int(n)}" for rel, lines in outside.items() if isinstance(lines, list)
         for n in lines if isinstance(n, int) and n in eligible_by_file.get(rel, set()))[:MAX_LISTED]
+
+
+MAX_NODE_TEST_FILES = 200  # node test files run one by one for the per-file record
+NODE_COV_DIR = f"{RUN_DIR}/cov"
+MAX_SOURCE_BYTES = 2_000_000
+
+
+def _node_file_lines(ex: Executor, runner: Any, test: str, texts: dict[str, bytes],
+                     eligible_by_file: dict[str, set[int]], timeout_s: float) -> set[str]:
+    """The changed executable lines ("path:line") one node test file ran alone, in its own pristine sandboxed
+    workspace. Raises `v8lines.Unavailable` when its coverage cannot be trusted to say what ran."""
+    from . import v8lines
+    assert ex.workspace is not None
+    ws = ex.workspace.path
+    ident = v8lines.prepare(ws, NODE_COV_DIR)
+    env = dict(runner.env)
+    env["NODE_V8_COVERAGE"] = f"{ex.inside_root}/{NODE_COV_DIR}"
+    res = ex.run(runner.file_argv(test), cwd=runner.cwd, env=env, timeout_s=timeout_s, toolchain="node")
+    if res.timed_out:
+        raise v8lines.Unavailable("its run timed out (no coverage is written for a killed process)")
+    if res.exit_code != 0:
+        raise v8lines.Unavailable(f"it did not pass when run alone (exit {res.exit_code})")
+    scripts = v8lines.scripts_for(v8lines.read_reports(ws, NODE_COV_DIR, ident), ex.inside_root, {*texts, test})
+    if test not in scripts:
+        raise v8lines.Unavailable("its coverage does not include the test file itself")
+    hits: set[str] = set()
+    for rel, original in texts.items():
+        try:
+            after = isolate.read_inside(ws, rel, MAX_SOURCE_BYTES)
+        except isolate.ReportTooLarge:
+            after = None
+        if after != original:
+            raise v8lines.Unavailable(f"{rel} changed during its run")
+        entries = scripts.get(rel)
+        if not entries:
+            continue  # valid coverage that never loaded this file: it ran none of its lines
+        executable, ran = v8lines.line_status(original.decode("utf-8"), entries, rel)
+        hits.update(f"{rel}:{n}" for n in ran & executable & eligible_by_file.get(rel, set()))
+    return hits
+
+
+def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, files: list[str],
+                       changed: dict[str, set[int]], eligible_by_file: dict[str, set[int]], left: float) -> None:
+    """The per-test record of a `node --test` mission, per test FILE: each file runs alone, in a fresh copy of the
+    workspace taken before anything ran, with NODE_V8_COVERAGE pointing at a directory repo-ai created. A file whose
+    coverage is missing, malformed or untrustworthy is listed as unavailable with the reason, never as having run
+    nothing. Container backends never get here (`measure` returns first)."""
+    from . import v8lines
+    from ..verify.execute import release
+    assert template.workspace is not None
+    record["per_test_granularity"] = "file"
+    watched = sorted(p for p in changed if p.endswith((".js", ".mjs", ".cjs")))
+    if not watched:
+        record["per_test_reason"] = "no changed JavaScript file"
+        return
+    if not files:
+        record["per_test_reason"] = "no node test file was discovered"
+        return
+    texts: dict[str, bytes] = {}
+    for rel in watched:
+        try:
+            data = isolate.read_inside(template.workspace.path, rel, MAX_SOURCE_BYTES)
+        except isolate.ReportTooLarge:
+            data = None
+        if data is None:
+            record["per_test_reason"] = f"{rel} could not be read back"
+            return
+        try:
+            data.decode("utf-8")
+        except UnicodeDecodeError:
+            record["per_test_reason"] = f"{rel} is not UTF-8, so V8's offsets cannot be mapped to its lines"
+            return
+        texts[rel] = data
+    deadline = time.monotonic() + left
+    per: dict[str, list[str]] = {}
+    measured: list[str] = []
+    unavailable: dict[str, str] = {}
+    for test in files[:MAX_NODE_TEST_FILES]:
+        remaining = deadline - time.monotonic()
+        if remaining <= 1:
+            unavailable[test] = "no time was left for its run"
+            continue
+        ex = template.fresh()
+        try:
+            lines = _node_file_lines(ex, runner, test, texts, eligible_by_file, remaining)
+        except v8lines.Unavailable as exc:
+            unavailable[test] = str(exc)
+            continue
+        finally:
+            release([ex])
+        measured.append(test)
+        if lines:
+            per[test] = sorted(lines)[:MAX_LISTED]
+    record["per_test"] = per
+    record["per_test_measured"] = measured
+    record["per_test_unavailable"] = unavailable
+    if len(files) > MAX_NODE_TEST_FILES:
+        record["per_test_reason"] = (f"only the first {MAX_NODE_TEST_FILES} of {len(files)} test files were run; "
+                                     "the others are not measured")
+    record["per_test_complete"] = not unavailable and len(files) <= MAX_NODE_TEST_FILES
 
 
 def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.0,
@@ -191,6 +298,7 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
         record.update(assurance="NO_EXECUTABLE_CHANGE", reason="diff adds no line to a supported source file")
         return record
     ws = None
+    template: Executor | None = None
     try:
         runner = verification._runner(command)
         listing = isolate.worktree_files(workspace)
@@ -202,6 +310,13 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
             return record
         with isolate.materialize(workspace, label="mission-exercise", listing=listing) as ws:
             bound = executor.in_workspace(ws)
+            if per_test and runner.kind == "node":
+                # every per-file run starts from a copy taken now, before the assurance run changes anything; a copy
+                # that cannot be made only leaves the per-file record out, never the assurance
+                try:
+                    template = bound.fresh()
+                except (OSError, RuntimeError) as exc:
+                    record["per_test_reason"] = "the workspace copy for the per-file runs failed: " + type(exc).__name__
             run_dir = isolate.run_dir(ws.path, RUN_DIR)
             inside = bound.inside_root
             env = dict(runner.env)
@@ -265,14 +380,23 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                 record["assurance"] = "NO_EXECUTABLE_CHANGE"
             else:
                 record["assurance"] = "PARTIAL" if unexercised else "FULL"
-            if per_test and runner.kind == "pytest":
+            if per_test and runner.kind in {"pytest", "node"}:
                 try:  # informational: nothing in it may change the assurance just recorded
-                    _per_test_run(record, bound, ws, runner, env, inside, changed, eligible_by_file,
-                                  timeout_s - (time.monotonic() - started))
+                    left = timeout_s - (time.monotonic() - started)
+                    if runner.kind == "pytest":
+                        _per_test_run(record, bound, ws, runner, env, inside, changed, eligible_by_file, left)
+                    elif template is not None:
+                        _per_file_node_run(record, template, runner, runner.test_files(listing[0], workspace),
+                                           changed, eligible_by_file, left)
                 except Exception as exc:  # noqa: BLE001 - the per-test record is optional
-                    record.pop("per_test", None)
+                    for key in ("per_test", "per_test_complete", "per_test_measured", "per_test_unavailable"):
+                        record.pop(key, None)
                     record["per_test_reason"] = "the per-test run failed: " + type(exc).__name__
             return record
     except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
         record["reason"] = type(exc).__name__ + ": " + str(exc)[:160]
         return record
+    finally:
+        if template is not None:
+            from ..verify.execute import release
+            release([template])

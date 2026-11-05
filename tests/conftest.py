@@ -135,13 +135,13 @@ _MISSION_NEEDS_SANDBOX = {
     "test_mission_after_init_review", "test_mission_project_interpreter",
     "test_workspace_export_attributes", "test_workspace_state_paths",
     "test_provider_opencode_acp", "test_provider_acp_runtime", "test_provider_acp_live_prefix",
-    "test_tournament_probe", "test_tournament_probe_node",
+    "test_tournament_probe", "test_tournament_probe_node", "test_mission_node_requirement_lines",
 }
 _MISSION_POSIX_ONLY = _MISSION_NEEDS_SANDBOX | {
     "test_eval_integrity", "test_mission_real_project_edges", "test_mission_apply_transaction",
     "test_provider_channels", "test_provider_probe", "test_mission_redteam", "test_mission_review_state",
     "test_mission_review_security", "test_abc_protocol", "test_abc_v2_protocol", "test_abc_v3_protocol", "test_abc_v4_protocol", "test_abc_v5_protocol",
-    "test_auto_route_user_paths",
+    "test_auto_route_user_paths", "test_mission_v8lines",
 }
 # These write attack-like fixtures to disk (reverse and bind shells, recursive deletes, credential or environment
 # uploads, curl-pipe-to-shell) for the skill and plugin vetting checks to read, or make real, deliberately denied
