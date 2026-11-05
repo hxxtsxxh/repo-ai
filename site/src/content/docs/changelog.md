@@ -1,9 +1,20 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.4, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.5, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.5
+
+- **Added** `repo-ai coverage ID` lists the changed lines each requirement's tests ran for `node --test` missions
+  too, per test file (pytest is per test).
+- **Fixed** a `node --test` mission's change-exercise level could read FULL when a changed line never ran, if a
+  character such as an emoji came earlier in the file; offsets are now read the way V8 counts them.
+- **Fixed** the per-test changed-line record no longer drops lines past 40 while saying it is complete.
+- **Changed** when a provider rejects its login or token inside repo-ai's isolation, the advice names the exact step
+  (for Claude, the login command for the directory the run used).
+- **Added** a Claude run's record says which path each refused or failed tool call concerned (paths scrubbed).
 
 ## 0.12.4
 
