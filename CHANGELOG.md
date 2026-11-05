@@ -15,16 +15,28 @@
 - `repo-ai coverage ID` now lists the changed lines each requirement's tests ran for `node --test` missions too, per
   test FILE (C11). A mission run with a frozen `--requirements` declaration runs each test file once more, alone
   (`node --test FILE`), in the same sandbox and environment and in a fresh copy of the workspace, with
-  `NODE_V8_COVERAGE` pointing at a directory repo-ai created. Every changed executable line the file ran (module load
-  included) is credited to every test in that file, so a requirement can be credited with lines another test in its
-  file ran. The output says `per test file` and the record carries `per_test_granularity: "file"`. V8's offsets are
-  UTF-16 code units: CRLF, non-ASCII text and the byte-order mark that a CommonJS module keeps and an ES module drops
-  are all handled, and a script whose length does not match the file is refused. A line counts as run when any code
-  on it ran, and an executable line is one with a word character outside comments. The coverage output comes from the
-  untrusted test process, so it is read with bounded size and file count, never through a symbolic link, and
-  validated field by field. A file that times out, fails alone, or whose coverage is missing or malformed is shown as
-  unavailable, with the reason, never as having run nothing. Like the pytest mapping, this is informational only and
-  never changes a status or the headline. Container runs are still not measured.
+  `NODE_V8_COVERAGE` pointing at a directory repo-ai created. Files holding declared tests run first, and each run
+  gets at most the larger of 30 s and twice an equal share of the time left. Every changed executable line the file ran
+  (module load included) is credited to every test in that file, so a requirement can be credited with lines another
+  test in its file ran. The output says `per test file` and the record carries `per_test_granularity: "file"`. V8's
+  offsets are UTF-16 code units: CRLF, non-ASCII text and the byte-order mark that a CommonJS module keeps and an ES
+  module drops are all handled, and a script whose length does not match the file is refused. A line counts as run
+  when any code on it ran, and an executable line is one with a word character outside comments. The coverage output
+  comes from the untrusted test process, so it is read with bounded size, file count, script entries and ranges,
+  never through a symbolic link, reduced to the watched files as each coverage file is parsed, and validated field by
+  field. A file that times out, ends abnormally (any exit other than 0 or 1), whose run raises, or whose coverage is
+  missing or malformed is shown as unavailable, with the reason, never as having run nothing. Like the pytest
+  mapping, this is informational only and never changes a status or the headline. Container runs are still not
+  measured.
+- The per-test changed-line record (pytest and node) keeps every line, up to 2000 per test or file, instead of the
+  first 40 sorted as text. A cut marks the record incomplete with the true count, and `coverage` says that lines shown
+  as run only by undeclared tests may have been run by declared ones when the record is incomplete.
+- The change-exercise level of a `node --test` mission no longer reads V8 offsets as code points: an emoji or other
+  astral character earlier in a changed file, or an ES module's byte-order mark, could shift a never-run branch off its
+  line and report FULL. It now uses the same UTF-16 mapping, coverage reader and executable-line definition as the
+  per-file record (a malformed coverage file or entry is skipped there, which can only report more lines as never
+  run). Added lines are numbered by LF only, as git does; a CR, U+2028 or form feed inside a line no longer shifts
+  the numbers after it.
 
 ## 0.12.4 — JavaScript tournament probes
 
