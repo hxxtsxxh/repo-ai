@@ -63,4 +63,4 @@ with its session count and caps before it runs.
 
 | batch | sessions | upper bound | running total of the $10 |
 |---|---|---|---|
-| C13 live-to-live handoff (`benchmarks/c13-live-handoff/run_l2l.py`) | at most 2 Claude Code | $1.00 ($0.50 each) | (pending) |
+| C13 live-to-live handoff (`benchmarks/c13-live-handoff/run_l2l.py`) | at most 2 Claude Code | $1.00 ($0.50 each) | attempt 1: 1 session started, $0.00 OBSERVED (authentication_failed, no model turn); running total $0.00 of $10 |
