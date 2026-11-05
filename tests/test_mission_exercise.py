@@ -32,6 +32,13 @@ def test_added_lines_tracks_new_side_numbers_and_ignores_deletions():
     assert exercise.added_lines('') == {}
 
 
+def test_added_lines_numbers_lines_by_lf_only_as_git_does():
+    """splitlines() would also split on CR, U+2028, form feed, ...: line numbers after them would shift."""
+    diff = ('diff --git a/m.js b/m.js\n--- a/m.js\n+++ b/m.js\n@@ -1,2 +1,4 @@\n'
+            ' const a = "x\u2028y\x0cz\x85w\x1c";\r\n+const b = 1;\r\n+const c = "\rq";\n const d = 3;\n+const e = 4;\n')
+    assert exercise.added_lines(diff) == {'m.js': {2, 3, 5}}
+
+
 def test_added_lines_new_file_and_dev_null():
     diff = 'diff --git a/n.py b/n.py\n--- /dev/null\n+++ b/n.py\n@@ -0,0 +1,2 @@\n+x = 1\n+y = 2\n'
     assert exercise.added_lines(diff) == {'n.py': {1, 2}}
@@ -316,7 +323,7 @@ def test_direct_lines_fill_the_cap_before_fixture_credit(monkeypatch):
     trace = {'per_test_complete': True, 'per_test': {'t::direct': {'m.py': [2]}},
              'fixture_lines': {'conftest::app::session#1': {'m.py': [3]}},
              'fixture_uses': {f't::user{i}': ['conftest::app::session#1'] for i in range(5)}}
-    out, complete = exercise._per_test(trace, {'m.py': {2, 3}})
+    out, complete, _ = exercise._per_test(trace, {'m.py': {2, 3}})
     assert out['t::direct'] == ['m.py:2'] and len(out) == 2 and complete is False
 
 
@@ -336,3 +343,248 @@ def test_lines_of_a_shared_fixture_no_test_ran_with_count_as_outside_any_test(tm
     rec = _fixture_case(tmp_path, '@pytest.fixture(scope="session")\ndef app():\n    make(1)\n    pytest.skip("not here")\n',
                         'def test_a(app):\n    pass\n')
     assert rec['per_test'] == {} and rec['changed_outside_tests'] == ['m.py:2', 'm.py:3'], rec
+
+
+# -- C11, node: the per-test record per test FILE (each file alone under V8 coverage) ------------------------------
+
+JS_BEFORE = 'exports.pick = (x) => x;\n'
+JS_AFTER = 'exports.pick = (x) => {\n  if (x < 0) {\n    return -x;\n  }\n  return x;\n};\n'
+JS_HEAD = "const t = require('node:test');\nconst assert = require('node:assert');\n"
+JS_TESTS = {
+    'pick.test.js': JS_HEAD + "const { pick } = require('./pick.js');\nt('positive', () => assert.equal(pick(2), 2));\n",
+    'neg.test.js': JS_HEAD + "const { pick } = require('./pick.js');\nt('negative', () => assert.equal(pick(-2), 2));\n",
+    'other.test.js': JS_HEAD + "t('unrelated', () => assert.equal(1 + 1, 2));\n",
+}
+
+
+def _node_repo(tmp_path, extra=None):
+    root = tmp_path / 'njs'
+    root.mkdir()
+    (root / 'pick.js').write_text(JS_AFTER)
+    (root / 'package.json').write_text('{"name": "njs", "version": "1.0.0"}\n')
+    for name, text in {**JS_TESTS, **(extra or {})}.items():
+        (root / name).write_text(text)
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'candidate applied')
+    return root
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_per_file_record_names_the_changed_lines_each_test_file_ran(tmp_path):
+    root = _node_repo(tmp_path)
+    diff = _diff('pick.js', JS_BEFORE, JS_AFTER)
+    plain = exercise.measure(root, 'node --test', diff)
+    assert plain['assurance'] == 'FULL' and 'per_test' not in plain, plain
+    rec = exercise.measure(root, 'node --test', diff, per_test=True)
+    assert rec['assurance'] == 'FULL' and rec['changed_lines'] == 4, rec
+    assert rec['per_test_granularity'] == 'file'
+    assert rec['per_test'] == {'neg.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:3'],
+                               'pick.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:5']}, rec
+    assert sorted(rec['per_test_measured']) == ['neg.test.js', 'other.test.js', 'pick.test.js']
+    assert rec['per_test_unavailable'] == {} and rec['per_test_complete'] is True
+    assert 'changed_outside_tests' not in rec, 'module load belongs to the test file that ran it'
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_malformed_coverage_makes_that_file_unavailable_never_not_run(tmp_path):
+    junk = JS_HEAD + ("const { pick } = require('./pick.js');\nconst fs = require('node:fs');\n"
+                      "const path = require('node:path');\n"
+                      "t('writes junk', () => { pick(-1); "
+                      "fs.writeFileSync(path.join(process.env.NODE_V8_COVERAGE, 'junk.json'), '{'); });\n")
+    root = _node_repo(tmp_path, {'junk.test.js': junk})
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['assurance'] == 'FULL', rec
+    assert rec['per_test_unavailable'] == {'junk.test.js': 'a coverage file is not valid JSON'}, rec
+    assert 'junk.test.js' not in rec['per_test'] and 'junk.test.js' not in rec['per_test_measured']
+    assert rec['per_test_complete'] is False and set(rec['per_test']) == {'neg.test.js', 'pick.test.js'}
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_test_files_past_the_cap_or_the_time_left_are_not_measured(tmp_path, monkeypatch):
+    root = _node_repo(tmp_path)
+    monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 2)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['per_test_complete'] is False and len(rec['per_test_measured']) == 2, rec
+    assert rec['per_test_reason'].startswith('only 2 of 3 test files were run')
+    monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 200)
+    real = exercise._per_file_node_run
+    monkeypatch.setattr(exercise, '_per_file_node_run', lambda *a: real(*a[:6], 0.0, *a[7:]))  # no time left
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['assurance'] == 'FULL' and rec['per_test'] == {} and rec['per_test_measured'] == [], rec
+    assert set(rec['per_test_unavailable'].values()) == {'no time was left for its run'}
+    assert rec['per_test_complete'] is False
+
+
+def test_more_than_forty_changed_lines_are_all_kept_and_a_cut_record_is_incomplete(monkeypatch):
+    """Review of #146: the stored record was cut to 40 lines (sorted as text), so lines past it read as run only by
+    other tests, while the record still said complete."""
+    many = {'a.py': list(range(1, 51)), 'b.py': [1, 2]}
+    eligible = {'a.py': set(range(1, 51)), 'b.py': {1, 2}}
+    out, complete, cut = exercise._per_test({'per_test_complete': True, 'per_test': {'t::x': many}}, eligible)
+    assert len(out['t::x']) == 52 and out['t::x'][-2:] == ['b.py:1', 'b.py:2'] and complete is True and cut == {}
+    assert out['t::x'][:3] == ['a.py:1', 'a.py:2', 'a.py:3'] and out['t::x'][9] == 'a.py:10', 'by number, not as text'
+    monkeypatch.setattr(exercise, 'MAX_STORED_LINES', 30)
+    out, complete, cut = exercise._per_test({'per_test_complete': True, 'per_test': {'t::x': many}}, eligible)
+    assert len(out['t::x']) == 30 and complete is False and cut == {'t::x': 52}
+
+
+def _many_lines_repo(tmp_path):
+    root = tmp_path / 'many'
+    root.mkdir()
+    (root / 'a.js').write_text(''.join(f'exports.a{i} = {i};\n' for i in range(50)))
+    (root / 'b.js').write_text('exports.b = (x) => {\n  const y = x * 2;\n  return y;\n};\n')
+    (root / 'package.json').write_text('{"name": "p", "version": "1.0.0"}\n')
+    (root / 'x.test.js').write_text("const t = require('node:test');\nconst assert = require('node:assert');\n"
+                                    "require('./a.js');\nconst { b } = require('./b.js');\n"
+                                    "t('b doubles', () => assert.equal(b(2), 4));\n")
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+    diff = ('diff --git a/a.js b/a.js\n' + _diff('a.js', 'exports.a0 = 0;\n', (root / 'a.js').read_text())
+            + 'diff --git a/b.js b/b.js\n' + _diff('b.js', 'exports.b = (x) => x;\n', (root / 'b.js').read_text()))
+    return root, diff
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_per_file_record_keeps_more_than_forty_lines_and_flags_a_cut(tmp_path, monkeypatch):
+    root, diff = _many_lines_repo(tmp_path)
+    rec = exercise.measure(root, 'node --test', diff, per_test=True)
+    lines = rec['per_test']['x.test.js']
+    assert rec['changed_lines'] == 52 and len(lines) == 52 and lines[-3:] == ['b.js:1', 'b.js:2', 'b.js:3'], rec
+    assert rec['per_test_complete'] is True and 'per_test_truncated' not in rec
+    monkeypatch.setattr(exercise, 'MAX_STORED_LINES', 10)
+    rec = exercise.measure(root, 'node --test', diff, per_test=True)
+    assert rec['per_test_complete'] is False and rec['per_test_truncated'] == {'x.test.js': 52}, rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_one_file_failing_to_run_leaves_the_others_measured(tmp_path, monkeypatch):
+    """Review of #146: an exception in one file's run (here from file_argv) dropped every file's record."""
+    root = _node_repo(tmp_path)
+    from repo_ai.verify.runner import RunnerError, TestRunner
+    real = TestRunner.file_argv
+
+    def argv(self, test):
+        if test == 'neg.test.js':
+            raise RunnerError('refused')
+        return real(self, test)
+    monkeypatch.setattr(TestRunner, 'file_argv', argv)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['per_test_unavailable'] == {'neg.test.js': 'its run could not be measured: RunnerError'}, rec
+    assert set(rec['per_test']) == {'pick.test.js'} and rec['per_test_complete'] is False
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_declared_files_run_first_and_a_failing_file_still_counts(tmp_path, monkeypatch):
+    failing = JS_HEAD + "const { pick } = require('./pick.js');\nt('fails', () => assert.equal(pick(-3), 0));\n"
+    root = _node_repo(tmp_path, {'zfail.test.js': failing})
+    monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 2)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True,
+                           declared_files=['zfail.test.js', 'pick.test.js'])
+    assert rec['per_test_measured'] == ['pick.test.js', 'zfail.test.js'], rec
+    # exit 1 (a failing test) still writes valid coverage
+    assert rec['per_test']['zfail.test.js'] == ['pick.js:1', 'pick.js:2', 'pick.js:3'], rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_assurance_counts_utf16_units_so_emoji_cannot_hide_an_unrun_branch(tmp_path):
+    """Review of #146 (pre-existing): offsets read as code points shifted the count-0 block of line 3 off it, so the
+    measurement said FULL."""
+    before = 'exports.a = (x) => 1;\n'
+    for name, lead in (('emoji', '\U0001F600' * 12), ('plain', 'x')):
+        after = f'const s = "{lead}";\nexports.a = (x) => {{\n  if (x) n();\n                    return 1;\n}};\n'
+        root = tmp_path / name
+        root.mkdir()
+        (root / 'm.js').write_text(after, encoding='utf-8')
+        (root / 'm.test.js').write_text(JS_HEAD + "const { a } = require('./m.js');\nt('a', () => assert.equal(a(0), 1));\n")
+        _git(root, 'init', '-q')
+        _git(root, 'add', '.')
+        _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+        rec = exercise.measure(root, 'node --test', _diff('m.js', before, after))
+        assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['m.js:3'], (name, rec)
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_each_file_gets_a_capped_share_of_the_time_left(tmp_path, monkeypatch):
+    root = _node_repo(tmp_path)
+    seen = []
+
+    def fake(ex, runner, test, texts, eligible, timeout_s, deadline):
+        seen.append((test, timeout_s))
+        from repo_ai.mission.v8lines import Unavailable
+        raise Unavailable('stub')
+    monkeypatch.setattr(exercise, '_node_file_lines', fake)
+    real = exercise._per_file_node_run
+    monkeypatch.setattr(exercise, '_per_file_node_run', lambda *a: real(*a[:6], 300.0, *a[7:]))
+    exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True,
+                     declared_files=['pick.test.js'])
+    assert seen[0][0] == 'pick.test.js', 'declared files first'
+    assert exercise.NODE_FILE_MIN_TIMEOUT <= seen[0][1] <= 2 * 300.0 / 3 + 1, seen
+
+
+def test_pytest_per_test_record_keeps_more_than_forty_lines(tmp_path):
+    before = 'def pick(x):\n    return x\n'
+    after = 'def pick(x):\n' + ''.join(f'    v{i} = x + {i}\n' for i in range(45)) + '    return x\n'
+    root = _repo(tmp_path, after, PY_TEST)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', before, after), per_test=True)
+    lines = rec['per_test']['test_m.py::test_pick']
+    assert len(lines) == rec['changed_lines'] == 45 and lines[-1] == 'm.py:46', rec
+    assert rec['per_test_complete'] is True and 'per_test_truncated' not in rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_a_file_left_out_of_a_full_record_is_unavailable_not_zero_lines(tmp_path, monkeypatch):
+    """Re-review of #146: past the whole-record cap a file's lines were dropped while it stayed measured."""
+    root = _node_repo(tmp_path)
+    monkeypatch.setattr(exercise, 'MAX_RECORD_LINES', 4)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert set(rec['per_test']) == {'neg.test.js'} and 'pick.test.js' not in rec['per_test_measured'], rec
+    assert rec['per_test_unavailable'] == {'pick.test.js': 'its 3 changed lines were cut from the record (over 4 in all)'}
+    assert rec['per_test_truncated'] == {'pick.test.js': 3} and rec['per_test_complete'] is False
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_assurance_holds_for_a_suite_of_many_test_files(tmp_path):
+    """Re-review of #146: a whole suite writes one coverage file per test file (entries differ by call counts); 70
+    files went UNMEASURED past a 64-entry cap, and about 125 would pass a 32 MiB total. 130 keep the real result."""
+    before = 'exports.f = (x) => x;\n'
+    after = 'exports.f = (x) => {\n  if (x > 1000) {\n    return -1;\n  }\n  return x;\n};\n'
+    root = tmp_path / 'suite'
+    (root / 'test').mkdir(parents=True)
+    (root / 'lib.js').write_text(after)
+    (root / 'package.json').write_text('{"name": "p", "version": "1.0.0"}\n')
+    for i in range(130):
+        (root / 'test' / f't{i}.test.js').write_text(
+            f"const t = require('node:test');\nconst {{ f }} = require('../lib.js');\n"
+            f"t('t{i}', () => {{ for (let k = 0; k < {i}; k++) f(k); }});\n")
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+    rec = exercise.measure(root, 'node --test', _diff('lib.js', before, after), timeout_s=300)
+    assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['lib.js:2', 'lib.js:3'], rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_assurance_holds_when_tests_start_node_child_processes(tmp_path):
+    """Final review of #146: each child process inherits NODE_V8_COVERAGE and writes its own file; 20 test files that
+    each run a CLI 15 times wrote over 256 files and went UNMEASURED under a suite-size-derived cap."""
+    before = 'exports.f = (x) => x;\n'
+    after = 'exports.f = (x) => {\n  if (x > 1000) {\n    return -1;\n  }\n  return x;\n};\n'
+    root = tmp_path / 'children'
+    (root / 'test').mkdir(parents=True)
+    (root / 'lib.js').write_text(after)
+    (root / 'cli.js').write_text("console.log(String(require('./lib.js').f(1)));\n")
+    (root / 'package.json').write_text('{"name": "p", "version": "1.0.0"}\n')
+    for i in range(20):
+        (root / 'test' / f't{i}.test.js').write_text(
+            "const t = require('node:test');\nconst { execFileSync } = require('node:child_process');\n"
+            "const path = require('node:path');\n"
+            f"t('t{i}', () => {{ for (let k = 0; k < 15; k++) "
+            "execFileSync(process.execPath, [path.join(__dirname, '..', 'cli.js')]); });\n")
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+    rec = exercise.measure(root, 'node --test', _diff('lib.js', before, after), timeout_s=300)
+    assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['lib.js:2', 'lib.js:3'], rec
+
