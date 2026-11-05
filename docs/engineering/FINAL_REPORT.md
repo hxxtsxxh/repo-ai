@@ -1,12 +1,38 @@
 # Omniprovider mission — report
 
-Status: **0.12.4 publicly shipped and verified (2026-11-04 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.5 publicly shipped and verified (2026-11-05 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.5 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.5` at `676c09e` (#147), pushed with the owner's approval on 2026-11-05; release run 41986612102 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release) |
+| Wheel | `repo_ai_cli-0.12.5-py3-none-any.whl` sha256 `52c02e08fb30faa8163ea51363a752656fff3d3ca6f6f7636f4351a711b35c70` |
+| sdist | `repo_ai_cli-0.12.5.tar.gz` sha256 `17756f30e51626ed51bd563e1221a787661a48d72fe14b10576e4b9d8e23e82d` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | attestations verified for both (`gh attestation verify`) |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.5`; `init` in a scratch repository; `coverage` present |
+| Site | 21 of 21 sitemap URLs 200, a missing page 404, the changelog shows 0.12.5; release facts move to 0.12.5 with this record |
+
+Contents:
+- #146 (C11) per-requirement changed lines for `node --test` missions, per test file (V8 coverage, UTF-16 offsets,
+  defensive bounded parsing, every failure "unavailable" with a reason). Three adversarial review rounds; they found
+  and the PR fixed a 40-line truncation that claimed completeness, CPU/memory exhaustion from hostile coverage, and a
+  regression that made honest suites of many test files (or with child processes) UNMEASURED. Pre-existing bugs fixed
+  on the way: Node change-exercise read V8 offsets as code points (a false FULL after an emoji), and `added_lines`
+  split on more than LF.
+- #143 exact re-authentication advice when a provider rejects its credential (found when the dedicated Claude login
+  was revoked server-side; `claude auth status` stays loggedIn). Three review rounds (wrong advice for preflight
+  problems, environment drift between run and advice, API keys, quoting, Windows).
+- #141 Claude run records name the path of each refused or failed tool call (allowlist, not a scrubber; two rounds).
+- Evidence: #144 C21 retry: more-itertools and humanize live PASS end to end on 0.12.4 ($0.1233); #148 C23 release
+  and rollback procedure.
 
 ### Release 0.12.4 (verified after publication)
 
