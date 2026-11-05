@@ -4,8 +4,11 @@
 
 | Version | Supported |
 |---|---|
-| latest `0.9.x` release | yes |
-| `0.9.0.devN` pre-releases, `0.8.0rc1`, `0.7.x` and older | no — upgrade |
+| the latest release (`pip install -U repo-ai-cli`; see [PyPI](https://pypi.org/project/repo-ai-cli/)) | yes |
+| any earlier release, `0.9.0.devN` pre-releases, `0.8.0rc1`, `0.7.x` and older | no — upgrade |
+
+Fixes ship only as a new patch release; published versions and tags are never changed (see
+[docs/RELEASING.md](docs/RELEASING.md)).
 
 ## Reporting a vulnerability
 
