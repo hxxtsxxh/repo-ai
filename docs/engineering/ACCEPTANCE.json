@@ -1,6 +1,6 @@
 {
  "schema": "repo-ai.omniprovider-acceptance/1",
- "updated": "2026-11-04",
+ "updated": "2026-11-05",
  "statuses": [
   "PASS",
   "PASS_AT_0.9.0",
@@ -387,7 +387,7 @@
    "title": "Distribution/release",
    "status": "PASS",
    "owner": "principal",
-   "code_sha": "3c1b999",
+   "code_sha": "676c09e",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
@@ -406,7 +406,8 @@
     "0.12.1 published 2026-11-03 (UTC) (tag at ecfdc8e pushed by the agent with the owner's approval; release run 41680549675): wheel c752612facefe82630a24036f422384a23945655df1c3559279cc8e7c53a9dcf, sdist 4fc70dc1fd63b44885698694bac9001ec0a9146041be7a76c1519f151c22c20b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.1); fresh install from PyPI reports 0.12.1, verify --run catches a regression",
     "0.12.2 published 2026-11-03 (UTC) (tag at f661ebb pushed by the agent with the owner's approval; release run 41757207196): wheel 52e6f4b96e2faca6bed64c061c06193c68ede37696dbe89a6a3e411c348529e4, sdist cc2051b6845ee48976d4d1a3b0030ddc3aeaa46e062228ba642197534ecd412b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.2); fresh install from PyPI reports 0.12.2, verify --run catches a regression, an uncapped live Claude run is refused before start; site deployed from f661ebb (21/21 sitemap URLs 200, real 404)",
     "0.12.3 published 2026-11-04 (UTC) (tag at 27fa6a3 pushed by the agent with the owner's approval; release run 41806360967): wheel 9531fe530b212b78c38a79121ff57d88fe9c041b0bb919957da832170ea2e4a2, sdist 47517f4650db85625960dd8a9459450bcdd0194ac9a9fe63f3fb0ef2ccd4cb56; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.3); fresh install from PyPI reports 0.12.3, a replay tournament + shortlist --probe reports DIFFER, an uncapped live Claude run is refused before start; site deployed from 27fa6a3 (21/21 sitemap URLs 200, real 404)",
-    "0.12.4 published 2026-11-04 (UTC) (tag at 3c1b999 pushed by the agent with the owner's approval; release run 41918248372): wheel 6d3ca8444f983aeab612aa2206aa353197e020d5a4896ff030105622f8eb709e, sdist 8774504c516eb317943d417344c8fc5df1a8cb0e8d84e993e5053078058bc6ca; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)"
+    "0.12.4 published 2026-11-04 (UTC) (tag at 3c1b999 pushed by the agent with the owner's approval; release run 41918248372): wheel 6d3ca8444f983aeab612aa2206aa353197e020d5a4896ff030105622f8eb709e, sdist 8774504c516eb317943d417344c8fc5df1a8cb0e8d84e993e5053078058bc6ca; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)",
+    "0.12.5 published 2026-11-05 (UTC) (tag at 676c09e pushed by the agent with the owner's approval; release run 41986612102): wheel 52c02e08fb30faa8163ea51363a752656fff3d3ca6f6f7636f4351a711b35c70, sdist 17756f30e51626ed51bd563e1221a787661a48d72fe14b10576e4b9d8e23e82d; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)"
    ],
    "limits": [],
    "next_action": "next release"
@@ -431,14 +432,15 @@
     "2026-11-03 journey-live-v1 (benchmarks/journey-live-v1/RESULTS.md; amendment 3 before any session): repo-ai 0.12.1 from PyPI, Claude Code 2.1.317 on the dedicated login, project code only in podman. Controls: 3 of 4 (marshmallow INCONCLUSIVE, unstable observation; no session). Zero-provider onboarding found the frozen regressions on all three. Live: pyjwt PASS (native frozen ok, hidden upstream oracle no behavioural difference, apply/undo exact); humanize BLOCKED by a repo-ai defect (copied version file blamed on the provider); more-itertools BLOCKED by a repo-ai defect (64 KB capture killed the run, cost UNKNOWN); both fixed in #125. Gates L1, L3, L4, L5: 0; L6: 3 sessions, $0.0875 + one UNKNOWN (capped $1.00)",
     "2026-11-04 (UTC) marshmallow control follow-up (no model call, $0; results/followup-marshmallow-control-2026-11-04.jsonl): the INCONCLUSIVE control had two causes. A repo-ai defect: mission observations ignored the project's norecursedirs (tests/mypy_test_cases), so every marshmallow mission was incomplete; fixed in #131 (confirmed readings only; both observations then complete, 1104 tests, 1 failure then 0). A project property: test_invalid_datetime_deserialization is parametrized with the current time, so baseline and candidate never share test IDs; correctly INCONCLUSIVE, and the refusal now names the IDs. Projects with clock- or random-parametrized test IDs cannot be compared by a mission (limit)",
     "2026-11-04 journey-live-v1 re-run (amendment 4, owner-approved 2 sessions <= $2.00; repo-ai 0.12.4 from PyPI, Claude Code 2.1.318): prep and positive controls PASS again; both sessions BLOCKED before any model turn by a server-side revocation of the dedicated login (`authentication_failed`, OAuth token revoked) while `claude auth status` still reported logged in; $0.00 OBSERVED each; correctly not a pass; the harness first refused both on leftover workspaces from a stopped local test run (guard worked). Recovery advice made exact in #143",
-    "2026-11-05 journey-live-v1 retry (amendment 5, after the owner's re-login; repo-ai 0.12.4, Claude Code 2.1.318): more-itertools and humanize both PASS end to end: native frozen tests 0 still failing / 0 new failures, hidden oracle 0 behavioural differences (humanize's oracle equals its frozen tests), apply with post-apply PASS in the container and byte-identical undo; $0.084002 + $0.039266 = $0.1233 OBSERVED of the approved $2.00. With pyjwt (2026-11-03), three real-project live Claude journeys pass every gate on released builds; marshmallow INCONCLUSIVE by design"
+    "2026-11-05 journey-live-v1 retry (amendment 5, after the owner's re-login; repo-ai 0.12.4, Claude Code 2.1.318): more-itertools and humanize both PASS end to end: native frozen tests 0 still failing / 0 new failures, hidden oracle 0 behavioural differences (humanize's oracle equals its frozen tests), apply with post-apply PASS in the container and byte-identical undo; $0.084002 + $0.039266 = $0.1233 OBSERVED of the approved $2.00. With pyjwt (2026-11-03), three real-project live Claude journeys pass every gate on released builds; marshmallow INCONCLUSIVE by design",
+    "2026-11-05 site page docs/reproduce ('Repeat our journeys'): exact commands for a stranger to repeat journey-offline-v2 (fork, push a journey/ branch, disposable runner, $0) and journey-live-v1 (own Claude login, podman only, per-session cap, sessions counted from records), with what to compare against our results and the stated limits (recall, localisation given)"
    ],
    "limits": [
     "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
     "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
     "two repositories; on the published build, one live run (Claude, python-humanize)"
    ],
-   "next_action": "a stranger-repeatable write-up of one live journey and the offline journey (exact commands from a clean machine); skill discovery inside a real-project journey; marshmallow stays INCONCLUSIVE by design"
+   "next_action": "skill discovery inside a real-project journey; an actual repeat by someone outside the project; marshmallow stays INCONCLUSIVE by design"
   },
   {
    "id": "C22",
