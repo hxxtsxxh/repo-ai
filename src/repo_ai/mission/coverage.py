@@ -16,10 +16,12 @@ observed for exactly those test IDs. Per requirement:
 
 Besides the declared requirements, the report names the obligations nothing declared covers: changed executable
 lines no frozen test ran (the mission's change-exercise measurement), and failures a scoped mission accepted as
-pre-existing. For pytest missions run with a frozen declaration it also lists, informationally, the changed lines
-that ran while each requirement's own tests ran (by time window; a shared fixture's setup run is credited to each
-test whose call ran with it active) and those only undeclared tests ran. Either keeps the headline below ACCEPTANCE_MAPPED_ALL. A test named by a bare suffix and one test
-mapped to several requirements are flagged.
+pre-existing. Either keeps the headline below ACCEPTANCE_MAPPED_ALL. For missions run with a frozen declaration it
+also lists, informationally, the changed lines that ran while each requirement's own tests ran and those only
+undeclared tests ran: per test for pytest (by time window; a shared fixture's setup run is credited to each test
+whose call ran with it active), per test FILE for `node --test` (each file ran alone under V8 coverage, and what it
+ran is credited to every test in it; a file whose coverage could not be used is shown as unavailable, with the
+reason). A test named by a bare suffix and one test mapped to several requirements are flagged.
 
 The headline is ACCEPTANCE_MAPPED_ALL only if every requirement is verified. It is never a task-correctness claim:
 the mapping is the developer's statement, the tests may be weak, and a verified requirement only means the declared
@@ -185,40 +187,70 @@ def _row(req: dict[str, Any], known: set[str], baseline: dict[str, str], candida
     return {**req, 'status': status, 'detail': detail, 'observed': observed}
 
 
+_TIME_WINDOW_NOTE = ('attribution is by time window (a shared fixture\'s setup run is credited to each test whose call '
+                     'ran with it active): lines run at import, in a teardown, in a child process or in another test\'s '
+                     'thread are not credited to the test they serve; informational, never part of a status or the '
+                     'headline')
+_PER_FILE_NOTE = ('Node attribution is per test FILE, not per test: each test file ran alone (`node --test FILE`) under '
+                  'V8 coverage, and every changed line it ran, loading its modules included, is credited to every test '
+                  'in that file, so a requirement is credited with lines its file\'s other tests ran; a line counts as '
+                  'run when any code on it ran; informational, never part of a status or the headline')
+
+
 def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str, Any] | None) -> dict[str, Any]:
     """Requirement by requirement, which changed executable lines ran while its mapped tests ran (the exercise
-    measurement's per-test record: pytest missions with a frozen declaration). Informational only, never an
-    obligation or a status: attribution is by time window (a shared fixture's setup run is credited to each test
-    whose call ran with it active), so a line that runs at import, in a teardown, in a child process or in another
-    test's thread is not credited to the test it serves."""
+    measurement's per-test record, kept for missions with a frozen declaration). Informational only, never an
+    obligation or a status. pytest (`per_test_granularity` "test", or absent in older records): keyed by test, by time
+    window (a shared fixture's setup run is credited to each test whose call ran with it active), so a line that runs
+    at import, in a teardown, in a child process or in another test's thread is not credited to the test it serves.
+    node (`"file"`): keyed by test file; a requirement gets the lines of every file its tests are in, and a file whose
+    coverage was unavailable is named with the reason instead of being counted as having run nothing."""
     per_test = (exercise or {}).get('per_test')
     total = int((exercise or {}).get('changed_lines') or 0)
     if not isinstance(per_test, dict):
         why = (exercise or {}).get('per_test_reason')
         return {'measured': False, 'reason': f'not measured: {why}' if isinstance(why, str) and why else
-                'not measured (recorded for pytest missions run with a frozen --requirements declaration)'}
+                'not measured (recorded for pytest and node --test missions run with a frozen --requirements '
+                'declaration)'}
     if total <= 0:
         return {'measured': False, 'reason': 'no executable line changed'}
+    per_file = (exercise or {}).get('per_test_granularity') == 'file'
     complete = (exercise or {}).get('per_test_complete') is True
+    raw_unavailable = (exercise or {}).get('per_test_unavailable')
+    unavailable = {k: v for k, v in (raw_unavailable.items() if isinstance(raw_unavailable, dict) else ())
+                   if isinstance(k, str) and isinstance(v, str)}
+    measured_files = {f for f in ((exercise or {}).get('per_test_measured') or []) if isinstance(f, str)} | set(per_test)
     claimed: set[str] = set()
     for r in rows:
         if not r['observed']:
             continue
-        ran = sorted({line for o in r['observed']
-                      for line in per_test.get(o['test'].partition('::')[2], []) if isinstance(line, str)})
+        if per_file:
+            # the recorded identity is `test file::test name`: the file's lines stand for each of its tests
+            files = sorted({o['test'].partition('::')[0] for o in r['observed']})
+            keys = [f for f in files if f in measured_files]
+            missing = {f: unavailable.get(f, 'not measured') for f in files if f not in measured_files}
+            if missing:
+                r['changed_lines_unavailable'] = missing
+            r['changed_lines_test_files'] = files
+        else:
+            keys = [o['test'].partition('::')[2] for o in r['observed']]
+        ran = sorted({line for k in keys for line in (per_test.get(k) or []) if isinstance(line, str)})
         claimed.update(ran)
         r['changed_lines_run'] = ran[:20]
         r['changed_lines_run_count'] = len(ran)
     every = {line for lines in per_test.values() if isinstance(lines, list) for line in lines if isinstance(line, str)}
     unclaimed = sorted(every - claimed)
-    outside = [x for x in ((exercise or {}).get('changed_outside_tests') or []) if isinstance(x, str)]
-    return {'measured': True, 'complete': complete, 'changed_lines': total,
-            'run_outside_any_test': outside[:20],
-            'run_by_tests_of_no_requirement': unclaimed[:20], 'run_by_tests_of_no_requirement_count': len(unclaimed),
-            'note': ('attribution is by time window (a shared fixture\'s setup run is credited to each test whose '
-                     'call ran with it active): lines run at import, in a teardown, in a child process or in another '
-                     'test\'s thread are not credited to the test they serve; informational, never part of a status '
-                     'or the headline')}
+    out: dict[str, Any] = {'measured': True, 'granularity': 'file' if per_file else 'test', 'complete': complete,
+                           'changed_lines': total, 'run_by_tests_of_no_requirement': unclaimed[:20],
+                           'run_by_tests_of_no_requirement_count': len(unclaimed),
+                           'note': _PER_FILE_NOTE if per_file else _TIME_WINDOW_NOTE}
+    if per_file:
+        out['unavailable_test_files'] = dict(sorted(unavailable.items())[:20])
+        out['unavailable_test_files_count'] = len(unavailable)
+    else:
+        outside = [x for x in ((exercise or {}).get('changed_outside_tests') or []) if isinstance(x, str)]
+        out['run_outside_any_test'] = outside[:20]
+    return out
 
 
 def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, str], *,
@@ -355,15 +387,37 @@ def render(report: dict[str, Any]) -> str:
             lines.append(f"      {display_test_id(o['test'])}: baseline {o['baseline']} -> candidate {o['candidate']}")
         if 'changed_lines_run_count' in row:
             ran = row['changed_lines_run']
-            lines.append(f"      its tests ran {row['changed_lines_run_count']} changed line(s)"
-                         + (': ' + ', '.join(ran[:8]) if ran else ''))
+            shown = (': ' + ', '.join(ran[:8])) if ran else ''
+            if 'changed_lines_test_files' in row:
+                gone = row.get('changed_lines_unavailable') or {}
+                files = row['changed_lines_test_files']
+                if len(gone) < len(files):
+                    lines.append(f"      its test file(s) ran {row['changed_lines_run_count']} changed line(s) "
+                                 f"[per test file: {', '.join(f for f in files if f not in gone)}]{shown}")
+                for f, why in gone.items():
+                    lines.append(f'      changed lines unavailable for its test file {f}: {why}')
+            else:
+                lines.append(f"      its tests ran {row['changed_lines_run_count']} changed line(s){shown}")
     if report['follow_up_test_needed']:
         lines.append('Follow-up acceptance test needed for: ' + '; '.join(json.dumps(t, ensure_ascii=True)
                                                                          for t in report['follow_up_test_needed']))
     for item in report.get('other_obligations') or []:
         lines.append('Not covered by any requirement: ' + item)
     by_req = report.get('changed_lines_by_requirement') or {}
-    if by_req.get('measured'):
+    if by_req.get('measured') and by_req.get('granularity') == 'file':
+        if by_req.get('run_by_tests_of_no_requirement_count'):
+            lines.append(f"Changed lines run only by test files that hold no declared test "
+                         f"({by_req['run_by_tests_of_no_requirement_count']}): "
+                         + ', '.join(by_req['run_by_tests_of_no_requirement'][:8]))
+        if by_req.get('unavailable_test_files_count'):
+            lines.append(f"Changed lines unavailable for {by_req['unavailable_test_files_count']} test file(s): "
+                         + '; '.join(f'{f} ({why})' for f, why in list(by_req['unavailable_test_files'].items())[:8]))
+        if not by_req.get('complete'):
+            lines.append('Changed lines by requirement (Node, per test file): the record is incomplete (coverage '
+                         'unavailable or not run for some test files); a requirement shown with 0 lines may have run '
+                         'some')
+        lines.append('Changed lines by requirement (Node, per test file): ' + str(by_req.get('note', '')))
+    elif by_req.get('measured'):
         if by_req.get('run_by_tests_of_no_requirement_count'):
             lines.append(f"Changed lines run only while tests no requirement names ran "
                          f"({by_req['run_by_tests_of_no_requirement_count']}): "

@@ -280,3 +280,79 @@ def test_without_a_per_test_record_the_mapping_is_not_measured():
     no_code = cov.assess(d, {T_NEG: 'fail'}, {T_NEG: 'pass'}, verdict='PASS', freshness='fresh',
                          exercise={**C11_EXERCISE, 'changed_lines': 0})
     assert no_code['changed_lines_by_requirement']['reason'] == 'no executable line changed'
+
+
+# -- C11, node: the same fields, per test FILE (`per_test_granularity: "file"`) -----------------------------------
+
+N_NEG, N_POS, N_POS2 = 'neg.test.js::negative', 'pick.test.js::positive', 'pick.test.js::positive again'
+N_OTHER = 'deep/other.test.js::suite > unrelated'
+NODE_EXERCISE = {'assurance': 'FULL', 'changed_lines': 4, 'unexercised': [], 'unexercised_count': 0,
+                 'per_test_granularity': 'file', 'per_test_complete': True,
+                 'per_test_measured': ['deep/other.test.js', 'neg.test.js', 'pick.test.js', 'side.test.js'],
+                 'per_test_unavailable': {},
+                 'per_test': {'neg.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:3'],
+                              'pick.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:5'],
+                              'side.test.js': ['pick.js:1', 'pick.js:6']}}
+N_BASE = {N_NEG: 'fail', N_POS: 'pass', N_POS2: 'pass', N_OTHER: 'pass'}
+N_CAND = {N_NEG: 'pass', N_POS: 'pass', N_POS2: 'pass', N_OTHER: 'pass'}
+
+
+def test_node_lines_are_credited_to_every_test_in_the_file_and_labelled_per_file():
+    d = decl(req('negative input is negated', ['neg.test.js::negative']),
+             req('positive input unchanged', ['pick.test.js::positive'], kind='preserve'),
+             req('positive again unchanged', ['pick.test.js::positive again'], kind='preserve'),
+             req('unrelated still works', [N_OTHER], kind='preserve'))
+    out = cov.assess(d, N_BASE, N_CAND, verdict='PASS', freshness='fresh', exercise=NODE_EXERCISE)
+    rows = {r['text']: r for r in out['requirements']}
+    assert rows['negative input is negated']['changed_lines_run'] == ['pick.js:1', 'pick.js:2', 'pick.js:3']
+    # two tests in one file: both get the file's lines, including those only the other test may have run
+    assert rows['positive input unchanged']['changed_lines_run'] == rows['positive again unchanged']['changed_lines_run'] \
+        == ['pick.js:1', 'pick.js:2', 'pick.js:5']
+    assert rows['unrelated still works']['changed_lines_run'] == [] and 'changed_lines_unavailable' not in rows[
+        'unrelated still works'], 'measured and ran nothing is not unavailable'
+    assert rows['negative input is negated']['changed_lines_test_files'] == ['neg.test.js']
+    by = out['changed_lines_by_requirement']
+    assert by['measured'] is True and by['granularity'] == 'file' and by['complete'] is True
+    assert by['run_by_tests_of_no_requirement'] == ['pick.js:6'], 'only side.test.js, which holds no declared test, ran it'
+    assert 'run_outside_any_test' not in by
+    assert out['headline'] == 'ACCEPTANCE_MAPPED_ALL', 'informational only'
+    text = cov.render(out)
+    assert 'its test file(s) ran 3 changed line(s) [per test file: neg.test.js]: pick.js:1, pick.js:2, pick.js:3' in text
+    assert 'Changed lines run only by test files that hold no declared test (1): pick.js:6' in text
+    assert 'Changed lines by requirement (Node, per test file): Node attribution is per test FILE, not per test' in text
+    assert 'time window' not in text
+
+
+def test_node_unavailable_coverage_is_named_with_its_reason_not_shown_as_zero_lines():
+    ex = {**NODE_EXERCISE, 'per_test_complete': False, 'per_test_measured': ['pick.test.js'],
+          'per_test_unavailable': {'neg.test.js': 'a coverage file is not valid JSON'},
+          'per_test': {'pick.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:5']}}
+    d = decl(req('negative input is negated', ['neg.test.js::negative']),
+             req('both', ['neg.test.js::negative', 'pick.test.js::positive']),
+             req('never measured', [N_OTHER], kind='preserve'))
+    base = {**N_BASE, 'pick.test.js::positive': 'fail'}
+    out = cov.assess(d, base, N_CAND, verdict='PASS', freshness='fresh', exercise=ex)
+    rows = {r['text']: r for r in out['requirements']}
+    neg = rows['negative input is negated']
+    assert neg['changed_lines_unavailable'] == {'neg.test.js': 'a coverage file is not valid JSON'}
+    assert rows['both']['changed_lines_run'] == ['pick.js:1', 'pick.js:2', 'pick.js:5']
+    assert rows['both']['changed_lines_unavailable'] == {'neg.test.js': 'a coverage file is not valid JSON'}
+    assert rows['never measured']['changed_lines_unavailable'] == {'deep/other.test.js': 'not measured'}
+    by = out['changed_lines_by_requirement']
+    assert by['complete'] is False and by['unavailable_test_files'] == {'neg.test.js': 'a coverage file is not valid JSON'}
+    text = cov.render(out)
+    neg_block = text.split('"negative input is negated"')[1].split('[')[0]
+    assert 'changed lines unavailable for its test file neg.test.js: a coverage file is not valid JSON' in neg_block
+    assert 'ran 0 changed line' not in neg_block
+    assert 'Changed lines unavailable for 1 test file(s): neg.test.js (a coverage file is not valid JSON)' in text
+    assert 'the record is incomplete' in text
+
+
+def test_node_without_a_per_file_record_says_why():
+    d = decl(req('negative input is negated', ['neg.test.js::negative']))
+    ex = {k: v for k, v in NODE_EXERCISE.items() if not k.startswith('per_test')}
+    out = cov.assess(d, N_BASE, N_CAND, verdict='PASS', freshness='fresh', exercise=ex)
+    assert 'pytest and node --test missions' in out['changed_lines_by_requirement']['reason']
+    ex['per_test_reason'] = 'no changed JavaScript file'
+    out = cov.assess(d, N_BASE, N_CAND, verdict='PASS', freshness='fresh', exercise=ex)
+    assert out['changed_lines_by_requirement']['reason'] == 'not measured: no changed JavaScript file'

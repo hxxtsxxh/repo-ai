@@ -336,3 +336,74 @@ def test_lines_of_a_shared_fixture_no_test_ran_with_count_as_outside_any_test(tm
     rec = _fixture_case(tmp_path, '@pytest.fixture(scope="session")\ndef app():\n    make(1)\n    pytest.skip("not here")\n',
                         'def test_a(app):\n    pass\n')
     assert rec['per_test'] == {} and rec['changed_outside_tests'] == ['m.py:2', 'm.py:3'], rec
+
+
+# -- C11, node: the per-test record per test FILE (each file alone under V8 coverage) ------------------------------
+
+JS_BEFORE = 'exports.pick = (x) => x;\n'
+JS_AFTER = 'exports.pick = (x) => {\n  if (x < 0) {\n    return -x;\n  }\n  return x;\n};\n'
+JS_HEAD = "const t = require('node:test');\nconst assert = require('node:assert');\n"
+JS_TESTS = {
+    'pick.test.js': JS_HEAD + "const { pick } = require('./pick.js');\nt('positive', () => assert.equal(pick(2), 2));\n",
+    'neg.test.js': JS_HEAD + "const { pick } = require('./pick.js');\nt('negative', () => assert.equal(pick(-2), 2));\n",
+    'other.test.js': JS_HEAD + "t('unrelated', () => assert.equal(1 + 1, 2));\n",
+}
+
+
+def _node_repo(tmp_path, extra=None):
+    root = tmp_path / 'njs'
+    root.mkdir()
+    (root / 'pick.js').write_text(JS_AFTER)
+    (root / 'package.json').write_text('{"name": "njs", "version": "1.0.0"}\n')
+    for name, text in {**JS_TESTS, **(extra or {})}.items():
+        (root / name).write_text(text)
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'candidate applied')
+    return root
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_per_file_record_names_the_changed_lines_each_test_file_ran(tmp_path):
+    root = _node_repo(tmp_path)
+    diff = _diff('pick.js', JS_BEFORE, JS_AFTER)
+    plain = exercise.measure(root, 'node --test', diff)
+    assert plain['assurance'] == 'FULL' and 'per_test' not in plain, plain
+    rec = exercise.measure(root, 'node --test', diff, per_test=True)
+    assert rec['assurance'] == 'FULL' and rec['changed_lines'] == 4, rec
+    assert rec['per_test_granularity'] == 'file'
+    assert rec['per_test'] == {'neg.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:3'],
+                               'pick.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:5']}, rec
+    assert sorted(rec['per_test_measured']) == ['neg.test.js', 'other.test.js', 'pick.test.js']
+    assert rec['per_test_unavailable'] == {} and rec['per_test_complete'] is True
+    assert 'changed_outside_tests' not in rec, 'module load belongs to the test file that ran it'
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_malformed_coverage_makes_that_file_unavailable_never_not_run(tmp_path):
+    junk = JS_HEAD + ("const { pick } = require('./pick.js');\nconst fs = require('node:fs');\n"
+                      "const path = require('node:path');\n"
+                      "t('writes junk', () => { pick(-1); "
+                      "fs.writeFileSync(path.join(process.env.NODE_V8_COVERAGE, 'junk.json'), '{'); });\n")
+    root = _node_repo(tmp_path, {'junk.test.js': junk})
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['assurance'] == 'FULL', rec
+    assert rec['per_test_unavailable'] == {'junk.test.js': 'a coverage file is not valid JSON'}, rec
+    assert 'junk.test.js' not in rec['per_test'] and 'junk.test.js' not in rec['per_test_measured']
+    assert rec['per_test_complete'] is False and set(rec['per_test']) == {'neg.test.js', 'pick.test.js'}
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_test_files_past_the_cap_or_the_time_left_are_not_measured(tmp_path, monkeypatch):
+    root = _node_repo(tmp_path)
+    monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 2)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['per_test_complete'] is False and len(rec['per_test_measured']) == 2, rec
+    assert rec['per_test_reason'].startswith('only the first 2 of 3 test files')
+    monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 200)
+    real = exercise._per_file_node_run
+    monkeypatch.setattr(exercise, '_per_file_node_run', lambda *a: real(*a[:-1], 0.0))
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['assurance'] == 'FULL' and rec['per_test'] == {} and rec['per_test_measured'] == [], rec
+    assert set(rec['per_test_unavailable'].values()) == {'no time was left for its run'}
+    assert rec['per_test_complete'] is False
