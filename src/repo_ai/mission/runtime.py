@@ -854,6 +854,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                             names = run_res.get('auth_env_vars')
                             state['provider']['auth_env_vars'] = [n for n in names if n in TOKEN_ENV_VARS] \
                                 if isinstance(names, list) else []
+                            if run_res.get('auth_config_source') in {'env', 'default'}:
+                                state['provider']['auth_config_source'] = run_res['auth_config_source']
                         if run_res.get('rate_limited') and is_live_provider:
                             from ..providers.registry import note_rate_limited
                             note_rate_limited(root, contract.provider)
@@ -1304,6 +1306,38 @@ def stale_comparison_step(comparison: dict[str, Any], freshness: str) -> dict[st
     return comp
 
 
+def _reauthenticate_action(prov: dict[str, Any], *, rejected: bool) -> str:
+    """What to do when the provider is not authenticated inside repo-ai's isolation. `rejected`: the provider itself
+    rejected its credential (a provider error event), as opposed to repo-ai's preflight refusing an unusable setup.
+    Only a rejection is fixed by a new login or token; a preflight problem is fixed by what its reason names."""
+    name = re.sub(r'[^A-Za-z0-9_.-]', '', str(prov.get('name') or '')) or '<provider>'
+    tail = ('retrying will fail the same way. Or switch provider via handoff --to <provider> and continue with '
+            'do --from-handoff <capsule.json>')
+    if name == 'claude' and rejected and prov.get('auth_mode') == 'dedicated_config' \
+            and prov.get('auth_config_source') in {'env', 'default'}:
+        from ..providers import claude_auth
+        source = 'env' if prov.get('auth_config_source') == 'env' else 'default'
+        return ('Claude Code rejected repo-ai\'s dedicated login (expired or revoked; `claude auth status` checks '
+                f'only locally and can still report it as logged in). Log in again once with '
+                f'`{claude_auth.relogin_command(source)}`'
+                + (f' (with the {claude_auth.CONFIG_DIR_ENV} the run used)' if source == 'env' else '')
+                + ', then start a new mission; ' + tail)
+    if name == 'claude' and rejected and prov.get('auth_mode') == 'token_env':
+        raw_names = prov.get('auth_env_vars')
+        names: list[Any] = raw_names if isinstance(raw_names, list) else []
+        if 'ANTHROPIC_API_KEY' in names:
+            return ('Claude Code rejected the credential repo-ai passed; ANTHROPIC_API_KEY was set: replace it with a '
+                    'valid key, or unset it to use CLAUDE_CODE_OAUTH_TOKEN, then start a new mission; ' + tail)
+        return ('Claude Code rejected the token repo-ai passed (CLAUDE_CODE_OAUTH_TOKEN): create a new one '
+                '(`claude setup-token`), set it, then start a new mission; ' + tail)
+    if name == 'claude' and rejected:  # a record from before the config source was kept: name no directory
+        return ('Claude Code rejected the credential repo-ai passed (expired or revoked; `claude auth status` checks '
+                'only locally). `repo-ai agents setup claude` shows how to log in again, then start a new mission; '
+                + tail)
+    return (f'the provider is not authenticated inside repo-ai\'s isolation: fix what the reason names (see '
+            f'`repo-ai agents setup {name}`); ' + tail)
+
+
 def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
     """Classify mission state into one of the 7 bounded recovery categories (or 'none')."""
     verdict = state.get('effective_verdict') or (state.get('passport') or {}).get('verdict', 'BLOCKED')
@@ -1374,16 +1408,15 @@ def classify_recovery(state: dict[str, Any]) -> dict[str, Any]:
             'reasons': negatives,
         }
     provider_errors = ' | '.join(n for n in negatives if 'provider error event' in n).lower()
-    if any(k in provider_errors for k in ('authentication_failed', 'not logged in', 'please run /login', 'invalid api key',
-                                          'failed to authenticate', 'not authenticated for isolated execution')) or \
+    rejected = any(k in provider_errors for k in ('authentication_failed', 'not logged in', 'please run /login',
+                                                  'invalid api key', 'failed to authenticate', 'token revoked'))
+    if rejected or 'not authenticated for isolated execution' in provider_errors or \
             any('not authenticated for isolated execution' in n for n in negatives):
         # the same isolated login fails the same way: a resume would only repeat it
         return {
             'category': 'provider_unavailable',
             'recoverable': True,
-            'action': ('the provider is not authenticated inside repo-ai\'s isolation; retrying will fail the same way. '
-                       'See `repo-ai agents setup <provider>`, or switch provider via handoff --to <provider> and '
-                       'continue with do --from-handoff <capsule.json>'),
+            'action': _reauthenticate_action(prov, rejected=rejected),
             'reasons': negatives,
         }
     if pstage == 'NOT_INSTALLED':
