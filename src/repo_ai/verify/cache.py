@@ -393,6 +393,12 @@ class Timings:
         self.env["full_unusable"] = why[:200]
         self.dirty = True
 
+    def clear_full_unusable(self) -> None:
+        """A later full suite gave a trusted report: it may be chosen for speed again."""
+        if "full_unusable" in self.env:
+            self.env.pop("full_unusable")
+            self.dirty = True
+
     def file_s(self, test: str) -> float | None:
         v = (self.env.get("files") or {}).get(test)
         return float(v) if isinstance(v, (int, float)) and v > 0 else None

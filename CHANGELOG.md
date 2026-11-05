@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Fixed (found reviewing #152, older than it): after `verify --record`, an edit to a file named like a test that
+  pytest's own recorded collection leaves out (marshmallow's `tests/mypy_test_cases` under `norecursedirs`) required
+  the full suite, which passed without the file ever running: an edit that only made that file fail alone reported
+  `selected-and-full-suite-passed`, PASSED and exit 0. Unless another test imports, opens or names it, such an edit
+  no longer requires the full suite (that suite cannot run it), so on its own it is what any behavioural edit no
+  test is linked to is: `not verified: no test is linked to the behavioural change`, exit 1. Next to other changes,
+  their tests decide. Either way the run's first note says "<file>: pytest's recorded collection never runs it; no
+  test exercised this edit", and the plan, the evidence and the `--json` summary list it in `untested_edits`. As for
+  an unlinked source edit, a CI that runs `verify --run` fails on such an edit until a test covers it (`--full` still
+  runs the project's own suite and reports its pass, with the note).
+- A passing full suite chosen for speed but without a usable per-test report re-runs every selected file (0.12.6),
+  so it is never the faster shape there: verify now records it as not chosen for speed again in that environment (as
+  it already did for a failing full suite it cannot attribute). A full suite the change or `--full` forced leaves
+  that alone, and a later full suite with a trusted per-test report clears it.
+- Tests: end to end, Node's unreached path (a new failing file under a dot-directory, which `node --test`'s own
+  patterns skip and repo-ai's name match does not) and the trusted-failing full path (a failure already present at
+  the base elsewhere and a new failing file the full suite never collects give `regression`).
+
 - `scripts/public_export.py` keeps the identifiers it must never export (a corporate address, host and marking) only
   as SHA-256 digests, so the script itself no longer names them.
 ## 0.12.6 — verify never passes a selected file the full suite skipped; steadier run shape
