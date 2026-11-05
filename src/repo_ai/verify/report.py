@@ -304,7 +304,13 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
         out.append("  some failures in these files look like the sandbox's denied network (verify runs tests "
                    "without network; the project's own run may pass): " + ", ".join(net[:6]) + (" …" if len(net) > 6 else ""))
     full = rec.get("full_suite")
-    if full and full.get("status") not in {None, "not-run"} and str(rec.get("verdict")) == "full-suite-failed":
+    if full and full.get("status") not in {None, "not-run"} and verdict == evidence.NOT_VERIFIED_UNTESTED:
+        # what the full suite did stays visible: it just is not evidence about the edit
+        out.append(f"  the full suite {'passed' if full.get('status') == 'pass' else full.get('status')}, without "
+                   "running the changed file(s)")
+        if full.get("status") != "pass":
+            out += [f"  | {line[:150]}" for line in (full.get("output_tail") or "").strip().splitlines()[-6:]]
+    elif full and full.get("status") not in {None, "not-run"} and str(rec.get("verdict")) == "full-suite-failed":
         out += [f"  | {line[:150]}" for line in (full.get("output_tail") or "").strip().splitlines()[-6:]]
     elif full and full.get("status") == "not-run":
         out.append(f"  full suite not run: {full.get('reason')}")
@@ -336,7 +342,10 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     if after_run:
         out.append(("evidence reused" if rec.get("reused") else "evidence saved")
                    + "; `repo-ai evidence` shows whether it still covers the working tree.")
-    if verdict.startswith(("nothing-selected", "not verified")):
+    if verdict == evidence.NOT_VERIFIED_UNTESTED:
+        out.append("Tests ran, but none of them ran the changed file(s): this is not evidence that the change is "
+                   "correct.")
+    elif verdict.startswith(("nothing-selected", "not verified")):
         out.append("No test ran: this is not evidence that the change is correct.")
     elif verdict.startswith("selected-") or verdict == "failing (all failures pre-existing at the base)":
         out.append("This covers only the tests that ran; it is not proof the change is correct.")

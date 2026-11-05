@@ -262,9 +262,17 @@ in disposable copies, with the same integrity checks.
     suite would pass without it, and that pass must not stand for it): on
     its own it is "not verified: no test is linked to the behavioural
     change" (exit 1), like any unlinked behavioural edit; next to other
-    changes, their tests decide. Either way the run says so first among
+    changes, their tests decide. When every behavioural change is such an
+    edit, whatever else ran does not make it a pass: with `--full` (or
+    tests a documentation change names) the run is "not verified: the
+    tests that ran never run the changed file(s)" (exit 1), and the full
+    suite's own result is still shown. Only a new failure they reproduce
+    is reported, as a regression. Either way the run says so first among
     its notes ("pytest's recorded collection never runs it; no test
-    exercised this edit") and lists it in `untested_edits`.
+    exercised this edit") and lists it in `untested_edits`. An unlinked
+    source edit is different: the full suite runs the project's tests
+    against the new code and can reach code no recorded or static link
+    showed, so its pass under `--full` still counts.
 - **The selected files**, otherwise: balanced into at most `--workers`
   processes (unittest and pytest), or one `node --test` invocation (Node runs
   each file in its own child process).
