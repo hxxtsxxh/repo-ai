@@ -25,7 +25,8 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "public main = v0.10.0; PyPI repo-ai-cli 0.10.0; GitHub release assets identical to PyPI; SHA256SUMS OK; attestation verified"
+    "public main = v0.10.0; PyPI repo-ai-cli 0.10.0; GitHub release assets identical to PyPI; SHA256SUMS OK; attestation verified",
+    "2026-11-05 history rewrite at the owner's request (docs/engineering/HISTORY-REWRITE-2026-11-05.md): a corporate e-mail address on 86 commits and 3 tags replaced with the owner's personal address; trees, messages, names and dates unchanged; 513 SHAs changed (map in that file), v0.11.5-v0.12.6 tags moved to identical trees, PyPI and release files unchanged; 160 merged branches deleted; read-only PR refs await GitHub Support"
    ],
    "limits": [],
    "next_action": "site PR #5 deploys the matching release facts"

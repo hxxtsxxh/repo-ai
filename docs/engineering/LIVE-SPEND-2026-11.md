@@ -54,3 +54,13 @@ The owner approved, after seeing the call count, upper bound and accounting basi
 | 2026-11-04 | C21 journey-live-v1 re-run more-itertools (amendment 4) | Claude Code | $0.00 OBSERVED (the same) |
 | 2026-11-05 | C21 journey-live-v1 retry more-itertools (amendment 5) | Claude Code | $0.084002 OBSERVED (cap $1.00) |
 | 2026-11-05 | C21 journey-live-v1 retry humanize (amendment 5) | Claude Code | $0.039266 OBSERVED (cap $1.00) |
+
+## 2026-11-05: a $10 budget
+
+The owner approved live spending with a budget of **$10** (cumulative from 2026-11-05; Claude Code's reported
+`total_cost_usd`; providers whose cost cannot be observed are not used against it). Each batch is still predeclared
+with its session count and caps before it runs.
+
+| batch | sessions | upper bound | running total of the $10 |
+|---|---|---|---|
+| C13 live-to-live handoff (`benchmarks/c13-live-handoff/run_l2l.py`) | at most 2 Claude Code | $1.00 ($0.50 each) | (pending) |
