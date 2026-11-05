@@ -369,9 +369,10 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                 # malformed file or entry is skipped, which can only report more lines as never run
                 # each entry is folded into its file's bit map as it is read: a suite writes one per test file
                 parse_by = time.monotonic() + max(30.0, timeout_s - (time.monotonic() - started))
-                allowed = v8lines.files_allowed(len(runner.test_files(listing[0], workspace)))
+                # every node child process a test starts writes its own file too, so the count is not derived from
+                # the suite: bytes, ranges and the deadline bound the work; the ceiling bounds the listing
                 folded = v8lines.fold(ws.path, NODE_COV_DIR, cov_ident, inside, texts, deadline=parse_by,
-                                      lenient=True, max_files=allowed)
+                                      lenient=True, max_files=v8lines.MAX_FILES_CEILING)
                 for rel in texts:
                     exec_by_file[rel], never_by_file[rel] = folded.accumulators[rel].never_run()
             else:

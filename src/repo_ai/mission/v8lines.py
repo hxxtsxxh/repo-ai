@@ -48,7 +48,7 @@ from urllib.parse import unquote, urlparse
 
 from ..verify import isolate
 
-MAX_FILES = 256                         # coverage files one test file's processes may write (see `files_allowed`)
+MAX_FILES = 256                         # coverage files one test file's own run may write (the whole-suite run allows MAX_FILES_CEILING)
 MAX_FILES_CEILING = 20_000              # coverage files any run may write
 MAX_FILE_BYTES = 32 * 1024 * 1024       # one coverage file (each is parsed, folded and dropped before the next)
 MAX_TOTAL_BYTES = 2 * 1024 * 1024 * 1024  # all of one run's coverage files together
@@ -99,11 +99,6 @@ def prepare(ws: Path, rel_dir: str) -> tuple[int, int]:
     if any(path.iterdir()):
         raise Unavailable("the coverage directory was not empty before the run")
     return ident
-
-
-def files_allowed(test_files: int) -> int:
-    """Coverage files a run of `test_files` test files may write: a process per file and a few children each."""
-    return min(MAX_FILES_CEILING, max(MAX_FILES, 4 * test_files + 16))
 
 
 class Folded:
