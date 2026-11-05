@@ -1,9 +1,20 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.5, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.6, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.6
+
+- **Fixed** `verify --run` could report `selected-and-full-suite-passed` when it ran the full suite and the project's
+  own collection skipped a selected test file (a new failing file under pytest's `norecursedirs`, or a unittest
+  package whose `load_tests` hides it): that file now runs on its own, so a failure is a `regression`; if it cannot
+  run, the result is not verified. Present in 0.12.5 and earlier.
+- **Changed** for an unchanged suite, `verify --run` keeps a full-suite run shape instead of flipping between the
+  selection and the full suite on close timings; it never trades the full suite's evidence for speed.
+- **Added** `repo-ai agents setup claude` notes a plaintext credentials file left in repo-ai's Claude login directory
+  on macOS (checked for existence only).
 
 ## 0.12.5
 
