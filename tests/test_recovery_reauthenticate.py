@@ -109,5 +109,5 @@ def test_the_config_source_is_recorded_without_the_path():
 
 
 def test_windows_shows_the_path_as_is(monkeypatch):
-    monkeypatch.setattr(claude_auth.os, "name", "nt")
+    monkeypatch.setattr(claude_auth, "_WINDOWS", True)  # never patch os.name: pathlib < 3.12 reads it
     assert claude_auth.shell_path(Path("C:/Users/x/cfg dir")) == str(Path("C:/Users/x/cfg dir"))

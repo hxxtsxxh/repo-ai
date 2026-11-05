@@ -79,11 +79,14 @@ def default_config_dir(environ: Mapping[str, str] | None = None) -> Path:
     return registry_home() / "claude-provider"
 
 
+_WINDOWS = os.name == "nt"
+
+
 def shell_path(path: Path) -> str:
     """A path to paste into a shell: `~/...` under HOME (no account name shown; the rest shell-quoted when needed),
     otherwise shell-quoted. No `~` form when HOME is empty or `/`, where `~` would expand to something else. On
     Windows (no POSIX shell quoting or `~`), the path as is."""
-    if os.name == "nt":
+    if _WINDOWS:
         return str(path)
     home_env = os.environ.get("HOME")
     try:
