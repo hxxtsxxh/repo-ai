@@ -525,6 +525,34 @@ def test_after_a_measured_full_suite_a_cheap_suite_runs_whole_and_is_compared_in
 
 
 @needs_sandbox
+def test_the_shape_is_remembered_for_the_run_test_files_and_a_forced_run_leaves_it(proj: Path):
+    """C16 through the real engine: the decided shape is stored under the suite key of the files the
+    selection runs, before the timings are saved; a `--full` run stores nothing; the next call sees it."""
+    assert run_cli(proj, "verify", "--record", "--test-command", CMD).returncode == 0  # estimates to compare
+    (proj / "calc" / "core.py").write_text("def add(a, b):\n    return a + b + 0\n")
+    timings = proj / ".repo-ai" / "state" / cache.TIMINGS_FILE
+
+    def choices(env: str) -> tuple[dict, object]:
+        e = json.loads(timings.read_text())["envs"][env]
+        return e.get("choices"), e.get("choice_seq")
+
+    first = _run(proj)
+    strat = first["strategy"]
+    assert strat["basis"] == "compared" and strat["previous"] is None, strat
+    to_run = [t for t in first["selected"] if t not in {x["test"] for x in first.get("not_run") or []}]
+    universe = sorted(f.relative_to(proj).as_posix() for f in (proj / "tests").glob("test_*.py"))
+    key = cache.suite_key(proj, to_run, universe, 2)
+    stored = choices(first["environment"])
+    assert stored == ({key: {"k": strat["kind"], "n": 1}}, 1), (stored, key)
+    forced = _run(proj, "--full", "--rerun")
+    assert forced["strategy"]["kind"] == "full" and forced["strategy"]["basis"] == "forced"
+    assert forced["environment"] == first["environment"]
+    assert choices(forced["environment"]) == stored                     # nothing stored, nothing replaced
+    again = _run(proj, "--rerun")
+    assert again["strategy"]["previous"] == strat["kind"], again["strategy"]
+
+
+@needs_sandbox
 def test_a_hanging_file_in_a_batch_is_reported_and_the_rest_still_run(proj: Path):
     (proj / "tests" / "test_m3.py").write_text(_test_file(3, "        import time\n        time.sleep(300)\n"))
     _git(proj, "add", "-A")
