@@ -16,6 +16,7 @@ Pushing the result to a public repository is a separate, owner-approved step.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import io
 import re
 import shutil
@@ -44,13 +45,30 @@ EXCLUDED = (
 # file does not match itself.
 _USER = b"heet" + b"shah"
 FORBIDDEN = [
-    (re.compile(re.escape(_USER + b"@" + b"ibm.com")), "corporate e-mail address"),
     (re.compile(re.escape(b"/Users/" + _USER) + rb"\b"), "local home path"),
     (re.compile(re.escape(b"claude-" + b"501/-Users-")), "local Claude Code scratch path"),
-    (re.compile(re.escape(b"github." + b"ibm.com")), "enterprise GitHub host"),
     (re.compile(re.escape(b"keep it " + b"private")), "private-only policy text"),
-    (re.compile(rb"IBM " + rb"Confidential", re.I), "confidentiality marking"),
 ]
+
+# Identifiers that must not appear either, kept only as SHA-256 digests of their lowercase form so that this file
+# never contains them: each candidate token found by the pattern is hashed and compared.
+FORBIDDEN_DIGESTS = [
+    (re.compile(rb"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"), "corporate e-mail address",
+     {"36476fbc2833a538f1d79adbee1c13cc5f9483e13e833ba69176403732865bf3"}),
+    (re.compile(rb"github\.[A-Za-z0-9.-]+\.[A-Za-z]{2,}", re.I), "enterprise GitHub host",
+     {"efb77b10984cc890009b2b8f09459c1384c43855b6f15208f2338efe4ee0cd57"}),
+    (re.compile(rb"\b[A-Za-z]+ confidential\b", re.I), "confidentiality marking",
+     {"2544dd8dff311138629ec7c921195ee2e0255624a280aedbffc8a105c4941ea6"}),
+]
+
+
+def digest_hits(data: bytes, rules=None) -> list[str]:
+    """What each digest rule finds in `data`: a candidate token whose lowercase SHA-256 is listed."""
+    found = []
+    for pattern, what, digests in (FORBIDDEN_DIGESTS if rules is None else rules):
+        if any(hashlib.sha256(m.group(0).lower()).hexdigest() in digests for m in pattern.finditer(data)):
+            found.append(what)
+    return found
 
 AUTHOR = "Heet Shah <84190049+hxxtsxxh@users.noreply.github.com>"
 
@@ -86,6 +104,7 @@ def audit(out: Path) -> list[str]:
         for pattern, what in FORBIDDEN:
             if pattern.search(data):
                 problems.append(f"{rel}: {what}")
+        problems.extend(f"{rel}: {what}" for what in digest_hits(data))
     return problems
 
 

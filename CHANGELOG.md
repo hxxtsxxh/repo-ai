@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `scripts/public_export.py` keeps the identifiers it must never export (a corporate address, host and marking) only
+  as SHA-256 digests, so the script itself no longer names them.
 ## 0.12.6 — verify never passes a selected file the full suite skipped; steadier run shape
 
 - Fixed (found reviewing #152; older than it, present in 0.12.5 and earlier): `verify --run` could report
