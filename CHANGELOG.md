@@ -2,15 +2,19 @@
 
 ## Unreleased
 
-- `verify --run` keeps its run shape steady for an unchanged suite. When nothing forces a shape, the shape chosen
-  before for the same suite (the same selection, every test file by content, the worker count) in the same
-  environment is kept unless the other shape wins by a clear margin beyond the existing rule: 0.25 s or 20% of the
-  kept shape's estimate, whichever is larger. speed-v1 run 5 recorded the same state choosing `targeted` on one call
-  and `full` on the next on estimates a few tenths of a second apart (C16). A required full suite, `--full`, a full
-  suite whose result cannot be attributed, an empty selection and a command that cannot be split or run whole still
-  decide on their own, and a first choice is made by the same rule as before. The evidence's `strategy` now records
-  `basis` (`forced`, `no-estimates`, `compared`, `kept`, `switched`), `previous` and `margin_s`, and the `--json`
-  summary `strategy_basis`. Not re-measured: no speed claim.
+- `verify --run` keeps its run shape steady for an unchanged suite, only ever toward the full suite. speed-v1 run 5
+  recorded the same state choosing `targeted` on one call and `full` on the next on estimates a few tenths of a
+  second apart (C16). The shapes are not equally informative (the full suite also reports failing test files outside
+  the selection and can conclude `selected-and-full-suite-passed`), so the steadiness never trades the full suite's
+  evidence away: when nothing forces a shape, a full suite chosen before for the same test files (the same
+  selection, every test file by content, the worker count) in the same environment is kept unless the selection is
+  faster by more than 0.25 s plus the larger of 0.25 s and 20% of the full suite's estimate; a selection chosen
+  before never holds the full suite back (the existing rule decides), and a selection run only because nothing was
+  measured yet is not remembered. A required full suite, `--full`, a full suite whose result cannot be attributed,
+  an empty selection and a command that cannot be split or run whole still decide on their own. The evidence's
+  `strategy` now records `basis` (`forced`, `no-estimates`, `compared`, `kept`, `switched`), `previous` and
+  `margin_s` (how much faster the selection had to be), and the `--json` summary `strategy_basis`. Not re-measured:
+  no speed claim; a kept full suite can cost up to `margin_s`.
 
 ## 0.12.5 — Node per-requirement lines; a false FULL fixed; exact re-login advice; refusal paths
 
