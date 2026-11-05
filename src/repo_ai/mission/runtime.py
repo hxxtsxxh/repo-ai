@@ -1307,7 +1307,8 @@ def _reauthenticate_action(prov: dict[str, Any], *, rejected: bool) -> str:
     name = re.sub(r'[^A-Za-z0-9_.-]', '', str(prov.get('name') or '')) or '<provider>'
     tail = ('retrying will fail the same way. Or switch provider via handoff --to <provider> and continue with '
             'do --from-handoff <capsule.json>')
-    if name == 'claude' and rejected and prov.get('auth_mode') == 'dedicated_config':
+    if name == 'claude' and rejected and prov.get('auth_mode') == 'dedicated_config' \
+            and prov.get('auth_config_source') in {'env', 'default'}:
         from ..providers import claude_auth
         source = 'env' if prov.get('auth_config_source') == 'env' else 'default'
         return ('Claude Code rejected repo-ai\'s dedicated login (expired or revoked; `claude auth status` checks '
@@ -1323,6 +1324,10 @@ def _reauthenticate_action(prov: dict[str, Any], *, rejected: bool) -> str:
                     'valid key, or unset it to use CLAUDE_CODE_OAUTH_TOKEN, then start a new mission; ' + tail)
         return ('Claude Code rejected the token repo-ai passed (CLAUDE_CODE_OAUTH_TOKEN): create a new one '
                 '(`claude setup-token`), set it, then start a new mission; ' + tail)
+    if name == 'claude' and rejected:  # a record from before the config source was kept: name no directory
+        return ('Claude Code rejected the credential repo-ai passed (expired or revoked; `claude auth status` checks '
+                'only locally). `repo-ai agents setup claude` shows how to log in again, then start a new mission; '
+                + tail)
     return (f'the provider is not authenticated inside repo-ai\'s isolation: fix what the reason names (see '
             f'`repo-ai agents setup {name}`); ' + tail)
 
