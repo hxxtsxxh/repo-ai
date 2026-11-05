@@ -8,6 +8,12 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 
 ## Current state (2026-11-03 UTC)
 
+### History rewrite (2026-11-05)
+
+At the owner's request a corporate e-mail address was removed from 86 commits and 3 tags (now the owner's personal
+address). Trees, messages and dates are unchanged; 513 SHAs changed, so SHAs cited below before this date are the
+original ones: [HISTORY-REWRITE-2026-11-05.md](HISTORY-REWRITE-2026-11-05.md) maps each to its rewritten commit.
+
 ### Release 0.12.6 (verified after publication)
 
 | | |
