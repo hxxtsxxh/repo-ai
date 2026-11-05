@@ -856,7 +856,7 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     to_run = [s.test for s in p.selected if s.test not in p.duplicates]
     if p.duplicates:
         rec["not_run"] = [{"test": t, "reason": why} for t, why in sorted(p.duplicates.items())]
-    # the shape chosen before for this suite in this environment: kept unless clearly beaten (C16); not
+    # a full suite chosen before for these test files here is kept unless the selection is clearly faster (C16); not
     # identified (no test file read) when something forces the shape anyway
     timed = runner.per_file and to_run and full_argv and not (p.full_suite_required or full or timings.full_unusable)
     suite = cache.suite_key(root, to_run, p.universe_files, workers) if timed else ""

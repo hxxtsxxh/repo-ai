@@ -252,14 +252,21 @@ in disposable copies, with the same integrity checks.
   - a calibration ratio learned from earlier passing selections;
   - the full suite's measured time (`--record` times it once).
 - **Without measurements**, the selection runs, and the reason says so.
-- **A steady choice:** when nothing forces a shape, the shape chosen before
-  for the same suite (the same selection, test files by content and worker
-  count) in the same environment is kept unless the other shape wins by a
-  clear margin: 0.25 s or 20% of the kept shape's estimate, whichever is
-  larger. Close estimates measured a few tenths of a second apart no longer
-  flip the shape from one call to the next. A required full suite, `--full`,
-  a full suite whose result cannot be attributed, or a command that cannot
-  be split or run whole still decide on their own.
+- **A steady choice, only ever toward the full suite:** the two shapes are
+  not equally informative (the full suite also reports failing test files
+  outside the selection, and can say the full suite passed), so steadiness
+  never trades the full suite's evidence away. When nothing forces a shape,
+  a full suite chosen before for the same test files (the same selection,
+  test files by content and worker count) in the same environment is kept
+  unless the selection is faster by more than 0.25 s plus 0.25 s or 20% of
+  the full suite's estimate, whichever is larger. A selection chosen before
+  never holds the full suite back, and a selection run only because nothing
+  was measured yet is not remembered. Close estimates a few tenths of a
+  second apart therefore stop flipping the shape once the full suite has
+  been chosen; the cost is time only (a kept full suite can be up to that
+  much slower). A required full suite, `--full`, a full suite whose result
+  cannot be attributed, or a command that cannot be split or run whole still
+  decide on their own.
 - The chosen shape and the reason are printed and stored (`strategy`, with
   `basis`: `forced`, `no-estimates`, `compared`, `kept` or `switched`).
 

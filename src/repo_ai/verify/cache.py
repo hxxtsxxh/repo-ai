@@ -27,8 +27,8 @@ new or pre-existing, so the two directions are not equally safe:
 make a run slower, never make a result wrong. They also keep, per
 environment, the shape last chosen for a suite (`suite_key`: the selection,
 every test file by content, the worker count), so close estimates do not
-flip it from one call to the next; it is consulted only where time alone
-decides, so a stale one also costs time only.
+flip it from one call to the next. A remembered shape only ever keeps the
+full suite (see `strategy`), so a stale one also costs time only.
 """
 
 from __future__ import annotations
@@ -51,7 +51,9 @@ TIMINGS_FILE = "verify-timings.json"
 MAX_BASELINE_ENTRIES = 20_000
 MAX_TIMING_ENVS = 8
 MAX_STRATEGY_CHOICES = 64     # per environment
-MAX_SUITE_FILES = 5_000       # past this many test files a suite is not identified (no remembered shape)
+# past this many test files a suite is not identified (no remembered shape): hashing every test file costs
+# ~0.2 s at 5,000 files on each run where the estimates decide
+MAX_SUITE_FILES = 2_000
 _LOCK_MARKERS = (".package-lock.json", ".modules.yaml", ".yarn-state.yml", ".yarn-integrity")
 
 
@@ -339,6 +341,11 @@ class BaselineCache:
         _save(self.path, {"version": 1, "entries": entries})
 
 
+def _count(v: Any) -> int:
+    """A stored counter, or 0 when it is not a non-negative integer (a cache file edited or damaged by hand)."""
+    return v if isinstance(v, int) and not isinstance(v, bool) and v >= 0 else 0
+
+
 class Timings:
     """Measured wall times per environment: the full suite as one process,
     each test file run alone, and the fixed cost of one sandboxed process."""
@@ -412,25 +419,29 @@ class Timings:
         peaks[test] = round(max(seconds, prev), 3)
         self.dirty = True
 
+    def _choices(self) -> dict[str, Any]:
+        v = self.env.get("choices")
+        return v if isinstance(v, dict) else {}
+
     def choice(self, suite: str) -> str | None:
-        """The shape chosen before for this suite in this environment."""
-        e = (self.env.get("choices") or {}).get(suite) if suite else None
+        """The shape chosen before for these test files in this environment
+        (a malformed entry counts as none)."""
+        e = self._choices().get(suite) if suite else None
         k = e.get("k") if isinstance(e, dict) else None
         return k if k in {"targeted", "full"} else None
 
     def note_choice(self, suite: str, kind: str) -> None:
         if not suite or kind not in {"targeted", "full"}:
             return
-        choices = self.env.get("choices")
-        if not isinstance(choices, dict):
-            choices = self.env["choices"] = {}
-        seq = int(self.env.get("choice_seq") or 0) + 1
+        choices = self._choices()
+        self.env["choices"] = choices
+        seq = _count(self.env.get("choice_seq")) + 1
         self.env["choice_seq"] = seq
         choices[suite] = {"k": kind, "n": seq}
         if len(choices) > MAX_STRATEGY_CHOICES:  # the least recently chosen go first
             def order(k: str) -> int:
                 e = choices[k]
-                return int(e.get("n") or 0) if isinstance(e, dict) else 0
+                return _count(e.get("n")) if isinstance(e, dict) else 0
             for k in sorted(choices, key=order)[:len(choices) - MAX_STRATEGY_CHOICES]:
                 choices.pop(k, None)
         self.dirty = True
