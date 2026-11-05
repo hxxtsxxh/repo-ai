@@ -32,6 +32,13 @@ def test_added_lines_tracks_new_side_numbers_and_ignores_deletions():
     assert exercise.added_lines('') == {}
 
 
+def test_added_lines_numbers_lines_by_lf_only_as_git_does():
+    """splitlines() would also split on CR, U+2028, form feed, ...: line numbers after them would shift."""
+    diff = ('diff --git a/m.js b/m.js\n--- a/m.js\n+++ b/m.js\n@@ -1,2 +1,4 @@\n'
+            ' const a = "x\u2028y\x0cz\x85w\x1c";\r\n+const b = 1;\r\n+const c = "\rq";\n const d = 3;\n+const e = 4;\n')
+    assert exercise.added_lines(diff) == {'m.js': {2, 3, 5}}
+
+
 def test_added_lines_new_file_and_dev_null():
     diff = 'diff --git a/n.py b/n.py\n--- /dev/null\n+++ b/n.py\n@@ -0,0 +1,2 @@\n+x = 1\n+y = 2\n'
     assert exercise.added_lines(diff) == {'n.py': {1, 2}}
@@ -316,7 +323,7 @@ def test_direct_lines_fill_the_cap_before_fixture_credit(monkeypatch):
     trace = {'per_test_complete': True, 'per_test': {'t::direct': {'m.py': [2]}},
              'fixture_lines': {'conftest::app::session#1': {'m.py': [3]}},
              'fixture_uses': {f't::user{i}': ['conftest::app::session#1'] for i in range(5)}}
-    out, complete = exercise._per_test(trace, {'m.py': {2, 3}})
+    out, complete, _ = exercise._per_test(trace, {'m.py': {2, 3}})
     assert out['t::direct'] == ['m.py:2'] and len(out) == 2 and complete is False
 
 
@@ -399,11 +406,128 @@ def test_node_test_files_past_the_cap_or_the_time_left_are_not_measured(tmp_path
     monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 2)
     rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
     assert rec['per_test_complete'] is False and len(rec['per_test_measured']) == 2, rec
-    assert rec['per_test_reason'].startswith('only the first 2 of 3 test files')
+    assert rec['per_test_reason'].startswith('only 2 of 3 test files were run')
     monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 200)
     real = exercise._per_file_node_run
-    monkeypatch.setattr(exercise, '_per_file_node_run', lambda *a: real(*a[:-1], 0.0))
+    monkeypatch.setattr(exercise, '_per_file_node_run', lambda *a: real(*a[:6], 0.0, *a[7:]))  # no time left
     rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
     assert rec['assurance'] == 'FULL' and rec['per_test'] == {} and rec['per_test_measured'] == [], rec
     assert set(rec['per_test_unavailable'].values()) == {'no time was left for its run'}
     assert rec['per_test_complete'] is False
+
+
+def test_more_than_forty_changed_lines_are_all_kept_and_a_cut_record_is_incomplete(monkeypatch):
+    """Review of #146: the stored record was cut to 40 lines (sorted as text), so lines past it read as run only by
+    other tests, while the record still said complete."""
+    many = {'a.py': list(range(1, 51)), 'b.py': [1, 2]}
+    eligible = {'a.py': set(range(1, 51)), 'b.py': {1, 2}}
+    out, complete, cut = exercise._per_test({'per_test_complete': True, 'per_test': {'t::x': many}}, eligible)
+    assert len(out['t::x']) == 52 and out['t::x'][-2:] == ['b.py:1', 'b.py:2'] and complete is True and cut == {}
+    assert out['t::x'][:3] == ['a.py:1', 'a.py:2', 'a.py:3'] and out['t::x'][9] == 'a.py:10', 'by number, not as text'
+    monkeypatch.setattr(exercise, 'MAX_STORED_LINES', 30)
+    out, complete, cut = exercise._per_test({'per_test_complete': True, 'per_test': {'t::x': many}}, eligible)
+    assert len(out['t::x']) == 30 and complete is False and cut == {'t::x': 52}
+
+
+def _many_lines_repo(tmp_path):
+    root = tmp_path / 'many'
+    root.mkdir()
+    (root / 'a.js').write_text(''.join(f'exports.a{i} = {i};\n' for i in range(50)))
+    (root / 'b.js').write_text('exports.b = (x) => {\n  const y = x * 2;\n  return y;\n};\n')
+    (root / 'package.json').write_text('{"name": "p", "version": "1.0.0"}\n')
+    (root / 'x.test.js').write_text("const t = require('node:test');\nconst assert = require('node:assert');\n"
+                                    "require('./a.js');\nconst { b } = require('./b.js');\n"
+                                    "t('b doubles', () => assert.equal(b(2), 4));\n")
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+    diff = ('diff --git a/a.js b/a.js\n' + _diff('a.js', 'exports.a0 = 0;\n', (root / 'a.js').read_text())
+            + 'diff --git a/b.js b/b.js\n' + _diff('b.js', 'exports.b = (x) => x;\n', (root / 'b.js').read_text()))
+    return root, diff
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_per_file_record_keeps_more_than_forty_lines_and_flags_a_cut(tmp_path, monkeypatch):
+    root, diff = _many_lines_repo(tmp_path)
+    rec = exercise.measure(root, 'node --test', diff, per_test=True)
+    lines = rec['per_test']['x.test.js']
+    assert rec['changed_lines'] == 52 and len(lines) == 52 and lines[-3:] == ['b.js:1', 'b.js:2', 'b.js:3'], rec
+    assert rec['per_test_complete'] is True and 'per_test_truncated' not in rec
+    monkeypatch.setattr(exercise, 'MAX_STORED_LINES', 10)
+    rec = exercise.measure(root, 'node --test', diff, per_test=True)
+    assert rec['per_test_complete'] is False and rec['per_test_truncated'] == {'x.test.js': 52}, rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_one_file_failing_to_run_leaves_the_others_measured(tmp_path, monkeypatch):
+    """Review of #146: an exception in one file's run (here from file_argv) dropped every file's record."""
+    root = _node_repo(tmp_path)
+    from repo_ai.verify.runner import RunnerError, TestRunner
+    real = TestRunner.file_argv
+
+    def argv(self, test):
+        if test == 'neg.test.js':
+            raise RunnerError('refused')
+        return real(self, test)
+    monkeypatch.setattr(TestRunner, 'file_argv', argv)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert rec['per_test_unavailable'] == {'neg.test.js': 'its run could not be measured: RunnerError'}, rec
+    assert set(rec['per_test']) == {'pick.test.js'} and rec['per_test_complete'] is False
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_declared_files_run_first_and_a_failing_file_still_counts(tmp_path, monkeypatch):
+    failing = JS_HEAD + "const { pick } = require('./pick.js');\nt('fails', () => assert.equal(pick(-3), 0));\n"
+    root = _node_repo(tmp_path, {'zfail.test.js': failing})
+    monkeypatch.setattr(exercise, 'MAX_NODE_TEST_FILES', 2)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True,
+                           declared_files=['zfail.test.js', 'pick.test.js'])
+    assert rec['per_test_measured'] == ['pick.test.js', 'zfail.test.js'], rec
+    # exit 1 (a failing test) still writes valid coverage
+    assert rec['per_test']['zfail.test.js'] == ['pick.js:1', 'pick.js:2', 'pick.js:3'], rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_assurance_counts_utf16_units_so_emoji_cannot_hide_an_unrun_branch(tmp_path):
+    """Review of #146 (pre-existing): offsets read as code points shifted the count-0 block of line 3 off it, so the
+    measurement said FULL."""
+    before = 'exports.a = (x) => 1;\n'
+    for name, lead in (('emoji', '\U0001F600' * 12), ('plain', 'x')):
+        after = f'const s = "{lead}";\nexports.a = (x) => {{\n  if (x) n();\n                    return 1;\n}};\n'
+        root = tmp_path / name
+        root.mkdir()
+        (root / 'm.js').write_text(after, encoding='utf-8')
+        (root / 'm.test.js').write_text(JS_HEAD + "const { a } = require('./m.js');\nt('a', () => assert.equal(a(0), 1));\n")
+        _git(root, 'init', '-q')
+        _git(root, 'add', '.')
+        _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+        rec = exercise.measure(root, 'node --test', _diff('m.js', before, after))
+        assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['m.js:3'], (name, rec)
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_each_file_gets_a_capped_share_of_the_time_left(tmp_path, monkeypatch):
+    root = _node_repo(tmp_path)
+    seen = []
+
+    def fake(ex, runner, test, texts, eligible, timeout_s, deadline):
+        seen.append((test, timeout_s))
+        from repo_ai.mission.v8lines import Unavailable
+        raise Unavailable('stub')
+    monkeypatch.setattr(exercise, '_node_file_lines', fake)
+    real = exercise._per_file_node_run
+    monkeypatch.setattr(exercise, '_per_file_node_run', lambda *a: real(*a[:6], 300.0, *a[7:]))
+    exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True,
+                     declared_files=['pick.test.js'])
+    assert seen[0][0] == 'pick.test.js', 'declared files first'
+    assert exercise.NODE_FILE_MIN_TIMEOUT <= seen[0][1] <= 2 * 300.0 / 3 + 1, seen
+
+
+def test_pytest_per_test_record_keeps_more_than_forty_lines(tmp_path):
+    before = 'def pick(x):\n    return x\n'
+    after = 'def pick(x):\n' + ''.join(f'    v{i} = x + {i}\n' for i in range(45)) + '    return x\n'
+    root = _repo(tmp_path, after, PY_TEST)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', before, after), per_test=True)
+    lines = rec['per_test']['test_m.py::test_pick']
+    assert len(lines) == rec['changed_lines'] == 45 and lines[-1] == 'm.py:46', rec
+    assert rec['per_test_complete'] is True and 'per_test_truncated' not in rec

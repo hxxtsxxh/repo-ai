@@ -356,3 +356,18 @@ def test_node_without_a_per_file_record_says_why():
     ex['per_test_reason'] = 'no changed JavaScript file'
     out = cov.assess(d, N_BASE, N_CAND, verdict='PASS', freshness='fresh', exercise=ex)
     assert out['changed_lines_by_requirement']['reason'] == 'not measured: no changed JavaScript file'
+
+
+def test_lines_only_undeclared_tests_ran_carry_a_caveat_when_the_record_is_incomplete():
+    """Review of #146: a cut or unavailable declared record can make a line look run only by other tests."""
+    d = decl(req('negative input is negated', ['neg.test.js::negative']))
+    ex = {**NODE_EXERCISE, 'per_test_complete': False, 'per_test_truncated': {'neg.test.js': 2500},
+          'per_test': {**NODE_EXERCISE['per_test'], 'side.test.js': ['pick.js:10', 'pick.js:9']}}
+    out = cov.assess(d, N_BASE, N_CAND, verdict='PASS', freshness='fresh', exercise=ex)
+    by = out['changed_lines_by_requirement']
+    assert by['run_by_tests_of_no_requirement'] == ['pick.js:5', 'pick.js:9', 'pick.js:10'], 'by number'
+    assert 'may have run some of them too' in cov.render(out)
+    pytest_ex = {**C11_EXERCISE, 'per_test_complete': False}
+    text = cov.render(cov.assess(decl(req('x', ['m_test.py::test_pick'])), {T_PICK: 'fail', T_NEG: 'fail'},
+                                 {T_PICK: 'pass', T_NEG: 'pass'}, verdict='PASS', freshness='fresh', exercise=pytest_ex))
+    assert 'a declared test may have run some of them too' in text

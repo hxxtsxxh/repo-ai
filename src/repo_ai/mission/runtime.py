@@ -986,14 +986,20 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                 if scoped:
                     state['standing'] = (state.get('scoped') or {}).get('standing', verdict) if verdict == 'PASS' else verdict
                 if verdict == 'PASS':
+                    from .coverage import declared_test_files
                     from .exercise import measure as measure_exercise
                     try:
+                        # node: the test files of declared tests are measured first in the per-file record
+                        frozen = (planned or {}).get('requirements') or {}
+                        declared = declared_test_files(frozen.get('requirements') if isinstance(frozen, dict) else None,
+                                                       set(state['candidate'].get('outcomes') or {}))
                         # per-test changed lines only for a mission with a frozen requirements declaration (it
                         # slows the extra run, and only `coverage` reads it)
                         state['exercise'] = measure_exercise(candidate, contract.acceptance[0], state['diff'], timeout_s=remaining(),
                                                              project_root=root, sandbox_preference=contract.sandbox,
                                                              image=contract.image,
-                                                             per_test=bool((planned or {}).get('requirements')))
+                                                             per_test=bool((planned or {}).get('requirements')),
+                                                             declared_files=declared)
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}

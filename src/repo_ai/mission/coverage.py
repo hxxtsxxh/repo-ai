@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 from .contracts import digest
+from .exercise import line_key
 
 SCHEMA = 'repo-ai.coverage/1'
 REQ_SCHEMA = 'repo-ai.requirements/1'
@@ -133,6 +134,18 @@ def _resolve(test: str, known: set[str]) -> tuple[str | None, str | None]:
     if len(hits) == 1:
         return hits[0], None
     return None, ('ambiguous: matches ' + ', '.join(hits[:3])) if hits else 'not collected in the recorded runs'
+
+
+def declared_test_files(requirements: Any, known: set[str]) -> list[str]:
+    """The test files (the part before `::` of a recorded identity) holding the tests a declaration names, as far as
+    they resolve against `known`: used only to run those node test files first."""
+    out: list[str] = []
+    for req in requirements if isinstance(requirements, list) else []:
+        for test in (req.get('tests') or []) if isinstance(req, dict) else []:
+            resolved = _resolve(test, known)[0] if isinstance(test, str) else None
+            if resolved and resolved.partition('::')[0] not in out:
+                out.append(resolved.partition('::')[0])
+    return out
 
 
 def _row(req: dict[str, Any], known: set[str], baseline: dict[str, str], candidate: dict[str, str]) -> dict[str, Any]:
@@ -234,12 +247,12 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
             r['changed_lines_test_files'] = files
         else:
             keys = [o['test'].partition('::')[2] for o in r['observed']]
-        ran = sorted({line for k in keys for line in (per_test.get(k) or []) if isinstance(line, str)})
+        ran = sorted({line for k in keys for line in (per_test.get(k) or []) if isinstance(line, str)}, key=line_key)
         claimed.update(ran)
         r['changed_lines_run'] = ran[:20]
         r['changed_lines_run_count'] = len(ran)
     every = {line for lines in per_test.values() if isinstance(lines, list) for line in lines if isinstance(line, str)}
-    unclaimed = sorted(every - claimed)
+    unclaimed = sorted(every - claimed, key=line_key)
     out: dict[str, Any] = {'measured': True, 'granularity': 'file' if per_file else 'test', 'complete': complete,
                            'changed_lines': total, 'run_by_tests_of_no_requirement': unclaimed[:20],
                            'run_by_tests_of_no_requirement_count': len(unclaimed),
@@ -408,26 +421,31 @@ def render(report: dict[str, Any]) -> str:
         if by_req.get('run_by_tests_of_no_requirement_count'):
             lines.append(f"Changed lines run only by test files that hold no declared test "
                          f"({by_req['run_by_tests_of_no_requirement_count']}): "
-                         + ', '.join(by_req['run_by_tests_of_no_requirement'][:8]))
+                         + ', '.join(by_req['run_by_tests_of_no_requirement'][:8])
+                         + ('' if by_req.get('complete') else ' (the record is incomplete: a declared test file whose '
+                            'coverage is unavailable or cut may have run some of them too)'))
         if by_req.get('unavailable_test_files_count'):
             lines.append(f"Changed lines unavailable for {by_req['unavailable_test_files_count']} test file(s): "
                          + '; '.join(f'{f} ({why})' for f, why in list(by_req['unavailable_test_files'].items())[:8]))
         if not by_req.get('complete'):
             lines.append('Changed lines by requirement (Node, per test file): the record is incomplete (coverage '
-                         'unavailable or not run for some test files); a requirement shown with 0 lines may have run '
-                         'some')
+                         'unavailable or not run for some test files, or a file ran more changed lines than are '
+                         'kept); a requirement shown with 0 lines may have run some')
         lines.append('Changed lines by requirement (Node, per test file): ' + str(by_req.get('note', '')))
     elif by_req.get('measured'):
         if by_req.get('run_by_tests_of_no_requirement_count'):
             lines.append(f"Changed lines run only while tests no requirement names ran "
                          f"({by_req['run_by_tests_of_no_requirement_count']}): "
-                         + ', '.join(by_req['run_by_tests_of_no_requirement'][:8]))
+                         + ', '.join(by_req['run_by_tests_of_no_requirement'][:8])
+                         + ('' if by_req.get('complete') else ' (the record is incomplete: a declared test may have '
+                            'run some of them too)'))
         if by_req.get('run_outside_any_test'):
             lines.append('Changed lines run outside any test (import, collection): '
                          + ', '.join(by_req['run_outside_any_test'][:8]))
         if not by_req.get('complete'):
             lines.append('Changed lines by requirement: the per-test record is incomplete (a child process, an early '
-                         'stop or too many tests); a requirement shown with 0 lines may have run some')
+                         'stop, too many tests, or a test ran more changed lines than are kept); a requirement shown '
+                         'with 0 lines may have run some')
         lines.append('Changed lines by requirement: ' + str(by_req.get('note', '')))
     elif by_req:
         lines.append('Changed lines by requirement: ' + str(by_req.get('reason', 'not measured')))

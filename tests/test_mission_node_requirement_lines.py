@@ -56,7 +56,8 @@ def test_node_mission_coverage_shows_changed_lines_per_test_file(project, tmp_pa
     ex = status(project, result['id'])['exercise']
     assert ex['assurance'] == 'FULL' and ex['per_test_granularity'] == 'file', ex
     assert ex['per_test_complete'] is True and ex['per_test_unavailable'] == {}, ex
-    assert sorted(ex['per_test_measured']) == ['test/neg.test.js', 'test/plain.test.js', 'test/pos.test.js']
+    # the files holding declared tests run first (resolved from the frozen declaration), then the rest
+    assert ex['per_test_measured'] == ['test/neg.test.js', 'test/pos.test.js', 'test/plain.test.js'], ex
     assert ex['per_test'] == {'test/neg.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:3', 'pick.js:5'],
                               'test/pos.test.js': ['pick.js:1', 'pick.js:2', 'pick.js:5']}, ex
 

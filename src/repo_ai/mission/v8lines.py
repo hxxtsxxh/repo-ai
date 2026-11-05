@@ -13,22 +13,31 @@ equal the file's length in UTF-16 units, or that length minus one for a file tha
 loader dropped; any other length (a wrapper, a transpiled or altered source) makes the coverage unavailable.
 
 Ranges. Within a script, ranges are properly nested or disjoint, and an inner range's count replaces the outer
-one's (a block that never ran inside a function that did). They are applied outermost first, so the innermost wins.
-A character ran if its innermost range has a count above zero in any report the test file's processes wrote.
+one's (a block that never ran inside a function that did). One sweep over the ranges sorted outermost first keeps a
+stack of the open ones, so the innermost wins; the runs that ran are merged over every entry (each process that
+loaded the file writes one) and painted once. A character ran if its innermost range has a count above zero in any
+entry. Work is bounded: identical entries and ranges count once, a file with more than 64 distinct entries or more
+ranges than four per UTF-16 unit of its text is refused, each parsed coverage file is reduced at once to the
+watched scripts, and an optional deadline is checked between files and entries.
 
 Lines are split on LF only (git's numbering); CR stays at the end of its line. A line is EXECUTABLE when, outside
 comments, it has a letter, digit or underscore: blank lines, comment-only lines and punctuation-only lines (``}``,
-``});``) are not. Comments are found by a small scanner that knows strings, template literals and, heuristically,
-regular-expression literals; a misread regular expression can hide or expose a line. A line RAN when any of its
+``});``) are not. The change-exercise assurance uses the same definition. Comments are found by a small scanner that
+knows strings, template literals and, heuristically, regular-expression literals (a ``/`` after ``)``, ``]``, an
+identifier, a number, ``++`` or ``--`` is a division; a regular expression must close on its line); a ``/*`` with no
+closing ``*/`` is not taken as a comment, so a misread cannot hide the rest of the file, but it can still hide or
+expose a line. A line RAN when any of its
 non-blank code characters lies in a range that ran: a line that only opens a block that never ran (``} else {``)
 counts as run, as does a ``const f = () =>`` line whose function was never called.
 """
 from __future__ import annotations
 
+import itertools
 import json
 import os
 import re
 import stat
+import time
 from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -36,18 +45,26 @@ from urllib.parse import unquote, urlparse
 from ..verify import isolate
 
 MAX_FILES = 256                     # coverage files one test file's processes may write
-MAX_FILE_BYTES = 64 * 1024 * 1024   # one coverage file
-MAX_TOTAL_BYTES = 128 * 1024 * 1024  # all of one test file's coverage files together
+MAX_FILE_BYTES = 16 * 1024 * 1024   # one coverage file
+MAX_TOTAL_BYTES = 32 * 1024 * 1024  # all of one run's coverage files together
+MAX_ENTRIES = 64                    # distinct script entries for one watched file (normally one per process)
+RANGES_PER_UNIT = 4                 # more ranges than this per UTF-16 unit of the file's text is not V8 output
 _WORD = re.compile(r"\w")
 _REGEX_AFTER = set("(,=:[!&|?{};+-*%<>~^")
 _REGEX_KEYWORDS = {"return", "typeof", "case", "do", "else", "in", "of", "new", "delete", "void", "throw",
                    "instanceof", "yield", "await"}
 
 Range = tuple[int, int, int]
+Entry = tuple[Range, ...]
 
 
-class Unavailable(Exception):
-    """The coverage of one test file cannot be used; the message says why."""
+class Unavailable(ValueError):
+    """The coverage cannot be used; the message says why."""
+
+
+def _check(deadline: float | None) -> None:
+    if deadline is not None and time.monotonic() > deadline:
+        raise Unavailable("no time was left to read its coverage")
 
 
 def _dir_identity(ws: Path, rel_dir: str) -> tuple[int, int]:
@@ -78,13 +95,18 @@ def prepare(ws: Path, rel_dir: str) -> tuple[int, int]:
     return ident
 
 
-def read_reports(ws: Path, rel_dir: str, identity: tuple[int, int]) -> list[list[Any]]:
-    """The ``result`` list of every coverage file in `ws/rel_dir`, the directory `prepare` created."""
+def read_scripts(ws: Path, rel_dir: str, identity: tuple[int, int], inside_root: str, wanted: set[str],
+                 deadline: float | None = None, *, lenient: bool = False) -> dict[str, list[Entry]]:
+    """{repo-relative path: its distinct script entries} for the `wanted` files, from every coverage file in
+    `ws/rel_dir` (the directory `prepare` created). Each file is parsed, reduced to the wanted scripts and dropped
+    before the next is read. `lenient` (the assurance, where less coverage can only mean more lines reported as never
+    run): a malformed coverage file or entry is skipped instead of making everything unavailable; the directory,
+    link, size, count and time checks still apply."""
     if _dir_identity(ws, rel_dir) != identity:
         raise Unavailable("the coverage directory was replaced during the run")
     try:
         with os.scandir(ws / rel_dir) as it:
-            entries = list(it)
+            entries = list(itertools.islice(it, MAX_FILES + 1))
     except OSError:
         raise Unavailable("the coverage directory could not be listed") from None
     if len(entries) > MAX_FILES:
@@ -98,9 +120,10 @@ def read_reports(ws: Path, rel_dir: str, identity: tuple[int, int]) -> list[list
         names.append(entry.name)
     if not names:
         raise Unavailable("no coverage was written")
-    out: list[list[Any]] = []
+    out: dict[str, dict[Entry, None]] = {}
     total = 0
     for name in sorted(names):
+        _check(deadline)
         try:
             raw = isolate.read_inside(ws, f"{rel_dir}/{name}", MAX_FILE_BYTES)
         except isolate.ReportTooLarge:
@@ -113,23 +136,34 @@ def read_reports(ws: Path, rel_dir: str, identity: tuple[int, int]) -> list[list
         try:
             data = json.loads(raw.decode("utf-8"))
         except (UnicodeDecodeError, ValueError, RecursionError):
+            if lenient:
+                continue
             raise Unavailable("a coverage file is not valid JSON") from None
+        del raw
         if not isinstance(data, dict) or not isinstance(data.get("result"), list):
+            if lenient:
+                continue
             raise Unavailable("a coverage file has no result list")
-        out.append(data["result"])
-    return out
+        found = scripts_for([data["result"]], inside_root, wanted, lenient=lenient)
+        del data
+        for rel, items in found.items():
+            seen = out.setdefault(rel, {})
+            seen.update(dict.fromkeys(items))
+            if len(seen) > MAX_ENTRIES:
+                raise Unavailable(f"the coverage of {rel} has more than {MAX_ENTRIES} distinct script entries")
+    return {rel: list(seen) for rel, seen in out.items()}
 
 
 def _int(value: Any) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
 
-def _ranges(functions: Any, rel: str) -> list[Range]:
-    """Every range of one script entry, in V8's order, validated."""
+def _ranges(functions: Any, rel: str) -> Entry:
+    """Every distinct range of one script entry, in V8's order, validated."""
     bad = Unavailable(f"the coverage of {rel} is malformed")
     if not isinstance(functions, list):
         raise bad
-    out: list[Range] = []
+    out: dict[Range, None] = {}
     for fn in functions:
         ranges = fn.get("ranges") if isinstance(fn, dict) else None
         if not isinstance(ranges, list):
@@ -140,29 +174,40 @@ def _ranges(functions: Any, rel: str) -> list[Range]:
             start, end, count = _int(r.get("startOffset")), _int(r.get("endOffset")), _int(r.get("count"))
             if start is None or end is None or count is None or start > end:
                 raise bad
-            out.append((start, end, count))
+            out[(start, end, count)] = None
     if not out:
         raise bad
-    return out
+    return tuple(out)
 
 
-def scripts_for(reports: list[list[Any]], inside_root: str, wanted: set[str]) -> dict[str, list[list[Range]]]:
-    """{repo-relative path: the ranges of each script entry for it} for the `wanted` files only. An entry for a
-    wanted file that is malformed makes the whole coverage unavailable; other scripts are not looked at."""
+def scripts_for(reports: list[list[Any]], inside_root: str, wanted: set[str], *,
+                lenient: bool = False) -> dict[str, list[Entry]]:
+    """{repo-relative path: the distinct script entries for it} for the `wanted` files only. An entry for a wanted
+    file that is malformed makes the whole coverage unavailable; other scripts, and entries whose URL does not parse,
+    are not looked at."""
     prefix = inside_root.rstrip("/") + "/"
-    out: dict[str, list[list[Range]]] = {}
+    out: dict[str, dict[Entry, None]] = {}
     for result in reports:
         for script in result:
             url = script.get("url") if isinstance(script, dict) else None
             if not isinstance(url, str) or not url.startswith("file://"):
                 continue
-            path = unquote(urlparse(url).path)
+            try:
+                path = unquote(urlparse(url).path)
+            except ValueError:
+                continue
             if not path.startswith(prefix):
                 continue
             rel = path[len(prefix):]
             if rel in wanted:
-                out.setdefault(rel, []).append(_ranges(script.get("functions"), rel))
-    return out
+                try:
+                    entry = _ranges(script.get("functions"), rel)
+                except Unavailable:
+                    if lenient:
+                        continue
+                    raise
+                out.setdefault(rel, {})[entry] = None
+    return {rel: list(items) for rel, items in out.items()}
 
 
 def _regex_can_start(text: str, last: int) -> bool:
@@ -170,6 +215,8 @@ def _regex_can_start(text: str, last: int) -> bool:
     if last < 0:
         return True
     c = text[last]
+    if c in "+-" and last > 0 and text[last - 1] == c:
+        return False  # `x++ / 2`: a postfix increment or decrement is an operand
     if c in _REGEX_AFTER:
         return True
     if not (c.isalnum() or c in "_$"):
@@ -178,6 +225,24 @@ def _regex_can_start(text: str, last: int) -> bool:
     while start > 0 and (text[start - 1].isalnum() or text[start - 1] in "_$"):
         start -= 1
     return text[start:last + 1] in _REGEX_KEYWORDS
+
+
+def _regex_end(text: str, i: int) -> int:
+    """Index of the `/` closing the regular expression opened at `i`, or -1 when none closes it on its line."""
+    j, in_class, n = i + 1, False, len(text)
+    while j < n and text[j] != "\n":
+        ch = text[j]
+        if ch == "\\":
+            j += 2
+            continue
+        if ch == "[":
+            in_class = True
+        elif ch == "]":
+            in_class = False
+        elif ch == "/" and not in_class:
+            return j
+        j += 1
+    return -1
 
 
 def code_mask(text: str) -> bytearray:
@@ -209,10 +274,10 @@ def code_mask(text: str) -> bytearray:
             continue
         if text.startswith("/*", i):
             j = text.find("*/", i + 2)
-            j = n if j < 0 else j + 2
-            mask[i:j] = bytes(j - i)
-            i = j
-            continue
+            if j >= 0:  # an unclosed `/*` is a misread (it would be a syntax error): it hides nothing
+                mask[i:j + 2] = bytes(j + 2 - i)
+                i = j + 2
+                continue
         if c in "\"'":
             j = i + 1
             while j < n and text[j] != c and text[j] != "\n":
@@ -223,21 +288,10 @@ def code_mask(text: str) -> bytearray:
             in_template, i = True, i + 1
             continue
         if c == "/" and _regex_can_start(text, last):
-            j, in_class = i + 1, False
-            while j < n and text[j] != "\n":
-                ch = text[j]
-                if ch == "\\":
-                    j += 2
-                    continue
-                if ch == "[":
-                    in_class = True
-                elif ch == "]":
-                    in_class = False
-                elif ch == "/" and not in_class:
-                    break
-                j += 1
-            last, i = min(j, n - 1), j + 1
-            continue
+            j = _regex_end(text, i)
+            if j >= 0:
+                last, i = j, j + 1
+                continue
         if depths:
             if c == "{":
                 depths[-1] += 1
@@ -266,50 +320,124 @@ def _units(text: str) -> list[int] | None:
     return out
 
 
-def _paint(entry: list[Range], length: int, has_bom: bool, rel: str) -> int:
-    """One script entry as a bit set over UTF-16 units of the file (bit set: that unit ran)."""
-    end = max(e for _, e, _ in entry)
-    if end == length:
-        shift = 0
-    elif has_bom and end == length - 1:
-        shift = 1  # an ES module: V8 compiled the source without its byte-order mark
-    else:
-        raise Unavailable(f"the coverage of {rel} does not match its text (V8 saw {end} UTF-16 units, the file "
-                          f"has {length})")
-    mark = bytearray(length)
-    # outermost first (start ascending, end descending; V8's order breaks ties): an inner range overrides
+def _sweep(entry: Entry, shift: int) -> list[tuple[int, int]]:
+    """The [start, end) runs of one script entry whose innermost range ran, shifted into file units."""
+    out: list[tuple[int, int]] = []
+    stack: list[tuple[int, bool]] = []  # open ranges: (end, ran), innermost last
+    cursor = 0
+
+    def advance(to: int) -> None:
+        nonlocal cursor
+        while stack and stack[-1][0] <= to:
+            end, ran = stack.pop()
+            if end > cursor:
+                if ran:
+                    out.append((cursor + shift, end + shift))
+                cursor = end
+        if stack and to > cursor:
+            if stack[-1][1]:
+                out.append((cursor + shift, to + shift))
+            cursor = to
+        cursor = max(cursor, to)
+
+    # outermost first (start ascending, end descending; V8's order breaks ties, so a later twin wins)
     for start, stop, count in sorted(entry, key=lambda r: (r[0], -r[1])):
-        mark[start + shift:stop + shift] = (b"\x01" if count > 0 else b"\x00") * (stop - start)
-    return int.from_bytes(mark, "little")
+        advance(start)
+        stack.append((stop, count > 0))
+    advance(max(stop for _, stop, _ in entry))
+    return out
 
 
-def line_status(text: str, entries: list[list[Range]], rel: str = "the file") -> tuple[set[int], set[int]]:
-    """(executable lines, executable lines that ran) of one file from every script entry for it."""
+def _ran_units(text: str, entries: list[Entry], rel: str, deadline: float | None,
+               lenient: bool = False) -> tuple[bytes, list[int] | None]:
+    """(per UTF-16 unit of the file: 1 when it ran in any entry, the unit offset of each character or None)."""
     pos = _units(text)
     length = pos[-1] if pos is not None else len(text)
-    has_bom = text.startswith("﻿")
-    ran_bits = 0
+    if sum(len(e) for e in entries) > RANGES_PER_UNIT * length + 64:
+        raise Unavailable(f"the coverage of {rel} has more ranges than its text can hold")
+    has_bom = text.startswith("\ufeff")
+    runs: list[tuple[int, int]] = []
     for entry in entries:
-        ran_bits |= _paint(entry, length, has_bom, rel)
-    ran_units = ran_bits.to_bytes(length, "little") if length else b""
+        _check(deadline)
+        end = max(e for _, e, _ in entry)
+        if end == length:
+            shift = 0
+        elif has_bom and end == length - 1:
+            shift = 1  # an ES module: V8 compiled the source without its byte-order mark
+        elif lenient:
+            continue
+        else:
+            raise Unavailable(f"the coverage of {rel} does not match its text (V8 saw {end} UTF-16 units, the "
+                              f"file has {length})")
+        runs.extend(_sweep(entry, shift))
+    ran = bytearray(length)
+    cur_start, cur_end = -1, -1
+    for start, end in sorted(runs):  # merged first, so each unit is painted once
+        if start > cur_end:
+            if cur_end > cur_start:
+                ran[cur_start:cur_end] = b"\x01" * (cur_end - cur_start)
+            cur_start, cur_end = start, end
+        else:
+            cur_end = max(cur_end, end)
+    if cur_end > cur_start:
+        ran[cur_start:cur_end] = b"\x01" * (cur_end - cur_start)
+    return bytes(ran), pos
+
+
+def _scan(text: str, ran: bytes | None, pos: list[int] | None) -> tuple[set[int], set[int], set[int]]:
+    """(executable lines, those with a code character that ran, those with a code character that did not)."""
     mask = code_mask(text)
     executable: set[int] = set()
-    ran: set[int] = set()
-    line, word, hit = 1, False, False
+    hit_lines: set[int] = set()
+    miss_lines: set[int] = set()
+    line, word, hit, miss = 1, False, False, False
+
+    def close() -> None:
+        if word:
+            executable.add(line)
+            if hit:
+                hit_lines.add(line)
+            if miss:
+                miss_lines.add(line)
+
     for idx, ch in enumerate(text):
         if ch == "\n":
-            if word:
-                executable.add(line)
-                if hit:
-                    ran.add(line)
-            line, word, hit = line + 1, False, False
+            close()
+            line, word, hit, miss = line + 1, False, False, False
             continue
-        if not mask[idx] or ch.isspace():
+        if not mask[idx] or ch.isspace() or (idx == 0 and ch == "\ufeff"):
             continue
         word = word or bool(_WORD.match(ch))
-        hit = hit or bool(ran_units[pos[idx] if pos is not None else idx])
-    if word:
-        executable.add(line)
-        if hit:
-            ran.add(line)
-    return executable, ran
+        if ran is not None and ran[pos[idx] if pos is not None else idx]:
+            hit = True
+        else:
+            miss = True
+    close()
+    return executable, hit_lines, miss_lines
+
+
+def executable_lines(text: str) -> set[int]:
+    """The lines this module (and the change-exercise assurance) treats as executable."""
+    return _scan(text, None, None)[0]
+
+
+def line_status(text: str, entries: list[Entry], rel: str = "the file",
+                deadline: float | None = None) -> tuple[set[int], set[int]]:
+    """(executable lines, executable lines any code of which ran) of one file from every script entry for it."""
+    if not entries:
+        return executable_lines(text), set()
+    executable, hit, _ = _scan(text, *_ran_units(text, entries, rel, deadline))
+    return executable, hit
+
+
+def never_run(text: str, entries: list[Entry], rel: str = "the file",
+              deadline: float | None = None) -> tuple[set[int], set[int]]:
+    """(executable lines, executable lines with a code character that never ran in any entry): the assurance's
+    block-precise view, where a never-taken branch on an otherwise executed line (``while (c) n++;``) still counts.
+    A file no entry covers never ran at all. An entry whose length does not match the text is skipped (less coverage
+    only reports more lines as never run); too many ranges still make it unavailable."""
+    if not entries:
+        executable = executable_lines(text)
+        return executable, set(executable)
+    executable, _, miss = _scan(text, *_ran_units(text, entries, rel, deadline, lenient=True))
+    return executable, miss
