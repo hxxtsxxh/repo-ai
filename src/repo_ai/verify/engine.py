@@ -505,6 +505,7 @@ class _Ctx:
     deadline: float | None = None  # monotonic time by which every process of the run must have ended
     deadline_hit: bool = False     # a process was cut by it, or not started for lack of time
     show_fixed: bool = False       # run the base full suite (once per base) to name tests the change fixed
+    full_reached_all: bool = False  # a full-suite run's own report reached every selected file it was to run
 
     def count(self, phase: str, files: list[str] | None = None) -> None:
         with self.lock:
@@ -865,8 +866,6 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
                                measured_full=timings.full_s, measured_startup=timings.startup_s,
                                full_runnable=bool(full_argv), targeted_ratio=timings.targeted_ratio,
                                full_unusable=timings.full_unusable, previous=timings.choice(suite))
-    if strategy.steady(decision):
-        timings.note_choice(suite, decision.kind)
     rec["strategy"] = decision.to_json()
     log(f"  strategy: {decision.kind}: {decision.reason}")
     rows: list[dict[str, Any]] = []
@@ -901,6 +900,13 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     redundant = sum(n - 1 for n in ctx.file_runs.values() if n > 1)
     rec["processes"] = {"total": sum(ctx.processes.values()), **dict(sorted(ctx.processes.items())),
                         "test_file_runs_at_change": sum(ctx.file_runs.values()), "repeated_file_runs": redundant}
+    if strategy.steady(decision):
+        # after the run: a full suite is remembered only when its own report reached every selected file
+        # (one its collection skips, pytest's norecursedirs say, is not evidence it would cover them again)
+        if decision.kind == "full" and not ctx.full_reached_all:
+            timings.forget_choice(suite)
+        else:
+            timings.note_choice(suite, decision.kind)
     timings.save()
     cut = ctx.deadline_hit
     rec["verdict"] = evidence.verdict(rec["results"], rec["full_suite"], len(p.selected), p.full_suite_required,
@@ -981,12 +987,17 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
         if trusted and not ctx.timings.startup_s:
             _learn_from_batch(ctx, universe, res, att)
     selected = [s.test for s in p.selected]
+    to_run = [f for f in selected if f not in p.duplicates]
     rec["execution"] = "the full suite as one process, in a fresh copy"
     if status == "pass":
-        return [_row(ctx, f, NO_TESTS if trusted and att is not None and f in att.files and att.files[f].ran == 0
+        rows = [_row(ctx, f, NO_TESTS if trusted and att is not None and f in att.files and att.files[f].ran == 0
                      else "pass", res, argv, {}, "", shape="full", attributed=True,
                      duration=att.files[f].seconds if trusted and att is not None and f in att.files else 0.0)
                 for f in selected]
+        # without a trusted report nothing shows which selected files the suite ran
+        missed = unreached(att, to_run) if trusted and att is not None else (to_run if runner.per_file else [])
+        ctx.full_reached_all = trusted and not missed
+        return _run_unreached(ctx, rec, rows, missed, "" if trusted else "the full suite gave no per-test report")
     if trusted and att is not None:
         rec["full_suite"]["failing_files"] = att.failing_files()
         rows = []
@@ -997,7 +1008,9 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
                        duration=fo.seconds)
             row["selected"] = f in set(selected)
             rows.append(row)
-        return rows
+        missed = unreached(att, to_run)
+        ctx.full_reached_all = not missed
+        return _run_unreached(ctx, rec, rows, missed, "")
     if not (runner.per_file and selected):
         return []
     if res.timed_out and att is not None and not att.unmapped:
@@ -1024,6 +1037,67 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
     for chunk in run_parallel(lambda b: _run_batch(ctx, b), batches, ctx.workers):
         rows.extend(chunk)
     return rows
+
+
+def unreached(att: results.Attribution, files: list[str]) -> list[str]:
+    """Selected files a trusted full-suite report never reached: no test
+    outcome or failure in them, and the runner never said it collected
+    (pytest's modules, unittest's and pytest's collected ids) or finished
+    (node) them. The project's own command can leave out a file the
+    selection names (pytest's `norecursedirs`, a directory unittest
+    discovery does not enter): the suite's pass says nothing about it, and
+    its pre-filled empty outcome must not read as "defines no test"."""
+    out = []
+    for f in files:
+        fo = att.files.get(f)
+        if fo is not None and (fo.tests or fo.ran or fo.failing or fo.hung or fo.status != "pass"):
+            continue
+        if f in att.modules or f in att.collected or f in att.finished:
+            continue
+        out.append(f)
+    return out
+
+
+def _run_unreached(ctx: _Ctx, rec: dict[str, Any], rows: list[dict[str, Any]], files: list[str],
+                   why: str) -> list[dict[str, Any]]:
+    """Selected files the full suite did not reach (`unreached`), or could not
+    show it reached (`why`), run as the selection would run them: one more
+    process or a few, only when there are any; their rows replace the full
+    suite's. When that cannot be done (the runner cannot run single files,
+    or the time budget is spent), each is marked `not_reached` and the
+    verdict is never a pass."""
+    if not files:
+        return rows
+    by_file = {r["test"]: r for r in rows}
+    what = why or "the full suite's own collection did not include them"
+    left = ctx.deadline - time.monotonic() if ctx.deadline is not None else None
+    if not ctx.runner.per_file or (left is not None and left < 1.0):
+        cause = ("the runner cannot run single test files" if not ctx.runner.per_file else
+                 "the time budget ran out before they could run")
+        if left is not None and left < 1.0:
+            ctx.deadline_hit = True
+        for f in files:
+            if f in by_file:
+                by_file[f]["not_reached"] = f"not run by the full suite ({what}); {cause}"
+        rec["full_suite"]["not_reached"] = files[:50]
+        ctx.log(f"  {len(files)} selected file(s) not reached by the full suite, and {cause}")
+        return rows
+    ctx.log(f"  {len(files)} selected file(s) not reached by the full suite ({what}): running them on their own")
+    rec["full_suite"]["not_reached"] = files[:50]
+    rec["execution"] += f"; the {len(files)} selected file(s) the full suite did not reach were run on their own"
+    extra: list[dict[str, Any]] = []
+    for chunk in run_parallel(lambda b: _run_batch(ctx, b),
+                              strategy.make_batches(ctx.runner, files, ctx.durations, ctx.workers), ctx.workers):
+        extra.extend(chunk)
+    for r in extra:
+        r["selected"] = True
+        r["not_reached_by_full_suite"] = True
+        by_file[r["test"]] = r
+    got = {r["test"] for r in extra}
+    for f in files:
+        if f not in got and f in by_file:  # never expected: a file the extra run did not report on
+            by_file[f]["not_reached"] = f"not run by the full suite ({what}), and its own run gave no result"
+    return list(by_file.values())
 
 
 def _full_timed_out(ctx: _Ctx, rec: dict[str, Any], res, att: results.Attribution, argv: list[str], text: str,

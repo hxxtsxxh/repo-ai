@@ -354,7 +354,9 @@ class Timings:
         self.path = state_dir / TIMINGS_FILE
         self.env_key = env_key
         self._data = _load(self.path) or {"version": 1, "envs": {}}
-        envs = self._data.setdefault("envs", {})
+        if not isinstance(self._data.get("envs"), dict):  # a damaged file: start over, never fail the run
+            self._data["envs"] = {}
+        envs = self._data["envs"]
         self.env: dict[str, Any] = envs.get(env_key) if isinstance(envs.get(env_key), dict) else {}
         self.dirty = False
 
@@ -446,6 +448,13 @@ class Timings:
                 choices.pop(k, None)
         self.dirty = True
 
+    def forget_choice(self, suite: str) -> None:
+        choices = self._choices()
+        if suite and suite in choices:
+            choices.pop(suite)
+            self.env["choices"] = choices
+            self.dirty = True
+
     def peak_s(self, test: str) -> float | None:
         v = (self.env.get("peaks") or {}).get(test)
         return float(v) if isinstance(v, (int, float)) and v > 0 else None
@@ -462,6 +471,9 @@ class Timings:
         self.env["t"] = int(time.time())
         envs[self.env_key] = self.env
         if len(envs) > MAX_TIMING_ENVS:
-            for k in sorted(envs, key=lambda k: int((envs[k] or {}).get("t", 0)))[:len(envs) - MAX_TIMING_ENVS]:
+            def age(k: str) -> int:
+                e = envs[k]
+                return _count(e.get("t")) if isinstance(e, dict) else 0
+            for k in sorted(envs, key=age)[:len(envs) - MAX_TIMING_ENVS]:
                 envs.pop(k, None)
         _save(self.path, self._data)
