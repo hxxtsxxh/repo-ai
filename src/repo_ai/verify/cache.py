@@ -24,7 +24,11 @@ new or pre-existing, so the two directions are not equally safe:
   always re-run.
 
 **Timings** (`Timings`) feed the cost model (`strategy`). A wrong timing can
-make a run slower, never make a result wrong.
+make a run slower, never make a result wrong. They also keep, per
+environment, the shape last chosen for a suite (`suite_key`: the selection,
+every test file by content, the worker count), so close estimates do not
+flip it from one call to the next; it is consulted only where time alone
+decides, so a stale one also costs time only.
 """
 
 from __future__ import annotations
@@ -40,11 +44,14 @@ from typing import Any
 
 from .. import gitbin
 from .. import __version__
+from .changes import content_id
 
 BASELINE_FILE = "verify-baseline.json"
 TIMINGS_FILE = "verify-timings.json"
 MAX_BASELINE_ENTRIES = 20_000
 MAX_TIMING_ENVS = 8
+MAX_STRATEGY_CHOICES = 64     # per environment
+MAX_SUITE_FILES = 5_000       # past this many test files a suite is not identified (no remembered shape)
 _LOCK_MARKERS = (".package-lock.json", ".modules.yaml", ".yarn-state.yml", ".yarn-integrity")
 
 
@@ -143,6 +150,21 @@ def environment_key(executor, runner, links: dict[str, str] | None = None) -> st
             if os.path.exists(p):
                 parts.append(_stat_id(p))
     return hashlib.sha256("\0".join(parts).encode()).hexdigest()[:24]
+
+
+def suite_key(root: Path, selected: list[str], universe: list[str], workers: int) -> str:
+    """What a remembered run shape is for ("" when not identified): the
+    selection, the worker count and every test file by path and whole
+    content, so a test file added, removed or edited, another selection or
+    other parallelism is another suite. The environment (interpreter,
+    packages, sandbox, test command) is the `Timings` key around it."""
+    files = sorted(set(universe) | set(selected))
+    if len(files) > MAX_SUITE_FILES:
+        return ""
+    digest = hashlib.sha256(json.dumps([sorted(set(selected)), int(workers)]).encode())
+    for f in files:
+        digest.update(f"\0{f}\0{content_id(root, f)}".encode("utf-8", "surrogateescape"))
+    return digest.hexdigest()[:32]
 
 
 STATIC_ENV_VERSION = 1
@@ -388,6 +410,29 @@ class Timings:
         old = peaks.get(test)
         prev = 0.8 * float(old) if isinstance(old, (int, float)) and old > 0 else 0.0
         peaks[test] = round(max(seconds, prev), 3)
+        self.dirty = True
+
+    def choice(self, suite: str) -> str | None:
+        """The shape chosen before for this suite in this environment."""
+        e = (self.env.get("choices") or {}).get(suite) if suite else None
+        k = e.get("k") if isinstance(e, dict) else None
+        return k if k in {"targeted", "full"} else None
+
+    def note_choice(self, suite: str, kind: str) -> None:
+        if not suite or kind not in {"targeted", "full"}:
+            return
+        choices = self.env.get("choices")
+        if not isinstance(choices, dict):
+            choices = self.env["choices"] = {}
+        seq = int(self.env.get("choice_seq") or 0) + 1
+        self.env["choice_seq"] = seq
+        choices[suite] = {"k": kind, "n": seq}
+        if len(choices) > MAX_STRATEGY_CHOICES:  # the least recently chosen go first
+            def order(k: str) -> int:
+                e = choices[k]
+                return int(e.get("n") or 0) if isinstance(e, dict) else 0
+            for k in sorted(choices, key=order)[:len(choices) - MAX_STRATEGY_CHOICES]:
+                choices.pop(k, None)
         self.dirty = True
 
     def peak_s(self, test: str) -> float | None:

@@ -121,7 +121,7 @@ evidence: none yet for this repository
 
 `--json` returns the same as data, with a `summary` object for agents:
 - `verdict`, `new_failures` (file and tests), `pre_existing` (with `sandbox_network_suspected`), `unconfirmed`;
-- `passed`, `no_tests`, `strategy`, `seconds`, `processes`, `reused`;
+- `passed`, `no_tests`, `strategy` (with `strategy_basis`), `seconds`, `processes`, `reused`;
 - `source_tree_unchanged`.
 
 `repo-ai evidence` later tells you whether that result still covers the
@@ -252,7 +252,16 @@ in disposable copies, with the same integrity checks.
   - a calibration ratio learned from earlier passing selections;
   - the full suite's measured time (`--record` times it once).
 - **Without measurements**, the selection runs, and the reason says so.
-- The chosen shape and the reason are printed and stored (`strategy`).
+- **A steady choice:** when nothing forces a shape, the shape chosen before
+  for the same suite (the same selection, test files by content and worker
+  count) in the same environment is kept unless the other shape wins by a
+  clear margin: 0.25 s or 20% of the kept shape's estimate, whichever is
+  larger. Close estimates measured a few tenths of a second apart no longer
+  flip the shape from one call to the next. A required full suite, `--full`,
+  a full suite whose result cannot be attributed, or a command that cannot
+  be split or run whole still decide on their own.
+- The chosen shape and the reason are printed and stored (`strategy`, with
+  `basis`: `forced`, `no-estimates`, `compared`, `kept` or `switched`).
 
 **Failures are attributed, not re-run.** Each process reports every test's
 outcome as it happens, through a small reporter copied into the disposable
