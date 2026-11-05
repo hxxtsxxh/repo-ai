@@ -188,6 +188,8 @@ def summarize(rec: dict[str, Any]) -> dict[str, Any]:
         "no_tests": [r["test"] for r in rows if r["status"] == "no-tests"],
         "not_run": [x["test"] for x in rec.get("not_run") or []],
         "strategy": (rec.get("strategy") or {}).get("kind"),
+        # why: "forced", "no-estimates", "compared", "kept" (the suite's earlier shape) or "switched"
+        "strategy_basis": (rec.get("strategy") or {}).get("basis"),
         "seconds": (rec.get("timing") or {}).get("total_s"),
         "processes": (rec.get("processes") or {}).get("total"),
         "reused": bool(rec.get("reused")),
