@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -110,7 +111,9 @@ def test_agents_setup_prints_and_exports_the_note(tmp_path):
     cfg = tmp_path / "claude-provider"
     cfg.mkdir()
     (cfg / ".credentials.json").write_text("x")
-    env = {**os.environ, claude_auth.CONFIG_DIR_ENV: str(cfg), "USER": "someone"}
+    src = str(Path(claude_auth.__file__).resolve().parents[2])  # this checkout, whatever the cwd
+    env = {**os.environ, claude_auth.CONFIG_DIR_ENV: str(cfg), "USER": "someone",
+           "PYTHONPATH": os.pathsep.join(p for p in (src, os.environ.get("PYTHONPATH", "")) if p)}
     env.pop("CLAUDE_CODE_OAUTH_TOKEN", None)
     env.pop("ANTHROPIC_API_KEY", None)
     base = [sys.executable, "-m", "repo_ai.cli", "agents", "setup", "claude"]
