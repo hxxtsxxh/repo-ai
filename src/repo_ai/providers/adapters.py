@@ -1355,7 +1355,7 @@ def run_provider(
                 "identity_sha256": identity_before,
                 "cost_usd": 0.0,
                 "cost_status": "UNKNOWN",
-                "auth_mode": claude_plan.mode, "auth_env_vars": list(claude_plan.env_vars),
+                "auth_mode": claude_plan.mode, "auth_env_vars": list(claude_plan.env_vars), "auth_config_source": claude_auth.config_source(),
                 "events": {},
                 "reasons": blocked[1],
             }
@@ -1481,7 +1481,7 @@ def run_provider(
                 return {
                     "provider": provider, "stage": "BLOCKED", "simulated": False, "verification_label": "BLOCKED",
                     "returncode": -1, "capture_status": "isolation_probe_failed", "identity_sha256": identity_before,
-                    "cost_usd": 0.0, "cost_status": "UNKNOWN", "auth_mode": claude_plan.mode, "auth_env_vars": list(claude_plan.env_vars), "events": {},
+                    "cost_usd": 0.0, "cost_status": "UNKNOWN", "auth_mode": claude_plan.mode, "auth_env_vars": list(claude_plan.env_vars), "auth_config_source": claude_auth.config_source(), "events": {},
                     "reasons": unexpected,
                 }
         # events embed whole tool inputs/outputs (OpenCode: 68 KB for a 28-edit local run; Claude Code: one Read of a
@@ -1586,7 +1586,7 @@ def run_provider(
         "stage": stage,
         "simulated": simulated,
         "verification_label": "SIMULATED" if simulated else ("LIVE_READY" if not reasons else "LIVE_FAILED"),
-        **({"auth_mode": claude_plan.mode, "auth_env_vars": list(claude_plan.env_vars)} if claude_plan is not None else {}),
+        **({"auth_mode": claude_plan.mode, "auth_env_vars": list(claude_plan.env_vars), "auth_config_source": claude_auth.config_source()} if claude_plan is not None else {}),
         "executable": resolved.name,
         "identity_sha256": identity_before,
         "returncode": result.returncode,
