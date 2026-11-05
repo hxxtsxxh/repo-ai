@@ -3,9 +3,10 @@ or the project's own full suite as one process, whichever is expected to
 finish first. Both run in the same sandbox, in disposable copies, with the
 same checks; only the shape of the run differs.
 
-The full suite runs every selected test and more, so when it is not
-expected to be slower it is the better choice: more evidence for the same
-wait. It is also the only run when the plan requires the full suite anyway
+The full suite runs every test the project's own command collects (a
+selected file it leaves out runs on its own afterwards, `engine.unreached`),
+so when it is not expected to be slower it is the better choice: more
+evidence for the same wait. It is also the only run when the plan requires the full suite anyway
 (running the selection first would execute the same tests twice).
 
 **Cost model** (seconds of wall time, measured, never assumed):
@@ -24,6 +25,31 @@ wait. It is also the only run when the plan requires the full suite anyway
 
 Without durations (no `--record` yet, no earlier run) the selection runs
 as before, and the decision says so.
+
+**Steadiness** (C16: speed-v1 run 5 recorded the same suite choosing
+differently between calls on estimates a few tenths of a second apart).
+The two shapes are not equally informative: the full suite also reports
+failing test files outside the selection (which can make the verdict a
+regression) and can conclude `selected-and-full-suite-passed`; the
+selection can do neither. (A selected file the project's own command does
+not collect, pytest's `norecursedirs` say, is run on its own after the full
+suite, see `engine.unreached`, and a full suite that left one out is not
+remembered.) So steadiness only ever leans toward the full
+suite and never trades its evidence away:
+- a full suite chosen before for the same test files in the same
+  environment (`cache.suite_key`, kept in `Timings`) is kept unless the
+  selection is faster by more than `TIE_MARGIN_S + max(SWITCH_FLOOR_S,
+  SWITCH_FRACTION x` the full suite's estimate`)` (stored as `margin_s`);
+  without estimates it is kept as well;
+- a selection chosen before counts for nothing: the rule above picks the
+  full suite whenever it would without a remembered choice;
+- a selection run only because nothing was measured yet (`no-estimates`)
+  is not remembered.
+It is consulted only when nothing forces a shape (`basis` "forced": the
+change requires the full suite, `--full`, a command that cannot be split or
+run whole, a full suite whose result cannot be attributed, an empty
+selection); those are checked first and always win. The cost is time only:
+a kept full suite may be up to `margin_s` slower than the selection.
 """
 
 from __future__ import annotations
@@ -34,6 +60,15 @@ from typing import Any
 from .runner import TestRunner
 
 TIE_MARGIN_S = 0.25   # the full suite wins a near tie: same wait, more evidence
+# a full suite chosen before for the same test files is kept unless the selection is faster by more than
+# TIE_MARGIN_S + max(SWITCH_FLOOR_S, SWITCH_FRACTION x the full suite's estimate)
+SWITCH_FLOOR_S = 0.25
+SWITCH_FRACTION = 0.2
+STEADY_KINDS = ("targeted", "full")       # the shapes the estimates choose between
+# basis: "forced" (the case decides), "no-estimates" (nothing to compare: the selection), "compared" (the rule
+# above decided), "kept" (a full suite chosen before, kept although the rule alone would run the selection),
+# "switched" (a full suite chosen before, replaced: the selection is faster by more than `margin_s`)
+_STEADY_BASES = ("compared", "kept", "switched")   # remembered; a no-estimates selection is not
 
 
 @dataclass(slots=True)
@@ -44,11 +79,27 @@ class Decision:
     est_targeted_s: float | None = None
     est_full_s: float | None = None
     est_full_source: str = ""      # "measured" | "estimated from per-file times" | ""
+    basis: str = "forced"          # see `_STEADY_BASES`
+    previous: str | None = None    # the shape chosen before for the same suite, when it was consulted
+    margin_s: float | None = None  # how much faster the selection had to be to replace a full suite chosen before
 
     def to_json(self) -> dict[str, Any]:
         return {"kind": self.kind, "reason": self.reason, "batches": len(self.batches),
                 "est_targeted_s": _r(self.est_targeted_s), "est_full_s": _r(self.est_full_s),
-                "est_full_source": self.est_full_source}
+                "est_full_source": self.est_full_source, "basis": self.basis, "previous": self.previous,
+                "margin_s": _r(self.margin_s)}
+
+
+def steady(d: Decision) -> bool:
+    """The estimates made the decision, so it is remembered for these test
+    files (a selection replaces a full suite remembered before)."""
+    return d.kind in STEADY_KINDS and d.basis in _STEADY_BASES
+
+
+def keep_full_threshold(est_full: float) -> float:
+    """How much faster (est_full - est_targeted) the selection must be to
+    replace a full suite chosen before for the same test files."""
+    return TIE_MARGIN_S + max(SWITCH_FLOOR_S, SWITCH_FRACTION * est_full)
 
 
 def _r(x: float | None) -> float | None:
@@ -94,8 +145,10 @@ def make_batches(runner: TestRunner, files: list[str], d: dict[str, float | None
 def decide(runner: TestRunner, selected: list[str], universe: list[str], durations: dict[str, float | None], *,
            full_required: bool, full_requested: bool, workers: int, measured_full: float | None,
            measured_startup: float | None, full_runnable: bool, targeted_ratio: float | None = None,
-           full_unusable: str = "") -> Decision:
-    """The run shape for this plan, and why."""
+           full_unusable: str = "", previous: str | None = None) -> Decision:
+    """The run shape for this plan, and why. `previous`: the shape chosen
+    before for the same suite in the same environment (see the module's
+    "Steadiness"); it is consulted only after every forcing condition."""
     if not runner.per_file:
         if full_runnable:
             return Decision("full", f"`{runner.command}` cannot be split per test file: the full suite runs")
@@ -128,16 +181,35 @@ def decide(runner: TestRunner, selected: list[str], universe: list[str], duratio
     if full_unusable:
         return Decision("targeted", f"the full suite is not chosen for speed here: its result cannot be attributed "
                                     f"to files ({full_unusable})", batches, est_t, est_f, src)
+    prev = previous if previous in STEADY_KINDS else None
     if est_t is None or est_f is None:
         missing = "per-file durations" if est_t is None else "full-suite time"
+        if prev == "full":
+            return Decision("full", f"no {missing} to compare the two; the full suite was chosen before for these "
+                                    "unchanged test files and environment and is kept", [], est_t, est_f, src,
+                            "kept", prev)
         return Decision("targeted", f"no {missing} yet to compare the two (`repo-ai verify --record` measures "
-                                    "them); running the selection", batches, est_t, est_f, src)
+                                    "them); running the selection", batches, est_t, est_f, src, "no-estimates",
+                        prev)
     if est_f <= est_t + TIE_MARGIN_S:
         return Decision("full", f"the full suite ({src} {est_f:.1f}s as one process) is expected to be no "
                                 f"slower than the selection (~{est_t:.1f}s in {len(batches)} process(es)); "
-                                "it also runs every other test", [], est_t, est_f, src)
-    return Decision("targeted", f"the selection (~{est_t:.1f}s in {len(batches)} process(es)) is expected to "
-                                f"be faster than the full suite ({src} {est_f:.1f}s)", batches, est_t, est_f, src)
+                                "it also runs every other test the project's own command collects", [], est_t,
+                        est_f, src, "compared", prev)
+    targeted_reason = (f"the selection (~{est_t:.1f}s in {len(batches)} process(es)) is expected to be faster "
+                       f"than the full suite ({src} {est_f:.1f}s)")
+    if prev != "full":
+        return Decision("targeted", targeted_reason, batches, est_t, est_f, src, "compared", prev)
+    need, ahead = keep_full_threshold(est_f), est_f - est_t
+    if ahead > need:
+        return Decision("targeted", f"{targeted_reason} by {ahead:.2f}s, more than the {need:.2f}s needed to "
+                                    "replace the full suite chosen before for these test files", batches, est_t,
+                        est_f, src, "switched", prev, need)
+    return Decision("full", f"the full suite chosen before for these unchanged test files and environment is kept "
+                            f"({src} {est_f:.1f}s as one process): the selection (~{est_t:.1f}s in {len(batches)} "
+                            f"process(es)) is {ahead:.2f}s faster, not more than the {need:.2f}s needed to replace "
+                            "it; the full suite also runs every other test the project's own command collects", [],
+                    est_t, est_f, src, "kept", prev, need)
 
 
 def process_limit(estimate: float | None, cap: float, explicit: bool, floor: float = 30.0) -> float:
