@@ -33,6 +33,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -78,8 +79,45 @@ def default_config_dir(environ: Mapping[str, str] | None = None) -> Path:
     return registry_home() / "claude-provider"
 
 
+_WINDOWS = os.name == "nt"
+
+
+def shell_path(path: Path) -> str:
+    """A path to paste into a shell: `~/...` under HOME (no account name shown; the rest shell-quoted when needed),
+    otherwise shell-quoted. No `~` form when HOME is empty or `/`, where `~` would expand to something else. On
+    Windows (no POSIX shell quoting or `~`), the path as is."""
+    if _WINDOWS:
+        return str(path)
+    home_env = os.environ.get("HOME")
+    try:
+        home = Path.home().resolve()
+        rest = Path(path).expanduser().resolve().relative_to(home)
+    except (ValueError, OSError, RuntimeError, KeyError):
+        return shlex.quote(str(path))
+    if home_env == "" or home == Path(home.anchor) or not rest.parts:
+        return shlex.quote(str(path))
+    text = rest.as_posix()
+    return "~/" + (text if re.fullmatch(r"[A-Za-z0-9._/-]+", text) else shlex.quote(text))
+
+
 def login_command(config_dir: Path) -> str:
-    return f"CLAUDE_CONFIG_DIR={config_dir} claude auth login"
+    return f"CLAUDE_CONFIG_DIR={shell_path(config_dir)} claude auth login"
+
+
+def config_source(environ: Mapping[str, str] | None = None) -> str:
+    """Where a dedicated login's directory came from: `env` (REPO_AI_CLAUDE_CONFIG_DIR) or `default`. Recorded with a
+    run instead of the path, so later advice names the same directory without storing an account path."""
+    environ = os.environ if environ is None else environ
+    return "env" if environ.get(CONFIG_DIR_ENV) else "default"
+
+
+def relogin_command(source: str) -> str:
+    """The login command for the directory a run used, rendered from where it came from: `env` names the variable
+    (the shell stops if it is unset, rather than logging in to the personal config); `default` is the default
+    location computed without the override variable, whatever it is set to now."""
+    if source == "env":
+        return f'CLAUDE_CONFIG_DIR="${{{CONFIG_DIR_ENV}:?set it to the directory the run used}}" claude auth login'
+    return login_command(default_config_dir({k: v for k, v in os.environ.items() if k != CONFIG_DIR_ENV}))
 
 
 def audit_config_dir(path: Path) -> list[str]:
@@ -205,6 +243,6 @@ def invocation_flags(*, read_only: bool) -> list[str]:
             "--strict-mcp-config", "--disable-slash-commands", "--tools", READ_TOOLS if read_only else EDIT_TOOLS]
 
 
-__all__ = ["CONFIG_DIR_ENV", "ClaudeAuthPlan", "EDIT_TOOLS", "READ_TOOLS", "REQUIRED_FLAGS", "TOKEN_ENV_VARS",
+__all__ = ["CONFIG_DIR_ENV", "config_source", "relogin_command", "shell_path", "ClaudeAuthPlan", "EDIT_TOOLS", "READ_TOOLS", "REQUIRED_FLAGS", "TOKEN_ENV_VARS",
            "audit_config_dir", "default_config_dir", "invocation_flags", "login_command", "missing_flags", "plan",
            "seatbelt_rules"]
