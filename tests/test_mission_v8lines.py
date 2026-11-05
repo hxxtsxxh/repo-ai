@@ -197,8 +197,6 @@ def test_too_many_coverage_files_is_unavailable(tmp_path, monkeypatch):
     with pytest.raises(v8.Unavailable, match='more than 2 coverage files'):
         _fold(tmp_path, ident, max_files=2)
     assert _fold(tmp_path, ident, max_files=3).seen == set()
-    assert v8.files_allowed(1) == v8.MAX_FILES and v8.files_allowed(1000) == 4016
-    assert v8.files_allowed(10 ** 6) == v8.MAX_FILES_CEILING
 
 
 @pytest.mark.skipif(not hasattr(os, 'symlink'), reason='needs symbolic links')

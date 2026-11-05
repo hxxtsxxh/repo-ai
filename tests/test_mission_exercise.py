@@ -563,3 +563,28 @@ def test_node_assurance_holds_for_a_suite_of_many_test_files(tmp_path):
     _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
     rec = exercise.measure(root, 'node --test', _diff('lib.js', before, after), timeout_s=300)
     assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['lib.js:2', 'lib.js:3'], rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_assurance_holds_when_tests_start_node_child_processes(tmp_path):
+    """Final review of #146: each child process inherits NODE_V8_COVERAGE and writes its own file; 20 test files that
+    each run a CLI 15 times wrote over 256 files and went UNMEASURED under a suite-size-derived cap."""
+    before = 'exports.f = (x) => x;\n'
+    after = 'exports.f = (x) => {\n  if (x > 1000) {\n    return -1;\n  }\n  return x;\n};\n'
+    root = tmp_path / 'children'
+    (root / 'test').mkdir(parents=True)
+    (root / 'lib.js').write_text(after)
+    (root / 'cli.js').write_text("console.log(String(require('./lib.js').f(1)));\n")
+    (root / 'package.json').write_text('{"name": "p", "version": "1.0.0"}\n')
+    for i in range(20):
+        (root / 'test' / f't{i}.test.js').write_text(
+            "const t = require('node:test');\nconst { execFileSync } = require('node:child_process');\n"
+            "const path = require('node:path');\n"
+            f"t('t{i}', () => {{ for (let k = 0; k < 15; k++) "
+            "execFileSync(process.execPath, [path.join(__dirname, '..', 'cli.js')]); });\n")
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+    rec = exercise.measure(root, 'node --test', _diff('lib.js', before, after), timeout_s=300)
+    assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['lib.js:2', 'lib.js:3'], rec
+
