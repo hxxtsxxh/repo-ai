@@ -118,6 +118,7 @@ class Plan:
     durations: dict[str, float | None] = field(default_factory=dict)  # recorded per-file run times
     duplicates: dict[str, str] = field(default_factory=dict)  # selected aggregators a targeted run skips, and why
     durations_backend: str = ""  # the sandbox backend `durations` were recorded in
+    untested_edits: list[str] = field(default_factory=list)  # changed files no test runs or reads (see `plan`)
 
     def to_json(self) -> dict[str, Any]:
         return {"schema": "repo-ai.verify-plan/1", "base": self.base, "fingerprint": self.fingerprint,
@@ -127,7 +128,7 @@ class Plan:
                 "test_files_total": self.universe, "selected": [s.to_json() for s in self.selected],
                 "targeted_commands": self.targeted_commands, "full_suite_command": self.full_command,
                 "estimate": self.estimate, "changed_files": [f.to_json() for f in self.files],
-                "aggregators_skipped": self.duplicates,
+                "aggregators_skipped": self.duplicates, "untested_edits": self.untested_edits,
                 "never_claims": "a passing targeted run is evidence about the selected tests only; "
                                 "it is not proof that the change is correct"}
 
@@ -311,6 +312,9 @@ class Graph:
         return sorted(f for f in self.files if f.startswith(prefix) and f.endswith(".py"))
 
 
+EXCLUDED_UNTESTED = "pytest's recorded collection never runs it; no test exercised this edit"
+
+
 def classify(path: str, universe: set[str], runner: TestRunner) -> str:
     p = PurePosixPath(path)
     if path in universe:
@@ -338,6 +342,8 @@ def plan(change: Change, runner: TestRunner, repo_files: list[str], graph: Graph
     findings: list[FileFinding] = []
     triggers: list[str] = []
     uncertainty: list[str] = []
+    excluded = set(runner.excluded)  # pattern-matched files pytest's recorded collection leaves out
+    untested: list[str] = []
 
     def pick(test: str, reason: Reason) -> None:
         if test not in universe:
@@ -394,12 +400,31 @@ def plan(change: Change, runner: TestRunner, repo_files: list[str], graph: Graph
         # source or test helper ------------------------------------------------
         linked = _source(cf, f, runner, graph, dyn, tmap, universe, pick, name_links or {})
         f.consumers = linked
-        if kind == "test-helper" and not linked:
-            triggers.append(f"test helper {cf.path} changed and no evidence links it to specific tests")
+        never_run = False
+        if cf.path in excluded and cf.status != "deleted":
+            # named like a test, but the project's own pytest never collects it (marshmallow's
+            # tests/mypy_test_cases under norecursedirs): no run here, the full suite included, executes it, so
+            # the edit is untested unless a test imports, opens or names it. Its own `--record` run opened it:
+            # only another test that runs here counts
+            readers = [t for t in _string_or_runtime_users(cf, dyn, tmap, graph) if t in universe and t != cf.path]
+            for test in readers:
+                pick(test, Reason("runtime" if tmap and cf.path in _opened(tmap) else "string-reference",
+                                  f"reads or names {cf.path}"))
+            if not linked and not readers:
+                never_run = True
+                untested.append(cf.path)
+                f.notes.append(EXCLUDED_UNTESTED)
+        # an edit nothing runs requires no full suite: the full suite would pass without running it, and that pass
+        # must not stand for it (alone, such an edit is "not verified: no test is linked", like an unlinked
+        # source edit; next to other changes, their tests decide and it is named as untested)
+        if kind == "test-helper" and not linked and not never_run:
+            triggers.append(f"{cf.path} changed: pytest's recorded collection never runs it, and no evidence links "
+                            "it to the tests that do" if cf.path in excluded else
+                            f"test helper {cf.path} changed and no evidence links it to specific tests")
         if f.exposure and f.runtime != "fresh":
             triggers.append(f"{cf.path} may be loaded by a computed name ({f.exposure[0]['detail']}); "
                             "static imports cannot list its consumers")
-        if kind == "source" and not linked and not f.exposure:
+        if kind == "source" and not linked and not f.exposure and not never_run:
             if f.runtime == "fresh":
                 uncertainty.append(f"no test executes the changed code in {cf.path} "
                                    f"({', '.join(f.never_executed) or 'any of it'}): the change is untested")
@@ -412,6 +437,8 @@ def plan(change: Change, runner: TestRunner, repo_files: list[str], graph: Graph
                 triggers.append(f"no test reaches {cf.path} through imports and there is no runtime "
                                 "evidence for it")
 
+    # first: the run's report shows the first few of these, and these are edits nothing ran
+    uncertainty[:0] = [f"{path}: {EXCLUDED_UNTESTED}" for path in untested]
     duplicates = _aggregators(picks, tmap, universe, change) if tmap is not None else {}
     selected = sorted(picks.values(), key=lambda s: (s.strength, (tmap.duration(s.test) if tmap else None) or 0,
                                                      s.test))
@@ -462,7 +489,7 @@ def plan(change: Change, runner: TestRunner, repo_files: list[str], graph: Graph
     return Plan(change.base, change.fingerprint, runner, findings, selected, len(universe), confidence,
                 full_required, triggers, uncertainty, targeted, full, estimate, sorted(universe_list),
                 {t: tmap.duration(t) for t in universe} if tmap is not None else {}, duplicates,
-                tmap.backend if tmap is not None else "")
+                tmap.backend if tmap is not None else "", untested)
 
 
 def _opened(tmap: TestMap) -> set[str]:
