@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.5 — Node per-requirement lines; a false FULL fixed; exact re-login advice; refusal paths
 
 - When a provider rejects its credential inside repo-ai's isolation, the recovery advice now gives the exact step
   instead of `repo-ai agents setup <provider>`: for Claude's dedicated login, the login command for the directory the
