@@ -464,10 +464,11 @@
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
-    "community files, branch protection"
+    "community files, branch protection",
+    "2026-11-05 re-checked at 0.12.x: SECURITY.md (private advisories; supported-versions table was stale at 0.9.x, now 'the latest release'), CONTRIBUTING, CODE_OF_CONDUCT, SUPPORT, LICENSE, bug/feature issue forms and a PR template present; main protected (12 required checks, strict, admins included, no force-push); release and rollback procedure added as docs/RELEASING.md (immutable tags and files, PyPI yank, fix forward)"
    ],
    "limits": [],
-   "next_action": "keep"
+   "next_action": "keep; exercise the rollback procedure only if a release ever needs it"
   },
   {
    "id": "C24",
