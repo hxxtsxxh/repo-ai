@@ -403,9 +403,9 @@ def plan(change: Change, runner: TestRunner, repo_files: list[str], graph: Graph
         never_run = False
         if cf.path in excluded and cf.status != "deleted":
             # named like a test, but the project's own pytest never collects it (marshmallow's
-            # tests/mypy_test_cases under norecursedirs): the full suite this change requires passes without
-            # it, so the edit is untested unless a test imports, opens or names it
-            # its own `--record` run opened it: only another test that runs here counts
+            # tests/mypy_test_cases under norecursedirs): no run here, the full suite included, executes it, so
+            # the edit is untested unless a test imports, opens or names it. Its own `--record` run opened it:
+            # only another test that runs here counts
             readers = [t for t in _string_or_runtime_users(cf, dyn, tmap, graph) if t in universe and t != cf.path]
             for test in readers:
                 pick(test, Reason("runtime" if tmap and cf.path in _opened(tmap) else "string-reference",
@@ -414,7 +414,10 @@ def plan(change: Change, runner: TestRunner, repo_files: list[str], graph: Graph
                 never_run = True
                 untested.append(cf.path)
                 f.notes.append(EXCLUDED_UNTESTED)
-        if kind == "test-helper" and not linked:
+        # an edit nothing runs requires no full suite: the full suite would pass without running it, and that pass
+        # must not stand for it (alone, such an edit is "not verified: no test is linked", like an unlinked
+        # source edit; next to other changes, their tests decide and it is named as untested)
+        if kind == "test-helper" and not linked and not never_run:
             triggers.append(f"{cf.path} changed: pytest's recorded collection never runs it, and no evidence links "
                             "it to the tests that do" if cf.path in excluded else
                             f"test helper {cf.path} changed and no evidence links it to specific tests")

@@ -22,7 +22,7 @@ import pytest
 
 from conftest import run_cli
 
-from repo_ai.verify import cache, engine, strategy
+from repo_ai.verify import cache, engine, evidence, results, strategy
 from repo_ai.verify.runner import parse_command
 
 PY_CMD = "python -m pytest -q tests"
@@ -88,21 +88,50 @@ def _marshmallow_like(tmp_path: Path, extra: dict[str, str] | None = None) -> Pa
 
 
 # -- 1: an edit no test runs is named ----------------------------------------------
+LINE = f"{OLD}: pytest's recorded collection never runs it; no test exercised this edit"
+
+
+def _run_exit(root: Path, *extra: str) -> tuple[int, dict]:
+    proc = run_cli(root, "verify", "--run", "--json", "--rerun", "--workers", "2", "--test-command", PY_CMD, *extra)
+    assert proc.returncode in {0, 1}, proc.stderr[-800:]
+    return proc.returncode, json.loads(proc.stdout)
+
+
 @needs_sandbox
-def test_an_edit_to_a_file_the_recorded_collection_leaves_out_is_named_untested(tmp_path: Path):
+def test_an_edit_only_to_a_file_no_test_runs_is_not_verified(tmp_path: Path):
+    """Alone, such an edit is what any unlinked behavioural edit is: not verified, exit 1. It used to require the
+    full suite, which passes without running the file, so the run said PASSED (#155 review)."""
     root = _marshmallow_like(tmp_path)
     (root / OLD).write_text("from pkg.core import f\n\n\ndef test_old():\n    assert f() == 3\n")  # now fails alone
-    out = _run(root, PY_CMD)
+    code, out = _run_exit(root)
     ev, summary = out["evidence"], out["summary"]
-    # what the project's own command runs is unchanged: the full suite, which passes without the file
-    assert ev["full_suite"]["status"] == "pass" and OLD not in {r["test"] for r in ev["results"]}
-    line = f"{OLD}: pytest's recorded collection never runs it; no test exercised this edit"
-    assert ev["plan"]["uncertainty"][0] == line, ev["plan"]["uncertainty"]
+    assert code == 1
+    assert ev["verdict"] == evidence.NOT_VERIFIED_UNLINKED, ev["verdict"]
+    assert ev["selected"] == [] and not ev["plan"]["full_suite_required"] and not ev["full_suite"]
+    assert not any(OLD in t for t in ev["plan"]["triggers"]), ev["plan"]["triggers"]
+    assert ev["plan"]["uncertainty"][0] == LINE, ev["plan"]["uncertainty"]
     assert summary["untested_edits"] == [OLD]
-    assert not any("test helper" in t for t in ev["plan"]["triggers"]), ev["plan"]["triggers"]
-    text = run_cli(root, "verify", "--run", "--test-command", PY_CMD).stdout   # the reused record, as printed
-    assert f"! {line}" in text, text
-    assert text.index(f"! {line}") < text.index("evidence reused")
+    shown = run_cli(root, "verify", "--run", "--test-command", PY_CMD)   # the reused record, as printed
+    assert shown.returncode == 1 and shown.stdout.startswith("repo-ai verify"), shown.stdout
+    assert "NOT VERIFIED" in shown.stdout and f"! {LINE}" in shown.stdout, shown.stdout
+    assert "PASSED" not in shown.stdout
+    later = run_cli(root, "evidence")
+    assert "NOT VERIFIED" in later.stdout and "PASSED" not in later.stdout, later.stdout
+
+
+@needs_sandbox
+def test_next_to_a_tested_change_the_edit_no_test_runs_is_named_and_the_tests_decide(tmp_path: Path):
+    root = _marshmallow_like(tmp_path)
+    (root / OLD).write_text("from pkg.core import f\n\n\ndef test_old():\n    assert f() == 3\n")
+    (root / "pkg" / "core.py").write_text("def f():\n    return 0 + 1\n")   # behaviour kept, linked to two tests
+    code, out = _run_exit(root)
+    ev = out["evidence"]
+    assert code == 0 and ev["verdict"] in evidence.PASSING_VERDICTS, ev["verdict"]
+    assert sorted(ev["selected"]) == ["tests/test_ok.py", "tests/test_two.py"]
+    assert ev["plan"]["uncertainty"][0] == LINE and out["summary"]["untested_edits"] == [OLD]
+    assert not any(OLD in t for t in ev["plan"]["triggers"]), ev["plan"]["triggers"]
+    shown = run_cli(root, "verify", "--run", "--test-command", PY_CMD).stdout
+    assert shown.index(f"! {LINE}") < shown.index("evidence reused"), shown
 
 
 @needs_sandbox
@@ -144,7 +173,8 @@ def test_a_passing_full_suite_without_a_trusted_report_is_marked_unusable_for_sp
                           timeout_explicit=False, executor=None, durations={}, workers=2, deadline=None,
                           deadline_hit=False, full_reached_all=False)
     rec: dict = {}
-    decision = strategy.Decision("full", "the full suite (measured 1.0s as one process) is expected to be no slower")
+    decision = strategy.Decision("full", "the full suite (measured 1.0s as one process) is expected to be no slower",
+                                 basis="compared")   # chosen for speed
     rows = engine._run_full(ctx, rec, ["python", "-m", "pytest"], decision)  # type: ignore[arg-type]
     assert sorted(sum(calls, [])) == sel and {r["test"] for r in rows} == set(sel)
     assert timings.full_unusable and "per-test report" in timings.full_unusable
@@ -160,22 +190,46 @@ def test_a_passing_full_suite_without_a_trusted_report_is_marked_unusable_for_sp
     assert required.kind == "full"
 
 
-def test_a_requested_full_suite_without_a_report_still_marks_it(tmp_path: Path, monkeypatch):
-    """`--full` asked for it, but the fact learned (no usable report here) holds for later speed choices too."""
+def _ctx(tmp_path: Path, universe: list[str], timings: cache.Timings) -> SimpleNamespace:
+    p = SimpleNamespace(selected=[SimpleNamespace(test=t) for t in universe[:1]], universe_files=universe,
+                        duplicates={}, full_suite_required=False)
+    return SimpleNamespace(p=p, runner=parse_command(PY_CMD), timings=timings, log=lambda m: None, timeout_s=60.0,
+                           timeout_explicit=False, executor=None, durations={}, workers=2, deadline=None,
+                           deadline_hit=False, full_reached_all=False)
+
+
+@pytest.mark.parametrize("reason", ["--full was requested",
+                                    "the full suite is required for this change; it includes every selected test"])
+def test_a_forced_full_suite_without_a_report_leaves_the_flag_alone(tmp_path: Path, monkeypatch, reason: str):
+    """A run the change or `--full` forced says nothing about speed choices: nothing is marked."""
     timings = cache.Timings(tmp_path, "env")
     res = SimpleNamespace(exit_code=0, timed_out=False, stdout="", stderr="", duration_s=1.0, notes=[])
     monkeypatch.setattr(engine, "_process", lambda *a, **k: (res, None))
     monkeypatch.setattr(engine, "_run_batch", lambda ctx, b: [{"test": f, "status": "pass"} for f in b])
     monkeypatch.setattr(engine, "_row", lambda ctx, f, status, *a, **k: {"test": f, "status": status})
-    p = SimpleNamespace(selected=[SimpleNamespace(test="tests/test_a.py")], universe_files=["tests/test_a.py"],
-                        duplicates={}, full_suite_required=False)
-    ctx = SimpleNamespace(p=p, runner=parse_command(PY_CMD), timings=timings, log=lambda m: None, timeout_s=60.0,
-                          timeout_explicit=False, executor=None, durations={}, workers=2, deadline=None,
-                          deadline_hit=False, full_reached_all=False)
     rec: dict = {}
-    engine._run_full(ctx, rec, ["python", "-m", "pytest"], strategy.Decision("full", "--full was requested"))  # type: ignore[arg-type]
-    assert timings.full_unusable
-    assert "advisory" not in rec["full_suite"]          # a requested full suite is not advisory: it passed
+    ctx = _ctx(tmp_path, ["tests/test_a.py"], timings)
+    rows = engine._run_full(ctx, rec, ["python", "-m", "pytest"], strategy.Decision("full", reason))  # type: ignore[arg-type]
+    assert [r["test"] for r in rows] == ["tests/test_a.py"]          # still re-run on its own
+    assert timings.full_unusable == "" and "reason" not in rec["full_suite"]
+    assert "advisory" not in rec["full_suite"]
+
+
+def test_a_later_trusted_full_pass_clears_the_flag(tmp_path: Path, monkeypatch):
+    timings = cache.Timings(tmp_path, "env")
+    timings.note_full_unusable("no per-test report was written")
+    timings.save()
+    res = SimpleNamespace(exit_code=0, timed_out=False, stdout="", stderr="", duration_s=1.0, notes=[])
+    att = results.Attribution(trusted=True, done=True,
+                              files={"tests/test_a.py": results.FileOutcome(tests=1, ran=1, seconds=0.2)})
+    monkeypatch.setattr(engine, "_process", lambda *a, **k: (res, att))
+    monkeypatch.setattr(engine, "_run_batch", lambda ctx, b: pytest.fail("nothing should run again"))
+    monkeypatch.setattr(engine, "_row", lambda ctx, f, status, *a, **k: {"test": f, "status": status})
+    ctx = _ctx(tmp_path, ["tests/test_a.py"], timings)
+    engine._run_full(ctx, {}, ["python", "-m", "pytest"], strategy.Decision("full", "--full was requested"))  # type: ignore[arg-type]
+    assert ctx.full_reached_all and timings.full_unusable == ""
+    timings.save()
+    assert cache.Timings(tmp_path, "env").full_unusable == ""
 
 
 # -- 3: end to end ----------------------------------------------------------------

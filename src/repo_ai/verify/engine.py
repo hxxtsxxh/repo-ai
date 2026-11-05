@@ -984,6 +984,8 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
         rec["full_suite"]["counts"] = summary
     if status == "pass":
         ctx.timings.note_full(res.duration_s)
+        if trusted:  # its result can be attributed here after all: it may be chosen for speed again
+            ctx.timings.clear_full_unusable()
         if trusted and not ctx.timings.startup_s:
             _learn_from_batch(ctx, universe, res, att)
     selected = [s.test for s in p.selected]
@@ -997,9 +999,10 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
         # without a trusted report nothing shows which selected files the suite ran
         missed = unreached(att, to_run) if trusted and att is not None else (to_run if runner.per_file else [])
         ctx.full_reached_all = trusted and not missed
-        if not trusted and missed:
-            # every selected file runs again below, so here the full suite is never the faster shape: the cost
-            # model learns it (as it does for a failing full suite it cannot attribute), whoever asked for this run
+        if not trusted and missed and decision.basis != "forced":
+            # chosen for speed, but every selected file runs again below: here the full suite is never the faster
+            # shape, and the cost model learns it (as for a failing full suite it cannot attribute). A run the
+            # change or `--full` forced teaches nothing about speed choices and leaves the flag alone
             why = (att.reason if att is not None and att.reason else "") or "the full suite gave no per-test report"
             ctx.timings.note_full_unusable(why)
             rec["full_suite"]["reason"] = (f"not chosen for speed again here: it gave no usable per-test report "

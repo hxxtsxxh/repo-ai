@@ -249,21 +249,22 @@ in disposable copies, with the same integrity checks.
     per-test report shows no outcome for the file, so it runs on its own
     afterwards, and its result counts like the selection's. Without a
     per-test report from a passing full suite, every selected file runs on
-    its own, and the full suite is not chosen for speed again in that
-    environment (it would never be the faster shape there). If that cannot
+    its own; when the full suite was chosen for speed, it is not chosen for
+    speed again in that environment (it would never be the faster shape
+    there) until a later full suite gives a trusted report. If that cannot
     happen (no time left in `--deadline`), the run is "not verified", never
     a pass.
   - **An edit no test runs:** after `verify --record`, a file named like a
     test that pytest's own collection leaves out (marshmallow's
-    `tests/mypy_test_cases` under `norecursedirs`) is not a test here. An
-    edit to it still requires the full suite, which is what the project's
-    own command runs, but the full suite passes without it. Unless another
-    test imports, opens or names it, the run says so first among its
-    notes ("pytest's recorded collection never runs it; no test exercised
-    this edit") and lists it in `untested_edits`. The verdict stays the
-    full suite's, as for a changed source file no test executes: it is
-    evidence about the tests that ran, and the project's own command never
-    runs that file.
+    `tests/mypy_test_cases` under `norecursedirs`) is not a test here, and
+    no run, the full suite included, executes it. Unless another test
+    imports, opens or names it, an edit to it requires nothing (the full
+    suite would pass without it, and that pass must not stand for it): on
+    its own it is "not verified: no test is linked to the behavioural
+    change" (exit 1), like any unlinked behavioural edit; next to other
+    changes, their tests decide. Either way the run says so first among
+    its notes ("pytest's recorded collection never runs it; no test
+    exercised this edit") and lists it in `untested_edits`.
 - **The selected files**, otherwise: balanced into at most `--workers`
   processes (unittest and pytest), or one `node --test` invocation (Node runs
   each file in its own child process).
