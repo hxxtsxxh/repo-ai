@@ -371,3 +371,13 @@ def test_lines_only_undeclared_tests_ran_carry_a_caveat_when_the_record_is_incom
     text = cov.render(cov.assess(decl(req('x', ['m_test.py::test_pick'])), {T_PICK: 'fail', T_NEG: 'fail'},
                                  {T_PICK: 'pass', T_NEG: 'pass'}, verdict='PASS', freshness='fresh', exercise=pytest_ex))
     assert 'a declared test may have run some of them too' in text
+
+
+def test_a_pytest_test_left_out_of_a_full_record_is_unavailable_not_zero_lines():
+    ex = {**C11_EXERCISE, 'per_test_complete': False, 'per_test_truncated': {'m_test.py::test_pick': 3000},
+          'per_test': {'m_test.py::test_neg': ['m.py:2', 'm.py:3']}}
+    out = cov.assess(decl(req('positive', ['m_test.py::test_pick'], kind='preserve')), {T_PICK: 'pass'},
+                     {T_PICK: 'pass'}, verdict='PASS', freshness='fresh', exercise=ex)
+    [row] = out['requirements']
+    assert row['changed_lines_unavailable'] == {'m_test.py::test_pick': 'its changed lines were cut from the record'}
+    assert 'changed lines unavailable for its test m_test.py::test_pick' in cov.render(out)

@@ -531,3 +531,35 @@ def test_pytest_per_test_record_keeps_more_than_forty_lines(tmp_path):
     lines = rec['per_test']['test_m.py::test_pick']
     assert len(lines) == rec['changed_lines'] == 45 and lines[-1] == 'm.py:46', rec
     assert rec['per_test_complete'] is True and 'per_test_truncated' not in rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_a_file_left_out_of_a_full_record_is_unavailable_not_zero_lines(tmp_path, monkeypatch):
+    """Re-review of #146: past the whole-record cap a file's lines were dropped while it stayed measured."""
+    root = _node_repo(tmp_path)
+    monkeypatch.setattr(exercise, 'MAX_RECORD_LINES', 4)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    assert set(rec['per_test']) == {'neg.test.js'} and 'pick.test.js' not in rec['per_test_measured'], rec
+    assert rec['per_test_unavailable'] == {'pick.test.js': 'its 3 changed lines were cut from the record (over 4 in all)'}
+    assert rec['per_test_truncated'] == {'pick.test.js': 3} and rec['per_test_complete'] is False
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_assurance_holds_for_a_suite_of_many_test_files(tmp_path):
+    """Re-review of #146: a whole suite writes one coverage file per test file (entries differ by call counts); 70
+    files went UNMEASURED past a 64-entry cap, and about 125 would pass a 32 MiB total. 130 keep the real result."""
+    before = 'exports.f = (x) => x;\n'
+    after = 'exports.f = (x) => {\n  if (x > 1000) {\n    return -1;\n  }\n  return x;\n};\n'
+    root = tmp_path / 'suite'
+    (root / 'test').mkdir(parents=True)
+    (root / 'lib.js').write_text(after)
+    (root / 'package.json').write_text('{"name": "p", "version": "1.0.0"}\n')
+    for i in range(130):
+        (root / 'test' / f't{i}.test.js').write_text(
+            f"const t = require('node:test');\nconst {{ f }} = require('../lib.js');\n"
+            f"t('t{i}', () => {{ for (let k = 0; k < {i}; k++) f(k); }});\n")
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'c')
+    rec = exercise.measure(root, 'node --test', _diff('lib.js', before, after), timeout_s=300)
+    assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['lib.js:2', 'lib.js:3'], rec

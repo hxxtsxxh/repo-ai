@@ -83,8 +83,9 @@ def line_key(item: str) -> tuple[str, int]:
 
 
 def _finalize(acc: dict[str, set[str]]) -> tuple[dict[str, list[str]], dict[str, int], bool]:
-    """(the stored record, {key: true line count} for keys cut at MAX_STORED_LINES, whether nothing was cut). The
-    stored record is never cut for display: a line missing from it would read as run only by other tests."""
+    """(the stored record, {key: true line count} for keys cut at MAX_STORED_LINES or left out whole past
+    MAX_RECORD_LINES, whether nothing was cut). The stored record is never cut for display: a line missing from it
+    would read as run only by other tests."""
     out: dict[str, list[str]] = {}
     truncated: dict[str, int] = {}
     kept = 0
@@ -164,7 +165,7 @@ def _per_test_run(record: dict[str, Any], bound: Any, ws: Any, runner: Any, env:
     record["per_test"], complete, truncated = _per_test(per_trace, eligible_by_file)
     record["per_test_granularity"] = "test"
     if truncated:
-        record["per_test_truncated"] = dict(list(truncated.items())[:MAX_LISTED])
+        record["per_test_truncated"] = truncated
     # a child process runs code this run cannot see, and an early stop leaves tests unrun
     record["per_test_complete"] = complete and not per_trace.get("spawned") and per_res.exit_code in (0, 1)
     raw_outside = per_trace.get("outside_tests")
@@ -196,8 +197,9 @@ def _node_file_lines(ex: Executor, runner: Any, test: str, texts: dict[str, byte
         raise v8lines.Unavailable(f"its run timed out after {timeout_s:.0f}s (a killed process writes no coverage)")
     if res.exit_code not in (0, 1):  # 1: a test failed, and node still wrote its coverage on exit
         raise v8lines.Unavailable(f"its run ended abnormally (exit {res.exit_code})")
-    scripts = v8lines.read_scripts(ws, NODE_COV_DIR, ident, ex.inside_root, {*texts, test}, deadline)
-    if test not in scripts:
+    folded = v8lines.fold(ws, NODE_COV_DIR, ident, ex.inside_root,
+                          {rel: data.decode("utf-8") for rel, data in texts.items()}, present={test}, deadline=deadline)
+    if test not in folded.seen:
         raise v8lines.Unavailable("its coverage does not include the test file itself")
     hits: set[str] = set()
     for rel, original in texts.items():
@@ -207,10 +209,10 @@ def _node_file_lines(ex: Executor, runner: Any, test: str, texts: dict[str, byte
             after = None
         if after != original:
             raise v8lines.Unavailable(f"{rel} changed during its run")
-        entries = scripts.get(rel)
-        if not entries:
+        acc = folded.accumulators[rel]
+        if not acc.entries:
             continue  # valid coverage that never loaded this file: it ran none of its lines
-        executable, ran = v8lines.line_status(original.decode("utf-8"), entries, rel, deadline)
+        executable, ran = acc.line_status()
         hits.update(f"{rel}:{n}" for n in ran & executable & eligible_by_file.get(rel, set()))
     return hits
 
@@ -281,7 +283,12 @@ def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, 
             acc[test] = lines
     record["per_test"], truncated, whole = _finalize(acc)
     if truncated:
-        record["per_test_truncated"] = dict(list(truncated.items())[:MAX_LISTED])
+        record["per_test_truncated"] = truncated
+    for test in truncated:
+        if test not in record["per_test"]:  # left out whole: its lines are unknown, not none
+            measured.remove(test)
+            unavailable[test] = f"its {truncated[test]} changed lines were cut from the record (over " \
+                                f"{MAX_RECORD_LINES} in all)"
     record["per_test_measured"] = measured
     record["per_test_unavailable"] = unavailable
     if len(files) > MAX_NODE_TEST_FILES:
@@ -360,11 +367,13 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                 assert cov_ident is not None
                 # coverage the suite wrote is untrusted: bounded and link-free (`Unavailable` is UNMEASURED); a
                 # malformed file or entry is skipped, which can only report more lines as never run
+                # each entry is folded into its file's bit map as it is read: a suite writes one per test file
                 parse_by = time.monotonic() + max(30.0, timeout_s - (time.monotonic() - started))
-                scripts = v8lines.read_scripts(ws.path, NODE_COV_DIR, cov_ident, inside, set(texts), parse_by,
-                                               lenient=True)
-                for rel, text in texts.items():
-                    exec_by_file[rel], never_by_file[rel] = v8lines.never_run(text, scripts.get(rel, []), rel, parse_by)
+                allowed = v8lines.files_allowed(len(runner.test_files(listing[0], workspace)))
+                folded = v8lines.fold(ws.path, NODE_COV_DIR, cov_ident, inside, texts, deadline=parse_by,
+                                      lenient=True, max_files=allowed)
+                for rel in texts:
+                    exec_by_file[rel], never_by_file[rel] = folded.accumulators[rel].never_run()
             else:
                 raw = isolate.read_inside(ws.path, f"{RUN_DIR}/trace.json", MAX_RECORD_BYTES)
                 trace = json.loads(raw.decode("utf-8")) if raw else {}

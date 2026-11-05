@@ -22,20 +22,22 @@
   offsets are UTF-16 code units: CRLF, non-ASCII text and the byte-order mark that a CommonJS module keeps and an ES
   module drops are all handled, and a script whose length does not match the file is refused. A line counts as run
   when any code on it ran, and an executable line is one with a word character outside comments. The coverage output
-  comes from the untrusted test process, so it is read with bounded size, file count, script entries and ranges,
-  never through a symbolic link, reduced to the watched files as each coverage file is parsed, and validated field by
-  field. A file that times out, ends abnormally (any exit other than 0 or 1), whose run raises, or whose coverage is
+  comes from the untrusted test process, so it is read with bounded size, file count and ranges, never through a
+  symbolic link, and validated field by field; each coverage file is parsed, folded into one bit map per watched file
+  and dropped before the next, so a suite of many test files (one coverage file each) stays measurable. A file that times out, ends abnormally (any exit other than 0 or 1), whose run raises, or whose coverage is
   missing or malformed is shown as unavailable, with the reason, never as having run nothing. Like the pytest
   mapping, this is informational only and never changes a status or the headline. Container runs are still not
   measured.
 - The per-test changed-line record (pytest and node) keeps every line, up to 2000 per test or file, instead of the
-  first 40 sorted as text. A cut marks the record incomplete with the true count, and `coverage` says that lines shown
-  as run only by undeclared tests may have been run by declared ones when the record is incomplete.
+  first 40 sorted as text. A cut marks the record incomplete with the true count; a test or file left out whole (past
+  200,000 lines in all) is shown as unavailable, not as having run nothing; and `coverage` says that lines shown as
+  run only by undeclared tests may have been run by declared ones when the record is incomplete.
 - The change-exercise level of a `node --test` mission no longer reads V8 offsets as code points: an emoji or other
   astral character earlier in a changed file, or an ES module's byte-order mark, could shift a never-run branch off its
   line and report FULL. It now uses the same UTF-16 mapping, coverage reader and executable-line definition as the
   per-file record (a malformed coverage file or entry is skipped there, which can only report more lines as never
-  run). Added lines are numbered by LF only, as git does; a CR, U+2028 or form feed inside a line no longer shifts
+  run). A regular expression right after the `)` of an `if`, `while`, `for` or `with` condition is no longer read as
+  a division followed by a comment. Added lines are numbered by LF only, as git does; a CR, U+2028 or form feed inside a line no longer shifts
   the numbers after it.
 
 ## 0.12.4 — JavaScript tournament probes

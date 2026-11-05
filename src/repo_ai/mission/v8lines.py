@@ -14,17 +14,20 @@ loader dropped; any other length (a wrapper, a transpiled or altered source) mak
 
 Ranges. Within a script, ranges are properly nested or disjoint, and an inner range's count replaces the outer
 one's (a block that never ran inside a function that did). One sweep over the ranges sorted outermost first keeps a
-stack of the open ones, so the innermost wins; the runs that ran are merged over every entry (each process that
-loaded the file writes one) and painted once. A character ran if its innermost range has a count above zero in any
-entry. Work is bounded: identical entries and ranges count once, a file with more than 64 distinct entries or more
-ranges than four per UTF-16 unit of its text is refused, each parsed coverage file is reduced at once to the
-watched scripts, and an optional deadline is checked between files and entries.
+stack of the open ones, so the innermost wins. Each entry (every process that loaded the file writes one: a whole
+`node --test` suite writes one per test file) is folded into one per-file "ran" bit map as soon as its coverage file
+is parsed, so memory does not grow with the number of entries; an entry whose ran runs equal an earlier one's is not
+painted again. A character ran if its innermost range has a count above zero in any entry. Work is bounded: one
+entry with more ranges than four per UTF-16 unit of its text is refused, as is a run with more than 2,000,000
+ranges for the watched files, more coverage files than the caller allows, a file over 32 MiB or 2 GiB in all; an
+optional deadline is checked between files and entries.
 
 Lines are split on LF only (git's numbering); CR stays at the end of its line. A line is EXECUTABLE when, outside
 comments, it has a letter, digit or underscore: blank lines, comment-only lines and punctuation-only lines (``}``,
 ``});``) are not. The change-exercise assurance uses the same definition. Comments are found by a small scanner that
 knows strings, template literals and, heuristically, regular-expression literals (a ``/`` after ``)``, ``]``, an
-identifier, a number, ``++`` or ``--`` is a division; a regular expression must close on its line); a ``/*`` with no
+identifier, a number, ``++`` or ``--`` is a division, except after the ``)`` of ``if``, ``while``, ``for`` or
+``with``; a regular expression must close on its line); a ``/*`` with no
 closing ``*/`` is not taken as a comment, so a misread cannot hide the rest of the file, but it can still hide or
 expose a line. A line RAN when any of its
 non-blank code characters lies in a range that ran: a line that only opens a block that never ran (``} else {``)
@@ -32,6 +35,7 @@ counts as run, as does a ``const f = () =>`` line whose function was never calle
 """
 from __future__ import annotations
 
+import hashlib
 import itertools
 import json
 import os
@@ -44,13 +48,15 @@ from urllib.parse import unquote, urlparse
 
 from ..verify import isolate
 
-MAX_FILES = 256                     # coverage files one test file's processes may write
-MAX_FILE_BYTES = 16 * 1024 * 1024   # one coverage file
-MAX_TOTAL_BYTES = 32 * 1024 * 1024  # all of one run's coverage files together
-MAX_ENTRIES = 64                    # distinct script entries for one watched file (normally one per process)
-RANGES_PER_UNIT = 4                 # more ranges than this per UTF-16 unit of the file's text is not V8 output
+MAX_FILES = 256                         # coverage files one test file's processes may write (see `files_allowed`)
+MAX_FILES_CEILING = 20_000              # coverage files any run may write
+MAX_FILE_BYTES = 32 * 1024 * 1024       # one coverage file (each is parsed, folded and dropped before the next)
+MAX_TOTAL_BYTES = 2 * 1024 * 1024 * 1024  # all of one run's coverage files together
+MAX_TOTAL_RANGES = 2_000_000            # ranges of the watched files over a whole run
+RANGES_PER_UNIT = 4                     # more ranges in one entry than this per UTF-16 unit of the text is not V8
 _WORD = re.compile(r"\w")
 _REGEX_AFTER = set("(,=:[!&|?{};+-*%<>~^")
+_CONDITION_KEYWORDS = {"if", "while", "for", "with"}
 _REGEX_KEYWORDS = {"return", "typeof", "case", "do", "else", "in", "of", "new", "delete", "void", "throw",
                    "instanceof", "yield", "await"}
 
@@ -95,22 +101,38 @@ def prepare(ws: Path, rel_dir: str) -> tuple[int, int]:
     return ident
 
 
-def read_scripts(ws: Path, rel_dir: str, identity: tuple[int, int], inside_root: str, wanted: set[str],
-                 deadline: float | None = None, *, lenient: bool = False) -> dict[str, list[Entry]]:
-    """{repo-relative path: its distinct script entries} for the `wanted` files, from every coverage file in
-    `ws/rel_dir` (the directory `prepare` created). Each file is parsed, reduced to the wanted scripts and dropped
+def files_allowed(test_files: int) -> int:
+    """Coverage files a run of `test_files` test files may write: a process per file and a few children each."""
+    return min(MAX_FILES_CEILING, max(MAX_FILES, 4 * test_files + 16))
+
+
+class Folded:
+    """What one run's coverage says about the watched files: an `Accumulator` per watched file, and which wanted
+    files (watched or merely required to be present) had at least one valid entry."""
+
+    def __init__(self, accumulators: dict[str, Accumulator], seen: set[str]) -> None:
+        self.accumulators = accumulators
+        self.seen = seen
+
+
+def fold(ws: Path, rel_dir: str, identity: tuple[int, int], inside_root: str, texts: dict[str, str], *,
+         present: set[str] | None = None, deadline: float | None = None, lenient: bool = False,
+         max_files: int = MAX_FILES) -> Folded:
+    """Read every coverage file in `ws/rel_dir` (the directory `prepare` created) and fold the entries for the
+    watched files (`texts`: repo-relative path -> its text) into their accumulators; `present`: other files whose
+    having an entry is recorded in `seen` (the test file itself). Each coverage file is parsed, folded and dropped
     before the next is read. `lenient` (the assurance, where less coverage can only mean more lines reported as never
-    run): a malformed coverage file or entry is skipped instead of making everything unavailable; the directory,
-    link, size, count and time checks still apply."""
+    run): a malformed coverage file or entry, or an entry that does not fit its text, is skipped instead of making
+    everything unavailable; the directory, link, size, count, range and time checks still apply."""
     if _dir_identity(ws, rel_dir) != identity:
         raise Unavailable("the coverage directory was replaced during the run")
     try:
         with os.scandir(ws / rel_dir) as it:
-            entries = list(itertools.islice(it, MAX_FILES + 1))
+            entries = list(itertools.islice(it, max_files + 1))
     except OSError:
         raise Unavailable("the coverage directory could not be listed") from None
-    if len(entries) > MAX_FILES:
-        raise Unavailable(f"more than {MAX_FILES} coverage files were written")
+    if len(entries) > max_files:
+        raise Unavailable(f"more than {max_files} coverage files were written")
     names: list[str] = []
     for entry in entries:
         if entry.is_symlink():
@@ -120,8 +142,10 @@ def read_scripts(ws: Path, rel_dir: str, identity: tuple[int, int], inside_root:
         names.append(entry.name)
     if not names:
         raise Unavailable("no coverage was written")
-    out: dict[str, dict[Entry, None]] = {}
-    total = 0
+    accs = {rel: Accumulator(text, rel, lenient) for rel, text in texts.items()}
+    wanted = set(texts) | set(present or ())
+    seen: set[str] = set()
+    total = ranges = 0
     for name in sorted(names):
         _check(deadline)
         try:
@@ -132,7 +156,7 @@ def read_scripts(ws: Path, rel_dir: str, identity: tuple[int, int], inside_root:
             raise Unavailable("a coverage file could not be read safely")
         total += len(raw)
         if total > MAX_TOTAL_BYTES:
-            raise Unavailable(f"the coverage output is larger than {MAX_TOTAL_BYTES // (1024 * 1024)} MiB")
+            raise Unavailable(f"the coverage output is larger than {MAX_TOTAL_BYTES // (1024 ** 3)} GiB")
         try:
             data = json.loads(raw.decode("utf-8"))
         except (UnicodeDecodeError, ValueError, RecursionError):
@@ -147,11 +171,17 @@ def read_scripts(ws: Path, rel_dir: str, identity: tuple[int, int], inside_root:
         found = scripts_for([data["result"]], inside_root, wanted, lenient=lenient)
         del data
         for rel, items in found.items():
-            seen = out.setdefault(rel, {})
-            seen.update(dict.fromkeys(items))
-            if len(seen) > MAX_ENTRIES:
-                raise Unavailable(f"the coverage of {rel} has more than {MAX_ENTRIES} distinct script entries")
-    return {rel: list(seen) for rel, seen in out.items()}
+            seen.add(rel)
+            acc = accs.get(rel)
+            for item in items:
+                ranges += len(item)
+                if ranges > MAX_TOTAL_RANGES:
+                    raise Unavailable(f"the coverage output has more than {MAX_TOTAL_RANGES} ranges for the "
+                                      "watched files")
+                if acc is not None:
+                    _check(deadline)
+                    acc.add(item)
+    return Folded(accs, seen)
 
 
 def _int(value: Any) -> int | None:
@@ -219,12 +249,17 @@ def _regex_can_start(text: str, last: int) -> bool:
         return False  # `x++ / 2`: a postfix increment or decrement is an operand
     if c in _REGEX_AFTER:
         return True
-    if not (c.isalnum() or c in "_$"):
-        return False
+    return _word_at(text, last) in _REGEX_KEYWORDS
+
+
+def _word_at(text: str, last: int) -> str:
+    """The identifier or keyword ending at index `last` ("" when none does)."""
+    if last < 0 or not (text[last].isalnum() or text[last] in "_$"):
+        return ""
     start = last
     while start > 0 and (text[start - 1].isalnum() or text[start - 1] in "_$"):
         start -= 1
-    return text[start:last + 1] in _REGEX_KEYWORDS
+    return text[start:last + 1]
 
 
 def _regex_end(text: str, i: int) -> int:
@@ -252,6 +287,8 @@ def code_mask(text: str) -> bytearray:
     depths: list[int] = []  # brace depth inside each open `${ ... }` of a template literal
     in_template = False
     last = -1  # index of the last significant code character
+    parens: list[bool] = []  # open `(`: whether it follows if / while / for / with
+    statement_paren = -2  # index of the last `)` that closed such a condition: a `/` right after it is a regex
     i = 0
     while i < n:
         c = text[i]
@@ -287,7 +324,7 @@ def code_mask(text: str) -> bytearray:
         if c == "`":
             in_template, i = True, i + 1
             continue
-        if c == "/" and _regex_can_start(text, last):
+        if c == "/" and (last == statement_paren or _regex_can_start(text, last)):
             j = _regex_end(text, i)
             if j >= 0:
                 last, i = j, j + 1
@@ -301,6 +338,10 @@ def code_mask(text: str) -> bytearray:
                     in_template, i = True, i + 1
                     continue
                 depths[-1] -= 1
+        if c == "(":
+            parens.append(_word_at(text, last) in _CONDITION_KEYWORDS)
+        elif c == ")" and parens and parens.pop():
+            statement_paren = i
         if not c.isspace():
             last = i
         i += 1
@@ -348,40 +389,60 @@ def _sweep(entry: Entry, shift: int) -> list[tuple[int, int]]:
     return out
 
 
-def _ran_units(text: str, entries: list[Entry], rel: str, deadline: float | None,
-               lenient: bool = False) -> tuple[bytes, list[int] | None]:
-    """(per UTF-16 unit of the file: 1 when it ran in any entry, the unit offset of each character or None)."""
-    pos = _units(text)
-    length = pos[-1] if pos is not None else len(text)
-    if sum(len(e) for e in entries) > RANGES_PER_UNIT * length + 64:
-        raise Unavailable(f"the coverage of {rel} has more ranges than its text can hold")
-    has_bom = text.startswith("\ufeff")
-    runs: list[tuple[int, int]] = []
-    for entry in entries:
-        _check(deadline)
+class Accumulator:
+    """One watched file's "ran" bit map over its UTF-16 units, folded entry by entry."""
+
+    def __init__(self, text: str, rel: str = "the file", lenient: bool = False) -> None:
+        self.text, self.rel, self.lenient = text, rel, lenient
+        self.pos = _units(text)
+        self.length = self.pos[-1] if self.pos is not None else len(text)
+        self.has_bom = text.startswith("\ufeff")
+        self.ran = bytearray(self.length)
+        self.entries = 0  # entries folded in
+        self._patterns: set[bytes] = set()
+
+    def add(self, entry: Entry) -> None:
+        """Fold one script entry in. Strict: an entry that does not fit the text is `Unavailable`; lenient: it is
+        skipped (less coverage only reports more lines as never run)."""
+        if len(entry) > RANGES_PER_UNIT * self.length + 64:
+            if self.lenient:
+                return
+            raise Unavailable(f"the coverage of {self.rel} has more ranges than its text can hold")
         end = max(e for _, e, _ in entry)
-        if end == length:
+        if end == self.length:
             shift = 0
-        elif has_bom and end == length - 1:
+        elif self.has_bom and end == self.length - 1:
             shift = 1  # an ES module: V8 compiled the source without its byte-order mark
-        elif lenient:
-            continue
+        elif self.lenient:
+            return
         else:
-            raise Unavailable(f"the coverage of {rel} does not match its text (V8 saw {end} UTF-16 units, the "
-                              f"file has {length})")
-        runs.extend(_sweep(entry, shift))
-    ran = bytearray(length)
-    cur_start, cur_end = -1, -1
-    for start, end in sorted(runs):  # merged first, so each unit is painted once
-        if start > cur_end:
-            if cur_end > cur_start:
-                ran[cur_start:cur_end] = b"\x01" * (cur_end - cur_start)
-            cur_start, cur_end = start, end
-        else:
-            cur_end = max(cur_end, end)
-    if cur_end > cur_start:
-        ran[cur_start:cur_end] = b"\x01" * (cur_end - cur_start)
-    return bytes(ran), pos
+            raise Unavailable(f"the coverage of {self.rel} does not match its text (V8 saw {end} UTF-16 units, the "
+                              f"file has {self.length})")
+        runs = _sweep(entry, shift)  # disjoint and in order
+        self.entries += 1
+        key = hashlib.blake2b(repr(runs).encode(), digest_size=16).digest()
+        if key in self._patterns:
+            return
+        self._patterns.add(key)
+        for start, stop in runs:
+            self.ran[start:stop] = b"\x01" * (stop - start)
+
+    def line_status(self) -> tuple[set[int], set[int]]:
+        """(executable lines, executable lines any code of which ran)."""
+        if not self.entries:
+            return executable_lines(self.text), set()
+        executable, hit, _ = _scan(self.text, bytes(self.ran), self.pos)
+        return executable, hit
+
+    def never_run(self) -> tuple[set[int], set[int]]:
+        """(executable lines, executable lines with a code character that never ran in any entry): the assurance's
+        block-precise view, where a never-taken branch on an otherwise executed line (``while (c) n++;``) still
+        counts. A file no entry covers never ran at all."""
+        if not self.entries:
+            executable = executable_lines(self.text)
+            return executable, set(executable)
+        executable, _, miss = _scan(self.text, bytes(self.ran), self.pos)
+        return executable, miss
 
 
 def _scan(text: str, ran: bytes | None, pos: list[int] | None) -> tuple[set[int], set[int], set[int]]:
@@ -421,23 +482,21 @@ def executable_lines(text: str) -> set[int]:
     return _scan(text, None, None)[0]
 
 
+def _accumulate(text: str, entries: list[Entry], rel: str, deadline: float | None, lenient: bool) -> Accumulator:
+    acc = Accumulator(text, rel, lenient)
+    for entry in entries:
+        _check(deadline)
+        acc.add(entry)
+    return acc
+
+
 def line_status(text: str, entries: list[Entry], rel: str = "the file",
                 deadline: float | None = None) -> tuple[set[int], set[int]]:
-    """(executable lines, executable lines any code of which ran) of one file from every script entry for it."""
-    if not entries:
-        return executable_lines(text), set()
-    executable, hit, _ = _scan(text, *_ran_units(text, entries, rel, deadline))
-    return executable, hit
+    """(executable lines, executable lines any code of which ran) of one file from the given script entries."""
+    return _accumulate(text, entries, rel, deadline, False).line_status()
 
 
 def never_run(text: str, entries: list[Entry], rel: str = "the file",
               deadline: float | None = None) -> tuple[set[int], set[int]]:
-    """(executable lines, executable lines with a code character that never ran in any entry): the assurance's
-    block-precise view, where a never-taken branch on an otherwise executed line (``while (c) n++;``) still counts.
-    A file no entry covers never ran at all. An entry whose length does not match the text is skipped (less coverage
-    only reports more lines as never run); too many ranges still make it unavailable."""
-    if not entries:
-        executable = executable_lines(text)
-        return executable, set(executable)
-    executable, _, miss = _scan(text, *_ran_units(text, entries, rel, deadline, lenient=True))
-    return executable, miss
+    """`Accumulator.never_run` over the given entries; an entry that does not fit the text is skipped."""
+    return _accumulate(text, entries, rel, deadline, True).never_run()
