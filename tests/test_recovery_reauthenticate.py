@@ -32,8 +32,22 @@ def test_a_run_that_used_the_env_dir_is_advised_with_the_variable_not_todays_def
     # the advice is computed later (status, why), perhaps without the variable the run had
     monkeypatch.delenv(claude_auth.CONFIG_DIR_ENV, raising=False)
     rec = runtime.classify_recovery(_state(name="claude", auth_mode="dedicated_config", auth_config_source="env"))
-    assert 'CLAUDE_CONFIG_DIR="$REPO_AI_CLAUDE_CONFIG_DIR" claude auth login' in rec["action"]
+    assert 'CLAUDE_CONFIG_DIR="${REPO_AI_CLAUDE_CONFIG_DIR:?set it to the directory the run used}" claude auth login' \
+        in rec["action"]
     assert "the run used" in rec["action"] and str(claude_auth.default_config_dir()) not in rec["action"]
+
+
+def test_a_default_dir_run_ignores_an_override_set_when_the_advice_is_shown(monkeypatch):
+    monkeypatch.setenv(claude_auth.CONFIG_DIR_ENV, "/work/other-cfg")
+    rec = runtime.classify_recovery(_state(name="claude", auth_mode="dedicated_config", auth_config_source="default"))
+    assert "/work/other-cfg" not in rec["action"] and "claude-provider claude auth login" in rec["action"]
+
+
+def test_an_old_record_without_the_config_source_names_no_directory(monkeypatch):
+    monkeypatch.setenv(claude_auth.CONFIG_DIR_ENV, "/work/other-cfg")
+    rec = runtime.classify_recovery(_state(name="claude", auth_mode="dedicated_config"))
+    assert "CLAUDE_CONFIG_DIR" not in rec["action"] and "`repo-ai agents setup claude`" in rec["action"]
+    assert "checks only locally" in rec["action"]
 
 
 def test_a_preflight_setup_problem_is_not_told_to_log_in_again():
@@ -73,8 +87,15 @@ def test_login_commands_are_pasteable_and_show_no_account_path(tmp_path):
     assert claude_auth.login_command(home / ".local/share/repo-ai/claude-provider") == \
         "CLAUDE_CONFIG_DIR=~/.local/share/repo-ai/claude-provider claude auth login"
     spaced = tmp_path / "My Disk" / "claude cfg"
-    assert claude_auth.login_command(spaced) == f"CLAUDE_CONFIG_DIR='{spaced}' claude auth login"
-    assert claude_auth.shell_path(home / "a b") == f"'{home / 'a b'}'"
+    if home.resolve() not in spaced.resolve().parents:
+        assert claude_auth.login_command(spaced) == f"CLAUDE_CONFIG_DIR='{spaced}' claude auth login"
+    assert claude_auth.shell_path(home / "a b") == "~/'a b'"
+
+
+def test_no_tilde_form_when_home_is_root_or_empty(monkeypatch):
+    for value in ("/", ""):
+        monkeypatch.setenv("HOME", value)
+        assert claude_auth.shell_path(Path("/Users/x/.local/share/c")) == "/Users/x/.local/share/c"
 
 
 def test_the_config_source_is_recorded_without_the_path():

@@ -80,14 +80,18 @@ def default_config_dir(environ: Mapping[str, str] | None = None) -> Path:
 
 
 def shell_path(path: Path) -> str:
-    """A path to paste into a shell: `~/...` under HOME when that needs no quoting (no account name shown),
-    otherwise shell-quoted."""
+    """A path to paste into a shell: `~/...` under HOME (no account name shown; the rest shell-quoted when needed),
+    otherwise shell-quoted. No `~` form when HOME is empty or `/`, where `~` would expand to something else."""
+    home_env = os.environ.get("HOME")
     try:
-        rest = Path(path).expanduser().resolve().relative_to(Path.home().resolve())
-    except (ValueError, OSError, RuntimeError):
+        home = Path.home().resolve()
+        rest = Path(path).expanduser().resolve().relative_to(home)
+    except (ValueError, OSError, RuntimeError, KeyError):
+        return shlex.quote(str(path))
+    if home_env == "" or home == Path(home.anchor) or not rest.parts:
         return shlex.quote(str(path))
     text = rest.as_posix()
-    return f"~/{text}" if re.fullmatch(r"[A-Za-z0-9._/-]+", text) else shlex.quote(str(path))
+    return "~/" + (text if re.fullmatch(r"[A-Za-z0-9._/-]+", text) else shlex.quote(text))
 
 
 def login_command(config_dir: Path) -> str:
@@ -102,10 +106,12 @@ def config_source(environ: Mapping[str, str] | None = None) -> str:
 
 
 def relogin_command(source: str) -> str:
-    """The login command for the directory a run used, rendered from where it came from."""
+    """The login command for the directory a run used, rendered from where it came from: `env` names the variable
+    (the shell stops if it is unset, rather than logging in to the personal config); `default` is the default
+    location computed without the override variable, whatever it is set to now."""
     if source == "env":
-        return f'CLAUDE_CONFIG_DIR="${CONFIG_DIR_ENV}" claude auth login'
-    return login_command(default_config_dir())
+        return f'CLAUDE_CONFIG_DIR="${{{CONFIG_DIR_ENV}:?set it to the directory the run used}}" claude auth login'
+    return login_command(default_config_dir({k: v for k, v in os.environ.items() if k != CONFIG_DIR_ENV}))
 
 
 def audit_config_dir(path: Path) -> list[str]:
