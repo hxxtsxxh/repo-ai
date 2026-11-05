@@ -89,6 +89,7 @@ export default defineConfig({
             { label: 'Evaluation & methodology', slug: 'docs/evaluation' },
             { label: 'Status matrix', slug: 'docs/status' },
             { label: 'Compared with other tools', slug: 'docs/compare' },
+            { label: 'Repeat our journeys', slug: 'docs/reproduce' },
           ],
         },
         {
