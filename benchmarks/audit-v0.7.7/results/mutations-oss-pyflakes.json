@@ -1,0 +1,234 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "pyflakes/checker.py",
+   "func": "getCommonAncestor",
+   "start": 898,
+   "end": 914,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_builtin",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations",
+    "pyflakes.test.test_undefined_names"
+   ]
+  },
+  {
+   "file": "pyflakes/api.py",
+   "func": "iterSourceCode",
+   "start": 104,
+   "end": 112,
+   "indent": 4,
+   "failing_modules": [
+    "pyflakes.test.test_api"
+   ]
+  },
+  {
+   "file": "pyflakes/messages.py",
+   "func": "__init__",
+   "start": 368,
+   "end": 369,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "NAME",
+   "start": 1914,
+   "end": 1926,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_api",
+    "pyflakes.test.test_builtin",
+    "pyflakes.test.test_code_segment",
+    "pyflakes.test.test_custom_builtins",
+    "pyflakes.test.test_dict",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_is_literal",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations",
+    "pyflakes.test.test_undefined_names"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "_has_alias",
+   "start": 312,
+   "end": 312,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_api",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations",
+    "pyflakes.test.test_undefined_names"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "descendantOf",
+   "start": 917,
+   "end": 920,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "_run_deferred",
+   "start": 770,
+   "end": 777,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_api",
+    "pyflakes.test.test_builtin",
+    "pyflakes.test.test_code_segment",
+    "pyflakes.test.test_custom_builtins",
+    "pyflakes.test.test_dict",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_is_literal",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations",
+    "pyflakes.test.test_undefined_names"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "annotationsFutureEnabled",
+   "start": 803,
+   "end": 805,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_type_annotations"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "futuresAllowed",
+   "start": 792,
+   "end": 794,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_api",
+    "pyflakes.test.test_builtin",
+    "pyflakes.test.test_custom_builtins",
+    "pyflakes.test.test_dict",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_is_literal",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations",
+    "pyflakes.test.test_undefined_names"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "imported_name",
+   "start": 330,
+   "end": 330,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_api",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "GENERATOREXP",
+   "start": 1894,
+   "end": 1905,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_undefined_names"
+   ]
+  },
+  {
+   "file": "pyflakes/messages.py",
+   "func": "__init__",
+   "start": 304,
+   "end": 305,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_other"
+   ]
+  },
+  {
+   "file": "pyflakes/reporter.py",
+   "func": "flake",
+   "start": 84,
+   "end": 85,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_api"
+   ]
+  },
+  {
+   "file": "pyflakes/messages.py",
+   "func": "__init__",
+   "start": 248,
+   "end": 249,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_type_annotations"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "_is_typing_helper",
+   "start": 624,
+   "end": 655,
+   "indent": 4,
+   "failing_modules": [
+    "pyflakes.test.test_builtin",
+    "pyflakes.test.test_dict",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations",
+    "pyflakes.test.test_undefined_names"
+   ]
+  },
+  {
+   "file": "pyflakes/checker.py",
+   "func": "isDocstring",
+   "start": 1217,
+   "end": 1221,
+   "indent": 8,
+   "failing_modules": [
+    "pyflakes.test.test_api",
+    "pyflakes.test.test_builtin",
+    "pyflakes.test.test_custom_builtins",
+    "pyflakes.test.test_dict",
+    "pyflakes.test.test_doctests",
+    "pyflakes.test.test_imports",
+    "pyflakes.test.test_is_literal",
+    "pyflakes.test.test_match",
+    "pyflakes.test.test_other",
+    "pyflakes.test.test_type_annotations",
+    "pyflakes.test.test_undefined_names"
+   ]
+  }
+ ]
+}

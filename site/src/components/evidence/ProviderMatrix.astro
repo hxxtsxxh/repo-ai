@@ -1,0 +1,246 @@
+---
+/**
+ * Provider compatibility matrix, rendered from src/data/providers.json (edited by hand, validated by
+ * scripts/site_facts.py and again at build time in src/data/facts.ts).
+ */
+import StatusChip from './StatusChip.astro';
+import { providers, providerLabels, providersAsOf, labelTone, repoBlob, PROVIDER_LABELS } from '../../data/facts';
+
+interface Props {
+  /** Show the label definitions under the table. */
+  legend?: boolean;
+  captionId?: string;
+}
+const { legend = true, captionId = 'provider-matrix-caption' } = Astro.props;
+---
+
+<div class="ri-prov not-content">
+  <div class="ri-prov__wrap" role="region" aria-labelledby={captionId} tabindex="0">
+    <table class="ri-prov__table">
+      <caption id={captionId}>
+        Coding agents and repo-ai, as of <time datetime={providersAsOf}>{providersAsOf}</time>
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Provider</th>
+          <th scope="col">Label</th>
+          <th scope="col">Isolated execution (<code>repo-ai do</code>)</th>
+          <th scope="col">Host (<code>repo-ai init</code>)</th>
+          <th scope="col">Cost reporting</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          providers.map((p) => (
+            <tr>
+              <th scope="row">
+                {p.name}
+                <span class="ri-prov__agent">
+                  <code>--agent {p.agent}</code>
+                </span>
+              </th>
+              <td data-label="Label">
+                <StatusChip label={p.label} {...labelTone[p.label]} />
+              </td>
+              <td data-label="Execution">
+                {p.execution.status !== p.label && (
+                  <span class="ri-prov__exec">
+                    <StatusChip label={p.execution.status} {...labelTone[p.execution.status]} />
+                  </span>
+                )}
+                <span class="ri-prov__observed">{p.execution.observed}</span>
+                <span class="ri-prov__evidence">
+                  <time datetime={p.execution.verified_on}>{p.execution.verified_on}</time> · version {p.execution.version} ·{' '}
+                  {p.execution.sample} · {p.execution.platforms} ·{' '}
+                  <a href={repoBlob(p.execution.source)} rel="noopener">
+                    evidence<span class="ri-prov__sr"> for {p.name}</span>
+                  </a>
+                </span>
+              </td>
+              <td data-label="Host">{p.host}</td>
+              <td data-label="Cost">{p.cost}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  {
+    legend && (
+      <dl class="ri-prov__legend">
+        {PROVIDER_LABELS.map((l) => (
+          <div>
+            <dt>
+              <StatusChip label={l} {...labelTone[l]} />
+            </dt>
+            <dd>{providerLabels[l]}</dd>
+          </div>
+        ))}
+      </dl>
+    )
+  }
+</div>
+
+<style>
+  .ri-prov {
+    margin-bottom: 1.5rem;
+    color: var(--ri-fg);
+  }
+  .ri-prov__wrap {
+    overflow-x: auto;
+    border: 1px solid var(--ri-line);
+    border-radius: 10px;
+    background: var(--ri-bg);
+  }
+  .ri-prov__wrap:focus-visible {
+    outline: 2px solid var(--ri-focus);
+    outline-offset: 2px;
+  }
+  .ri-prov__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    min-width: 760px;
+  }
+  .ri-prov__table caption {
+    text-align: left;
+    padding: 0.85rem 1rem;
+    font-weight: 650;
+    border-bottom: 1px solid var(--ri-line);
+  }
+  .ri-prov__table th,
+  .ri-prov__table td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--ri-line);
+  }
+  .ri-prov__table tbody tr:last-child th,
+  .ri-prov__table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .ri-prov__table thead th {
+    font-family: var(--ri-font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--ri-muted);
+    background: var(--ri-bg-raised);
+  }
+  .ri-prov__table code {
+    font-family: var(--ri-font-mono);
+    font-size: 0.92em;
+    background: none;
+    padding: 0;
+  }
+  .ri-prov__table tbody th {
+    font-weight: 600;
+    min-width: 9rem;
+  }
+  .ri-prov__agent {
+    display: block;
+    margin-top: 0.2rem;
+    font-weight: 400;
+    color: var(--ri-muted);
+    font-size: 0.78rem;
+  }
+  .ri-prov__table td {
+    color: var(--ri-muted);
+  }
+  .ri-prov__table td:nth-child(2) {
+    white-space: nowrap;
+  }
+  .ri-prov__exec {
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  .ri-prov__observed {
+    display: block;
+    color: var(--ri-fg);
+  }
+  .ri-prov__evidence {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+  }
+  .ri-prov__evidence a {
+    color: var(--ri-accent-text);
+  }
+  .ri-prov__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .ri-prov__legend {
+    margin: 1rem 0 0;
+    display: grid;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+  }
+  .ri-prov__legend div {
+    display: grid;
+    grid-template-columns: minmax(0, 12.5rem) minmax(0, 1fr);
+    gap: 0.25rem 0.8rem;
+    align-items: baseline;
+  }
+  .ri-prov__legend dd {
+    margin: 0;
+    color: var(--ri-muted);
+  }
+
+  /* Stacked rows on narrow screens. */
+  @media (max-width: 719px) {
+    .ri-prov__table {
+      min-width: 0;
+    }
+    .ri-prov__table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .ri-prov__table tbody,
+    .ri-prov__table tr,
+    .ri-prov__table tbody th {
+      display: block;
+    }
+    .ri-prov__table tr {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--ri-line);
+    }
+    .ri-prov__table tbody tr:last-child {
+      border-bottom: 0;
+    }
+    .ri-prov__table tbody th,
+    .ri-prov__table td {
+      padding: 0;
+      border: 0;
+    }
+    .ri-prov__table tbody th {
+      margin-bottom: 0.4rem;
+    }
+    .ri-prov__table td {
+      display: block;
+      position: relative;
+      padding: 0.2rem 0 0.2rem 6.25rem;
+    }
+    .ri-prov__table td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 0;
+      top: 0.3rem;
+      width: 5.75rem;
+      font-family: var(--ri-font-mono);
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: var(--ri-muted);
+    }
+    .ri-prov__legend div {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

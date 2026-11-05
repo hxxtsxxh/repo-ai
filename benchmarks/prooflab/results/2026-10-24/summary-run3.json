@@ -1,0 +1,409 @@
+{
+ "all_as_expected": false,
+ "cases": {
+  "ipaddr.js": {
+   "command": "node --test",
+   "fix": "74ee4c5751afbb998247696539065c78d274d631",
+   "licence": "MIT",
+   "parent": "40708ee",
+   "url": "https://github.com/whitequark/ipaddr.js"
+  },
+  "json-pointer": {
+   "command": "python -m unittest tests",
+   "fix": "16c4c8e33a30e364d94f7a870a6c79916b5f870d",
+   "licence": "BSD-3-Clause",
+   "parent": "f15abacd371a3415fb874634687d1619aa5a6fe4",
+   "url": "https://github.com/stefankoegl/python-json-pointer"
+  }
+ },
+ "controls": {
+  "baseline": [
+   "baseline-not-reproduced",
+   "the pinned target is an existing test that already passes"
+  ],
+  "breakage": [
+   "regressions-detected",
+   "fixes the target but breaks related existing behaviour"
+  ],
+  "fix": [
+   "supported",
+   "the upstream fix, its upstream test pinned from the fix commit"
+  ],
+  "hang": [
+   "incomplete",
+   "the candidate hangs on the claimed path: missing evidence is not a pass"
+  ],
+  "hidden": [
+   "regressions-detected",
+   "breaks related behaviour and skips the existing tests that show it"
+  ],
+  "partial": [
+   "candidate-failed",
+   "a partial fix: the targeted failure is still there"
+  ],
+  "separate-breakage": [
+   "regressions-detected",
+   "fixes the target but breaks related behaviour (separate acceptance file)"
+  ],
+  "separate-fix": [
+   "supported",
+   "the same fix, with the acceptance test as a separate file outside the tree"
+  ],
+  "stale": [
+   "stale",
+   "a supported passport after a later edit"
+  ],
+  "weaken": [
+   "scenario-changed",
+   "the candidate weakens the pinned acceptance test"
+  ]
+ },
+ "false_proofs": 0,
+ "node": "v24.19.0",
+ "platform": "darwin",
+ "python": "3.12.14",
+ "repo_ai": "repo-ai 0.7.7",
+ "rows": [
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "fix",
+   "exit_code": 0,
+   "expected": "supported",
+   "expected_level": "behavior_observed",
+   "false_proof": false,
+   "level": "behavior_observed",
+   "observed": "supported",
+   "passport_digest": "8dde252e79afe5dd599262844b6b00e3f1ff18e98f7a9d869d760e8555f259c2",
+   "reasons": [],
+   "seconds": 2.6,
+   "what": "the upstream fix, its upstream test pinned from the fix commit"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "stale",
+   "exit_code": 2,
+   "expected": "stale",
+   "false_proof": false,
+   "observed": "stale",
+   "passport_digest": null,
+   "seconds": 0.0,
+   "what": "a supported passport after a later edit"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "partial",
+   "exit_code": 1,
+   "expected": "candidate-failed",
+   "false_proof": false,
+   "level": "not_established",
+   "observed": "candidate-failed",
+   "passport_digest": "db75acd8d5e519ee4221a455c329323d2cbd4b71bade2e6a10a207a6e55eb5f9",
+   "reasons": [
+    "candidate: 1 test(s) of the scenario fail at the candidate: tests.WrongInputTests.test_string_not_indexable (AssertionError: JsonPointerException not raised by resolve_pointer)",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+   ],
+   "seconds": 2.7,
+   "what": "a partial fix: the targeted failure is still there"
+  },
+  {
+   "as_expected": false,
+   "case": "json-pointer",
+   "control": "breakage",
+   "exit_code": 1,
+   "expected": "regressions-detected",
+   "false_proof": false,
+   "level": "not_established",
+   "observed": "candidate-failed",
+   "passport_digest": "b65ee4f91a57bf698c8fdb1e7f89196082d970b8151aab9c35faff309b4949f6",
+   "reasons": [
+    "candidate: 2 test(s) of the scenario fail at the candidate: tests.AltTypesTests.test_alttypes (jsonpointer.JsonPointerException: Cannot apply token 'left' to non-container type <class 'tests.AltTypesTests.Node'>)",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)",
+    "edited tests: the base's own tests.py fails at the candidate: tests.AltTypesTests.test_alttypes, tests.AltTypesTests.test_mock_dict_sanity"
+   ],
+   "seconds": 1.9,
+   "what": "fixes the target but breaks related existing behaviour"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "hang",
+   "exit_code": 1,
+   "expected": "incomplete",
+   "false_proof": false,
+   "level": "not_established",
+   "observed": "incomplete",
+   "passport_digest": "fb0f558e78ac8608643aa10e3a52a719c647c9f18c078215200637f7737e8db3",
+   "reasons": [
+    "candidate: the scenario's run at the candidate is incomplete: did not finish within 20s (--timeout): the process timed out; still running: tests.AltTypesTests.test_mock_dict_raises_key_error",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)",
+    "edited tests: tests.py could not be compared: did not finish within 20s (--timeout): the process timed out; still running: tests.AltTypesTests.test_mock_dict_raises_key_error"
+   ],
+   "seconds": 21.9,
+   "what": "the candidate hangs on the claimed path: missing evidence is not a pass"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "weaken",
+   "exit_code": 1,
+   "expected": "scenario-changed",
+   "false_proof": false,
+   "level": null,
+   "observed": "scenario-changed",
+   "passport_digest": "f8c0c1c1c6915bef076dd07fb70d17146157e7fae99ab8cbc385e26b4d365c12",
+   "reasons": [
+    "tests.py in the working tree is not the pinned scenario (sha256 0f865c62352c): the candidate changed the acceptance test after it was pinned"
+   ],
+   "seconds": 0.7,
+   "what": "the candidate weakens the pinned acceptance test"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "baseline",
+   "exit_code": 1,
+   "expected": "baseline-not-reproduced",
+   "false_proof": false,
+   "level": "behavior_observed",
+   "observed": "baseline-not-reproduced",
+   "passport_digest": "17fe353c84abc2ff97417d692d1c4b8e892cea1041c056b83304200c64552ce7",
+   "reasons": [
+    "baseline: pinned target 'tests.AltTypesTests.test_alttypes' passed at the base",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+   ],
+   "seconds": 2.4,
+   "what": "the pinned target is an existing test that already passes"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "separate-fix",
+   "exit_code": 0,
+   "expected": "supported",
+   "expected_level": "supported_by_controlled_comparison",
+   "false_proof": false,
+   "level": "supported_by_controlled_comparison",
+   "observed": "supported",
+   "passport_digest": "c242dd5ced3c34398971d32f235f0c74ac8cb13fb7b4bd03137fd67290348410",
+   "reasons": [],
+   "seconds": 3.0,
+   "what": "the same fix, with the acceptance test as a separate file outside the tree"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "separate-breakage",
+   "exit_code": 1,
+   "expected": "regressions-detected",
+   "false_proof": false,
+   "level": "supported_by_controlled_comparison",
+   "observed": "regressions-detected",
+   "passport_digest": "28d03a4cf57ecf99325ebea55807b64d2b668b6473959d9844f86ab2374caaaf",
+   "reasons": [
+    "regressions: verify found new failures in existing tests"
+   ],
+   "seconds": 3.6,
+   "what": "fixes the target but breaks related behaviour (separate acceptance file)"
+  },
+  {
+   "as_expected": true,
+   "case": "json-pointer",
+   "control": "hidden",
+   "exit_code": 1,
+   "expected": "regressions-detected",
+   "false_proof": false,
+   "level": "supported_by_controlled_comparison",
+   "observed": "regressions-detected",
+   "passport_digest": "73018423a7f87712b82f60455a4a95e05a446c5a5cf99d66a8f28c054be82119",
+   "reasons": [
+    "edited tests: the base's own tests.py fails at the candidate: tests.AltTypesTests.test_alttypes, tests.AltTypesTests.test_mock_dict_sanity"
+   ],
+   "seconds": 2.5,
+   "skipped_existing_tests": [
+    "test_alttypes",
+    "test_mock_dict_sanity"
+   ],
+   "verify_alone": {
+    "exit_code": 0,
+    "verdict": "selected-passed (full suite not run)"
+   },
+   "what": "breaks related behaviour and skips the existing tests that show it"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "fix",
+   "exit_code": 0,
+   "expected": "supported",
+   "expected_level": "behavior_observed",
+   "false_proof": false,
+   "level": "behavior_observed",
+   "observed": "supported",
+   "passport_digest": "1718bc4dc1f4939e5caaab0366200083a27f040ad9b8e14404824c58449bc767",
+   "reasons": [],
+   "seconds": 3.2,
+   "what": "the upstream fix, its upstream test pinned from the fix commit"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "stale",
+   "exit_code": 2,
+   "expected": "stale",
+   "false_proof": false,
+   "observed": "stale",
+   "passport_digest": null,
+   "seconds": 0.0,
+   "what": "a supported passport after a later edit"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "partial",
+   "exit_code": 1,
+   "expected": "candidate-failed",
+   "false_proof": false,
+   "level": "not_established",
+   "observed": "candidate-failed",
+   "passport_digest": "b1d31276711430fffe25ca8cc1b88a01b8b6942f882abc8b5dc0edbb7f84d01a",
+   "reasons": [
+    "candidate: 3 test(s) of the scenario fail at the candidate: ipaddr > rejects invalid IPv4 CIDR prefix lengths in match (AssertionError: Missing expected exception.)",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+   ],
+   "seconds": 3.4,
+   "what": "a partial fix: the targeted failure is still there"
+  },
+  {
+   "as_expected": false,
+   "case": "ipaddr.js",
+   "control": "breakage",
+   "exit_code": 1,
+   "expected": "regressions-detected",
+   "false_proof": false,
+   "level": "not_established",
+   "observed": "candidate-failed",
+   "passport_digest": "11c2d5c58fdb5250e157eb1231b8f4eaa2697f1ce5d71ecfcde23fc8d5b694c8",
+   "reasons": [
+    "candidate: 8 test(s) of the scenario fail at the candidate: ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses (ipaddr: invalid CIDR prefix length)",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)",
+    "edited tests: the base's own test/ipaddr.test.js fails at the candidate: ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses, ipaddr > correctly processes IPv4-mapped addresses, ipaddr > detects reserved IPv4 networks"
+   ],
+   "seconds": 2.4,
+   "what": "fixes the target but breaks related existing behaviour"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "hang",
+   "exit_code": 1,
+   "expected": "incomplete",
+   "false_proof": false,
+   "level": "not_established",
+   "observed": "incomplete",
+   "passport_digest": "5e6452cb9ea4604a9b5a9533bf834a428f38c882889b8e324d575130bd53322d",
+   "reasons": [
+    "candidate: the scenario's run at the candidate is incomplete: did not finish within 20s (--timeout): the process timed out",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+   ],
+   "seconds": 22.1,
+   "what": "the candidate hangs on the claimed path: missing evidence is not a pass"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "weaken",
+   "exit_code": 1,
+   "expected": "scenario-changed",
+   "false_proof": false,
+   "level": null,
+   "observed": "scenario-changed",
+   "passport_digest": "da05d87b02406456fb3a8c34eb2958d309c6d098d5ed872528ca1b858b60bf53",
+   "reasons": [
+    "test/ipaddr.test.js in the working tree is not the pinned scenario (sha256 ba469775028d): the candidate changed the acceptance test after it was pinned"
+   ],
+   "seconds": 1.0,
+   "what": "the candidate weakens the pinned acceptance test"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "baseline",
+   "exit_code": 1,
+   "expected": "baseline-not-reproduced",
+   "false_proof": false,
+   "level": "behavior_observed",
+   "observed": "baseline-not-reproduced",
+   "passport_digest": "71698243cc049acda0f02b116d692c3d749ccd0b3c3a05ae77927ceb9541e433",
+   "reasons": [
+    "baseline: pinned target 'ipaddr > matches IPv4 CIDR correctly' passed at the base",
+    "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+   ],
+   "seconds": 3.0,
+   "what": "the pinned target is an existing test that already passes"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "separate-fix",
+   "exit_code": 0,
+   "expected": "supported",
+   "expected_level": "supported_by_controlled_comparison",
+   "false_proof": false,
+   "level": "supported_by_controlled_comparison",
+   "observed": "supported",
+   "passport_digest": "c3ff155994a7678d29d0d5c3f5e2bc65d5837a27a6109e9c90a5b5c4fb50f9b9",
+   "reasons": [],
+   "seconds": 4.1,
+   "what": "the same fix, with the acceptance test as a separate file outside the tree"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "separate-breakage",
+   "exit_code": 1,
+   "expected": "regressions-detected",
+   "false_proof": false,
+   "level": "supported_by_controlled_comparison",
+   "observed": "regressions-detected",
+   "passport_digest": "6ac4895f07f51b8cf9c1e2e602bfd7cd0ee5abd24ab1448a21118de023e42a54",
+   "reasons": [
+    "regressions: verify found new failures in existing tests"
+   ],
+   "seconds": 5.2,
+   "what": "fixes the target but breaks related behaviour (separate acceptance file)"
+  },
+  {
+   "as_expected": true,
+   "case": "ipaddr.js",
+   "control": "hidden",
+   "exit_code": 1,
+   "expected": "regressions-detected",
+   "false_proof": false,
+   "level": "supported_by_controlled_comparison",
+   "observed": "regressions-detected",
+   "passport_digest": "500441b58cdea8d557d05c591cce912f9be8f87f1a5127f3153b25375b81c402",
+   "reasons": [
+    "edited tests: the base's own test/ipaddr.test.js fails at the candidate: ipaddr > converts between IPv4-mapped IPv6 addresses and IPv4 addresses, ipaddr > correctly processes IPv4-mapped addresses, ipaddr > detects reserved IPv4 networks"
+   ],
+   "seconds": 2.9,
+   "skipped_existing_tests": [
+    "converts between IPv4-mapped IPv6 addresses and IPv4 addresses",
+    "correctly processes IPv4-mapped addresses",
+    "detects reserved IPv4 networks",
+    "detects reserved IPv6 networks",
+    "matches IPv4 CIDR correctly",
+    "matches IPv6 CIDR correctly",
+    "parses IPv4 CIDR correctly",
+    "parses IPv6 CIDR correctly"
+   ],
+   "verify_alone": {
+    "exit_code": 0,
+    "verdict": "selected-passed (full suite not run)"
+   },
+   "what": "breaks related behaviour and skips the existing tests that show it"
+  }
+ ]
+}

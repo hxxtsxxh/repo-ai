@@ -1,0 +1,2437 @@
+{
+  "confirmatory": false,
+  "environment": {
+    "manifest_content_sha256": "2a35a81fc2e163c76676fce067f79f5a635bb19086f9d1e17ce804ad39f6f42a",
+    "node": "v24.19.0",
+    "platform": "Darwin",
+    "python": "3.12.14",
+    "repo_ai_git_head": "598ed2dc12ef47999cc517e83a9a0c0bf7d471a9",
+    "sealed": true
+  },
+  "note": "Calibration only: synthetic tasks, one author for every role, authored candidates. Not evidence of lift or of safety; never pooled with confirmatory data. No model or provider was invoked (repo-ai replay agent only, $0). Mission ids and seconds vary between runs; decisions are deterministic.",
+  "rows": [
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "ACCEPT",
+      "B": "REJECT",
+      "B_detail": {
+        "baseline": {
+          "chunk.acceptance.test.js::does not mutate input": "pass",
+          "chunk.acceptance.test.js::keeps the remainder": "fail",
+          "chunk.acceptance.test.js::rejects non-array": "fail",
+          "chunk.acceptance.test.js::rejects zero size": "fail",
+          "chunk.test.js::empty input": "pass",
+          "chunk.test.js::exact multiples": "pass"
+        },
+        "candidate": {},
+        "claims_headline": "INCONCLUSIVE",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R1: the last chunk may be shorter",
+            "R2: size must be an integer >= 1, otherwise RangeError",
+            "R3: the input is never modified and chunks are new arrays",
+            "R4: items must be an array, otherwise TypeError",
+            "R5: empty input and exact multiples are unchanged"
+          ],
+          "headline": "INCONCLUSIVE",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R1: the last chunk may be shorter"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R2: size must be an integer >= 1, otherwise RangeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "FAILING",
+              "text": "R3: the input is never modified and chunks are new arrays"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R4: items must be an array, otherwise TypeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "FAILING",
+              "text": "R5: empty input and exact multiples are unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "REJECT",
+        "do_exit": 2,
+        "freshness": "fresh",
+        "mission": "69e0099523276628b9ce7134",
+        "named_unverified": [
+          "R1",
+          "R2",
+          "R3",
+          "R4",
+          "R5"
+        ],
+        "seconds": 5.7,
+        "state": "INCONCLUSIVE",
+        "verdict": "INCONCLUSIVE",
+        "why": "state INCONCLUSIVE / verdict INCONCLUSIVE"
+      },
+      "B_plus": "REJECT",
+      "actionable": true,
+      "candidate": "ctl-srcskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-node-chunk",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.3,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-tamper",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-node-chunk",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R4"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.3,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-testskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-node-chunk",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R4"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "ACCEPT",
+      "B_detail": {
+        "baseline": {
+          "chunk.acceptance.test.js::does not mutate input": "pass",
+          "chunk.acceptance.test.js::keeps the remainder": "fail",
+          "chunk.acceptance.test.js::rejects non-array": "fail",
+          "chunk.acceptance.test.js::rejects zero size": "fail",
+          "chunk.test.js::empty input": "pass",
+          "chunk.test.js::exact multiples": "pass"
+        },
+        "candidate": {
+          "chunk.acceptance.test.js::does not mutate input": "pass",
+          "chunk.acceptance.test.js::keeps the remainder": "pass",
+          "chunk.acceptance.test.js::rejects non-array": "pass",
+          "chunk.acceptance.test.js::rejects zero size": "pass",
+          "chunk.test.js::empty input": "pass",
+          "chunk.test.js::exact multiples": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: the last chunk may be shorter"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: size must be an integer >= 1, otherwise RangeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R3: the input is never modified and chunks are new arrays"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R4: items must be an array, otherwise TypeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R5: empty input and exact multiples are unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 0,
+        "decision": "ACCEPT",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "e5cdf1c1a9ce2876bbf336ee",
+        "named_unverified": [],
+        "seconds": 5.3,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "B_plus": "ACCEPT",
+      "actionable": false,
+      "candidate": "decoy-r2-integer",
+      "followup_tests_B_plus": 0,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-node-chunk",
+      "violated_requirements": [
+        "R2"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "ACCEPT",
+      "B_detail": {
+        "baseline": {
+          "chunk.acceptance.test.js::does not mutate input": "pass",
+          "chunk.acceptance.test.js::keeps the remainder": "fail",
+          "chunk.acceptance.test.js::rejects non-array": "fail",
+          "chunk.acceptance.test.js::rejects zero size": "fail",
+          "chunk.test.js::empty input": "pass",
+          "chunk.test.js::exact multiples": "pass"
+        },
+        "candidate": {
+          "chunk.acceptance.test.js::does not mutate input": "pass",
+          "chunk.acceptance.test.js::keeps the remainder": "pass",
+          "chunk.acceptance.test.js::rejects non-array": "pass",
+          "chunk.acceptance.test.js::rejects zero size": "pass",
+          "chunk.test.js::empty input": "pass",
+          "chunk.test.js::exact multiples": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: the last chunk may be shorter"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: size must be an integer >= 1, otherwise RangeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R3: the input is never modified and chunks are new arrays"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R4: items must be an array, otherwise TypeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R5: empty input and exact multiples are unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 0,
+        "decision": "ACCEPT",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "5a268affe850aed2857b4072",
+        "named_unverified": [],
+        "seconds": 5.4,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "B_plus": "ACCEPT",
+      "actionable": false,
+      "candidate": "decoy-r3-alias",
+      "followup_tests_B_plus": 0,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-node-chunk",
+      "violated_requirements": [
+        "R3"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "ACCEPT",
+      "B": "ACCEPT",
+      "B_detail": {
+        "baseline": {
+          "chunk.acceptance.test.js::does not mutate input": "pass",
+          "chunk.acceptance.test.js::keeps the remainder": "fail",
+          "chunk.acceptance.test.js::rejects non-array": "fail",
+          "chunk.acceptance.test.js::rejects zero size": "fail",
+          "chunk.test.js::empty input": "pass",
+          "chunk.test.js::exact multiples": "pass"
+        },
+        "candidate": {
+          "chunk.acceptance.test.js::does not mutate input": "pass",
+          "chunk.acceptance.test.js::keeps the remainder": "pass",
+          "chunk.acceptance.test.js::rejects non-array": "pass",
+          "chunk.acceptance.test.js::rejects zero size": "pass",
+          "chunk.test.js::empty input": "pass",
+          "chunk.test.js::exact multiples": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: the last chunk may be shorter"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: size must be an integer >= 1, otherwise RangeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R3: the input is never modified and chunks are new arrays"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R4: items must be an array, otherwise TypeError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R5: empty input and exact multiples are unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 0,
+        "decision": "ACCEPT",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "d8da6a44d63603405caace54",
+        "named_unverified": [],
+        "seconds": 5.4,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "B_plus": "ACCEPT",
+      "actionable": false,
+      "candidate": "reference",
+      "followup_tests_B_plus": 0,
+      "kind": "reference",
+      "label": "CORRECT",
+      "stratum": "none",
+      "task": "cal-node-chunk",
+      "violated_requirements": []
+    },
+    {
+      "A": "REJECT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "REJECT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: no-op proposal cannot establish a repair",
+        "seconds": 1.3,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "untouched",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FAIL",
+      "stratum": "noop",
+      "task": "cal-node-chunk",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R4"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "ACCEPT",
+      "B": "REJECT",
+      "B_detail": {
+        "baseline": {
+          "roman.acceptance.test.js::rejects IIII": "fail",
+          "roman.acceptance.test.js::rejects empty string": "fail",
+          "roman.acceptance.test.js::rejects non-string with TypeError": "pass",
+          "roman.acceptance.test.js::subtractive pairs": "fail",
+          "roman.test.js::toRoman basics": "pass",
+          "roman.test.js::toRoman range": "pass"
+        },
+        "candidate": {},
+        "claims_headline": "INCONCLUSIVE",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R1: fromRoman understands subtractive pairs",
+            "R2: fromRoman accepts only canonical numerals",
+            "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input",
+            "R4: toRoman is unchanged"
+          ],
+          "headline": "INCONCLUSIVE",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R1: fromRoman understands subtractive pairs"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R2: fromRoman accepts only canonical numerals"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+            },
+            {
+              "kind": "preserve",
+              "status": "FAILING",
+              "text": "R4: toRoman is unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "REJECT",
+        "do_exit": 2,
+        "freshness": "fresh",
+        "mission": "7a5ef8522d84537506e54c71",
+        "named_unverified": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ],
+        "seconds": 5.5,
+        "state": "INCONCLUSIVE",
+        "verdict": "INCONCLUSIVE",
+        "why": "state INCONCLUSIVE / verdict INCONCLUSIVE"
+      },
+      "B_plus": "REJECT",
+      "actionable": true,
+      "candidate": "ctl-srcskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-node-roman",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.2,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-tamper",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-node-roman",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.3,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-testskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-node-roman",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "REJECT",
+      "A_plus_plus": "REJECT",
+      "A_plus_requirements": [
+        "R2"
+      ],
+      "B": "ABSTAIN",
+      "B_detail": {
+        "baseline": {
+          "roman.acceptance.test.js::rejects IIII": "fail",
+          "roman.acceptance.test.js::rejects empty string": "fail",
+          "roman.acceptance.test.js::rejects non-string with TypeError": "pass",
+          "roman.acceptance.test.js::subtractive pairs": "fail",
+          "roman.test.js::toRoman basics": "pass",
+          "roman.test.js::toRoman range": "pass"
+        },
+        "candidate": {
+          "roman.acceptance.test.js::rejects IIII": "pass",
+          "roman.acceptance.test.js::rejects empty string": "pass",
+          "roman.acceptance.test.js::rejects non-string with TypeError": "pass",
+          "roman.acceptance.test.js::subtractive pairs": "pass",
+          "roman.test.js::toRoman basics": "pass",
+          "roman.test.js::toRoman range": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+          ],
+          "headline": "ACCEPTANCE_PARTIAL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: fromRoman understands subtractive pairs"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: fromRoman accepts only canonical numerals"
+            },
+            {
+              "kind": "change",
+              "status": "NOT_DISCRIMINATING",
+              "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: toRoman is unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "ABSTAIN",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "046691a4a86fe6fdf45a3450",
+        "named_unverified": [
+          "R3"
+        ],
+        "seconds": 4.7,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS but coverage ACCEPTANCE_PARTIAL"
+      },
+      "B_plus": "ACCEPT",
+      "B_plus_detail": {
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: fromRoman understands subtractive pairs"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: fromRoman accepts only canonical numerals"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: toRoman is unchanged"
+            }
+          ]
+        },
+        "decision": "ACCEPT",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "actionable": false,
+      "candidate": "decoy-r2-repeats",
+      "followup_tests_B_plus": 1,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-node-roman",
+      "violated_requirements": [
+        "R2"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "A_plus_requirements": [
+        "R1"
+      ],
+      "B": "ABSTAIN",
+      "B_detail": {
+        "baseline": {
+          "roman.acceptance.test.js::rejects IIII": "fail",
+          "roman.acceptance.test.js::rejects empty string": "fail",
+          "roman.acceptance.test.js::rejects non-string with TypeError": "pass",
+          "roman.acceptance.test.js::subtractive pairs": "fail",
+          "roman.test.js::toRoman basics": "pass",
+          "roman.test.js::toRoman range": "pass"
+        },
+        "candidate": {
+          "roman.acceptance.test.js::rejects IIII": "pass",
+          "roman.acceptance.test.js::rejects empty string": "pass",
+          "roman.acceptance.test.js::rejects non-string with TypeError": "pass",
+          "roman.acceptance.test.js::subtractive pairs": "pass",
+          "roman.test.js::toRoman basics": "pass",
+          "roman.test.js::toRoman range": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+          ],
+          "headline": "ACCEPTANCE_PARTIAL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: fromRoman understands subtractive pairs"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: fromRoman accepts only canonical numerals"
+            },
+            {
+              "kind": "change",
+              "status": "NOT_DISCRIMINATING",
+              "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: toRoman is unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "ABSTAIN",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "becc13406d56ccea7565b7dc",
+        "named_unverified": [
+          "R3"
+        ],
+        "seconds": 4.5,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS but coverage ACCEPTANCE_PARTIAL"
+      },
+      "B_plus": "REJECT",
+      "B_plus_detail": {
+        "coverage": {
+          "follow_up_test_needed": [
+            "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+          ],
+          "headline": "INCONCLUSIVE",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: fromRoman understands subtractive pairs"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: fromRoman accepts only canonical numerals"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: toRoman is unchanged"
+            }
+          ]
+        },
+        "decision": "REJECT",
+        "verdict": "FAIL",
+        "why": "state INCONCLUSIVE / verdict FAIL"
+      },
+      "actionable": true,
+      "candidate": "decoy-r3-lowercase",
+      "followup_tests_B_plus": 1,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-node-roman",
+      "violated_requirements": [
+        "R3"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "ACCEPT",
+      "A_plus_requirements": [
+        "R2"
+      ],
+      "B": "ABSTAIN",
+      "B_detail": {
+        "baseline": {
+          "roman.acceptance.test.js::rejects IIII": "fail",
+          "roman.acceptance.test.js::rejects empty string": "fail",
+          "roman.acceptance.test.js::rejects non-string with TypeError": "pass",
+          "roman.acceptance.test.js::subtractive pairs": "fail",
+          "roman.test.js::toRoman basics": "pass",
+          "roman.test.js::toRoman range": "pass"
+        },
+        "candidate": {
+          "roman.acceptance.test.js::rejects IIII": "pass",
+          "roman.acceptance.test.js::rejects empty string": "pass",
+          "roman.acceptance.test.js::rejects non-string with TypeError": "pass",
+          "roman.acceptance.test.js::subtractive pairs": "pass",
+          "roman.test.js::toRoman basics": "pass",
+          "roman.test.js::toRoman range": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+          ],
+          "headline": "ACCEPTANCE_PARTIAL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: fromRoman understands subtractive pairs"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: fromRoman accepts only canonical numerals"
+            },
+            {
+              "kind": "change",
+              "status": "NOT_DISCRIMINATING",
+              "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: toRoman is unchanged"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "ABSTAIN",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "4decd4f0529ad611ea865471",
+        "named_unverified": [
+          "R3"
+        ],
+        "seconds": 5.6,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS but coverage ACCEPTANCE_PARTIAL"
+      },
+      "B_plus": "ACCEPT",
+      "B_plus_detail": {
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: fromRoman understands subtractive pairs"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: fromRoman accepts only canonical numerals"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: TypeError for non-strings; RangeError for empty or non-uppercase-Roman input"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: toRoman is unchanged"
+            }
+          ]
+        },
+        "decision": "ACCEPT",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "actionable": false,
+      "candidate": "reference",
+      "followup_tests_B_plus": 1,
+      "kind": "reference",
+      "label": "CORRECT",
+      "stratum": "none",
+      "task": "cal-node-roman",
+      "violated_requirements": []
+    },
+    {
+      "A": "REJECT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "REJECT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: no-op proposal cannot establish a repair",
+        "seconds": 1.3,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "untouched",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FAIL",
+      "stratum": "noop",
+      "task": "cal-node-roman",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "A": "REJECT",
+      "A0": "REJECT",
+      "A_clean": "REJECT",
+      "A_plus": "REJECT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "baseline": {
+          "test_backoff.py::test_backoff.py::test_uncapped_schedule": "pass",
+          "test_backoff.py::test_backoff.py::test_zero_attempts": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_cap_applies": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_negative_attempts_rejected": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_nonpositive_base_rejected": "fail"
+        },
+        "candidate": {},
+        "claims_headline": "INCONCLUSIVE",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R1: every delay is min(base * factor ** i, cap)",
+            "R2: attempts below 0 raises ValueError; attempts == 0 returns []",
+            "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError",
+            "R4: a schedule that never reaches the cap is unchanged",
+            "R5: attempts that is a bool or not an int raises TypeError"
+          ],
+          "headline": "INCONCLUSIVE",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R1: every delay is min(base * factor ** i, cap)"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "FAILING",
+              "text": "R4: a schedule that never reaches the cap is unchanged"
+            },
+            {
+              "kind": "change",
+              "status": "UNMAPPED",
+              "text": "R5: attempts that is a bool or not an int raises TypeError"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "REJECT",
+        "do_exit": 2,
+        "freshness": "fresh",
+        "mission": "1fc5817c41770de79e2f98b2",
+        "named_unverified": [
+          "R1",
+          "R2",
+          "R3",
+          "R4",
+          "R5"
+        ],
+        "seconds": 8.1,
+        "state": "INCONCLUSIVE",
+        "verdict": "INCONCLUSIVE",
+        "why": "state INCONCLUSIVE / verdict INCONCLUSIVE"
+      },
+      "B_plus": "REJECT",
+      "actionable": true,
+      "candidate": "ctl-srcskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FAIL",
+      "stratum": "process",
+      "task": "cal-py-backoff",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.4,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-tamper",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-py-backoff",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R5"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.4,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-testskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-py-backoff",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R5"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "A_plus_requirements": [
+        "R2"
+      ],
+      "B": "ABSTAIN",
+      "B_detail": {
+        "baseline": {
+          "test_backoff.py::test_backoff.py::test_uncapped_schedule": "pass",
+          "test_backoff.py::test_backoff.py::test_zero_attempts": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_cap_applies": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_negative_attempts_rejected": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_nonpositive_base_rejected": "fail"
+        },
+        "candidate": {
+          "test_backoff.py::test_backoff.py::test_uncapped_schedule": "pass",
+          "test_backoff.py::test_backoff.py::test_zero_attempts": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_cap_applies": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_negative_attempts_rejected": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_nonpositive_base_rejected": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R5: attempts that is a bool or not an int raises TypeError"
+          ],
+          "headline": "ACCEPTANCE_PARTIAL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: every delay is min(base * factor ** i, cap)"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: a schedule that never reaches the cap is unchanged"
+            },
+            {
+              "kind": "change",
+              "status": "UNMAPPED",
+              "text": "R5: attempts that is a bool or not an int raises TypeError"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "ABSTAIN",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "0ef60f007e98e06b19a02b10",
+        "named_unverified": [
+          "R5"
+        ],
+        "seconds": 9.2,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS but coverage ACCEPTANCE_PARTIAL"
+      },
+      "B_plus": "ACCEPT",
+      "B_plus_detail": {
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: every delay is min(base * factor ** i, cap)"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: a schedule that never reaches the cap is unchanged"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R5: attempts that is a bool or not an int raises TypeError"
+            }
+          ]
+        },
+        "decision": "ACCEPT",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "actionable": false,
+      "candidate": "decoy-r3-partial",
+      "followup_tests_B_plus": 1,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-py-backoff",
+      "violated_requirements": [
+        "R3"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "A_plus_requirements": [
+        "R4"
+      ],
+      "B": "ABSTAIN",
+      "B_detail": {
+        "baseline": {
+          "test_backoff.py::test_backoff.py::test_uncapped_schedule": "pass",
+          "test_backoff.py::test_backoff.py::test_zero_attempts": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_cap_applies": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_negative_attempts_rejected": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_nonpositive_base_rejected": "fail"
+        },
+        "candidate": {
+          "test_backoff.py::test_backoff.py::test_uncapped_schedule": "pass",
+          "test_backoff.py::test_backoff.py::test_zero_attempts": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_cap_applies": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_negative_attempts_rejected": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_nonpositive_base_rejected": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R5: attempts that is a bool or not an int raises TypeError"
+          ],
+          "headline": "ACCEPTANCE_PARTIAL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: every delay is min(base * factor ** i, cap)"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: a schedule that never reaches the cap is unchanged"
+            },
+            {
+              "kind": "change",
+              "status": "UNMAPPED",
+              "text": "R5: attempts that is a bool or not an int raises TypeError"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "ABSTAIN",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "ce44fe8039190636bc99627a",
+        "named_unverified": [
+          "R5"
+        ],
+        "seconds": 8.1,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS but coverage ACCEPTANCE_PARTIAL"
+      },
+      "B_plus": "REJECT",
+      "B_plus_detail": {
+        "coverage": {
+          "follow_up_test_needed": [
+            "R5: attempts that is a bool or not an int raises TypeError"
+          ],
+          "headline": "INCONCLUSIVE",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: every delay is min(base * factor ** i, cap)"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: a schedule that never reaches the cap is unchanged"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R5: attempts that is a bool or not an int raises TypeError"
+            }
+          ]
+        },
+        "decision": "REJECT",
+        "verdict": "FAIL",
+        "why": "state INCONCLUSIVE / verdict FAIL"
+      },
+      "actionable": true,
+      "candidate": "decoy-r5-bool",
+      "followup_tests_B_plus": 1,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-py-backoff",
+      "violated_requirements": [
+        "R5"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "ACCEPT",
+      "A_plus_requirements": [
+        "R2"
+      ],
+      "B": "ABSTAIN",
+      "B_detail": {
+        "baseline": {
+          "test_backoff.py::test_backoff.py::test_uncapped_schedule": "pass",
+          "test_backoff.py::test_backoff.py::test_zero_attempts": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_cap_applies": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_negative_attempts_rejected": "fail",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_nonpositive_base_rejected": "fail"
+        },
+        "candidate": {
+          "test_backoff.py::test_backoff.py::test_uncapped_schedule": "pass",
+          "test_backoff.py::test_backoff.py::test_zero_attempts": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_cap_applies": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_negative_attempts_rejected": "pass",
+          "test_backoff_acceptance.py::test_backoff_acceptance.py::test_nonpositive_base_rejected": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R5: attempts that is a bool or not an int raises TypeError"
+          ],
+          "headline": "ACCEPTANCE_PARTIAL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: every delay is min(base * factor ** i, cap)"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: a schedule that never reaches the cap is unchanged"
+            },
+            {
+              "kind": "change",
+              "status": "UNMAPPED",
+              "text": "R5: attempts that is a bool or not an int raises TypeError"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "ABSTAIN",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "6338ed192efa0ef9a4c7e0e7",
+        "named_unverified": [
+          "R5"
+        ],
+        "seconds": 9.0,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS but coverage ACCEPTANCE_PARTIAL"
+      },
+      "B_plus": "ACCEPT",
+      "B_plus_detail": {
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: every delay is min(base * factor ** i, cap)"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: attempts below 0 raises ValueError; attempts == 0 returns []"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: base > 0, factor >= 1 and cap >= base, otherwise ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R4: a schedule that never reaches the cap is unchanged"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R5: attempts that is a bool or not an int raises TypeError"
+            }
+          ]
+        },
+        "decision": "ACCEPT",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "actionable": false,
+      "candidate": "reference",
+      "followup_tests_B_plus": 1,
+      "kind": "reference",
+      "label": "CORRECT",
+      "stratum": "none",
+      "task": "cal-py-backoff",
+      "violated_requirements": []
+    },
+    {
+      "A": "REJECT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "REJECT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: no-op proposal cannot establish a repair",
+        "seconds": 1.4,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "untouched",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FAIL",
+      "stratum": "noop",
+      "task": "cal-py-backoff",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R5"
+      ]
+    },
+    {
+      "A": "REJECT",
+      "A0": "REJECT",
+      "A_clean": "REJECT",
+      "A_plus": "REJECT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "baseline": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "fail"
+        },
+        "candidate": {},
+        "claims_headline": "INCONCLUSIVE",
+        "coverage": {
+          "follow_up_test_needed": [
+            "R1: KiB, MiB and GiB are powers of 1024",
+            "R2: the unit is case-insensitive",
+            "R3: exactly one space may separate number and unit; other whitespace is rejected",
+            "R4: fractional numbers allowed; a non-whole byte result raises ValueError",
+            "R5: existing forms and errors keep their meaning"
+          ],
+          "headline": "INCONCLUSIVE",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R1: KiB, MiB and GiB are powers of 1024"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R2: the unit is case-insensitive"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R3: exactly one space may separate number and unit; other whitespace is rejected"
+            },
+            {
+              "kind": "change",
+              "status": "FAILING",
+              "text": "R4: fractional numbers allowed; a non-whole byte result raises ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "FAILING",
+              "text": "R5: existing forms and errors keep their meaning"
+            }
+          ]
+        },
+        "coverage_exit": 2,
+        "decision": "REJECT",
+        "do_exit": 2,
+        "freshness": "fresh",
+        "mission": "5438a580b941285bbb5ad664",
+        "named_unverified": [
+          "R1",
+          "R2",
+          "R3",
+          "R4",
+          "R5"
+        ],
+        "seconds": 8.5,
+        "state": "INCONCLUSIVE",
+        "verdict": "INCONCLUSIVE",
+        "why": "state INCONCLUSIVE / verdict INCONCLUSIVE"
+      },
+      "B_plus": "REJECT",
+      "actionable": true,
+      "candidate": "ctl-srcskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FAIL",
+      "stratum": "process",
+      "task": "cal-py-sizes",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.4,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-tamper",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-py-sizes",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: edit lacks explicit path approval or duplicates another edit",
+        "seconds": 1.5,
+        "why": "proposal refused / no mission"
+      },
+      "B_perm": "REJECT",
+      "B_perm_detail": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "ctl-testskip",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FALSE_GREEN",
+      "stratum": "process",
+      "task": "cal-py-sizes",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "ACCEPT",
+      "B_detail": {
+        "baseline": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "fail"
+        },
+        "candidate": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: KiB, MiB and GiB are powers of 1024"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: the unit is case-insensitive"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: exactly one space may separate number and unit; other whitespace is rejected"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R4: fractional numbers allowed; a non-whole byte result raises ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R5: existing forms and errors keep their meaning"
+            }
+          ]
+        },
+        "coverage_exit": 0,
+        "decision": "ACCEPT",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "3ea4e0aeac6ae2b03ee4ff4f",
+        "named_unverified": [],
+        "seconds": 9.3,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "B_plus": "ACCEPT",
+      "actionable": false,
+      "candidate": "decoy-r1-gib",
+      "followup_tests_B_plus": 0,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-py-sizes",
+      "violated_requirements": [
+        "R1",
+        "R2"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "ACCEPT",
+      "B_detail": {
+        "baseline": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "fail"
+        },
+        "candidate": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: KiB, MiB and GiB are powers of 1024"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: the unit is case-insensitive"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: exactly one space may separate number and unit; other whitespace is rejected"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R4: fractional numbers allowed; a non-whole byte result raises ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R5: existing forms and errors keep their meaning"
+            }
+          ]
+        },
+        "coverage_exit": 0,
+        "decision": "ACCEPT",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "1ea8fb38e84f53a87c7bc702",
+        "named_unverified": [],
+        "seconds": 8.8,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "B_plus": "ACCEPT",
+      "actionable": false,
+      "candidate": "decoy-r3-anyspace",
+      "followup_tests_B_plus": 0,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-py-sizes",
+      "violated_requirements": [
+        "R3"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "REJECT",
+      "B": "ACCEPT",
+      "B_detail": {
+        "baseline": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "fail"
+        },
+        "candidate": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: KiB, MiB and GiB are powers of 1024"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: the unit is case-insensitive"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: exactly one space may separate number and unit; other whitespace is rejected"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R4: fractional numbers allowed; a non-whole byte result raises ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R5: existing forms and errors keep their meaning"
+            }
+          ]
+        },
+        "coverage_exit": 0,
+        "decision": "ACCEPT",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "68f9cd1afaa348b351430bd4",
+        "named_unverified": [],
+        "seconds": 8.5,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "B_plus": "ACCEPT",
+      "actionable": false,
+      "candidate": "decoy-r4-truncate",
+      "followup_tests_B_plus": 0,
+      "kind": "decoy",
+      "label": "FALSE_GREEN",
+      "stratum": "semantic",
+      "task": "cal-py-sizes",
+      "violated_requirements": [
+        "R4"
+      ]
+    },
+    {
+      "A": "ACCEPT",
+      "A0": "ACCEPT",
+      "A_clean": "ACCEPT",
+      "A_plus": "ACCEPT",
+      "A_plus_plus": "ACCEPT",
+      "B": "ACCEPT",
+      "B_detail": {
+        "baseline": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "fail",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "fail"
+        },
+        "candidate": {
+          "test_sizes.py::test_sizes.py::test_decimal_units": "pass",
+          "test_sizes.py::test_sizes.py::test_invalid_strings": "pass",
+          "test_sizes.py::test_sizes.py::test_non_str": "pass",
+          "test_sizes.py::test_sizes.py::test_plain_bytes": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_binary_units": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_case_insensitive": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_fractional": "pass",
+          "test_sizes_acceptance.py::test_sizes_acceptance.py::test_single_space": "pass"
+        },
+        "claims_headline": "ASSURANCE_PARTIAL",
+        "coverage": {
+          "follow_up_test_needed": [],
+          "headline": "ACCEPTANCE_MAPPED_ALL",
+          "rows": [
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R1: KiB, MiB and GiB are powers of 1024"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R2: the unit is case-insensitive"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R3: exactly one space may separate number and unit; other whitespace is rejected"
+            },
+            {
+              "kind": "change",
+              "status": "VERIFIED_FAIL_TO_PASS",
+              "text": "R4: fractional numbers allowed; a non-whole byte result raises ValueError"
+            },
+            {
+              "kind": "preserve",
+              "status": "VERIFIED_PRESERVED",
+              "text": "R5: existing forms and errors keep their meaning"
+            }
+          ]
+        },
+        "coverage_exit": 0,
+        "decision": "ACCEPT",
+        "do_exit": 0,
+        "freshness": "fresh",
+        "mission": "70ba35b7e1621fd2f29bf459",
+        "named_unverified": [],
+        "seconds": 8.5,
+        "state": "COMPLETE",
+        "verdict": "PASS",
+        "why": "PASS and every requirement verified"
+      },
+      "B_plus": "ACCEPT",
+      "actionable": false,
+      "candidate": "reference",
+      "followup_tests_B_plus": 0,
+      "kind": "reference",
+      "label": "CORRECT",
+      "stratum": "none",
+      "task": "cal-py-sizes",
+      "violated_requirements": []
+    },
+    {
+      "A": "REJECT",
+      "A0": "ACCEPT",
+      "A_clean": "REJECT",
+      "A_plus": "REJECT",
+      "A_plus_plus": "REJECT",
+      "B": "REJECT",
+      "B_detail": {
+        "decision": "REJECT",
+        "do_exit": 1,
+        "refusal": "error: no-op proposal cannot establish a repair",
+        "seconds": 1.4,
+        "why": "proposal refused / no mission"
+      },
+      "B_plus": "REJECT",
+      "actionable": false,
+      "candidate": "untouched",
+      "followup_tests_B_plus": 0,
+      "kind": "control",
+      "label": "FAIL",
+      "stratum": "noop",
+      "task": "cal-py-sizes",
+      "violated_requirements": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ]
+    }
+  ],
+  "split": "calibration",
+  "study": "abc-v5",
+  "summary": {
+    "B_perm_process_controls": {
+      "cal-node-chunk/ctl-tamper": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "cal-node-chunk/ctl-testskip": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "cal-node-roman/ctl-tamper": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "cal-node-roman/ctl-testskip": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "cal-py-backoff/ctl-tamper": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "cal-py-backoff/ctl-testskip": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "cal-py-sizes/ctl-tamper": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      },
+      "cal-py-sizes/ctl-testskip": {
+        "decision": "REJECT",
+        "refusal": "error: frozen acceptance inputs/config cannot change; only approved source files",
+        "verdict": null,
+        "why": "proposal refused / no mission"
+      }
+    },
+    "H1_pilot": {
+      "ceiling": false,
+      "ci90": [
+        -0.1672,
+        0.8338
+      ],
+      "ci95": [
+        -0.2631,
+        0.9297
+      ],
+      "cohens_h": 1.571,
+      "diff": 0.5,
+      "equivalence_margin": 0.1,
+      "equivalent": false,
+      "floor": false,
+      "mcnemar_p": 0.5,
+      "method": "task-clustered (repetitions averaged per task; adjusted Wald interval, Bonett-Price; sign-flip permutation test)",
+      "note": "calibration pilot (n=4 < MIN_PAIRS=10): never 'supported'",
+      "pairs": 4,
+      "permutation_p": 0.5,
+      "runs_per_task": 1.0,
+      "success_a": 0.0,
+      "success_b": 0.5,
+      "table": {
+        "A_only": 0.0,
+        "B_only": 2.0,
+        "both": 0.0,
+        "neither": 2.0
+      },
+      "tasks": 4,
+      "verdict": "inconclusive (pilot: 4 < 10 tasks)",
+      "verdict_class": "inconclusive",
+      "wilson_a": [
+        0.0,
+        0.4899
+      ],
+      "wilson_b": [
+        0.15,
+        0.85
+      ]
+    },
+    "H2_pilot": {
+      "ceiling": false,
+      "ci90": [
+        -0.2948,
+        0.6281
+      ],
+      "ci95": [
+        -0.3832,
+        0.7165
+      ],
+      "cohens_h": 1.047,
+      "diff": 0.25,
+      "equivalence_margin": 0.1,
+      "equivalent": false,
+      "floor": false,
+      "mcnemar_p": 1.0,
+      "method": "task-clustered (repetitions averaged per task; adjusted Wald interval, Bonett-Price; sign-flip permutation test)",
+      "note": "calibration pilot (n=4 < MIN_PAIRS=10): never 'supported'",
+      "pairs": 4,
+      "permutation_p": 1.0,
+      "runs_per_task": 1.0,
+      "success_a": 0.0,
+      "success_b": 0.25,
+      "table": {
+        "A_plus_only": 0.0,
+        "B_plus_only": 1.0,
+        "both": 0.0,
+        "neither": 3.0
+      },
+      "tasks": 4,
+      "verdict": "inconclusive (pilot: 4 < 10 tasks)",
+      "verdict_class": "inconclusive",
+      "wilson_a": [
+        0.0,
+        0.4899
+      ],
+      "wilson_b": [
+        0.0456,
+        0.6994
+      ]
+    },
+    "J_task_level_B": {
+      "cal-node-chunk": 0,
+      "cal-node-roman": 0,
+      "cal-py-backoff": 0,
+      "cal-py-sizes": 0
+    },
+    "J_task_level_B_plus": {
+      "cal-node-chunk": 0,
+      "cal-node-roman": 1,
+      "cal-py-backoff": 0,
+      "cal-py-sizes": 0
+    },
+    "actionability_B": {
+      "k": 4,
+      "meaning": "false greens B did not accept whose violated requirement B named as unverified",
+      "n": 14
+    },
+    "confusion": {
+      "A": {
+        "CORRECT": {
+          "ACCEPT": 4
+        },
+        "FAIL": {
+          "REJECT": 6
+        },
+        "FALSE_GREEN": {
+          "ACCEPT": 19
+        },
+        "INVALID": {}
+      },
+      "A0": {
+        "CORRECT": {
+          "ACCEPT": 4
+        },
+        "FAIL": {
+          "ACCEPT": 4,
+          "REJECT": 2
+        },
+        "FALSE_GREEN": {
+          "ACCEPT": 19
+        },
+        "INVALID": {}
+      },
+      "A_clean": {
+        "CORRECT": {
+          "ACCEPT": 4
+        },
+        "FAIL": {
+          "REJECT": 6
+        },
+        "FALSE_GREEN": {
+          "ACCEPT": 11,
+          "REJECT": 8
+        },
+        "INVALID": {}
+      },
+      "A_plus": {
+        "CORRECT": {
+          "ACCEPT": 4
+        },
+        "FAIL": {
+          "REJECT": 6
+        },
+        "FALSE_GREEN": {
+          "ACCEPT": 18,
+          "REJECT": 1
+        },
+        "INVALID": {}
+      },
+      "A_plus_plus": {
+        "CORRECT": {
+          "ACCEPT": 4
+        },
+        "FAIL": {
+          "REJECT": 6
+        },
+        "FALSE_GREEN": {
+          "ACCEPT": 2,
+          "REJECT": 17
+        },
+        "INVALID": {}
+      },
+      "B": {
+        "CORRECT": {
+          "ABSTAIN": 2,
+          "ACCEPT": 2
+        },
+        "FAIL": {
+          "REJECT": 6
+        },
+        "FALSE_GREEN": {
+          "ABSTAIN": 4,
+          "ACCEPT": 5,
+          "REJECT": 10
+        },
+        "INVALID": {}
+      },
+      "B_plus": {
+        "CORRECT": {
+          "ACCEPT": 4
+        },
+        "FAIL": {
+          "REJECT": 6
+        },
+        "FALSE_GREEN": {
+          "ACCEPT": 7,
+          "REJECT": 12
+        },
+        "INVALID": {}
+      }
+    },
+    "correct_B_breakdown": {
+      "cal-node-chunk": "ACCEPT (PASS and every requirement verified)",
+      "cal-node-roman": "ABSTAIN (PASS but coverage ACCEPTANCE_PARTIAL)",
+      "cal-py-backoff": "ABSTAIN (PASS but coverage ACCEPTANCE_PARTIAL)",
+      "cal-py-sizes": "ACCEPT (PASS and every requirement verified)"
+    },
+    "correct_non_acceptance": {
+      "A": {
+        "k": 0,
+        "n": 4
+      },
+      "A0": {
+        "k": 0,
+        "n": 4
+      },
+      "A_clean": {
+        "k": 0,
+        "n": 4
+      },
+      "A_plus": {
+        "k": 0,
+        "n": 4
+      },
+      "A_plus_plus": {
+        "k": 0,
+        "n": 4
+      },
+      "B": {
+        "k": 2,
+        "n": 4
+      },
+      "B_plus": {
+        "k": 0,
+        "n": 4
+      }
+    },
+    "false_green_acceptance": {
+      "A": {
+        "k": 19,
+        "n": 19
+      },
+      "A0": {
+        "k": 19,
+        "n": 19
+      },
+      "A_clean": {
+        "k": 11,
+        "n": 19
+      },
+      "A_plus": {
+        "k": 18,
+        "n": 19
+      },
+      "A_plus_plus": {
+        "k": 2,
+        "n": 19
+      },
+      "B": {
+        "k": 5,
+        "n": 19
+      },
+      "B_plus": {
+        "k": 7,
+        "n": 19
+      }
+    },
+    "false_green_acceptance_by_stratum": {
+      "process": {
+        "A": {
+          "k": 10,
+          "n": 10
+        },
+        "A0": {
+          "k": 10,
+          "n": 10
+        },
+        "A_clean": {
+          "k": 2,
+          "n": 10
+        },
+        "A_plus": {
+          "k": 10,
+          "n": 10
+        },
+        "A_plus_plus": {
+          "k": 2,
+          "n": 10
+        },
+        "B": {
+          "k": 0,
+          "n": 10
+        },
+        "B_plus": {
+          "k": 0,
+          "n": 10
+        }
+      },
+      "semantic": {
+        "A": {
+          "k": 9,
+          "n": 9
+        },
+        "A0": {
+          "k": 9,
+          "n": 9
+        },
+        "A_clean": {
+          "k": 9,
+          "n": 9
+        },
+        "A_plus": {
+          "k": 8,
+          "n": 9
+        },
+        "A_plus_plus": {
+          "k": 0,
+          "n": 9
+        },
+        "B": {
+          "k": 5,
+          "n": 9
+        },
+        "B_plus": {
+          "k": 7,
+          "n": 9
+        }
+      }
+    },
+    "followup_tests_used": {
+      "A_plus_plus_per_candidate": "all requirements",
+      "B_plus": 6
+    },
+    "primary_pairs": {
+      "cal-node-chunk": {
+        "A_accepts_decoy": true,
+        "A_plus_accepts_decoy": true,
+        "B_accepts_decoy": true,
+        "B_accepts_reference": true,
+        "B_plus_accepts_decoy": true,
+        "B_plus_accepts_reference": true,
+        "decoy": "decoy-r3-alias"
+      },
+      "cal-node-roman": {
+        "A_accepts_decoy": true,
+        "A_plus_accepts_decoy": true,
+        "B_accepts_decoy": false,
+        "B_accepts_reference": false,
+        "B_plus_accepts_decoy": false,
+        "B_plus_accepts_reference": true,
+        "decoy": "decoy-r3-lowercase"
+      },
+      "cal-py-backoff": {
+        "A_accepts_decoy": true,
+        "A_plus_accepts_decoy": true,
+        "B_accepts_decoy": false,
+        "B_accepts_reference": false,
+        "B_plus_accepts_decoy": true,
+        "B_plus_accepts_reference": true,
+        "decoy": "decoy-r3-partial"
+      },
+      "cal-py-sizes": {
+        "A_accepts_decoy": true,
+        "A_plus_accepts_decoy": true,
+        "B_accepts_decoy": true,
+        "B_accepts_reference": true,
+        "B_plus_accepts_decoy": true,
+        "B_plus_accepts_reference": true,
+        "decoy": "decoy-r4-truncate"
+      }
+    }
+  },
+  "wall_seconds": 243.8
+}

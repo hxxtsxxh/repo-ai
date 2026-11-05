@@ -1,0 +1,129 @@
+{
+ "id": "20261020-222831-1ee7",
+ "suite": "_evalsuite",
+ "arms": {
+  "baseline": [],
+  "core": [
+   "hooks",
+   "packet",
+   "rules"
+  ],
+  "full": [
+   "agents",
+   "hooks",
+   "orchestration",
+   "outcomes",
+   "packet",
+   "rules",
+   "skills",
+   "thirdparty"
+  ]
+ },
+ "seed": 0,
+ "model": "claude-sonnet-5-5",
+ "effort": "medium",
+ "max_turns": 60,
+ "timeout_s": 1800,
+ "repeat": 1,
+ "budget_usd": 24.0,
+ "max_cost_per_run_usd": 1.5,
+ "reservation_per_run_usd": 1.875,
+ "completion_budget_usd": 22.5,
+ "planned_runs": 12,
+ "worst_case_usd": 22.5,
+ "tasks": [
+  "cal-bt-001",
+  "cal-md-001",
+  "cal-pf-001",
+  "cal-sj-001"
+ ],
+ "fake": false,
+ "blind": false,
+ "max_invalid_rate": 0.2,
+ "schedule": [
+  {
+   "rep": 0,
+   "task": "cal-bt-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "cal-md-001",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "cal-pf-001",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "cal-sj-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  }
+ ],
+ "permissions": {
+  "mode": "dontAsk",
+  "allowed": [
+   "Read",
+   "Edit",
+   "Write",
+   "MultiEdit",
+   "Glob",
+   "Grep",
+   "TodoWrite",
+   "Task",
+   "Bash(python -m unittest:*)",
+   "Bash(python3 -m unittest:*)",
+   "Bash(python -m pytest:*)",
+   "Bash(python3 -m pytest:*)",
+   "Bash(pytest:*)",
+   "Bash(node --test:*)",
+   "Bash(npm test:*)",
+   "Bash(javac:*)",
+   "Bash(java -cp:*)",
+   "Bash(make test:*)",
+   "Bash(ls:*)",
+   "Bash(git status:*)",
+   "Bash(git diff:*)",
+   "Bash(git log:*)",
+   "Bash(repo-ai context:*)",
+   "Bash(repo-ai impact:*)",
+   "Bash(repo-ai explain:*)",
+   "Bash(repo-ai symbol:*)",
+   "Bash(repo-ai related:*)",
+   "Bash(repo-ai packet:*)",
+   "Bash(repo-ai status:*)"
+  ],
+  "disallowed": [
+   "WebFetch",
+   "WebSearch",
+   "Bash(curl:*)",
+   "Bash(wget:*)",
+   "Bash(git push:*)",
+   "Bash(pip install:*)",
+   "Bash(npm install:*)"
+  ]
+ },
+ "cost_note": "reported costs are Claude Code client-side estimates, not billing",
+ "started": "2026-10-20T22:28:31",
+ "stopped": null,
+ "spent_usd_charged": 1.2694,
+ "finished": "2026-10-20T22:37:12"
+}

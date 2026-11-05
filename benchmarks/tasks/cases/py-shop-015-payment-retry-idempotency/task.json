@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-015-payment-retry-idempotency",
+  "base": "py-shop",
+  "language": "python",
+  "category": "integration",
+  "difficulty": "hard",
+  "prompt": "Mobile clients retry `POST /orders/{id}/pay` when the network drops, sending the same\n`Idempotency-Key` header on every attempt. Often the first attempt actually went\nthrough server-side, so the retry gets\n\n    409 {\"error\": {\"code\": \"conflict\", \"message\": \"order ord_0003 is not awaiting payment (paid)\"}}\n\nand the app tells the customer the payment failed even though the card was charged.\nA retry carrying the same key should get the original payment back (200, same payment\nid) without charging again or sending a second receipt. Reusing a key for a *different*\norder must still be refused.",
+  "setup": [
+    {
+      "file": "shop/services/payments.py",
+      "find": "        if idempotency_key:\n            existing = self.payments.find_by_idempotency_key(idempotency_key)\n            if existing is not None:\n                if existing.order_id != order_id:\n                    raise Conflict(\"idempotency key already used for another order\")\n                return existing\n\n        order = self.order_service.get(order_id)\n        if order.status != PENDING:",
+      "replace": "        order = self.order_service.get(order_id)\n        if order.status != PENDING:"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/payments.py",
+      "find": "        order = self.order_service.get(order_id)\n        if order.status != PENDING:",
+      "replace": "        if idempotency_key:\n            existing = self.payments.find_by_idempotency_key(idempotency_key)\n            if existing is not None:\n                if existing.order_id != order_id:\n                    raise Conflict(\"idempotency key already used for another order\")\n                return existing\n\n        order = self.order_service.get(order_id)\n        if order.status != PENDING:"
+    }
+  ],
+  "gold_files": [
+    "shop/services/payments.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_pay_retry.py",
+      "dest": "tests/test_hidden_pay_retry.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_pay_retry"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

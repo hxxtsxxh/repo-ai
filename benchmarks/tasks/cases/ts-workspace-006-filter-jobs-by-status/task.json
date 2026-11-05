@@ -1,0 +1,60 @@
+{
+  "id": "ts-workspace-006-filter-jobs-by-status",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "api",
+  "difficulty": "medium",
+  "prompt": "API change request: the dashboard needs to filter the job list by status.\n\n- `GET /jobs?status=failed` returns only failed jobs\n- a comma-separated list (`status=failed,cancelled`) returns jobs in any of those statuses\n- it has to combine with the existing `tag` filter and with cursor pagination\n- an unknown status value is a 400, not an empty list\n\nThe CLI's `jobs list --status ...` already sends this parameter; the API just ignores it today.",
+  "setup": [
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "import { JOB_STATUSES } from \"../../core/src/types.ts\";\n",
+      "replace": ""
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "import { badRequest, conflict, notFound } from \"./errors.ts\";",
+      "replace": "import { conflict, notFound } from \"./errors.ts\";"
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "  const checks: Array<(job: Job) => boolean> = [];\n\n  const statusParam = queryParam(request, \"status\");\n  if (statusParam !== undefined) {\n    const wanted = statusParam\n      .split(\",\")\n      .map((s) => s.trim().toLowerCase())\n      .filter(Boolean);\n    const unknown = wanted.filter((s) => !JOB_STATUSES.includes(s as JobStatus));\n    if (unknown.length > 0) throw badRequest(`unknown status: ${unknown.join(\", \")}`);\n    checks.push((job) => wanted.includes(job.status));\n  }\n",
+      "replace": "  const checks: Array<(job: Job) => boolean> = [];\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "import type { Job, JobStatus } from \"../../core/src/types.ts\";\n",
+      "replace": "import type { Job, JobStatus } from \"../../core/src/types.ts\";\nimport { JOB_STATUSES } from \"../../core/src/types.ts\";\n"
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "import { conflict, notFound } from \"./errors.ts\";",
+      "replace": "import { badRequest, conflict, notFound } from \"./errors.ts\";"
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "  const checks: Array<(job: Job) => boolean> = [];\n",
+      "replace": "  const checks: Array<(job: Job) => boolean> = [];\n\n  const statusParam = queryParam(request, \"status\");\n  if (statusParam !== undefined) {\n    const wanted = statusParam\n      .split(\",\")\n      .map((s) => s.trim().toLowerCase())\n      .filter(Boolean);\n    const unknown = wanted.filter((s) => !JOB_STATUSES.includes(s as JobStatus));\n    if (unknown.length > 0) throw badRequest(`unknown status: ${unknown.join(\", \")}`);\n    checks.push((job) => wanted.includes(job.status));\n  }\n"
+    }
+  ],
+  "gold_files": [
+    "packages/api/src/jobs.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_status_filter.test.ts",
+      "dest": "packages/api/test/hidden_status_filter.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/api/test/hidden_status_filter.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

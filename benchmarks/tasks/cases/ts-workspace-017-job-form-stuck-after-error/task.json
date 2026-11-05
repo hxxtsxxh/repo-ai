@@ -1,0 +1,48 @@
+{
+  "id": "ts-workspace-017-job-form-stuck-after-error",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "frontend",
+  "difficulty": "medium",
+  "prompt": "QA found two problems with the \"New job\" form state (`@jobrunner/web`, the reducer in\n`job-form.ts`):\n\n1. When the API rejects a submission (e.g. 409 \"a queued job named nightly already\n   exists\", or a 500 with no field details), the Create button stays disabled forever.\n   The form keeps behaving as if the request were still in flight, so the user can't\n   fix the input and try again without reloading the page.\n2. After such a rejection, the server's message under the Name field disappears as soon\n   as the user edits any other field, e.g. Command, even though the name is still a\n   duplicate.\n\nExpected: a rejected submit leaves the form in the `failed` state, editable and\nsubmittable again. A server error stays attached to its own field until that field is\nedited or the form is submitted again; editing one field must not hide another field's\nserver error.",
+  "setup": [
+    {
+      "file": "packages/web/package.json",
+      "create": "{\n  \"name\": \"@jobrunner/web\",\n  \"version\": \"0.7.0\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"license\": \"MIT\",\n  \"description\": \"Server-rendered dashboard pieces: pure functions from API DTOs to HTML and UI state.\",\n  \"scripts\": {\n    \"test\": \"node --test\"\n  }\n}\n"
+    },
+    {
+      "file": "packages/web/src/job-form.ts",
+      "create": "// State behind the dashboard's \"New job\" form. A pure reducer: (state, action) => next state.\nimport { parseDuration } from \"../../core/src/duration.ts\";\nimport { parseSchedule } from \"../../core/src/schedule.ts\";\n\nexport type Field = \"name\" | \"command\" | \"schedule\" | \"timeout\";\nexport const FIELDS: readonly Field[] = [\"name\", \"command\", \"schedule\", \"timeout\"];\nexport type FieldMap<T> = Record<Field, T>;\nexport type Status = \"editing\" | \"submitting\" | \"failed\" | \"succeeded\";\n\nexport interface FormState {\n  values: FieldMap<string>;\n  touched: FieldMap<boolean>;\n  errors: Partial<FieldMap<string>>; // client-side validation of the current values\n  serverErrors: Partial<FieldMap<string>>; // field errors from the last rejected submit\n  formError: string | null; // message of the last rejected submit\n  status: Status;\n  submitCount: number;\n}\n\nexport type Action =\n  | { type: \"change\"; field: Field; value: string }\n  | { type: \"blur\"; field: Field }\n  | { type: \"submit\" }\n  | { type: \"submitSucceeded\" }\n  | { type: \"submitFailed\"; message: string; fieldErrors?: Partial<FieldMap<string>> }\n  | { type: \"reset\" };\n\nconst NAME_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;\n\nexport function validate(values: FieldMap<string>): Partial<FieldMap<string>> {\n  const errors: Partial<FieldMap<string>> = {};\n  if (!NAME_RE.test(values.name.trim())) errors.name = \"Use 1-63 lowercase letters, digits or dashes\";\n  if (!values.command.trim()) errors.command = \"Command is required\";\n  if (values.schedule.trim()) {\n    try {\n      parseSchedule(values.schedule);\n    } catch (error) {\n      errors.schedule = (error as Error).message;\n    }\n  }\n  if (values.timeout.trim()) {\n    try {\n      parseDuration(values.timeout);\n    } catch (error) {\n      errors.timeout = (error as Error).message;\n    }\n  }\n  return errors;\n}\n\nfunction allFields<T>(value: T): FieldMap<T> {\n  return { name: value, command: value, schedule: value, timeout: value };\n}\n\nconst hasErrors = (errors: Partial<FieldMap<string>>) => Object.values(errors).some(Boolean);\n\nexport function initialState(values: Partial<FieldMap<string>> = {}): FormState {\n  const filled = { ...allFields(\"\"), ...values };\n  return {\n    values: filled,\n    touched: allFields(false),\n    errors: validate(filled),\n    serverErrors: {},\n    formError: null,\n    status: \"editing\",\n    submitCount: 0,\n  };\n}\n\nexport function reducer(state: FormState, action: Action): FormState {\n  switch (action.type) {\n    case \"change\": {\n      if (state.status === \"submitting\") return state;\n      const values = { ...state.values, [action.field]: action.value };\n      return { ...state, values, errors: validate(values), serverErrors: {}, status: \"editing\" };\n    }\n    case \"blur\":\n      return { ...state, touched: { ...state.touched, [action.field]: true } };\n    case \"submit\": {\n      if (state.status === \"submitting\") return state;\n      const errors = validate(state.values);\n      const touched = allFields(true);\n      const submitCount = state.submitCount + 1;\n      if (hasErrors(errors)) return { ...state, errors, touched, submitCount, status: \"editing\" };\n      return { ...state, errors, touched, submitCount, status: \"submitting\", serverErrors: {}, formError: null };\n    }\n    case \"submitSucceeded\":\n      return { ...initialState(), status: \"succeeded\" };\n    case \"submitFailed\":\n      return { ...state, serverErrors: { ...action.fieldErrors }, formError: action.message };\n    case \"reset\":\n      return initialState();\n  }\n}\n\n// The message to show under `field`, if any. Server errors win; validation errors are\n// only shown once the field has been touched or a submit has been attempted.\nexport function visibleError(state: FormState, field: Field): string | null {\n  const server = state.serverErrors[field];\n  if (server) return server;\n  if (!state.touched[field] && state.submitCount === 0) return null;\n  return state.errors[field] ?? null;\n}\n\n// Whether the Create button is enabled.\nexport function canSubmit(state: FormState): boolean {\n  return state.status !== \"submitting\" && !hasErrors(state.errors);\n}\n\n// Request body for POST /jobs.\nexport function toRequestBody(values: FieldMap<string>): Record<string, unknown> {\n  const body: Record<string, unknown> = { name: values.name.trim(), command: values.command.trim() };\n  if (values.schedule.trim()) body.schedule = values.schedule.trim();\n  if (values.timeout.trim()) body.timeout = values.timeout.trim();\n  return body;\n}\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/web/src/job-form.ts",
+      "find": "      return { ...state, values, errors: validate(values), serverErrors: {}, status: \"editing\" };",
+      "replace": "      const serverErrors = { ...state.serverErrors };\n      delete serverErrors[action.field];\n      return { ...state, values, errors: validate(values), serverErrors, status: \"editing\" };"
+    },
+    {
+      "file": "packages/web/src/job-form.ts",
+      "find": "      return { ...state, serverErrors: { ...action.fieldErrors }, formError: action.message };",
+      "replace": "      return { ...state, status: \"failed\", serverErrors: { ...action.fieldErrors }, formError: action.message };"
+    }
+  ],
+  "gold_files": [
+    "packages/web/src/job-form.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_job_form.test.ts",
+      "dest": "packages/web/test/hidden_job_form.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/web/test/hidden_job_form.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

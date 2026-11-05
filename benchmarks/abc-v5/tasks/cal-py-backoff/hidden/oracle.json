@@ -1,0 +1,43 @@
+{
+  "decoy_feasibility": {
+    "R1": "infeasible: test_cap_applies pins the capped schedule",
+    "R2": "infeasible: negative attempts tested",
+    "R4": "infeasible: preserve tests pin the uncapped schedule"
+  },
+  "hidden_tests": [
+    "test_backoff_hidden::test_r1_cap_equal_to_base",
+    "test_backoff_hidden::test_r1_cap_from_start",
+    "test_backoff_hidden::test_r1_cap_reached",
+    "test_backoff_hidden::test_r2_negative_attempts",
+    "test_backoff_hidden::test_r2_zero_attempts",
+    "test_backoff_hidden::test_r3_base_not_positive",
+    "test_backoff_hidden::test_r3_cap_below_base",
+    "test_backoff_hidden::test_r3_factor_below_one",
+    "test_backoff_hidden::test_r4_uncapped_unchanged",
+    "test_backoff_hidden::test_r5_bool_rejected",
+    "test_backoff_hidden::test_r5_non_int_rejected",
+    "test_backoff_hidden::test_r5_type_check_first"
+  ],
+  "note": "Frozen expected test IDs. Every ID must be observed and pass; skipped or missing is not a pass.",
+  "requirement_of": {
+    "test_backoff_hidden::test_r1_cap_equal_to_base": "R1",
+    "test_backoff_hidden::test_r1_cap_from_start": "R1",
+    "test_backoff_hidden::test_r1_cap_reached": "R1",
+    "test_backoff_hidden::test_r2_negative_attempts": "R2",
+    "test_backoff_hidden::test_r2_zero_attempts": "R2",
+    "test_backoff_hidden::test_r3_base_not_positive": "R3",
+    "test_backoff_hidden::test_r3_cap_below_base": "R3",
+    "test_backoff_hidden::test_r3_factor_below_one": "R3",
+    "test_backoff_hidden::test_r4_uncapped_unchanged": "R4",
+    "test_backoff_hidden::test_r5_bool_rejected": "R5",
+    "test_backoff_hidden::test_r5_non_int_rejected": "R5",
+    "test_backoff_hidden::test_r5_type_check_first": "R5"
+  },
+  "visible_tests": [
+    "test_backoff::test_uncapped_schedule",
+    "test_backoff::test_zero_attempts",
+    "test_backoff_acceptance::test_cap_applies",
+    "test_backoff_acceptance::test_negative_attempts_rejected",
+    "test_backoff_acceptance::test_nonpositive_base_rejected"
+  ]
+}

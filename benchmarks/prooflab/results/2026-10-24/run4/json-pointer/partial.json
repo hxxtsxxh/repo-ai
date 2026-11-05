@@ -1,0 +1,669 @@
+{
+ "baseline": {
+  "commit": "ad57e0720b7d5696923662ae268bccde7ba0d418",
+  "revision": "HEAD"
+ },
+ "candidate": {
+  "changed_files": [
+   "jsonpointer.py",
+   "tests.py"
+  ],
+  "changed_files_total": 2,
+  "fingerprint": "b6e70bc67e321678ea19ad69d8361d2d9fd40037be8d300c326b5d5d08c4a067",
+  "kind": "working tree",
+  "withheld_credential_like": 0
+ },
+ "claim": {
+  "earlier_scenarios": [],
+  "expect_failure": null,
+  "id": "claim",
+  "pinned": {
+   "agent_shell": false,
+   "created": "2026-10-24T08:31:27-07:00",
+   "signals": []
+  },
+  "redacted": false,
+  "replaced": 0,
+  "settings": "0b4a0cabd6ca1927561cb3c29bd9f5f79b861cfa957ba9335d1ec1465db44d3e",
+  "sha256": "73bcf3015232655429aa35a21886e5db76f28bd30fdf3cfbae948f943e9ecca6",
+  "supersedes": [],
+  "targets": [
+   "tests.WrongInputTests.test_string_not_indexable"
+  ],
+  "text": "Resolving a JSON pointer token against a string raises JsonPointerException instead of indexing into the string (/foo/0 on {'foo': 'abc'} must not return 'a')."
+ },
+ "conditions": {
+  "command": "python -m unittest tests",
+  "oracle": {
+   "base_sha256": "4702e743a9a7fdd9cc6fd4a0dcaec2891f3b37f2ebd6c28108c2062c3b786a6c",
+   "candidate_sha256": "4702e743a9a7fdd9cc6fd4a0dcaec2891f3b37f2ebd6c28108c2062c3b786a6c",
+   "changed_data": [],
+   "checked": 0,
+   "differing": [],
+   "files": [],
+   "identical": true,
+   "imported_changed": [
+    "jsonpointer.py"
+   ]
+  },
+  "runner": {
+   "command": "python -m unittest tests",
+   "identity_sha256": "e93e24e4ba3b4b72e53abc1d49e7ac824d9a4a180d086e9a30c2dc149bc49a32",
+   "kind": "unittest",
+   "source": "--test-command"
+  },
+  "same_sandbox_and_interpreter": true
+ },
+ "created": "2026-10-24T08:31:29-07:00",
+ "digest": "fa3f619ced9a8c21ab4c111d8cbe268f47bf874a40080706336bff564e5e2099",
+ "edited_tests": {
+  "files": [
+   {
+    "messages": {},
+    "new_failures": [],
+    "path": "tests.py",
+    "state": "none-detected",
+    "status": "modified",
+    "superseded": []
+   }
+  ],
+  "state": "none-detected"
+ },
+ "edited_tests_planned": [
+  {
+   "is_scenario": "true",
+   "path": "tests.py",
+   "status": "modified"
+  }
+ ],
+ "environment": {
+  "backend": "seatbelt",
+  "key": "279670c871c0455aa23c15f7",
+  "machine": "arm64",
+  "os": "Darwin",
+  "os_release": "25.5.0",
+  "python": "3.12.14",
+  "repo_ai": "0.7.7"
+ },
+ "evidence": [
+  {
+   "base": {
+    "commit": "ad57e0720b7d5696923662ae268bccde7ba0d418",
+    "tree": "1b782999396b468dfe84fc42d83acbf0f11f2208"
+   },
+   "candidate": {
+    "fingerprint": "b6e70bc67e321678ea19ad69d8361d2d9fd40037be8d300c326b5d5d08c4a067",
+    "head": "ad57e0720b7d5696923662ae268bccde7ba0d418"
+   },
+   "claim": {
+    "level": "not_established",
+    "not_established": [
+     "other inputs and scenarios",
+     "other environments",
+     "the full test suite",
+     "correctness of the change",
+     "the candidate did not pass conclusively",
+     "the scenario is not independent of the change",
+     "the ProofLab claim: candidate-failed (candidate: 1 test(s) of the scenario fail at the candidate: tests.WrongInputTests.test_string_not_indexable (AssertionError: JsonPointerException not raised by resolve_pointer))"
+    ],
+    "text": "nothing is claimed"
+   },
+   "command": {
+    "argv": [
+     "python -m unittest tests tests_c9c2ef83833"
+    ],
+    "runner": {
+     "command": "python -m unittest tests",
+     "cwd": "",
+     "env": {},
+     "kind": "unittest",
+     "modules": [
+      "tests"
+     ],
+     "options": [],
+     "paths": [],
+     "pattern": "test*.py",
+     "start": ".",
+     "top": "."
+    }
+   },
+   "contract_version": "1.0",
+   "freshness": {
+    "checked_at": "2026-10-24T08:31:33-07:00",
+    "environment_key": "279670c871c0455aa23c15f7",
+    "state": "fresh"
+   },
+   "integrity": {
+    "sandbox": {
+     "backend": "seatbelt",
+     "network": false
+    },
+    "source_tree_unchanged": true,
+    "workspace_disposable": true
+   },
+   "oracle": {
+    "kind": "test-ids",
+    "sha256": "c9113d5eb63b1c2c9367e5824c5578dd89f30b836d2e742e470d620c9f06d0ed",
+    "spec": "every test of the scenario passes on the candidate; at the base, the targeted tests fail"
+   },
+   "reproduction": {
+    "commands": [
+     "repo-ai prove run claim --base ad57e0720b7d",
+     "repo-ai verify --run --base ad57e0720b7d   # the regression check"
+    ],
+    "engine": {
+     "version": "0.7.7"
+    },
+    "environment": {
+     "machine": "arm64",
+     "os": "Darwin",
+     "python": "3.12.14"
+    }
+   },
+   "scenario": {
+    "independent_of_change": false,
+    "sha256": "0f865c62352ce0fde46f1904810d29ec0e9906db0cdf87ff4953d7ee9980c7bf",
+    "source": "blob:16c4c8e33a30:tests.py"
+   },
+   "schema": "repo-ai.proof-evidence/1",
+   "sides": {
+    "base": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.24,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "e6bccb59956e176cb9da2d02bc10198f6dd67438a689f770809d2e6ddf970875",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.22,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "2403c0fdeb07ef10a05592ec08b1c9c53e5791e3c1c3eaca40f0f5856620da6e",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "candidate": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.24,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "c2fd2baad16595a2ed77c7d6ad70f711a1b9905c46e98c18dc548b63e02902bc",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.14,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "488bf1cc4524b9e88ab642e456ed29d3e33dfb67e8a3fc001aa50ff178111e44",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "control": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.19,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests.WrongInputTests.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "83e45d03b8e362bd7f6ff6182b5e49cdc1e4a1ccccbc32d2b2245f20be837a75",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 28,
+        "ran": 29,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "executed": true,
+ "freshness": {
+  "reasons": [],
+  "state": "fresh"
+ },
+ "integrity": {
+  "changes": [],
+  "check_seconds": 0.006,
+  "entries_checked": 50,
+  "files_hashed": 22,
+  "unchanged": true
+ },
+ "limitations": [
+  "A passing scenario shows the claim only for what this scenario checks; it is not a proof that the change is correct for other inputs, states or callers.",
+  "ProofLab checks for mistakes, not for a hostile candidate: code under test runs in the scenario's own process and could defeat any check made there. This passport is also a local record that anyone who can write .repo-ai/state could forge, so a reviewer should run `repo-ai prove run` again.",
+  "The scenario is blob 19bd621d75b8 of tests.py at commit 16c4c8e33a30; whoever wrote that commit wrote the oracle (check it with `git cat-file -p 19bd621d75b8`).",
+  "The change edits files the scenario reaches by imports (jsonpointer.py). ProofLab treats them as the code under test; if one of them holds the expected values, the scenario does not check the claim. Review them, or move expected values into the scenario.",
+  "Each side ran 2 time(s); a flaky outcome that shows up less often is not ruled out.",
+  "The assertion canary only shows that assertions still fail in the scenario's process; code under test that recognises the scenario and behaves differently for it is not detected."
+ ],
+ "observations": {
+  "baseline": {
+   "control": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c9c2ef83833",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.19,
+     "skipped": 0,
+     "stderr_sha256": "83e45d03b8e362bd7f6ff6182b5e49cdc1e4a1ccccbc32d2b2245f20be837a75",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "kind": "behaviour",
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c9c2ef83833",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.24,
+     "skipped": 0,
+     "stderr_sha256": "e6bccb59956e176cb9da2d02bc10198f6dd67438a689f770809d2e6ddf970875",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c9c2ef83833",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.22,
+     "skipped": 0,
+     "stderr_sha256": "2403c0fdeb07ef10a05592ec08b1c9c53e5791e3c1c3eaca40f0f5856620da6e",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "reproduced",
+   "targets_failing": [
+    "tests.WrongInputTests.test_string_not_indexable"
+   ],
+   "why": "1 targeted test(s) fail at the base"
+  },
+  "candidate": {
+   "failing": [
+    "tests.WrongInputTests.test_string_not_indexable"
+   ],
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c9c2ef83833",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.24,
+     "skipped": 0,
+     "stderr_sha256": "c2fd2baad16595a2ed77c7d6ad70f711a1b9905c46e98c18dc548b63e02902bc",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests tests_c9c2ef83833",
+     "exit_code": 1,
+     "failures": {
+      "tests.WrongInputTests.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "jsonpointer.JsonPointer.from_parts": "pass",
+      "jsonpointer.JsonPointer.path": "pass",
+      "jsonpointer.pairwise": "pass",
+      "jsonpointer.resolve_pointer": "pass",
+      "jsonpointer.set_pointer": "pass",
+      "tests.AltTypesTests.test_alttypes": "pass",
+      "tests.AltTypesTests.test_mock_dict_raises_key_error": "pass",
+      "tests.AltTypesTests.test_mock_dict_returns_default": "pass",
+      "tests.AltTypesTests.test_mock_dict_sanity": "pass",
+      "tests.ComparisonTests.test_contains": "pass",
+      "tests.ComparisonTests.test_contains_magic": "pass",
+      "tests.ComparisonTests.test_eq_hash": "pass",
+      "tests.ComparisonTests.test_join": "pass",
+      "tests.ComparisonTests.test_join_magic": "pass",
+      "tests.SetTests.test_set": "pass",
+      "tests.SpecificationTests.test_eol": "pass",
+      "tests.SpecificationTests.test_example": "pass",
+      "tests.SpecificationTests.test_parts": "pass",
+      "tests.SpecificationTests.test_round_trip": "pass",
+      "tests.SpecificationTests.test_str_and_repr": "pass",
+      "tests.ToLastTests.test_empty_path": "pass",
+      "tests.ToLastTests.test_path": "pass",
+      "tests.WrongInputTests.test_invalid_escape": "pass",
+      "tests.WrongInputTests.test_invalid_index": "pass",
+      "tests.WrongInputTests.test_leading_zero": "pass",
+      "tests.WrongInputTests.test_no_start_slash": "pass",
+      "tests.WrongInputTests.test_oob": "pass",
+      "tests.WrongInputTests.test_string_not_indexable": "fail",
+      "tests.WrongInputTests.test_trailing_escape": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.14,
+     "skipped": 0,
+     "stderr_sha256": "488bf1cc4524b9e88ab642e456ed29d3e33dfb67e8a3fc001aa50ff178111e44",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 29,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "failed",
+   "why": "1 test(s) of the scenario fail at the candidate: tests.WrongInputTests.test_string_not_indexable (AssertionError: JsonPointerException not raised by resolve_pointer)"
+  }
+ },
+ "regressions": {
+  "state": "not-checked",
+  "why": "the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+ },
+ "repeat": 2,
+ "repo_ai_version": "0.7.7",
+ "reproduce": [
+  "repo-ai prove run claim --base ad57e0720b7d",
+  "# by hand: check out ad57e0720b7d in a separate worktree, then git show 16c4c8e33a30:tests.py > tests.py",
+  "# check the bytes: sha256 of tests.py must be 0f865c62352ce0fde46f1904810d29ec0e9906db0cdf87ff4953d7ee9980c7bf",
+  "# at the base, in a sandbox: python -m unittest tests   -> expect a failure in tests.WrongInputTests.test_string_not_indexable",
+  "# at the candidate: python -m unittest tests   -> expect every test to pass",
+  "repo-ai verify --run --base ad57e0720b7d   # the regression check"
+ ],
+ "scenario": {
+  "bytes": 13066,
+  "in_base_tree": "differs",
+  "in_candidate_tree": "identical",
+  "notes": [],
+  "path": "tests.py",
+  "provenance": {
+   "blob": "19bd621d75b8800eb5072f557c8d22e2beec89f5",
+   "commit": "16c4c8e33a30e364d94f7a870a6c79916b5f870d",
+   "kind": "git",
+   "revision": "16c4c8e33a30e364d94f7a870a6c79916b5f870d"
+  },
+  "sha256": "0f865c62352ce0fde46f1904810d29ec0e9906db0cdf87ff4953d7ee9980c7bf"
+ },
+ "schema": "repo-ai.proof-passport/1",
+ "seconds": 3.23,
+ "support": [],
+ "untested": [
+  "Behaviour outside the scenario's 29 test(s).",
+  "Other platforms and environments: only Darwin, 3.12.14 in the seatbelt sandbox was used.",
+  "The claim's wording itself: no tool checks that the scenario tests what the claim says."
+ ],
+ "verdict": {
+  "headline": "CLAIM NOT ESTABLISHED: the candidate fails the pinned scenario",
+  "level": "not_established",
+  "reasons": [
+   "candidate: 1 test(s) of the scenario fail at the candidate: tests.WrongInputTests.test_string_not_indexable (AssertionError: JsonPointerException not raised by resolve_pointer)",
+   "regressions: the scenario stage already shows the claim is not established (--keep-going runs the regression check anyway)"
+  ],
+  "state": "candidate-failed",
+  "supported": false
+ }
+}

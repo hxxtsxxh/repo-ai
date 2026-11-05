@@ -1,0 +1,87 @@
+{
+  "id": "ts-workspace-020-retry-backoff-attempts",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "hard",
+  "prompt": "Automatic retries (the worker endpoints `POST /jobs/:id/start` and\n`POST /jobs/:id/fail`) don't follow the job's retry policy.\n\nJob `sync` has `retry: { maxAttempts: 3, backoff: \"1s\", maxBackoff: \"5m\" }`. From the\nworker log:\n\n    08:00:00  run 1 failed -> API requeued it with retryAt 08:00:02\n    08:00:02  run 2 failed -> retryAt 08:00:06\n\nThe policy says the first retry waits `backoff` (1s), then the delay doubles up to\n`maxBackoff`, so we expected 08:00:01 and 08:00:03. `maxAttempts` is the total number of\nruns including the first one; once they are used up the job must end up `failed`\ninstead of being requeued.\n\nAlso, while a retry is pending, `GET /jobs/:id` reports `nextRunAt` from the job's\nschedule (or `null` for unscheduled jobs) instead of the retry time, so the dashboard\nshows the wrong \"next run\".",
+  "setup": [
+    {
+      "file": "packages/core/src/types.ts",
+      "find": "  lastError?: string;\n",
+      "replace": "  lastError?: string;\n  retryAt?: string;\n"
+    },
+    {
+      "file": "packages/core/src/retry.ts",
+      "find": "export interface RetryOptions {",
+      "replace": "export interface AttemptPolicy {\n  maxAttempts: number;\n  backoffMs: number;\n  maxBackoffMs: number;\n}\n\n// A job has just failed its `attempt`-th run (1-based). Returns when it should run\n// again, or null once all `maxAttempts` runs have been used. Retry number n waits\n// backoffDelay(n) with the policy's base delay and cap (no jitter).\nexport function nextAttemptAt(failedAt: Date, attempt: number, policy: AttemptPolicy): Date | null {\n  if (attempt > policy.maxAttempts) return null;\n  const delay = backoffDelay(attempt, { baseMs: policy.backoffMs, maxMs: policy.maxBackoffMs, jitter: 0 });\n  return new Date(failedAt.getTime() + delay);\n}\n\nexport interface RetryOptions {"
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "import { canTransition } from \"../../core/src/lifecycle.ts\";\n",
+      "replace": "import { canTransition } from \"../../core/src/lifecycle.ts\";\nimport { nextAttemptAt } from \"../../core/src/retry.ts\";\n"
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "export function retryJob(ctx: JobsContext, id: string): ApiResponse {\n  return transition(ctx, id, \"queued\", \"job:retried\", { lastError: undefined });\n}\n",
+      "replace": "export function retryJob(ctx: JobsContext, id: string): ApiResponse {\n  return transition(ctx, id, \"queued\", \"job:retried\", { lastError: undefined });\n}\n\n// A worker picked the job up: one more attempt is used.\nexport function startJob(ctx: JobsContext, id: string): ApiResponse {\n  const job = requireJob(ctx, id);\n  if (!canTransition(job.status, \"running\")) {\n    throw conflict(`job ${id} is ${job.status} and cannot become running`);\n  }\n  const now = ctx.clock();\n  if (job.retryAt !== undefined && Date.parse(job.retryAt) > now.getTime()) {\n    throw conflict(`job ${id} is backing off until ${job.retryAt}`);\n  }\n  const updated = ctx.store.setStatus(id, \"running\", { attempts: job.attempts + 1, retryAt: undefined });\n  ctx.events.emit(\"job:started\", updated);\n  return json(200, toJobDto(updated, now));\n}\n\n// The run in progress failed: requeue with backoff while attempts remain.\nexport function failJob(ctx: JobsContext, id: string, request: ApiRequest): ApiResponse {\n  const job = requireJob(ctx, id);\n  if (job.status !== \"running\") throw conflict(`job ${id} is ${job.status}, not running`);\n  const body = (request.body ?? {}) as { error?: unknown };\n  const error = typeof body.error === \"string\" && body.error.trim() ? body.error.trim() : \"job failed\";\n  const now = ctx.clock();\n  const retryAt = nextAttemptAt(now, job.attempts + 1, job.retry);\n  const updated = retryAt\n    ? ctx.store.setStatus(id, \"queued\", { lastError: error, retryAt: retryAt.toISOString() })\n    : ctx.store.setStatus(id, \"failed\", { lastError: error, retryAt: undefined });\n  ctx.events.emit(retryAt ? \"job:retry-scheduled\" : \"job:failed\", updated);\n  return json(200, toJobDto(updated, now));\n}\n\nexport function succeedJob(ctx: JobsContext, id: string): ApiResponse {\n  return transition(ctx, id, \"succeeded\", \"job:succeeded\", { lastError: undefined });\n}\n"
+    },
+    {
+      "file": "packages/api/src/serialize.ts",
+      "find": "  nextRunAt: string | null;\n",
+      "replace": "  nextRunAt: string | null; // when the job runs next; a pending retry comes first\n  retryAt: string | null;\n"
+    },
+    {
+      "file": "packages/api/src/serialize.ts",
+      "find": "    nextRunAt: parsed && active ? nextRun(parsed, now).toISOString() : null,\n",
+      "replace": "    nextRunAt: parsed && active ? nextRun(parsed, now).toISOString() : null,\n    retryAt: job.retryAt ?? null,\n"
+    },
+    {
+      "file": "packages/api/src/server.ts",
+      "find": "import { cancelJob, createJob, getJob, listJobs, retryJob } from \"./jobs.ts\";",
+      "replace": "import { cancelJob, createJob, failJob, getJob, listJobs, retryJob, startJob, succeedJob } from \"./jobs.ts\";"
+    },
+    {
+      "file": "packages/api/src/server.ts",
+      "find": "    .add(\"POST\", \"/jobs/:id/retry\", scoped(\"jobs:write\", (_req, p) => retryJob(ctx, p.id)));",
+      "replace": "    .add(\"POST\", \"/jobs/:id/retry\", scoped(\"jobs:write\", (_req, p) => retryJob(ctx, p.id)))\n    .add(\"POST\", \"/jobs/:id/start\", scoped(\"jobs:write\", (_req, p) => startJob(ctx, p.id)))\n    .add(\"POST\", \"/jobs/:id/fail\", scoped(\"jobs:write\", (req, p) => failJob(ctx, p.id, req)))\n    .add(\"POST\", \"/jobs/:id/succeed\", scoped(\"jobs:write\", (_req, p) => succeedJob(ctx, p.id)));"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/retry.ts",
+      "find": "  if (attempt > policy.maxAttempts) return null;",
+      "replace": "  if (attempt >= policy.maxAttempts) return null;"
+    },
+    {
+      "file": "packages/api/src/jobs.ts",
+      "find": "  const retryAt = nextAttemptAt(now, job.attempts + 1, job.retry);",
+      "replace": "  const retryAt = nextAttemptAt(now, job.attempts, job.retry);"
+    },
+    {
+      "file": "packages/api/src/serialize.ts",
+      "find": "    nextRunAt: parsed && active ? nextRun(parsed, now).toISOString() : null,\n",
+      "replace": "    nextRunAt: active && job.retryAt ? job.retryAt : parsed && active ? nextRun(parsed, now).toISOString() : null,\n"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/retry.ts",
+    "packages/api/src/jobs.ts",
+    "packages/api/src/serialize.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_retry_flow.test.ts",
+      "dest": "packages/api/test/hidden_retry_flow.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/api/test/hidden_retry_flow.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

@@ -1,0 +1,666 @@
+{
+ "frozen": "2026-10-21: before any selection was measured on a held-out project",
+ "note": "Public, permissively licensed repositories, cloned at the pinned commit. Nothing from them is redistributed here; the harness clones them.",
+ "projects": {
+  "cachetools": {
+   "set": "dev",
+   "lang": "python",
+   "url": "https://github.com/tkem/cachetools",
+   "commit": "6f23e2a7b75a42d30cb9d890ab3ca4059ee01bfd",
+   "license": "MIT",
+   "test_command": "PYTHONPATH=src python -m unittest discover -s tests -t ."
+  },
+  "markdown": {
+   "set": "dev",
+   "lang": "python",
+   "url": "https://github.com/Python-Markdown/markdown",
+   "commit": "b29a5b6de169b8f331c37c392f58b5183f728e0e",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m unittest discover -s tests -t ."
+  },
+  "pyflakes": {
+   "set": "dev",
+   "lang": "python",
+   "url": "https://github.com/PyCQA/pyflakes",
+   "commit": "f0a8b98156ba1645a45bc7d77dcfe79dbbf11f10",
+   "license": "MIT",
+   "test_command": "python -m unittest discover -s pyflakes/test -t ."
+  },
+  "simplejson": {
+   "set": "dev",
+   "lang": "python",
+   "url": "https://github.com/simplejson/simplejson",
+   "commit": "9950b7e5f4443fff8defb51e80e41ab40d0a36b9",
+   "license": "MIT OR AFL-2.1",
+   "test_command": "python -m unittest discover -s simplejson/tests -t ."
+  },
+  "tomli": {
+   "set": "dev",
+   "lang": "python",
+   "url": "https://github.com/hukkin/tomli",
+   "commit": "43a86ade8b795c6ef9b4ec53372a607cd1ed426f",
+   "license": "MIT",
+   "test_command": "PYTHONPATH=src python -m unittest discover -s tests -t ."
+  },
+  "geojson-vt": {
+   "set": "dev",
+   "lang": "node",
+   "url": "https://github.com/mapbox/geojson-vt",
+   "commit": "ddbeb4026c814ae49af870578f0521ccffd39eb6",
+   "license": "ISC",
+   "test_command": "node --test"
+  },
+  "webidl-conversions": {
+   "set": "dev",
+   "lang": "node",
+   "url": "https://github.com/jsdom/webidl-conversions",
+   "commit": "52a15589ff38ca2fd59b5173e43b7a41c5b89eb6",
+   "license": "BSD-2-Clause",
+   "test_command": "node --test"
+  },
+  "peewee": {
+   "set": "heldout",
+   "lang": "python",
+   "url": "https://github.com/coleifer/peewee",
+   "commit": "beae2f0cf902841c8f72038b1e6f57faa8870ac4",
+   "license": "MIT",
+   "test_command": "python -m unittest discover -s tests -t . -p *.py"
+  },
+  "pyfakefs": {
+   "set": "heldout",
+   "lang": "python",
+   "url": "https://github.com/pytest-dev/pyfakefs",
+   "commit": "45d460c7b93ffd0ddfb29e37b5f7e0930f7c91e4",
+   "license": "Apache-2.0",
+   "test_command": "python -m unittest discover -s pyfakefs/tests -t . -p *_test.py"
+  },
+  "elementpath": {
+   "set": "heldout",
+   "lang": "python",
+   "url": "https://github.com/sissaschool/elementpath",
+   "commit": "62f1f7f586ef4157db6850396bbcd68a19505455",
+   "license": "MIT",
+   "test_command": "python -m unittest discover -s tests -t ."
+  },
+  "genshi": {
+   "set": "heldout",
+   "lang": "python",
+   "url": "https://github.com/edgewall/genshi",
+   "commit": "5160b3eaa1784d50abf694293abafc55ac065864",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m unittest discover -s genshi -t . -p test_*.py"
+  },
+  "python-pathspec": {
+   "set": "heldout",
+   "lang": "python",
+   "url": "https://github.com/cpburnz/python-pathspec",
+   "commit": "a23de069a3e6de5aab66a620de88f110d0b7cb09",
+   "license": "MPL-2.0",
+   "test_command": "python -m unittest discover -s tests -t ."
+  },
+  "culori": {
+   "set": "heldout",
+   "lang": "node",
+   "url": "https://github.com/Evercoder/culori",
+   "commit": "7613e691db8b3f86d086eb837243ec7a6a20e92f",
+   "license": "MIT",
+   "test_command": "node --test test/**/*.test.js"
+  },
+  "busboy": {
+   "set": "heldout",
+   "lang": "node",
+   "url": "https://github.com/fastify/busboy",
+   "commit": "af57a2c6a892a85a507e3c39202f3208f95b86d9",
+   "license": "MIT",
+   "test_command": "node --test test/**/*.test.js"
+  },
+  "simple-statistics": {
+   "set": "heldout",
+   "lang": "node",
+   "url": "https://github.com/simple-statistics/simple-statistics",
+   "commit": "ca409aa6b2f5525b5ee988b691099468b4a73a0c",
+   "license": "ISC",
+   "test_command": "node --test test/*.test.js",
+   "excluded_tests": [
+    "test/sample_with_replacement.test.js",
+    "test/permutation_test.test.js",
+    "test/shuffle.test.js",
+    "test/sample.test.js"
+   ]
+  },
+  "pony": {
+   "set": "heldout2",
+   "lang": "python",
+   "url": "https://github.com/ponyorm/pony",
+   "commit": "07136c853b180a5987523877a471a90296a5e2d8",
+   "license": "Apache-2.0",
+   "test_command": "python -m unittest discover -s pony/orm/tests -t . -p test_*.py"
+  },
+  "supervisor": {
+   "set": "heldout2",
+   "lang": "python",
+   "url": "https://github.com/Supervisor/supervisor",
+   "commit": "abc60468ea4b78c446cf3a194f6fccb83d90f670",
+   "license": "BSD-derived (repoze)",
+   "test_command": "python -m unittest discover -s supervisor/tests -t . -p test_*.py"
+  },
+  "svgwrite": {
+   "set": "heldout2",
+   "lang": "python",
+   "url": "https://github.com/mozman/svgwrite",
+   "commit": "cd10a7ed1982de77ba85ff4556e154187d7f14bc",
+   "license": "MIT",
+   "test_command": "python -m unittest discover -s tests"
+  },
+  "oauthlib": {
+   "set": "heldout2",
+   "lang": "python",
+   "url": "https://github.com/oauthlib/oauthlib",
+   "commit": "fa4570206dfeecb903dd0948d91bcdeaf07dfa0d",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m unittest discover -s tests -t ."
+  },
+  "cel-js": {
+   "set": "heldout2",
+   "lang": "node",
+   "url": "https://github.com/marcbachmann/cel-js",
+   "commit": "86cd97216a1cbb522eda81aaa0221c245d5913d7",
+   "license": "MIT",
+   "test_command": "node --test test/**/*.test.js"
+  },
+  "primitive-geometry": {
+   "set": "heldout2",
+   "lang": "node",
+   "url": "https://github.com/dmnsgn/primitive-geometry",
+   "commit": "2160a93147e82746e470595299e2e18ebc8a0a0d",
+   "license": "MIT",
+   "test_command": "node --test"
+  },
+  "t-a-i": {
+   "set": "heldout2",
+   "lang": "node",
+   "url": "https://github.com/qntm/t-a-i",
+   "commit": "08ca4ad08885bbfd87ed432bc3d585d50bea99a4",
+   "license": "MIT",
+   "test_command": "node --test"
+  },
+  "itsdangerous": {
+   "set": "heldout3",
+   "lang": "python",
+   "url": "https://github.com/pallets/itsdangerous",
+   "commit": "672971d66a2ef9f85151e53283113f33d642dabd",
+   "license": "BSD-3-Clause",
+   "test_command": "PYTHONPATH=src python -m pytest tests",
+   "test_requirements": [
+    "pytest",
+    "freezegun"
+   ],
+   "image": "localhost/vev-itsdangerous:h3"
+  },
+  "humanize": {
+   "set": "heldout3-replaced",
+   "lang": "python",
+   "url": "https://github.com/python-humanize/humanize",
+   "commit": "785e5dcc0d0308ad0dff3f6cc0faa7085ad0375b",
+   "license": "MIT",
+   "test_command": "PYTHONPATH=src python -m pytest tests",
+   "test_requirements": [
+    "pytest>=9",
+    "freezegun",
+    "pytest-benchmark",
+    "pytest-cov"
+   ],
+   "image": "localhost/vev-humanize:h3",
+   "replaced_by": "boltons",
+   "replacement_reason": "replacement rule: 0 of 6 test files pass at baseline (src/humanize/_version.py is generated by hatch-vcs at build time and absent from the checkout)"
+  },
+  "parse": {
+   "set": "heldout3",
+   "lang": "python",
+   "url": "https://github.com/r1chardj0n3s/parse",
+   "commit": "175b52d5079dd632332bdc8a075f25867d5a6a17",
+   "license": "MIT",
+   "test_command": "python -m pytest tests",
+   "test_requirements": [
+    "pytest",
+    "pytest-cov",
+    "typing-extensions"
+   ],
+   "image": "localhost/vev-parse:h3"
+  },
+  "toolz": {
+   "set": "heldout3",
+   "lang": "python",
+   "url": "https://github.com/pytoolz/toolz",
+   "commit": "451af60dec590a6010e2babdbf391ea8f815122f",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m pytest toolz/tests",
+   "test_requirements": [
+    "pytest",
+    "pycodestyle"
+   ],
+   "image": "localhost/vev-toolz:h3",
+   "note": "CI also runs --doctest-modules over toolz/; source-module doctests are not test files and are outside the per-file universe"
+  },
+  "ZENCHE": {
+   "set": "heldout3",
+   "lang": "node",
+   "url": "https://github.com/Tauber01/ZENCHE",
+   "commit": "52d60af0b4b532ec862904c8787f43364d57e2c3",
+   "license": "MIT",
+   "test_command": "node --test"
+  },
+  "jmgraph": {
+   "set": "heldout3",
+   "lang": "node",
+   "url": "https://github.com/fefeding/jmgraph",
+   "commit": "3d1849d8985d7a03e1b7270df854137a8d68cae3",
+   "license": "MIT",
+   "test_command": "node --test test/*.test.mjs"
+  },
+  "ziti-sdk-nodejs": {
+   "set": "heldout3-replaced",
+   "lang": "node",
+   "url": "https://github.com/openziti/ziti-sdk-nodejs",
+   "commit": "7f75bdad9599ee16f0399c83b6b164a778d0549d",
+   "license": "Apache-2.0",
+   "test_command": "node --test --test-timeout=20000 tests/*.test.*js",
+   "image": "localhost/vev-ziti-sdk-nodejs:h3",
+   "replaced_by": "FEAScript-core",
+   "replacement_reason": "eligibility check 4: the reference command's universe has 3 test files (< 5)"
+  },
+  "FEAScript-core": {
+   "set": "heldout3",
+   "lang": "node",
+   "url": "https://github.com/FEAScript/FEAScript-core",
+   "commit": "63b60bff4e57a8b80b0e399eb666d792320726b4",
+   "license": "MIT",
+   "test_command": "node --test",
+   "image": "localhost/vev-feascript-core:h3",
+   "replaces": "ziti-sdk-nodejs"
+  },
+  "boltons": {
+   "set": "heldout3",
+   "lang": "python",
+   "url": "https://github.com/mahmoud/boltons",
+   "commit": "4e5faa3d7e4008d89e0d8bf1ea87b6d9a061a16d",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m pytest tests",
+   "test_requirements": [
+    "pytest"
+   ],
+   "image": "localhost/vev-boltons:h3",
+   "replaces": "humanize",
+   "note": "tox also runs --doctest-modules over the installed package; those doctests are outside the per-file universe"
+  },
+  "tomlkit": {
+   "set": "heldout4",
+   "lang": "python",
+   "url": "https://github.com/python-poetry/tomlkit",
+   "commit": "eddd27e43a62fe58707c311bfad2f52e72493f53",
+   "license": "MIT",
+   "test_command": "python -m pytest -q tests",
+   "test_requirements": [
+    "pytest"
+   ],
+   "image": "localhost/vev-tomlkit:h4",
+   "note": "CI: poetry run pytest -q tests. tests/test_toml_tests.py needs the toml-test git submodule, absent from a plain checkout"
+  },
+  "cattrs": {
+   "set": "heldout4",
+   "lang": "python",
+   "url": "https://github.com/python-attrs/cattrs",
+   "commit": "bde101a5a67997c61a3ee0e971386a82fe141d4e",
+   "license": "MIT",
+   "test_command": "PYTHONPATH=src python -m pytest tests",
+   "test_requirements": [
+    "pytest",
+    "attrs",
+    "typing-extensions",
+    "hypothesis",
+    "pytest-benchmark",
+    "immutables",
+    "ujson",
+    "orjson",
+    "msgpack",
+    "PyYAML",
+    "tomlkit",
+    "cbor2",
+    "pymongo",
+    "msgspec",
+    "tomli-w"
+   ],
+   "image": "localhost/vev-cattrs:h4",
+   "note": "Justfile: uv run --all-extras --group test pytest -x --ff -n auto tests; early-exit, failed-first and parallel flags are not part of the suite's content"
+  },
+  "loguru": {
+   "set": "heldout4",
+   "lang": "python",
+   "url": "https://github.com/Delgan/loguru",
+   "commit": "bce5dfd3b435b1d1658507d7e095ad7a9919bf1c",
+   "license": "MIT",
+   "test_command": "python -m pytest tests",
+   "test_requirements": [
+    "pytest",
+    "freezegun",
+    "colorama",
+    "mypy"
+   ],
+   "image": "localhost/vev-loguru:h4",
+   "note": "tox: PYTHONPATH={toxinidir} pytest -vv --cov loguru/ (coverage flags dropped)"
+  },
+  "jmespath.py": {
+   "set": "heldout4",
+   "lang": "python",
+   "url": "https://github.com/jmespath/jmespath.py",
+   "commit": "2812594e69d43098ef60f81f4efc404c071b0418",
+   "license": "MIT",
+   "test_command": "python -m pytest tests",
+   "test_requirements": [
+    "pytest"
+   ],
+   "image": "localhost/vev-jmespath:h4",
+   "note": "tox: python -m pytest tests. Standard library only at test time (hypothesis is used only by extra/, outside tests/)"
+  },
+  "chardet": {
+   "set": "heldout4-replaced",
+   "lang": "python",
+   "url": "https://github.com/chardet/chardet",
+   "commit": "88107b4ab8abc8b202fd145bc457b8b481557c87",
+   "license": "0BSD",
+   "test_command": "PYTHONPATH=src python -m pytest tests scripts/tests --ignore=tests/test_accuracy.py",
+   "test_requirements": [
+    "pytest"
+   ],
+   "image": "localhost/vev-chardet:h4",
+   "excluded_tests": [
+    "tests/test_accuracy.py"
+   ],
+   "note": "CI: uv run pytest tests/ scripts/tests/ --ignore=tests/test_accuracy.py (coverage flags dropped). Standard library only at test time",
+   "replaced_by": "colorama",
+   "replacement_reason": "replacement rule: 9 of 52 test files pass at baseline (src/chardet/_version.py is generated at build time and absent from the checkout)"
+  },
+  "colorama": {
+   "set": "heldout4",
+   "lang": "python",
+   "url": "https://github.com/tartley/colorama",
+   "commit": "841634ed2a0da5d5ac2d867db533da8131266cb2",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m unittest discover -p *_test.py",
+   "test_requirements": [
+    "pytest"
+   ],
+   "image": "localhost/vev-colorama:h4",
+   "replaces": "chardet",
+   "note": "tox: python -m unittest discover -p *_test.py. Standard library only at test time (pyparsing, the candidate before it, imports matplotlib, railroad and littletable in its tests)"
+  },
+  "cloi": {
+   "set": "heldout4",
+   "lang": "node",
+   "url": "https://github.com/gabrielchasukjin/cloi",
+   "commit": "1da62db7aa3aed8b1e65f1e3fb69a89cf00707b9",
+   "license": "MIT",
+   "test_command": "node --test test/**/*.test.js",
+   "image": "localhost/vev-cloi:h4",
+   "note": "package.json test script (no CI workflow)"
+  },
+  "autoplan": {
+   "set": "heldout4",
+   "lang": "node",
+   "url": "https://github.com/lyming99/autoplan",
+   "commit": "0d40ed8f233e5f620505362763b606cbf3b53e7e",
+   "license": "Apache-2.0",
+   "test_command": "node --test src/**/*.test.js",
+   "image": "localhost/vev-autoplan:h4",
+   "note": "package.json test script (no CI workflow)"
+  },
+  "skyhook": {
+   "set": "heldout4",
+   "lang": "node",
+   "url": "https://github.com/Commit451/skyhook",
+   "commit": "af08d3f46b7a22e5c1e868c0a8032944be87886f",
+   "license": "MIT",
+   "test_command": "node --experimental-strip-types --test test/**/*-spec.ts",
+   "image": "localhost/vev-skyhook:h4",
+   "note": "package.json test script; TypeScript tests run through Node's type stripping (the TypeScript quota)"
+  },
+  "marshmallow": {
+   "set": "heldout5",
+   "lang": "python",
+   "url": "https://github.com/marshmallow-code/marshmallow",
+   "commit": "b762ea2d59ca52fe5df76b90de14bed7e5ec5607",
+   "license": "MIT",
+   "test_command": "PYTHONPATH=src python -m pytest tests",
+   "image": "localhost/vev-marshmallow:h5",
+   "test_requirements": [
+    "pytest",
+    "simplejson"
+   ]
+  },
+  "attrs": {
+   "set": "heldout5",
+   "lang": "python",
+   "url": "https://github.com/python-attrs/attrs",
+   "commit": "ee66e7274852438cc23d4240a1a9cd632fda8b52",
+   "license": "MIT",
+   "test_command": "PYTHONPATH=src python -m pytest tests",
+   "image": "localhost/vev-attrs:h5",
+   "test_requirements": [
+    "pytest>9",
+    "cloudpickle",
+    "hypothesis",
+    "pympler",
+    "pytest-xdist[psutil]"
+   ]
+  },
+  "pluggy": {
+   "set": "heldout5",
+   "lang": "python",
+   "url": "https://github.com/pytest-dev/pluggy",
+   "commit": "49c07369faedfbf8689dc2d86c3330d48ea286ad",
+   "license": "MIT",
+   "test_command": "PYTHONPATH=src python -m pytest testing",
+   "image": "localhost/vev-pluggy:h5",
+   "test_requirements": [
+    "pytest>=8",
+    "pytest-benchmark"
+   ]
+  },
+  "sqlparse": {
+   "set": "heldout5",
+   "lang": "python",
+   "url": "https://github.com/andialbrecht/sqlparse",
+   "commit": "60cdc649726bf1bc4f1b336050560b336da715ec",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m pytest tests",
+   "image": "localhost/vev-sqlparse:h5",
+   "test_requirements": [
+    "pytest"
+   ]
+  },
+  "h11": {
+   "set": "heldout5",
+   "lang": "python",
+   "url": "https://github.com/python-hyper/h11",
+   "commit": "62c5068c971579d61fa1b55373390e12f25fd856",
+   "license": "MIT",
+   "test_command": "python -m pytest h11",
+   "image": "localhost/vev-h11:h5",
+   "test_requirements": [
+    "pytest"
+   ]
+  },
+  "koa": {
+   "set": "heldout5",
+   "lang": "node",
+   "url": "https://github.com/koajs/koa",
+   "commit": "a82feec38a7c28e14f4db7525b8f500801214a76",
+   "license": "MIT",
+   "test_command": "node --test",
+   "image": "localhost/vev-koa:h5"
+  },
+  "MusicBot": {
+   "set": "heldout5",
+   "lang": "node",
+   "url": "https://github.com/umutxyp/MusicBot",
+   "commit": "bf396aa48887333c2fc8f199221b16f0eeef1b2c",
+   "license": "MIT",
+   "test_command": "node --test \"test/*.test.js\"",
+   "image": "localhost/vev-musicbot:h5"
+  },
+  "pyjwt": {
+   "set": "heldout6",
+   "lang": "python",
+   "url": "https://github.com/jpadilla/pyjwt",
+   "commit": "16231abfd1d8eab4953e8779b3017b859c88565e",
+   "license": "MIT",
+   "test_command": "python -m pytest tests",
+   "image": "localhost/vev-pyjwt:h6",
+   "test_requirements": [
+    "pytest>=8.4.2,<9.0.0",
+    "cryptography>=3.4.0"
+   ]
+  },
+  "parsel": {
+   "set": "heldout6",
+   "lang": "python",
+   "url": "https://github.com/scrapy/parsel",
+   "commit": "599897f486ccc066555dacbd5014812ee640eec2",
+   "license": "BSD-3-Clause",
+   "test_command": "python -m pytest docs parsel tests",
+   "image": "localhost/vev-parsel:h6",
+   "test_requirements": [
+    "pytest>=9.0",
+    "hypothesis",
+    "psutil",
+    "sybil",
+    "cssselect>=1.2.0",
+    "jmespath>=1.0.0",
+    "lxml>=5.1.0",
+    "w3lib>=1.19.0",
+    "python-jsonpath>=2.0.0"
+   ]
+  },
+  "mkdocs": {
+   "set": "heldout6",
+   "lang": "python",
+   "url": "https://github.com/mkdocs/mkdocs",
+   "commit": "2862536793b3c67d9d83c33e0dd6d50a791928f8",
+   "license": "BSD-2-Clause",
+   "test_command": "python -m unittest discover -s mkdocs -p \"*tests.py\"",
+   "image": "localhost/vev-mkdocs:h6",
+   "test_requirements": [
+    "click>=7.0",
+    "Jinja2>=2.11.1",
+    "markupsafe>=2.0.1",
+    "Markdown>=3.3.6",
+    "PyYAML>=5.1",
+    "watchdog>=2.0",
+    "ghp-import>=1.0",
+    "pyyaml_env_tag>=0.1",
+    "packaging>=20.5",
+    "mergedeep>=1.3.4",
+    "pathspec>=0.11.1",
+    "mkdocs-get-deps>=0.2.0",
+    "babel>=2.9.0"
+   ]
+  },
+  "websockets": {
+   "set": "heldout6",
+   "lang": "python",
+   "url": "https://github.com/python-websockets/websockets",
+   "commit": "60bc20095093a5f7e6083640db5ffd56f1378da6",
+   "license": "BSD-3-Clause",
+   "test_command": "PYTHONPATH=src python -m unittest",
+   "image": "localhost/vev-websockets:h6",
+   "test_requirements": [
+    "mitmproxy",
+    "python-socks[asyncio]",
+    "trio",
+    "uvloop",
+    "werkzeug"
+   ]
+  },
+  "hubot": {
+   "set": "heldout6",
+   "lang": "node",
+   "url": "https://github.com/hubotio/hubot",
+   "commit": "9aab11a3deeafc9025731967ca4ae1e030acd8f8",
+   "license": "MIT",
+   "test_command": "node --test --test-timeout=40000",
+   "image": "localhost/vev-hubot:h6"
+  },
+  "jsonic": {
+   "set": "heldout6",
+   "lang": "node",
+   "url": "https://github.com/jsonicjs/jsonic",
+   "commit": "46b86551471c7379e86c76159aa2fb1665c8bd9f",
+   "license": "MIT",
+   "test_command": "node --enable-source-maps --test test/**/*.test.js",
+   "image": "localhost/vev-jsonic:h6"
+  },
+  "hb-actions": {
+   "set": "heldout6",
+   "lang": "node",
+   "url": "https://github.com/Homebrew/actions",
+   "commit": "d482da0e602890d3160aade42e72c8556103bf04",
+   "license": "BSD-2-Clause",
+   "test_command": "node --test --experimental-test-module-mocks --import ./spec-helper.mts --test-reporter ./test-reporter.mts --test-reporter-destination stdout",
+   "image": "localhost/vev-hb-actions:h6"
+  },
+  "wcd": {
+   "set": "heldout6-replaced",
+   "lang": "node",
+   "url": "https://github.com/node-projects/web-component-designer",
+   "commit": "557fbe2dbdc0977afce6af414bdfcd354d451772",
+   "license": "MIT",
+   "test_command": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+   "image": "localhost/vev-wcd:h6",
+   "control": true,
+   "replaced": "native suite fails at the base in its image (Amendment 5, replacement rule); replaced by ha-map-card"
+  },
+  "ha-map-card": {
+   "set": "heldout6",
+   "lang": "node",
+   "url": "https://github.com/nathan-gs/ha-map-card",
+   "commit": "0f2c9f9731f5869f660f6fa41d0665aeae477616",
+   "license": "MIT",
+   "test_command": "jest",
+   "image": "localhost/vev-ha-map-card:h6",
+   "control": true
+  }
+ },
+ "reserve": {
+  "python": [
+   "ponyorm/pony",
+   "web2py/pydal",
+   "Supervisor/supervisor",
+   "mozman/svgwrite",
+   "oauthlib/oauthlib"
+  ],
+  "node": [
+   "MikeMcl/decimal.js",
+   "MikeMcl/bignumber.js",
+   "mozilla/source-map"
+  ],
+  "heldout3": {
+   "python": [
+    "mahmoud/boltons",
+    "python-poetry/tomlkit",
+    "astanin/python-tabulate",
+    "pallets/markupsafe",
+    "python-attrs/cattrs",
+    "hynek/structlog"
+   ],
+   "node": [
+    "FEAScript/FEAScript-core@63b60bff4e57a8b80b0e399eb666d792320726b4",
+    "EasyXdc/PortsWhisper-Rust@b9984c49b6f23279da44fab2b79ad8b0c0c30cc7"
+   ],
+   "control_vitest": "4Catalyzer/found@0769f53b86d9d3ef70869434654a27198e4ed58c (plan-only: verify must report it cannot split vitest)"
+  }
+ },
+ "frozen_heldout2": "2026-10-21: second held-out set, frozen before any measurement; run once on the engine after the post-freeze fixes (edef2ae)",
+ "frozen_heldout3": "2026-10-22: selection recorded in FREEZE.md before any held-out-3 measurement",
+ "frozen_heldout4": "2026-10-22: engine ccb0622 (FREEZE.md); selection per PROTOCOL.md Amendment 3/3b",
+ "frozen_heldout6": "selection recorded in results/heldout6/reads.json; added before any held-out-6 project was set up"
+}

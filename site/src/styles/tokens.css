@@ -1,0 +1,90 @@
+/*
+ * repo-ai design tokens, shared by the landing page and the Starlight docs.
+ * Dark is the default (Starlight's convention); light applies under
+ * [data-theme='light'] or, on the landing page before JS runs, prefers-color-scheme.
+ * Every text/background pair below was checked for WCAG AA (4.5:1 body, 3:1 large/UI).
+ */
+:root {
+  --ri-font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --ri-font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, 'Cascadia Mono', 'Roboto Mono', Consolas, 'Liberation Mono', monospace;
+
+  /* dark (default) */
+  --ri-bg: #0e1211;
+  --ri-bg-raised: #141a18;
+  --ri-surface: #18201e;
+  --ri-fg: #e8ede9;
+  --ri-muted: #a4b0ab;
+  --ri-line: #24302c;
+  --ri-line-strong: #34433e;
+  --ri-hover: rgba(255, 255, 255, 0.05);
+  --ri-accent: #62d6a6;
+  --ri-accent-text: #6fe0b0;
+  --ri-accent-ink: #062619;
+  --ri-accent-soft: rgba(98, 214, 166, 0.12);
+  --ri-focus: #9ef0cb;
+  --ri-code-bg: #0a0e0d;
+  --ri-code-fg: #dfe7e3;
+
+  /* verdict semantics (used by the terminal, the diagram and the matrix) */
+  --ri-pass: #62d6a6;
+  --ri-fail: #ff8f80;
+  --ri-pre: #f2c46b;
+  --ri-abstain: #b3bcff;
+  --ri-unknown: #a4b0ab;
+
+  /* the terminal stays dark in both themes */
+  --ri-term-bg: #0a0e0d;
+  --ri-term-bar: #131917;
+  --ri-term-fg: #d9e2de;
+  --ri-term-dim: #8f9c97;
+  --ri-term-line: #24302c;
+}
+
+:root[data-theme='light'] {
+  --ri-bg: #f6f5f0;
+  --ri-bg-raised: #efeee7;
+  --ri-surface: #ffffff;
+  --ri-fg: #131816;
+  --ri-muted: #4a5551;
+  --ri-line: #dcdad1;
+  --ri-line-strong: #bfbcb0;
+  --ri-hover: rgba(0, 0, 0, 0.04);
+  --ri-accent: #08704d;
+  --ri-accent-text: #076848;
+  --ri-accent-ink: #ffffff;
+  --ri-accent-soft: rgba(10, 122, 84, 0.09);
+  --ri-focus: #08704d;
+  --ri-code-bg: #ecebe3;
+  --ri-code-fg: #131816;
+
+  --ri-pass: #08704d;
+  --ri-fail: #b42318;
+  --ri-pre: #8a5800;
+  --ri-abstain: #4338ca;
+  --ri-unknown: #4a5551;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --ri-bg: #f6f5f0;
+    --ri-bg-raised: #efeee7;
+    --ri-surface: #ffffff;
+    --ri-fg: #131816;
+    --ri-muted: #4a5551;
+    --ri-line: #dcdad1;
+    --ri-line-strong: #bfbcb0;
+    --ri-hover: rgba(0, 0, 0, 0.04);
+    --ri-accent: #08704d;
+    --ri-accent-text: #076848;
+    --ri-accent-ink: #ffffff;
+    --ri-accent-soft: rgba(10, 122, 84, 0.09);
+    --ri-focus: #08704d;
+    --ri-code-bg: #ecebe3;
+    --ri-code-fg: #131816;
+    --ri-pass: #08704d;
+    --ri-fail: #b42318;
+    --ri-pre: #8a5800;
+    --ri-abstain: #4338ca;
+    --ri-unknown: #4a5551;
+  }
+}

@@ -1,0 +1,14 @@
+name: Feature request
+description: A problem repo-ai could solve
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes: {label: The problem (what you were trying to do and what got in the way)}
+    validations: {required: true}
+  - type: textarea
+    id: evidence
+    attributes: {label: How would we know it helped? (observable outcome, measurement, or test)}
+  - type: textarea
+    id: alternatives
+    attributes: {label: What you use today instead}

@@ -1,0 +1,43 @@
+diff --git a/invoicekit/money.py b/invoicekit/money.py
+index 5cc842b..39e17d1 100644
+--- a/invoicekit/money.py
++++ b/invoicekit/money.py
+@@ -22,3 +22,11 @@ def format_amount(cents, currency):
+     sign = "-" if cents < 0 else ""
+     whole, frac = divmod(abs(int(cents)), 100)
+     return f"{code.upper()} {sign}{whole}.{frac:02d}"
++
++
++def apply_discount(cents, percent):
++    """Return integer cents after taking `percent` percent off, rounded half-even."""
++    if not 0 <= percent <= 100:
++        raise InvoiceError(f"discount out of range: {percent!r}")
++    remaining = Decimal(int(cents)) * (100 - Decimal(str(percent))) / 100
++    return int(remaining.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
+diff --git a/tests/test_money.py b/tests/test_money.py
+index c937b98..1c14d95 100644
+--- a/tests/test_money.py
++++ b/tests/test_money.py
+@@ -2,7 +2,7 @@ import pytest
+ 
+ from invoicekit.errors import InvoiceError
+ from invoicekit.lines import line_total
+-from invoicekit.money import format_amount, parse_amount
++from invoicekit.money import apply_discount, format_amount, parse_amount
+ 
+ 
+ def test_parse_amount():
+@@ -18,5 +18,13 @@ def test_format_amount():
+     assert format_amount(1234, "usd") == "USD 12.34"
+ 
+ 
++def test_apply_discount():
++    assert apply_discount(1000, 10) == 900
++    assert apply_discount(999, 10) == 899  # 899.1 rounds down
++    assert apply_discount(1005, 50) == 502  # 502.5 rounds half-even to 502
++    with pytest.raises(InvoiceError):
++        apply_discount(1000, 101)
++
++
+ def test_line_total():
+     assert line_total(3, 250) == 750

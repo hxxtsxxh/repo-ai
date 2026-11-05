@@ -1,0 +1,52 @@
+{
+  "id": "py-shop-009-cancel-order-endpoint",
+  "base": "py-shop",
+  "language": "python",
+  "category": "api",
+  "difficulty": "medium",
+  "prompt": "Request from the mobile team: customers need to be able to cancel their own orders\nfrom the app. Please add `POST /orders/{order_id}/cancel`:\n\n- 200 with the updated order, same JSON shape as `GET /orders/{order_id}`; reserved\n  stock goes back to inventory\n- 404 if the order doesn't exist or belongs to another customer (admins may cancel any order)\n- 409 if the order can no longer be cancelled (e.g. it has shipped)\n- 401 without a valid token",
+  "setup": [
+    {
+      "file": "shop/api/orders.py",
+      "find": "def cancel_order(ctx, request, order_id):\n    user = current_user(ctx, request)\n    _visible_order(ctx, user, order_id)\n    order = ctx.order_service.cancel(order_id)\n    return json_response(serialize_order(order))\n\n\ndef ship_order(",
+      "replace": "def ship_order("
+    },
+    {
+      "file": "shop/api/routes.py",
+      "find": "    (\"POST /orders/{order_id}/cancel\", orders.cancel_order),\n    (\"POST /orders/{order_id}/ship\"",
+      "replace": "    (\"POST /orders/{order_id}/ship\""
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/api/routes.py",
+      "find": "    (\"POST /orders/{order_id}/ship\"",
+      "replace": "    (\"POST /orders/{order_id}/cancel\", orders.cancel_order),\n    (\"POST /orders/{order_id}/ship\""
+    },
+    {
+      "file": "shop/api/orders.py",
+      "find": "def ship_order(",
+      "replace": "def cancel_order(ctx, request, order_id):\n    user = current_user(ctx, request)\n    _visible_order(ctx, user, order_id)\n    order = ctx.order_service.cancel(order_id)\n    return json_response(serialize_order(order))\n\n\ndef ship_order("
+    }
+  ],
+  "gold_files": [
+    "shop/api/orders.py",
+    "shop/api/routes.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_cancel_endpoint.py",
+      "dest": "tests/test_hidden_cancel_endpoint.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_cancel_endpoint"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

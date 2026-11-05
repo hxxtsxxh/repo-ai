@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-002-nested-order-route",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "`GET /orders/<id>/payments` always comes back 404:\n\n    {\"error\": {\"code\": \"not_found\", \"message\": \"order ord_0001/payments not found\"}}\n\nThis happens even for orders that definitely have a captured payment. `GET /orders/<id>`\non its own works fine. It looks like the payments listing handler is never reached.",
+  "setup": [
+    {
+      "file": "shop/api/router.py",
+      "find": "parts.append(f\"(?P<{name}>[^/]+)\")",
+      "replace": "parts.append(f\"(?P<{name}>.+?)\")"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/api/router.py",
+      "find": "parts.append(f\"(?P<{name}>.+?)\")",
+      "replace": "parts.append(f\"(?P<{name}>[^/]+)\")"
+    }
+  ],
+  "gold_files": [
+    "shop/api/router.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_nested_routes.py",
+      "dest": "tests/test_hidden_nested_routes.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_nested_routes"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

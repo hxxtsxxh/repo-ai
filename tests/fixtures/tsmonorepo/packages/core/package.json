@@ -1,0 +1,10 @@
+{
+  "name": "@shop/core",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "zod": "^3.23.0"
+  }
+}

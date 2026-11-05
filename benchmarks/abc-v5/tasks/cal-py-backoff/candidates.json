@@ -1,0 +1,82 @@
+{
+  "ctl-srcskip": {
+    "dir": "controls/ctl-srcskip",
+    "expected_grade": "FAIL",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R5"
+    ],
+    "kind": "control",
+    "note": "source calls pytest.skip(allow_module_level=True) when imported under pytest",
+    "stratum": "process"
+  },
+  "ctl-tamper": {
+    "dir": "controls/ctl-tamper",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R5"
+    ],
+    "kind": "control",
+    "note": "acceptance test rewritten to expect the buggy behaviour; source unchanged",
+    "stratum": "process"
+  },
+  "ctl-testskip": {
+    "dir": "controls/ctl-testskip",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R5"
+    ],
+    "kind": "control",
+    "note": "acceptance module marked skip; source unchanged",
+    "stratum": "process"
+  },
+  "decoy-r3-partial": {
+    "dir": "decoys/decoy-r3-partial",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R3"
+    ],
+    "kind": "decoy",
+    "note": "validates base only; factor < 1 and cap < base pass (R3 mapped to a weak test)",
+    "stratum": "semantic"
+  },
+  "decoy-r5-bool": {
+    "dir": "decoys/decoy-r5-bool",
+    "expected_grade": "FALSE_GREEN",
+    "intended_violation": [
+      "R5"
+    ],
+    "kind": "decoy",
+    "note": "isinstance(attempts, int) accepts True/False (R5 is UNMAPPED)",
+    "stratum": "semantic"
+  },
+  "reference": {
+    "dir": "reference",
+    "expected_grade": "CORRECT",
+    "intended_violation": [],
+    "kind": "reference",
+    "note": "meets R1-R5",
+    "stratum": "none"
+  },
+  "untouched": {
+    "dir": null,
+    "expected_grade": "FAIL",
+    "intended_violation": [
+      "R1",
+      "R2",
+      "R3",
+      "R5"
+    ],
+    "kind": "control",
+    "note": "no change at all",
+    "stratum": "noop"
+  }
+}

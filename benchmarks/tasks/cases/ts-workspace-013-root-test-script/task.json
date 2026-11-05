@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-013-root-test-script",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "ci",
+  "difficulty": "easy",
+  "prompt": "CI is green but suspiciously fast: the root `npm test` finishes instantly and reports\n`tests 0` / `pass 0`. Running `npm test` inside each package works and runs the real\ntests. The root script is supposed to run every package's test suite.",
+  "setup": [
+    {
+      "file": "package.json",
+      "find": "\"test\": \"node --test \\\"packages/*/test/*.test.ts\\\"\",",
+      "replace": "\"test\": \"node --test \\\"packages/*/tests/*.test.ts\\\"\","
+    }
+  ],
+  "solution": [
+    {
+      "file": "package.json",
+      "find": "\"test\": \"node --test \\\"packages/*/tests/*.test.ts\\\"\",",
+      "replace": "\"test\": \"node --test \\\"packages/*/test/*.test.ts\\\"\","
+    }
+  ],
+  "gold_files": [
+    "package.json"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_root_script.test.ts",
+      "dest": "ci-hidden/hidden_root_script.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "ci-hidden/hidden_root_script.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

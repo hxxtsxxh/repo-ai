@@ -1,0 +1,531 @@
+{
+ "baseline": {
+  "commit": "989f3ae53f87c91962660dc57414ff7592513c72",
+  "revision": "HEAD"
+ },
+ "candidate": {
+  "changed_files": [
+   "jsonpointer.py",
+   "tests.py"
+  ],
+  "changed_files_total": 2,
+  "fingerprint": "8f7c1a6000f7c44f6c2b704ae1d179d628367e95a6bafef9e39d2c89003213a4",
+  "kind": "working tree",
+  "withheld_credential_like": 0
+ },
+ "claim": {
+  "earlier_scenarios": [],
+  "expect_failure": null,
+  "id": "claim",
+  "pinned": {
+   "agent_shell": false,
+   "created": "2026-10-24T08:32:35-07:00",
+   "signals": []
+  },
+  "redacted": false,
+  "replaced": 0,
+  "settings": "e3e242c496b587ad2cde2afdacecfc6b8ee248488ea3e9a671202ad7f417cb64",
+  "sha256": "73bcf3015232655429aa35a21886e5db76f28bd30fdf3cfbae948f943e9ecca6",
+  "supersedes": [],
+  "targets": [],
+  "text": "Resolving a JSON pointer token against a string raises JsonPointerException instead of indexing into the string (/foo/0 on {'foo': 'abc'} must not return 'a')."
+ },
+ "conditions": {
+  "command": "python -m unittest tests_accept",
+  "oracle": {
+   "base_sha256": "4702e743a9a7fdd9cc6fd4a0dcaec2891f3b37f2ebd6c28108c2062c3b786a6c",
+   "candidate_sha256": "4702e743a9a7fdd9cc6fd4a0dcaec2891f3b37f2ebd6c28108c2062c3b786a6c",
+   "changed_data": [],
+   "checked": 0,
+   "differing": [],
+   "files": [],
+   "identical": true,
+   "imported_changed": [
+    "jsonpointer.py"
+   ]
+  },
+  "runner": {
+   "command": "python -m unittest tests",
+   "identity_sha256": "e93e24e4ba3b4b72e53abc1d49e7ac824d9a4a180d086e9a30c2dc149bc49a32",
+   "kind": "unittest",
+   "source": "--test-command"
+  },
+  "same_sandbox_and_interpreter": true
+ },
+ "created": "2026-10-24T08:32:38-07:00",
+ "digest": "f0b2d334c1508155b1db7ec8c2411f9d7b25a2fb5b0a703e99f240ad6fc9890c",
+ "edited_tests": {
+  "files": [
+   {
+    "messages": {
+     "tests.AltTypesTests.test_alttypes": "jsonpointer.JsonPointerException: Cannot apply token 'left' to non-container type <class 'tests.AltTypesTests.Node'>",
+     "tests.AltTypesTests.test_mock_dict_sanity": "AssertionError: None != {'2': '3'}"
+    },
+    "new_failures": [
+     "tests.AltTypesTests.test_alttypes",
+     "tests.AltTypesTests.test_mock_dict_sanity"
+    ],
+    "path": "tests.py",
+    "state": "detected",
+    "status": "modified",
+    "superseded": []
+   }
+  ],
+  "state": "detected"
+ },
+ "edited_tests_planned": [
+  {
+   "is_scenario": "false",
+   "path": "tests.py",
+   "status": "modified"
+  }
+ ],
+ "environment": {
+  "backend": "seatbelt",
+  "key": "279670c871c0455aa23c15f7",
+  "machine": "arm64",
+  "os": "Darwin",
+  "os_release": "25.5.0",
+  "python": "3.12.14",
+  "repo_ai": "0.7.7"
+ },
+ "evidence": [
+  {
+   "base": {
+    "commit": "989f3ae53f87c91962660dc57414ff7592513c72",
+    "tree": "8c0c036e29bd1debaec8ac732dc54f1ff0b256c5"
+   },
+   "candidate": {
+    "fingerprint": "8f7c1a6000f7c44f6c2b704ae1d179d628367e95a6bafef9e39d2c89003213a4",
+    "head": "989f3ae53f87c91962660dc57414ff7592513c72"
+   },
+   "claim": {
+    "level": "supported_by_controlled_comparison",
+    "not_established": [
+     "other inputs and scenarios",
+     "other environments",
+     "the full test suite",
+     "correctness of the change",
+     "the ProofLab claim: regressions-detected (edited tests: the base's own tests.py fails at the candidate: tests.AltTypesTests.test_alttypes, tests.AltTypesTests.test_mock_dict_sanity)"
+    ],
+    "text": "the pinned scenario fails at the base and passes with this change, and an independent base copy fails it the same way"
+   },
+   "command": {
+    "argv": [
+     "python -m unittest tests_accept tests_accept_cccdf6da039"
+    ],
+    "runner": {
+     "command": "python -m unittest tests",
+     "cwd": "",
+     "env": {},
+     "kind": "unittest",
+     "modules": [
+      "tests"
+     ],
+     "options": [],
+     "paths": [],
+     "pattern": "test*.py",
+     "start": ".",
+     "top": "."
+    }
+   },
+   "contract_version": "1.0",
+   "freshness": {
+    "checked_at": "2026-10-24T08:32:42-07:00",
+    "environment_key": "279670c871c0455aa23c15f7",
+    "state": "fresh"
+   },
+   "integrity": {
+    "sandbox": {
+     "backend": "seatbelt",
+     "network": false
+    },
+    "source_tree_unchanged": true,
+    "workspace_disposable": true
+   },
+   "oracle": {
+    "kind": "test-ids",
+    "sha256": "2bbf5db4c32344c03c4de791603a56409d268988e6b9d8d4bf363f74686c3a11",
+    "spec": "every test of the scenario passes on the candidate; at the base, the targeted tests fail"
+   },
+   "reproduction": {
+    "commands": [
+     "repo-ai prove run claim --base 989f3ae53f87",
+     "repo-ai verify --run --base 989f3ae53f87   # the regression check"
+    ],
+    "engine": {
+     "version": "0.7.7"
+    },
+    "environment": {
+     "machine": "arm64",
+     "os": "Darwin",
+     "python": "3.12.14"
+    }
+   },
+   "scenario": {
+    "independent_of_change": true,
+    "sha256": "1085a8afc44a9aca943d93352c762bb4121b0f09f821e6ebc39440d5924842e2",
+    "source": "external:1085a8afc44a9aca943d93352c762bb4121b0f09f821e6ebc39440d5924842e2"
+   },
+   "schema": "repo-ai.proof-evidence/1",
+   "sides": {
+    "base": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.22,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests_accept.StringNotIndexable.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "ec413c591b80696486410df34b9f9fdfa44e0b09698909d4e74bb27bb77995e4",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 0,
+        "ran": 1,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.21,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests_accept.StringNotIndexable.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "cf41fcd95a5538e747cac9c8acc87ee7734285481be92dd7b12d14359ebc161e",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 0,
+        "ran": 1,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "candidate": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.2,
+       "exit_code": 1,
+       "failing_tests": [],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "pass",
+       "stderr_sha256": "2537d3e01be4f3525fc287d91340e95a18f8199437dfd67e3e2eb12d367af8cf",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 0,
+        "passed": 1,
+        "ran": 1,
+        "skipped": 0
+       },
+       "timed_out": false
+      },
+      {
+       "conclusive": true,
+       "duration_s": 0.15,
+       "exit_code": 1,
+       "failing_tests": [],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "pass",
+       "stderr_sha256": "81c74fce422b3ea548ac0b5870475f73ae2e78175e423562f9342f438c9b9e8a",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 0,
+        "passed": 1,
+        "ran": 1,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    },
+    "control": {
+     "observations": [
+      {
+       "conclusive": true,
+       "duration_s": 0.17,
+       "exit_code": 1,
+       "failing_tests": [
+        "tests_accept.StringNotIndexable.test_string_not_indexable"
+       ],
+       "hung_tests": [],
+       "processes": 1,
+       "report": {
+        "complete": true,
+        "present": true,
+        "reason": "",
+        "trusted": true
+       },
+       "state": "fail",
+       "stderr_sha256": "f55cd9d14218c77ba25853ee1b180abeaf05d333eaf8c533e5d55236e08caece",
+       "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "tests": {
+        "expected_failures": 0,
+        "failed": 1,
+        "passed": 0,
+        "ran": 1,
+        "skipped": 0
+       },
+       "timed_out": false
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "executed": true,
+ "freshness": {
+  "reasons": [],
+  "state": "fresh"
+ },
+ "integrity": {
+  "changes": [],
+  "check_seconds": 0.006,
+  "entries_checked": 50,
+  "files_hashed": 22,
+  "unchanged": true
+ },
+ "limitations": [
+  "A passing scenario shows the claim only for what this scenario checks; it is not a proof that the change is correct for other inputs, states or callers.",
+  "ProofLab checks for mistakes, not for a hostile candidate: code under test runs in the scenario's own process and could defeat any check made there. This passport is also a local record that anyone who can write .repo-ai/state could forge, so a reviewer should run `repo-ai prove run` again.",
+  "The scenario was pinned from a terminal; who wrote it is not recorded.",
+  "The change edits files the scenario reaches by imports (jsonpointer.py). ProofLab treats them as the code under test; if one of them holds the expected values, the scenario does not check the claim. Review them, or move expected values into the scenario.",
+  "The scenario is not in the candidate's tree (it was injected for the experiment): the change does not ship this test.",
+  "Each side ran 2 time(s); a flaky outcome that shows up less often is not ruled out.",
+  "The assertion canary only shows that assertions still fail in the scenario's process; code under test that recognises the scenario and behaves differently for it is not detected.",
+  "The regression check's test selection has medium confidence (see `repo-ai verify`)."
+ ],
+ "observations": {
+  "baseline": {
+   "control": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests_accept tests_accept_cccdf6da039",
+     "exit_code": 1,
+     "failures": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "fail"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.17,
+     "skipped": 0,
+     "stderr_sha256": "f55cd9d14218c77ba25853ee1b180abeaf05d333eaf8c533e5d55236e08caece",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 1,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "kind": "behaviour",
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests_accept tests_accept_cccdf6da039",
+     "exit_code": 1,
+     "failures": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "fail"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.22,
+     "skipped": 0,
+     "stderr_sha256": "ec413c591b80696486410df34b9f9fdfa44e0b09698909d4e74bb27bb77995e4",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 1,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests_accept tests_accept_cccdf6da039",
+     "exit_code": 1,
+     "failures": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "AssertionError: JsonPointerException not raised by resolve_pointer"
+     },
+     "hung": [],
+     "outcomes": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "fail"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.21,
+     "skipped": 0,
+     "stderr_sha256": "cf41fcd95a5538e747cac9c8acc87ee7734285481be92dd7b12d14359ebc161e",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 1,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "reproduced",
+   "targets_failing": [
+    "tests_accept.StringNotIndexable.test_string_not_indexable"
+   ],
+   "why": "1 targeted test(s) fail at the base"
+  },
+  "candidate": {
+   "failing": [],
+   "repeats": [
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests_accept tests_accept_cccdf6da039",
+     "exit_code": 1,
+     "failures": {},
+     "hung": [],
+     "outcomes": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.2,
+     "skipped": 0,
+     "stderr_sha256": "2537d3e01be4f3525fc287d91340e95a18f8199437dfd67e3e2eb12d367af8cf",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 1,
+     "timed_out": false,
+     "trusted": true
+    },
+    {
+     "canary": "ok",
+     "command": "python -m unittest tests_accept tests_accept_cccdf6da039",
+     "exit_code": 1,
+     "failures": {},
+     "hung": [],
+     "outcomes": {
+      "tests_accept.StringNotIndexable.test_string_not_indexable": "pass"
+     },
+     "reason": "",
+     "report": {
+      "complete": true,
+      "present": true
+     },
+     "seconds": 0.15,
+     "skipped": 0,
+     "stderr_sha256": "81c74fce422b3ea548ac0b5870475f73ae2e78175e423562f9342f438c9b9e8a",
+     "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "tests": 1,
+     "timed_out": false,
+     "trusted": true
+    }
+   ],
+   "state": "passed",
+   "why": "all 1 test(s) of the scenario pass"
+  }
+ },
+ "regressions": {
+  "confidence": "medium",
+  "evidence": null,
+  "fingerprint": "8f7c1a6000f7c44f6c2b704ae1d179d628367e95a6bafef9e39d2c89003213a4",
+  "full_suite": "not-run",
+  "new_failures": [],
+  "passed": 1,
+  "pre_existing": [],
+  "reused": true,
+  "selected": 1,
+  "state": "none-detected",
+  "test_files_total": 1,
+  "verdict": "selected-passed (full suite not run)",
+  "why": "verify: selected-passed (full suite not run)"
+ },
+ "repeat": 2,
+ "repo_ai_version": "0.7.7",
+ "reproduce": [
+  "repo-ai prove run claim --base 989f3ae53f87",
+  "# by hand: check out 989f3ae53f87 in a separate worktree, then copy the pinned bytes from .repo-ai/state/prove/blobs/1085a8afc44a9aca943d93352c762bb4121b0f09f821e6ebc39440d5924842e2 to tests_accept.py",
+  "# check the bytes: sha256 of tests_accept.py must be 1085a8afc44a9aca943d93352c762bb4121b0f09f821e6ebc39440d5924842e2",
+  "# at the base, in a sandbox: python -m unittest tests_accept   -> expect a failure in tests_accept.StringNotIndexable.test_string_not_indexable",
+  "# at the candidate: python -m unittest tests_accept   -> expect every test to pass",
+  "repo-ai verify --run --base 989f3ae53f87   # the regression check"
+ ],
+ "scenario": {
+  "bytes": 505,
+  "in_base_tree": "absent",
+  "in_candidate_tree": "absent",
+  "notes": [],
+  "path": "tests_accept.py",
+  "provenance": {
+   "kind": "file",
+   "name": "tests_accept.py"
+  },
+  "sha256": "1085a8afc44a9aca943d93352c762bb4121b0f09f821e6ebc39440d5924842e2"
+ },
+ "schema": "repo-ai.proof-passport/1",
+ "seconds": 3.4,
+ "support": [],
+ "untested": [
+  "Behaviour outside the scenario's 1 test(s).",
+  "Other platforms and environments: only Darwin, 3.12.14 in the seatbelt sandbox was used.",
+  "The claim's wording itself: no tool checks that the scenario tests what the claim says."
+ ],
+ "verdict": {
+  "headline": "CLAIM NOT ESTABLISHED: the candidate breaks existing behaviour",
+  "level": "supported_by_controlled_comparison",
+  "reasons": [
+   "edited tests: the base's own tests.py fails at the candidate: tests.AltTypesTests.test_alttypes, tests.AltTypesTests.test_mock_dict_sanity"
+  ],
+  "state": "regressions-detected",
+  "supported": false
+ }
+}

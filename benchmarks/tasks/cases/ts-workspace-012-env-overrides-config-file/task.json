@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-012-env-overrides-config-file",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "config",
+  "difficulty": "medium",
+  "prompt": "Setting `RUNNER_CONCURRENCY=8` in the deployment environment has no effect when the\nrunner's config file also sets `concurrency: 2` -- we still get 2. Per the README,\nenvironment variables should win over the config file, and explicit overrides (CLI\nflags) should win over both.",
+  "setup": [
+    {
+      "file": "packages/core/src/config.ts",
+      "find": "    ...defined(options.file),\n    ...fromEnv(options.env ?? {}),",
+      "replace": "    ...fromEnv(options.env ?? {}),\n    ...defined(options.file),"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/config.ts",
+      "find": "    ...fromEnv(options.env ?? {}),\n    ...defined(options.file),",
+      "replace": "    ...defined(options.file),\n    ...fromEnv(options.env ?? {}),"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/config.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_config_precedence.test.ts",
+      "dest": "packages/core/test/hidden_config_precedence.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/core/test/hidden_config_precedence.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

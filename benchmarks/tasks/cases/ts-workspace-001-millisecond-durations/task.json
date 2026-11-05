@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-001-millisecond-durations",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Creating a job with a sub-second timeout fails:\n\n```\n$ jobs create ping --command ping.sh --timeout 250ms\nerror: --timeout: invalid duration: \"250ms\"\n```\n\nSending `{\"timeout\": \"1s500ms\"}` to `POST /jobs` gets a 400 for the same reason.\nMilliseconds are a documented duration unit.",
+  "setup": [
+    {
+      "file": "packages/core/src/duration.ts",
+      "find": "const token = /(\\d+(?:\\.\\d+)?)(ms|s|m|h|d)/y;",
+      "replace": "const token = /(\\d+(?:\\.\\d+)?)(m|ms|s|h|d)/y;"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/duration.ts",
+      "find": "const token = /(\\d+(?:\\.\\d+)?)(m|ms|s|h|d)/y;",
+      "replace": "const token = /(\\d+(?:\\.\\d+)?)(ms|s|m|h|d)/y;"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/duration.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_ms_unit.test.ts",
+      "dest": "packages/core/test/hidden_ms_unit.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/core/test/hidden_ms_unit.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

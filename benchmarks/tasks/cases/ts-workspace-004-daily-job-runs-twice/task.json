@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-004-daily-job-runs-twice",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Daily jobs are running twice. The scheduler computes the next run as soon as a run\nstarts, using the scheduled time as the reference point, and for `daily at 02:00` it\ngets 02:00 *today* again instead of tomorrow. Weekly schedules don't seem to have this\nproblem. You can see it from the CLI too:\n\n```\n$ jobs next \"daily at 02:00\" --from 2026-03-02T02:00:00Z --count 2\n2026-03-02T02:00:00.000Z\n2026-03-02T02:00:00.000Z\n```",
+  "setup": [
+    {
+      "file": "packages/core/src/schedule.ts",
+      "find": "if (candidate <= fromMs) candidate += DAY_MS;",
+      "replace": "if (candidate < fromMs) candidate += DAY_MS;"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/schedule.ts",
+      "find": "if (candidate < fromMs) candidate += DAY_MS;",
+      "replace": "if (candidate <= fromMs) candidate += DAY_MS;"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/schedule.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_daily_boundary.test.ts",
+      "dest": "packages/core/test/hidden_daily_boundary.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/core/test/hidden_daily_boundary.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

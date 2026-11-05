@@ -1,0 +1,48 @@
+diff --git a/invoicekit/money.py b/invoicekit/money.py
+index 5cc842b..13ad717 100644
+--- a/invoicekit/money.py
++++ b/invoicekit/money.py
+@@ -14,6 +14,20 @@ def parse_amount(text):
+     return int((value * 100).quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
+ 
+ 
++def apply_discount(cents, percent):
++    """Return integer cents left after taking `percent` percent off `cents`."""
++    if isinstance(cents, bool) or not isinstance(cents, int):
++        raise InvoiceError(f"not an amount in cents: {cents!r}")
++    try:
++        rate = Decimal(str(percent).strip())
++    except InvalidOperation:
++        raise InvoiceError(f"not a percentage: {percent!r}") from None
++    if not rate.is_finite() or not 0 <= rate <= 100:
++        raise InvoiceError(f"percentage out of range: {percent!r}")
++    off = (Decimal(cents) * rate / 100).quantize(Decimal(1), rounding=ROUND_HALF_EVEN)
++    return cents - int(off)
++
++
+ def format_amount(cents, currency):
+     """Render integer cents with an ISO 4217 code, e.g. "USD 12.34"."""
+     code = str(currency).strip()
+diff --git a/tests/test_money.py b/tests/test_money.py
+index c937b98..4f68e3b 100644
+--- a/tests/test_money.py
++++ b/tests/test_money.py
+@@ -2,7 +2,7 @@ import pytest
+ 
+ from invoicekit.errors import InvoiceError
+ from invoicekit.lines import line_total
+-from invoicekit.money import format_amount, parse_amount
++from invoicekit.money import apply_discount, format_amount, parse_amount
+ 
+ 
+ def test_parse_amount():
+@@ -20,3 +20,9 @@ def test_format_amount():
+ 
+ def test_line_total():
+     assert line_total(3, 250) == 750
++
++
++def test_apply_discount():
++    assert apply_discount(1000, 10) == 900
++    # 50% of 999 is 499.5 cents, which rounds half-even to 500 off, leaving 499
++    assert apply_discount(999, 50) == 499

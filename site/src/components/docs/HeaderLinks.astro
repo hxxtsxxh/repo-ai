@@ -1,0 +1,16 @@
+---
+/** Replaces Starlight's SocialIcons slot: a link back to the landing page and the source status. */
+import { site, sourceLabel } from '../../config';
+const home = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<div class="ri-header-links">
+  <a href={home}>Home</a>
+  {
+    site.repoPublic ? (
+      <a href={site.githubRepo} rel="noopener">{sourceLabel}</a>
+    ) : (
+      <span class="ri-header-source">{sourceLabel}</span>
+    )
+  }
+</div>

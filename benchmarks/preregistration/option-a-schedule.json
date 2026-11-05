@@ -1,0 +1,505 @@
+{
+ "experiment": "option-a-final-25x3x2",
+ "tasks": [
+  "oss-bt-001",
+  "oss-bt-002",
+  "oss-bt-003",
+  "oss-ct-001",
+  "oss-ct-002",
+  "oss-ct-003",
+  "oss-ct-004",
+  "oss-md-001",
+  "oss-md-002",
+  "oss-md-003",
+  "oss-md-004",
+  "oss-md-005",
+  "oss-md-006",
+  "oss-md-007",
+  "oss-md-008",
+  "oss-md-009",
+  "oss-md-010",
+  "oss-pf-001",
+  "oss-pf-002",
+  "oss-pf-003",
+  "oss-pf-004",
+  "oss-sj-001",
+  "oss-sj-002",
+  "oss-sj-003",
+  "oss-tl-001"
+ ],
+ "arms": {
+  "baseline": [],
+  "core": [
+   "hooks",
+   "packet",
+   "rules"
+  ],
+  "full": [
+   "agents",
+   "hooks",
+   "orchestration",
+   "outcomes",
+   "packet",
+   "rules",
+   "skills",
+   "thirdparty"
+  ]
+ },
+ "seed": 0,
+ "repeat": 2,
+ "model": "claude-sonnet-5-5",
+ "effort": "medium",
+ "schedule": [
+  {
+   "rep": 0,
+   "task": "oss-bt-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-bt-002",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-bt-003",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-002",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-003",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-ct-004",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-001",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-002",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-003",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-004",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-005",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-006",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-007",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-008",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-009",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-md-010",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-001",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-002",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-003",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-pf-004",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-sj-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-sj-002",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-sj-003",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "oss-tl-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-bt-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-bt-002",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-bt-003",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-002",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-003",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-ct-004",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-001",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-002",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-003",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-004",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-005",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-006",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-007",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-008",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-009",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-md-010",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-001",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-002",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-003",
+   "order": [
+    "baseline",
+    "full",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-pf-004",
+   "order": [
+    "full",
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-sj-001",
+   "order": [
+    "full",
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-sj-002",
+   "order": [
+    "core",
+    "baseline",
+    "full"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-sj-003",
+   "order": [
+    "core",
+    "full",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 1,
+   "task": "oss-tl-001",
+   "order": [
+    "baseline",
+    "core",
+    "full"
+   ]
+  }
+ ],
+ "schedule_sha256": "876a5f2308315c2fd9b71283ffd69b50fb17662e509aef2de6dc850fe1541fd4"
+}

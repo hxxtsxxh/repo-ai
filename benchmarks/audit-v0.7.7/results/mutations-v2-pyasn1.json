@@ -1,0 +1,187 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "pyasn1/codec/ber/encoder.py",
+   "func": "encodeValue",
+   "start": 743,
+   "end": 748,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.ber.test_encoder",
+    "tests.codec.cer.test_encoder",
+    "tests.codec.der.test_encoder"
+   ]
+  },
+  {
+   "file": "pyasn1/type/constraint.py",
+   "func": "__call__",
+   "start": 28,
+   "end": 37,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "pyasn1/type/univ.py",
+   "func": "index",
+   "start": 1730,
+   "end": 1742,
+   "indent": 8,
+   "failing_modules": [
+    "tests.type.test_univ"
+   ]
+  },
+  {
+   "file": "pyasn1/codec/ber/decoder.py",
+   "func": "valueDecoder",
+   "start": 60,
+   "end": 60,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "pyasn1/type/univ.py",
+   "func": "getComponentByPosition",
+   "start": 2507,
+   "end": 2531,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.ber.test_decoder",
+    "tests.codec.ber.test_encoder",
+    "tests.codec.cer.test_decoder",
+    "tests.codec.cer.test_encoder",
+    "tests.codec.der.test_decoder",
+    "tests.codec.der.test_encoder",
+    "tests.codec.native.test_decoder",
+    "tests.codec.native.test_encoder",
+    "tests.codec.test_encoder_no_mutation",
+    "tests.type.test_univ"
+   ]
+  },
+  {
+   "file": "pyasn1/codec/streaming.py",
+   "func": "peekIntoStream",
+   "start": 168,
+   "end": 185,
+   "indent": 4,
+   "failing_modules": [
+    "tests.codec.ber.test_decoder"
+   ]
+  },
+  {
+   "file": "pyasn1/codec/ber/decoder.py",
+   "func": "indefLenValueDecoder",
+   "start": 1251,
+   "end": 1310,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.ber.test_decoder"
+   ]
+  },
+  {
+   "file": "pyasn1/type/base.py",
+   "func": "__new__",
+   "start": 210,
+   "end": 229,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "pyasn1/type/constraint.py",
+   "func": "_setValues",
+   "start": 563,
+   "end": 570,
+   "indent": 8,
+   "failing_modules": [
+    "tests.type.test_constraint"
+   ]
+  },
+  {
+   "file": "pyasn1/type/univ.py",
+   "func": "__init__",
+   "start": 2241,
+   "end": 2247,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "pyasn1/codec/der/decoder.py",
+   "func": "__getattr__",
+   "start": 117,
+   "end": 120,
+   "indent": 4,
+   "failing_modules": []
+  },
+  {
+   "file": "pyasn1/codec/cer/encoder.py",
+   "func": "_chooseEncBase",
+   "start": 28,
+   "end": 29,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.cer.test_decoder",
+    "tests.codec.der.test_decoder"
+   ]
+  },
+  {
+   "file": "pyasn1/type/tagmap.py",
+   "func": "presentTypes",
+   "start": 75,
+   "end": 75,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.ber.test_decoder",
+    "tests.codec.ber.test_encoder",
+    "tests.codec.cer.test_decoder",
+    "tests.codec.cer.test_encoder",
+    "tests.codec.der.test_decoder",
+    "tests.codec.der.test_encoder",
+    "tests.codec.native.test_decoder",
+    "tests.codec.native.test_encoder",
+    "tests.codec.test_encoder_no_mutation",
+    "tests.type.test_namedtype",
+    "tests.type.test_opentype",
+    "tests.type.test_univ"
+   ]
+  },
+  {
+   "file": "pyasn1/codec/cer/encoder.py",
+   "func": "encodeValue",
+   "start": 166,
+   "end": 240,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.cer.test_encoder",
+    "tests.codec.der.test_encoder",
+    "tests.codec.test_encoder_no_mutation"
+   ]
+  },
+  {
+   "file": "pyasn1/type/univ.py",
+   "func": "isInconsistent",
+   "start": 2080,
+   "end": 2102,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.ber.test_encoder",
+    "tests.codec.cer.test_encoder",
+    "tests.codec.der.test_encoder",
+    "tests.type.test_univ"
+   ]
+  },
+  {
+   "file": "pyasn1/codec/ber/encoder.py",
+   "func": "encodeValue",
+   "start": 453,
+   "end": 551,
+   "indent": 8,
+   "failing_modules": [
+    "tests.codec.ber.test_decoder",
+    "tests.codec.ber.test_encoder",
+    "tests.codec.cer.test_decoder",
+    "tests.codec.der.test_decoder"
+   ]
+  }
+ ]
+}

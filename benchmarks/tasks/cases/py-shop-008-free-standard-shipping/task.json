@@ -1,0 +1,46 @@
+{
+  "id": "py-shop-008-free-standard-shipping",
+  "base": "py-shop",
+  "language": "python",
+  "category": "feature",
+  "difficulty": "medium",
+  "prompt": "Product wants free standard shipping for orders of $50.00 or more. The threshold\napplies to the merchandise subtotal *after* coupons (tax doesn't count). Express\nshipping is always charged. Ops already added a setting for the threshold in the\nconfig module, so it should be driven by that rather than hard-coded.",
+  "setup": [
+    {
+      "file": "shop/services/shipping.py",
+      "find": "    if method == \"standard\" and subtotal_cents >= config.FREE_SHIPPING_THRESHOLD_CENTS:\n        return 0\n",
+      "replace": ""
+    },
+    {
+      "file": "README.md",
+      "find": "* Standard shipping is free once the discounted subtotal reaches\n  `FREE_SHIPPING_THRESHOLD_CENTS`; express shipping is never free.\n",
+      "replace": ""
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/shipping.py",
+      "find": "    return config.SHIPPING_RATES_CENTS[method]\n",
+      "replace": "    if method == \"standard\" and subtotal_cents >= config.FREE_SHIPPING_THRESHOLD_CENTS:\n        return 0\n    return config.SHIPPING_RATES_CENTS[method]\n"
+    }
+  ],
+  "gold_files": [
+    "shop/services/shipping.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_free_shipping.py",
+      "dest": "tests/test_hidden_free_shipping.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_free_shipping"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

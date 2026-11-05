@@ -1,0 +1,83 @@
+{
+  "id": "py-shop-027-order-total-mismatch",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "hard",
+  "prompt": "Finance reconciliation flagged orders where three systems disagree about how much the\ncustomer owes. Reproduction:\n\n1. Customer orders 2 x Wool Beanie (HAT-0001, $25.00 each) with coupon PCT15, shipping\n   to CA (standard shipping).\n2. Before the customer pays, merchandising changes the beanie price to $27.50.\n3. Customer pays (`POST /orders/<id>/pay`).\n\nResult: the order API (`POST /orders`, `GET /orders/<id>`) shows one total, the\n\"Order received\" email shows a different total, and the card is charged a third\namount. None of them is the $51.57 that checkout actually priced (subtotal $50.00, 15%\noff, $5.99 shipping, CA tax on the discounted merchandise). The price a customer saw at\ncheckout is the price they pay, even if the catalogue changes afterwards. Fix it so the\nAPI, the email and the charge (and therefore refunds) all agree with checkout.",
+  "setup": [
+    {
+      "file": "shop/api/serializers.py",
+      "find": "def serialize_order(order) -> dict:\n    cur = order.currency",
+      "replace": "def _grand_total(order) -> int:\n    \"\"\"Merchandise + shipping + tax, as shown on the order page.\"\"\"\n    merchandise = sum(line.line_total_cents for line in order.lines)\n    return merchandise + order.shipping_cents + order.tax_cents\n\n\ndef serialize_order(order) -> dict:\n    cur = order.currency"
+    },
+    {
+      "file": "shop/api/serializers.py",
+      "find": "        \"total\": serialize_money(order.total_cents, cur),",
+      "replace": "        \"total\": serialize_money(_grand_total(order), cur),"
+    },
+    {
+      "file": "shop/services/notifications.py",
+      "find": "        lines.append(f\"Total: {format_money(order.total_cents, order.currency)}\")",
+      "replace": "        merchandise = order.subtotal_cents - order.discount_cents\n        lines.append(f\"Total: {format_money(merchandise + order.shipping_cents, order.currency)}\")"
+    },
+    {
+      "file": "shop/services/payments.py",
+      "find": "        if order.total_cents <= 0:\n            raise PaymentError(\"amount must be positive\")\n\n        gateway_ref = self.gateway.charge(order.total_cents, order.currency, order.id)\n        payment = Payment(\n            id=self.payments.next_id(),\n            order_id=order.id,\n            amount_cents=order.total_cents,",
+      "replace": "        amount_cents = self._amount_due(order)\n        if amount_cents <= 0:\n            raise PaymentError(\"amount must be positive\")\n\n        gateway_ref = self.gateway.charge(amount_cents, order.currency, order.id)\n        payment = Payment(\n            id=self.payments.next_id(),\n            order_id=order.id,\n            amount_cents=amount_cents,"
+    },
+    {
+      "file": "shop/services/payments.py",
+      "find": "    def refund(self, payment_id: str, amount_cents=None) -> Payment:",
+      "replace": "    def _amount_due(self, order) -> int:\n        \"\"\"Price the order from the catalogue so the charge reflects current prices.\"\"\"\n        products = self.order_service.products\n        merchandise = sum(products.require(line.sku).price_cents * line.quantity for line in order.lines)\n        return merchandise - order.discount_cents + order.shipping_cents + order.tax_cents\n\n    def refund(self, payment_id: str, amount_cents=None) -> Payment:"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/payments.py",
+      "find": "    def _amount_due(self, order) -> int:\n        \"\"\"Price the order from the catalogue so the charge reflects current prices.\"\"\"\n        products = self.order_service.products\n        merchandise = sum(products.require(line.sku).price_cents * line.quantity for line in order.lines)\n        return merchandise - order.discount_cents + order.shipping_cents + order.tax_cents\n\n    def refund(self, payment_id: str, amount_cents=None) -> Payment:",
+      "replace": "    def refund(self, payment_id: str, amount_cents=None) -> Payment:"
+    },
+    {
+      "file": "shop/services/payments.py",
+      "find": "        amount_cents = self._amount_due(order)\n        if amount_cents <= 0:\n            raise PaymentError(\"amount must be positive\")\n\n        gateway_ref = self.gateway.charge(amount_cents, order.currency, order.id)\n        payment = Payment(\n            id=self.payments.next_id(),\n            order_id=order.id,\n            amount_cents=amount_cents,",
+      "replace": "        if order.total_cents <= 0:\n            raise PaymentError(\"amount must be positive\")\n\n        gateway_ref = self.gateway.charge(order.total_cents, order.currency, order.id)\n        payment = Payment(\n            id=self.payments.next_id(),\n            order_id=order.id,\n            amount_cents=order.total_cents,"
+    },
+    {
+      "file": "shop/services/notifications.py",
+      "find": "        merchandise = order.subtotal_cents - order.discount_cents\n        lines.append(f\"Total: {format_money(merchandise + order.shipping_cents, order.currency)}\")",
+      "replace": "        lines.append(f\"Total: {format_money(order.total_cents, order.currency)}\")"
+    },
+    {
+      "file": "shop/api/serializers.py",
+      "find": "        \"total\": serialize_money(_grand_total(order), cur),",
+      "replace": "        \"total\": serialize_money(order.total_cents, cur),"
+    },
+    {
+      "file": "shop/api/serializers.py",
+      "find": "def _grand_total(order) -> int:\n    \"\"\"Merchandise + shipping + tax, as shown on the order page.\"\"\"\n    merchandise = sum(line.line_total_cents for line in order.lines)\n    return merchandise + order.shipping_cents + order.tax_cents\n\n\ndef serialize_order(order) -> dict:\n    cur = order.currency",
+      "replace": "def serialize_order(order) -> dict:\n    cur = order.currency"
+    }
+  ],
+  "gold_files": [
+    "shop/api/serializers.py",
+    "shop/services/notifications.py",
+    "shop/services/payments.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_total_consistency.py",
+      "dest": "tests/test_hidden_total_consistency.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_total_consistency"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

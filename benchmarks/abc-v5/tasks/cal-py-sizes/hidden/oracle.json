@@ -1,0 +1,39 @@
+{
+  "decoy_feasibility": {
+    "R2": "not attempted: no plausible case-handling error passes test_case_insensitive while failing the oracle",
+    "R5": "infeasible: preserve tests pin existing forms"
+  },
+  "hidden_tests": [
+    "test_sizes_hidden::test_r1_binary_units",
+    "test_sizes_hidden::test_r2_case_insensitive",
+    "test_sizes_hidden::test_r3_other_whitespace_rejected",
+    "test_sizes_hidden::test_r3_single_space",
+    "test_sizes_hidden::test_r4_exact_arithmetic",
+    "test_sizes_hidden::test_r4_fractions",
+    "test_sizes_hidden::test_r4_not_whole_rejected",
+    "test_sizes_hidden::test_r5_existing_errors",
+    "test_sizes_hidden::test_r5_existing_forms"
+  ],
+  "note": "Frozen expected test IDs. Every ID must be observed and pass; skipped or missing is not a pass.",
+  "requirement_of": {
+    "test_sizes_hidden::test_r1_binary_units": "R1",
+    "test_sizes_hidden::test_r2_case_insensitive": "R2",
+    "test_sizes_hidden::test_r3_other_whitespace_rejected": "R3",
+    "test_sizes_hidden::test_r3_single_space": "R3",
+    "test_sizes_hidden::test_r4_exact_arithmetic": "R4",
+    "test_sizes_hidden::test_r4_fractions": "R4",
+    "test_sizes_hidden::test_r4_not_whole_rejected": "R4",
+    "test_sizes_hidden::test_r5_existing_errors": "R5",
+    "test_sizes_hidden::test_r5_existing_forms": "R5"
+  },
+  "visible_tests": [
+    "test_sizes::test_decimal_units",
+    "test_sizes::test_invalid_strings",
+    "test_sizes::test_non_str",
+    "test_sizes::test_plain_bytes",
+    "test_sizes_acceptance::test_binary_units",
+    "test_sizes_acceptance::test_case_insensitive",
+    "test_sizes_acceptance::test_fractional",
+    "test_sizes_acceptance::test_single_space"
+  ]
+}

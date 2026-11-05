@@ -1,0 +1,60 @@
+{
+  "id": "py-shop-023-unit-of-work-rollback",
+  "base": "py-shop",
+  "language": "python",
+  "category": "database",
+  "difficulty": "medium",
+  "prompt": "Refund failures leave payments half-refunded.\n\nWhen the card gateway rejects a refund (we saw `PaymentError: gateway timeout` in the\nlogs), `PaymentService.refund` correctly raises, but afterwards the payment record\nalready shows the refunded amount and status `refunded`, and the order is marked\n`refunded` too, although no money moved. A retry then fails with \"refund exceeds the\nremaining captured amount\".\n\nThe refund code runs inside a `UnitOfWork` (shop/repository/unit_of_work.py) which is\ndocumented to put every repository back the way it was when anything inside raises.\nIt seems to undo only some kinds of change. Other services will start using\n`UnitOfWork` soon, so please fix the transaction support itself rather than\nspecial-casing refunds.",
+  "setup": [
+    {
+      "file": "shop/repository/unit_of_work.py",
+      "create": "\"\"\"All-or-nothing changes across one or more in-memory repositories.\n\n    with UnitOfWork(payments, orders):\n        ...  # any exception restores every repository to its state on entry\n\nInserts, updates (including objects changed in place) and deletes are all\nundone on rollback. The exception is re-raised.\n\"\"\"\n\n\nclass UnitOfWork:\n    def __init__(self, *repositories):\n        self.repositories = repositories\n        self._states = []\n\n    def __enter__(self):\n        self._states = [(repo, repo.snapshot()) for repo in self.repositories]\n        return self\n\n    def __exit__(self, exc_type, exc, tb):\n        if exc_type is not None:\n            for repo, state in reversed(self._states):\n                repo.restore(state)\n        self._states = []\n        return False\n"
+    },
+    {
+      "file": "shop/repository/memory.py",
+      "find": "    def __len__(self) -> int:\n        return len(self._items)\n",
+      "replace": "    def __len__(self) -> int:\n        return len(self._items)\n\n    # -- transactions ------------------------------------------------------\n    def snapshot(self):\n        \"\"\"Capture enough state to undo every change made after this call.\"\"\"\n        return dict(self._items), self._counter\n\n    def restore(self, state) -> None:\n        items, counter = state\n        self._items = dict(items)\n        self._counter = counter\n"
+    },
+    {
+      "file": "shop/services/payments.py",
+      "find": "from shop.models.payment import FULLY_REFUNDED, PARTIALLY_REFUNDED, Payment\n",
+      "replace": "from shop.models.payment import FULLY_REFUNDED, PARTIALLY_REFUNDED, Payment\nfrom shop.repository.unit_of_work import UnitOfWork\n"
+    },
+    {
+      "file": "shop/services/payments.py",
+      "find": "        self.gateway.refund(payment.gateway_ref, amount_cents)\n        payment.refunded_cents += amount_cents\n        if payment.refunded_cents == payment.amount_cents:\n            payment.status = FULLY_REFUNDED\n        else:\n            payment.status = PARTIALLY_REFUNDED\n        self.payments.update(payment)\n\n        order = self.order_service.get(payment.order_id)\n        if payment.status == FULLY_REFUNDED:\n            self.order_service.mark_refunded(order.id)\n        self.notifier.refund_issued(order, amount_cents)",
+      "replace": "        with UnitOfWork(self.payments, self.order_service.orders):\n            payment.refunded_cents += amount_cents\n            if payment.refunded_cents == payment.amount_cents:\n                payment.status = FULLY_REFUNDED\n            else:\n                payment.status = PARTIALLY_REFUNDED\n            self.payments.update(payment)\n\n            order = self.order_service.get(payment.order_id)\n            if payment.status == FULLY_REFUNDED:\n                self.order_service.mark_refunded(order.id)\n            # Talk to the gateway last: if it refuses, the unit of work puts\n            # the payment and the order back the way they were.\n            self.gateway.refund(payment.gateway_ref, amount_cents)\n        self.notifier.refund_issued(order, amount_cents)"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/repository/memory.py",
+      "find": "\"\"\"Generic dict-backed repository with insertion-ordered listing.\"\"\"\n",
+      "replace": "\"\"\"Generic dict-backed repository with insertion-ordered listing.\"\"\"\n\nimport copy\n"
+    },
+    {
+      "file": "shop/repository/memory.py",
+      "find": "        return dict(self._items), self._counter",
+      "replace": "        return copy.deepcopy(self._items), self._counter"
+    }
+  ],
+  "gold_files": [
+    "shop/repository/memory.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_uow_rollback.py",
+      "dest": "tests/test_hidden_uow_rollback.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_uow_rollback"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

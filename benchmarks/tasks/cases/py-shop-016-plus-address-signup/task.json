@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-016-plus-address-signup",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Sign-up rejects perfectly valid addresses like `jane.doe+shop@example.com` with\n`422 invalid email address`. Lots of people use plus-addressing to filter mail; we\nshould accept these.",
+  "setup": [
+    {
+      "file": "shop/utils/validation.py",
+      "find": "EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%+-]+@",
+      "replace": "EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%-]+@"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/utils/validation.py",
+      "find": "EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%-]+@",
+      "replace": "EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%+-]+@"
+    }
+  ],
+  "gold_files": [
+    "shop/utils/validation.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_plus_email.py",
+      "dest": "tests/test_hidden_plus_email.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_plus_email"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

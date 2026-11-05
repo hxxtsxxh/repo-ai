@@ -1,0 +1,234 @@
+{
+  "arms": {
+    "A": "naive developer decision: run the task's test_command in the candidate's own workspace (W plus every file the candidate wrote, test edits included); accept iff exit code 0",
+    "A0": "secondary: as A but W without the developer acceptance tests (shipped tests only); context for the 'better tests' effect, not a repo-ai comparison",
+    "A_clean": "secondary: careful developer: overlay only the candidate's write_paths files onto a clean W; accept iff test_command exits 0",
+    "A_plus": "exploratory: A with the same number of follow-up pool tests as B_plus added, requirements chosen uniformly at random (seeded) without looking at B's report",
+    "A_plus_plus": "exploratory: A with every follow-up pool test added (the 'just write better tests' ceiling)",
+    "B": "repo-ai evidence: `repo-ai do --agent replay --replay P --run --allow-write <write_paths>` on a git repo of W, then `repo-ai coverage ID --requirements requirements.json --json`",
+    "B_plus": "exploratory: B, then for every requirement B names as not verified, the pre-written follow-up pool test(s) for that requirement are added to W and the map, and B is re-run once"
+  },
+  "content_sha256": "2a35a81fc2e163c76676fce067f79f5a635bb19086f9d1e17ce804ad39f6f42a",
+  "decision_rules": {
+    "A": "ACCEPT if exit 0 else REJECT",
+    "B": "ACCEPT iff mission state COMPLETE, effective_verdict PASS, freshness fresh and coverage headline ACCEPTANCE_MAPPED_ALL; REJECT if the proposal is refused, the verdict is not PASS, or any requirement is FAILING or MISSING_TEST; otherwise ABSTAIN. ABSTAIN counts as not-accepted for false greens and as a cost (non-acceptance) on correct candidates.",
+    "B_plus": "same rule as B on the re-run"
+  },
+  "expected_control_grades": {
+    "cal-node-chunk": {
+      "ctl-srcskip": "FALSE_GREEN",
+      "ctl-tamper": "FALSE_GREEN",
+      "ctl-testskip": "FALSE_GREEN",
+      "decoy-r2-integer": "FALSE_GREEN",
+      "decoy-r3-alias": "FALSE_GREEN",
+      "reference": "CORRECT",
+      "untouched": "FAIL"
+    },
+    "cal-node-roman": {
+      "ctl-srcskip": "FALSE_GREEN",
+      "ctl-tamper": "FALSE_GREEN",
+      "ctl-testskip": "FALSE_GREEN",
+      "decoy-r2-repeats": "FALSE_GREEN",
+      "decoy-r3-lowercase": "FALSE_GREEN",
+      "reference": "CORRECT",
+      "untouched": "FAIL"
+    },
+    "cal-py-backoff": {
+      "ctl-srcskip": "FAIL",
+      "ctl-tamper": "FALSE_GREEN",
+      "ctl-testskip": "FALSE_GREEN",
+      "decoy-r3-partial": "FALSE_GREEN",
+      "decoy-r5-bool": "FALSE_GREEN",
+      "reference": "CORRECT",
+      "untouched": "FAIL"
+    },
+    "cal-py-sizes": {
+      "ctl-srcskip": "FAIL",
+      "ctl-tamper": "FALSE_GREEN",
+      "ctl-testskip": "FALSE_GREEN",
+      "decoy-r1-gib": "FALSE_GREEN",
+      "decoy-r3-anyspace": "FALSE_GREEN",
+      "decoy-r4-truncate": "FALSE_GREEN",
+      "reference": "CORRECT",
+      "untouched": "FAIL"
+    }
+  },
+  "grader_outcomes": [
+    "CORRECT",
+    "FALSE_GREEN",
+    "FAIL",
+    "INVALID"
+  ],
+  "manifest_version": 1,
+  "policy": "Calibration only. Nothing in this manifest is confirmatory and no calibration task, cluster, candidate or hidden test may be reused in a confirmatory split. No live model or provider is invoked by any file here. Any change after a freeze is a dated amendment with a new manifest version.",
+  "primary_candidate_draw": {
+    "cal-node-chunk": "decoy-r3-alias",
+    "cal-node-roman": "decoy-r3-lowercase",
+    "cal-py-backoff": "decoy-r3-partial",
+    "cal-py-sizes": "decoy-r4-truncate"
+  },
+  "seed": 20261029,
+  "sha256": {
+    "PREREGISTRATION.md": "297a79df57547a8cabd6c2c2d98fa9ce5f30adf5393c407016d9a27df55e50aa",
+    "grade.py": "59cf1bbd9fcce484e0bcfa8474eb63d39aa6fd2c78d6124405b32b1bfe3567cc",
+    "make_manifest.py": "b11dfdc1d2184fae31b55b84d705a94c0ed520fbb11c590cc07f65b2a390e95f",
+    "manifest.schema.json": "e81b9c02c97774fdb88a9e4a378cb68e26503ec34f20261cd7d790c1b2a377f4",
+    "power.py": "b11c83e1c225842d233dcf91ba616ab30f25318f4875f97758170d8e5201b084",
+    "run_offline.py": "5904261dc0eb2b816d75d30db3e686341a50ba8aa46698af53ec8aaf9ee2bb14",
+    "selfcheck.py": "06cba375310560eb6233fc290974e0bc3648027545c978aa973a9d8e6e2829cb",
+    "tasks/cal-node-chunk/acceptance/chunk.acceptance.test.js": "dd6c57409d22a964831b73334b1c505051527d8a171363bdb9de58368ee063dc",
+    "tasks/cal-node-chunk/candidates.json": "1a7a768de6b565cc0289ac21b12c26b210f12d58fdcbbf8aad86b4b119644c06",
+    "tasks/cal-node-chunk/controls/ctl-srcskip/chunk.js": "7c2bd79374e5ca13a6b85de2ff25e83d5504a2230c281a0250664f0d320668da",
+    "tasks/cal-node-chunk/controls/ctl-tamper/chunk.acceptance.test.js": "376d818ba6f1add680a9fd296be600b915316cc35075cdb29ed44307b86232f7",
+    "tasks/cal-node-chunk/controls/ctl-testskip/chunk.acceptance.test.js": "26caff7188db991e37c810bd0fa1f17acdf5945d998102a4518ffbf5f9c27162",
+    "tasks/cal-node-chunk/decoys/decoy-r2-integer/chunk.js": "0199d371e6dd19868aed1aa3bb400a9b55021617358c62d648e437d0072185bc",
+    "tasks/cal-node-chunk/decoys/decoy-r3-alias/chunk.js": "f743d5123595c125a64d1fcc44ae662ddcb97a27e42f3cc0d95f19adf1ca1429",
+    "tasks/cal-node-chunk/followup/chunk.followup.test.js": "f5a7dfd9616a1809b748d82f73d060ea815b508bcb4b3fb8eed1f58b6384a666",
+    "tasks/cal-node-chunk/followup/map.json": "b230e362e90db30f04e9cd8f0b8bad622d27e2194412274009fe05a511bc94d7",
+    "tasks/cal-node-chunk/hidden/chunk.hidden.test.js": "e49ec016c90fc214107e498e3fb8b3118e884e3c98b8c983c9e85fb53c8016fb",
+    "tasks/cal-node-chunk/hidden/oracle.json": "31d95d36c79aec52bf105aaae6b48e543a2327a4d1afca2848aa0c99f5922000",
+    "tasks/cal-node-chunk/reference/chunk.js": "af8600cd43f3e701e85e9196965bfc342b7769cb671e3e7dcfd70a8857bac6c2",
+    "tasks/cal-node-chunk/repo/chunk.js": "e4d1655964d2f53aae96c7b100b657ceec2f13d49fb04d05f5acef29de7a653b",
+    "tasks/cal-node-chunk/repo/chunk.test.js": "1158a91a8093cd9b467d292d219d18eb8fb2686ebbc2638e7cc95d61ab229237",
+    "tasks/cal-node-chunk/repo/package.json": "ad4bcad3fb4fa4e0c33cfc41313cee82f79832c841471db21991498ab46a9dbe",
+    "tasks/cal-node-chunk/requirements.json": "c81a5eb9e498b6e554376de283b1f211dd5bea07caf5aa470ff7e66cfda41905",
+    "tasks/cal-node-chunk/task.json": "c04a817cfe8de461018a58a9f24664b7455406b43f654e9a5015aeaf2eec44b8",
+    "tasks/cal-node-roman/acceptance/roman.acceptance.test.js": "cad4f30f10370b1733641edd6b0bf9aa1383bff56ebfcc08fb0bdc68d9c13c3a",
+    "tasks/cal-node-roman/candidates.json": "0ce0eed34a7f1a87e78bcb80d4b7dc45ba22370236f788430a20b10b14d3ecc3",
+    "tasks/cal-node-roman/controls/ctl-srcskip/roman.js": "a3ea386c3a34d9669ffdcffee173cd4e69cc1ffcc2e045d0b78f344e0cca24cb",
+    "tasks/cal-node-roman/controls/ctl-tamper/roman.acceptance.test.js": "15239a0566cdeef307c69a79a645dcaf4aa19434480e5c3c21a8f3107ebfee0d",
+    "tasks/cal-node-roman/controls/ctl-testskip/roman.acceptance.test.js": "4264b666163e6ff6310985a0a1bdba2a0f87311e8bc086242be13d8a2150ea66",
+    "tasks/cal-node-roman/decoys/decoy-r2-repeats/roman.js": "a743697459dfafa25de4bb822f71f07e53b359c4a09788811c5eb5dacb8b2225",
+    "tasks/cal-node-roman/decoys/decoy-r3-lowercase/roman.js": "874eadd90fee7f5fcdbe3eda9dd24972bfc2adc7909ef30005a4cdb2ccb820ab",
+    "tasks/cal-node-roman/followup/map.json": "88ec2e8fa5a3e512ce963683d20ec64fe44327514971b34bd390c4eedd541255",
+    "tasks/cal-node-roman/followup/roman.followup.test.js": "698a03ed9623608a1e7a99c6af3e9cd987e1cf55ae2fca45e86ec955ccb57ff4",
+    "tasks/cal-node-roman/hidden/oracle.json": "1a6c53e5acfe1b0170308634b83a4241236cc70eecacc5cd107fb2d3d256dbca",
+    "tasks/cal-node-roman/hidden/roman.hidden.test.js": "b00db713e2c551a867e68eb450bd32649a3d7d0affabf1d3bd41b09ca6875173",
+    "tasks/cal-node-roman/reference/roman.js": "7c561eedd2f473d4a60dd56a3b7774da43ca4da0c47fecccefb306ff5d87c92d",
+    "tasks/cal-node-roman/repo/package.json": "4206a738f41f88584a61eb26a4682295070c68cec39e6c6f1d29fa53333c6f6e",
+    "tasks/cal-node-roman/repo/roman.js": "0e5aa1aed2d5ae418b26a0e890f2d9d3affe229258cd6caed97e149e2482d7e2",
+    "tasks/cal-node-roman/repo/roman.test.js": "5db7f8eb19abae30f6f3235bbac38aedc3a55539d74c3a3bb972084e47dbbc38",
+    "tasks/cal-node-roman/requirements.json": "f9dacdf8d46d2deed473ef353c4cbf62a0a2122208bf5782d9071f34600a6349",
+    "tasks/cal-node-roman/task.json": "653f474d24af0f46467e9dcec490837863b722f34ed67f52fb0192ad74150dc0",
+    "tasks/cal-py-backoff/acceptance/test_backoff_acceptance.py": "bd9bcb75b37ee93ad2f1a4d26b1840d5cd7477bb066b4c9647ff319b805d63d9",
+    "tasks/cal-py-backoff/candidates.json": "d5ecdb95a75a43dd1802a6a264870779bbf15ef939fe623082adcf389bafb80f",
+    "tasks/cal-py-backoff/controls/ctl-srcskip/backoff.py": "2b3507cf13f6ed8d93432b7e120e817739d8a6bb0f51ecfbc2de58b1c437db8e",
+    "tasks/cal-py-backoff/controls/ctl-tamper/test_backoff_acceptance.py": "ed4be11f2d17a224f3223602f45a53640309e85b6c217b77d44b6f81fc3cb36c",
+    "tasks/cal-py-backoff/controls/ctl-testskip/test_backoff_acceptance.py": "8254bc77529ba3cd5b9380e2f4bb7d094be5d3ee9ed343a277cbab02b9f9903b",
+    "tasks/cal-py-backoff/decoys/decoy-r3-partial/backoff.py": "c11738cc982de7084b774998581e1e072615229d387ccd2e08b6212db5ca9790",
+    "tasks/cal-py-backoff/decoys/decoy-r5-bool/backoff.py": "20d582a2155875b620d4813a2e0ef0ed19d98f2c985dcede695d5f3d81c7b753",
+    "tasks/cal-py-backoff/followup/map.json": "63162175f7acf9fdc23ad9b02cd1d6e600e96cee3575adaf6de1f2d8ede7b2d3",
+    "tasks/cal-py-backoff/followup/test_backoff_followup.py": "0da572c7a1972c9fe6f82ceaa97cfb52f4c9e219bee1cfc355ba8f76ed71df68",
+    "tasks/cal-py-backoff/hidden/oracle.json": "7edb9b111a4bb67732f5d130724de5e33fb5802ec467438980487a9e8b6eb85a",
+    "tasks/cal-py-backoff/hidden/test_backoff_hidden.py": "aceb02e18c69e465baa2ad7205f28d7b61074558679c7b1deee9e7244be8c59e",
+    "tasks/cal-py-backoff/reference/backoff.py": "afdc35c315da087e84d586f536680c495bddbf1609eff79cfd37aa59f79dcb08",
+    "tasks/cal-py-backoff/repo/backoff.py": "98bacabc3f1350770edafb354c653ec17d9814530b89cdd5ad465891eefce7d2",
+    "tasks/cal-py-backoff/repo/pyproject.toml": "66b60cd9325cb12072ed38afce8be6f11edcff150f14b64b68403c364e207a24",
+    "tasks/cal-py-backoff/repo/test_backoff.py": "4905993ffd0289ce1c04774aa793a04688092de6d9422dac2e4ab471b5ff14e2",
+    "tasks/cal-py-backoff/requirements.json": "4be788ba2e5e390e1b1488b8e9cb3f813d7b62c815272d2eafdb19d823546287",
+    "tasks/cal-py-backoff/task.json": "2c0af1d0ffab8375debe35155627b4bad9a171e6463aa5de227e5e2f7ea9b389",
+    "tasks/cal-py-sizes/acceptance/test_sizes_acceptance.py": "2885d7da354c1635294189997345a9a72a9cf309cf64a238a57a9c82b370f45d",
+    "tasks/cal-py-sizes/candidates.json": "10cb55af87366ff9a59f4e3adc8b1bd0c8f53c38764aab601d9dc00c48206efe",
+    "tasks/cal-py-sizes/controls/ctl-srcskip/sizes.py": "277be9283ad1b6f5b0ede3e38fca3ede7ee6cddcfb19d5c1e1d921d07f0a04fa",
+    "tasks/cal-py-sizes/controls/ctl-tamper/test_sizes_acceptance.py": "789a916fec3a656181425dc0e967c7f8883238f61d87c58854942d07812b62f3",
+    "tasks/cal-py-sizes/controls/ctl-testskip/test_sizes_acceptance.py": "34712e9918095e219675aee35cbe1a1c00637c262fa428cab641aa124c64878a",
+    "tasks/cal-py-sizes/decoys/decoy-r1-gib/sizes.py": "4763ec8c3f90598830dbd29c05ca259dfde352a0c8da1ee225ae8d372006aa48",
+    "tasks/cal-py-sizes/decoys/decoy-r3-anyspace/sizes.py": "b4c03672a6d0472d0382196a850864f3a2f0846bc56da9085dfd69732eb6e96a",
+    "tasks/cal-py-sizes/decoys/decoy-r4-truncate/sizes.py": "63eb6bc1062dd6f714dff906be9c4cc83c07adc6f9a1cf85a886c15fb0a61f94",
+    "tasks/cal-py-sizes/followup/map.json": "63162175f7acf9fdc23ad9b02cd1d6e600e96cee3575adaf6de1f2d8ede7b2d3",
+    "tasks/cal-py-sizes/followup/test_sizes_followup.py": "e8a2db60f3383dde4c06033e639d88d629774056e6ba2996d6fc4bbce4113b22",
+    "tasks/cal-py-sizes/hidden/oracle.json": "92e260deb91a926a4f60c247bf82fbbf944bcf6323d032769bbf471303874fa8",
+    "tasks/cal-py-sizes/hidden/test_sizes_hidden.py": "5d15af7dbc49ad9031337bdd23efc6b50e86b763962651cbb4d6d0df7a70c484",
+    "tasks/cal-py-sizes/reference/sizes.py": "dcf99e83fe902b4fb91943237db95768d34a087d6dd57508c44db05546e80c31",
+    "tasks/cal-py-sizes/repo/pyproject.toml": "fd92b450a1f7bffa928edfc26cd5844ec1378af048c2628b3cf4d74b397c7598",
+    "tasks/cal-py-sizes/repo/sizes.py": "137b59d6fa24deace1b866e33cff1213026c5e356c5289496af66eee33fd554c",
+    "tasks/cal-py-sizes/repo/test_sizes.py": "3f4371af1a4cd35af423fea2a18ddb5d3908ce8ef7e01e9f447d1d97b8bfefe8",
+    "tasks/cal-py-sizes/requirements.json": "2fb8af0e87d25b27edacb326f475567ecbcbf3b91d96e1de385d14cc782f31dc",
+    "tasks/cal-py-sizes/task.json": "95ebf0ac09f9eba445bbd3d966ff6f69a5823f8996e7f850725d8915806f6165"
+  },
+  "stage": "FULL",
+  "status": "CALIBRATION_FROZEN_BEFORE_ANY_ARM_RUN",
+  "study": "abc-v5",
+  "tasks": {
+    "cal-node-chunk": {
+      "cluster": "node_array_chunking",
+      "language": "node",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "split": "calibration",
+      "test_command": "node --test",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "chunk.js"
+      ]
+    },
+    "cal-node-roman": {
+      "cluster": "node_roman_numerals",
+      "language": "node",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "split": "calibration",
+      "test_command": "node --test",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "roman.js"
+      ]
+    },
+    "cal-py-backoff": {
+      "cluster": "python_retry_backoff_schedule",
+      "language": "python",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "split": "calibration",
+      "test_command": "python -m pytest",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "backoff.py"
+      ]
+    },
+    "cal-py-sizes": {
+      "cluster": "python_byte_size_parsing",
+      "language": "python",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "split": "calibration",
+      "test_command": "python -m pytest",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "sizes.py"
+      ]
+    }
+  },
+  "w_manifest_sha256": "260e1ed73a19eb397e8d2e1dd0fd376fc02e187f625b413c5409ead195948515"
+}

@@ -1,0 +1,50 @@
+{
+  "id": "py-shop-024-catalog-import-slowdown",
+  "base": "py-shop",
+  "language": "python",
+  "category": "performance",
+  "difficulty": "medium",
+  "prompt": "The nightly supplier sync is getting slower every week. It calls\n`shop.services.catalog.import_products(ctx, rows)`. A 1k-row feed used to finish in about\na second; last night's 20k-row feed was still running after 40 minutes and we killed it.\nThe process is CPU-bound, and a profile puts almost all of the time inside the product\nrepository.\n\nPlease make the import scale roughly linearly with the number of rows (and with the size\nof the existing catalog). Its behaviour must not change: same products in the same order,\nsame slugs (including the `-2`, `-3` suffixes for repeated names and for names that clash\nwith existing products), same validation errors.",
+  "setup": [
+    {
+      "file": "shop/services/catalog.py",
+      "create": "\"\"\"Bulk catalog import used by the nightly supplier sync.\"\"\"\n\nfrom shop.errors import Conflict, ValidationError\nfrom shop.models.product import Product\nfrom shop.utils.money import to_cents\nfrom shop.utils.slugify import unique_slug\nfrom shop.utils.validation import validate_sku\n\n\ndef import_products(ctx, rows) -> list:\n    \"\"\"Create one product per row and return them in input order.\n\n    Each row is a dict with ``sku``, ``name``, ``price`` (dollars) and\n    optionally ``stock`` and ``tags``. Slugs are unique across the whole\n    catalog: existing products and earlier rows of the same import.\n    \"\"\"\n    created = []\n    for number, row in enumerate(rows, start=1):\n        try:\n            sku = validate_sku(row.get(\"sku\"))\n            price_cents = to_cents(row.get(\"price\"))\n        except (TypeError, ValueError, ValidationError) as exc:\n            raise ValidationError(f\"row {number}: {exc}\") from exc\n        if price_cents <= 0:\n            raise ValidationError(f\"row {number}: price must be positive\")\n        name = str(row.get(\"name\") or \"\").strip()\n        if not name:\n            raise ValidationError(f\"row {number}: name is required\")\n        if ctx.products.get(sku) is not None:\n            raise Conflict(f\"row {number}: product {sku} already exists\")\n        product = Product(\n            sku=sku,\n            name=name,\n            price_cents=price_cents,\n            slug=unique_slug(name, ctx.products.slugs()),\n            tags=list(row.get(\"tags\", [])),\n        )\n        ctx.products.add(product)\n        ctx.inventory.set_stock(sku, int(row.get(\"stock\", 0)))\n        created.append(product)\n    return created\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/catalog.py",
+      "find": "    created = []\n    for number, row in enumerate(rows, start=1):",
+      "replace": "    created = []\n    taken = ctx.products.slugs()\n    for number, row in enumerate(rows, start=1):"
+    },
+    {
+      "file": "shop/services/catalog.py",
+      "find": "            slug=unique_slug(name, ctx.products.slugs()),",
+      "replace": "            slug=unique_slug(name, taken),"
+    },
+    {
+      "file": "shop/services/catalog.py",
+      "find": "        ctx.products.add(product)\n        ctx.inventory.set_stock",
+      "replace": "        ctx.products.add(product)\n        taken.add(product.slug)\n        ctx.inventory.set_stock"
+    }
+  ],
+  "gold_files": [
+    "shop/services/catalog.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_catalog_scaling.py",
+      "dest": "tests/test_hidden_catalog_scaling.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_catalog_scaling"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}
