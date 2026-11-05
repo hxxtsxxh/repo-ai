@@ -70,3 +70,21 @@ result, but the source's partial work is a real model's, not a simulated proposa
   live starts are counted from its records and nothing is retried after a model call (`run_l2l.py`).
 - **Reading:** one task; a pass shows the live-to-live path works, not how often. A source that is not partial, or a
   continuation that fails, is reported as such.
+
+## Live-to-live attempt 1 (2026-11-05 UTC): blocked at authentication, $0.00, no model turn
+
+repo-ai 0.12.6 (PyPI), Claude Code 2.1.318, the dedicated login. The preflight found Claude eligible; the source
+session started and Claude Code exited with `authentication_failed`: "OAuth token revoked". Reported cost $0.00
+(OBSERVED), no tool call, no diff; repo-ai recorded BLOCKED and gave the exact re-login step. The run stopped before
+the handoff, as predeclared. Raw record: [results/l2l-attempt-1-2026-11-05.jsonl](results/l2l-attempt-1-2026-11-05.jsonl).
+
+**The second revocation of the dedicated login in about a day.** The owner logged in again on 2026-11-04 (local
+afternoon); that login served the journey-live-v1 retry successfully about half an hour later with a fresh access
+token (no refresh needed). The next use, about 20 hours later and the first that needed a token refresh, was refused
+as revoked. No repo-ai run used the login in between, so the revocation happened outside repo-ai's runs; the first
+revocation (2026-11-04) followed the same shape. Both times Claude Code then wrote a plaintext `.credentials.json`
+with a zeroed access-token expiry into the dedicated directory, and `claude auth status` kept reporting the login as
+valid. The cause is not known from here (a server-side limit on concurrent logins of the account is one possibility).
+Per the mission's rule for repeated unexplained external auth blockers, no further attempt is made in this way; the
+documented alternative is `token_env` (`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`), which does not depend on
+the dedicated login's refresh, and which needs the owner to create the token (QUEUE row 10).
