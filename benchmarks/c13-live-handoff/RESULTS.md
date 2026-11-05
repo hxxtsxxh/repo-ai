@@ -48,3 +48,25 @@ repo-ai handed a verified partial candidate (from the replay provider) to Claude
 isolated mode on a dedicated login, completed the task from the transferred partial work, passed the frozen tests
 and a hidden oracle it never saw, and was applied and undone exactly. One task, one session: this shows that the
 path works, not how often it does.
+
+## Live-to-live protocol (predeclared 2026-11-05, before any session)
+
+C13's next action is a live-to-live handoff. Codex (cost UNKNOWN on a plan) and Bob (managed account) are not used,
+and no local model server is started, so both sides are Claude Code on the dedicated login: not a cross-provider
+result, but the source's partial work is a real model's, not a simulated proposal.
+
+- **Fixture:** `money.py` (`add` returns a - b) and `units.py` (`scale` returns x + k); tests for both.
+- **Source (live session 1):** `repo-ai do TASK --agent claude --allow-write money.py --max-cost-usd 0.50`. units.py is
+  not writable, so the mission cannot pass. Accepted as a source only if repo-ai classifies it `partial_progress` and
+  its diff touches money.py only; otherwise the run stops and that is the result.
+- **Handoff:** `repo-ai handoff ID --to claude`, verified with `handoff --verify` before use.
+- **Continuation (live session 2):** `repo-ai do --from-handoff CAPSULE --agent claude --allow-write units.py
+  --max-cost-usd 0.50` (the widened scope is the user's, recorded in the child's provenance).
+- **Checks:** verdict and `partial_patch_transferred` on the child; the hidden oracle (4 tests never in the repository
+  or a workspace) on the final diff in a podman container without network; apply (post-apply verification) and undo
+  byte-identical.
+- **Budget:** at most 2 sessions, each capped at $0.50 by Claude Code's `--max-budget-usd`: at most $1.00 of the owner's
+  $10 budget (2026-11-05), accounted from Claude Code's reported `total_cost_usd`. One run in a fresh work directory;
+  live starts are counted from its records and nothing is retried after a model call (`run_l2l.py`).
+- **Reading:** one task; a pass shows the live-to-live path works, not how often. A source that is not partial, or a
+  continuation that fails, is reported as such.
