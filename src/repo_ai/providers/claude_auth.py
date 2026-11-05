@@ -138,6 +138,8 @@ def _audit_config_dir(path: Path) -> list[str]:
         return [f"no dedicated Claude login for repo-ai; run once: {login_command(path)}"]
     if path.is_symlink():
         return [f"{path} is a symlink; use a real directory owned by repo-ai"]
+    if not os.access(path, os.R_OK | os.X_OK):  # explicit: Path.is_dir() raises before 3.14 and is silent after
+        raise PermissionError(f"{path} is not readable")
     home = Path.home().resolve()
     resolved = path.resolve()
     if resolved == home or resolved in home.parents or too_broad(resolved) or \
