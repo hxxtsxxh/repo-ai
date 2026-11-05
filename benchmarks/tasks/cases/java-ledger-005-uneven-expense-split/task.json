@@ -1,0 +1,48 @@
+{
+  "id": "java-ledger-005-uneven-expense-split",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Splitting a $100.00 utility bill three ways between housemates blows up:\n\n```\nException in thread \"main\" com.example.ledger.LedgerException: transaction TX-00002 is unbalanced: entries sum to -0.01 USD\n\tat com.example.ledger.Ledger.post(Ledger.java:56)\n\tat com.example.ledger.ExpenseSplitter.split(ExpenseSplitter.java:43)\n\tat com.example.ledger.ExpenseSplitter.splitEvenly(ExpenseSplitter.java:19)\n\tat com.example.tools.Housemates.main(Housemates.java:22)\n```\n\nSplitting $90.00 three ways works. Whatever doesn't divide evenly needs to go somewhere\n-- the cents should land on the first shares so the split still adds up.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/Money.java",
+      "find": "        long step = Long.signum(remainder);\n        for (int i = 0; remainder != 0; i = (i + 1) % shares.length) {\n            if (ratios[i] == 0) {\n                continue;\n            }\n            shares[i] += step;\n            remainder -= step;\n        }\n        Money[] result = new Money[shares.length];",
+      "replace": "        Money[] result = new Money[shares.length];"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/Money.java",
+      "find": "        Money[] result = new Money[shares.length];",
+      "replace": "        long step = Long.signum(remainder);\n        for (int i = 0; remainder != 0; i = (i + 1) % shares.length) {\n            if (ratios[i] == 0) {\n                continue;\n            }\n            shares[i] += step;\n            remainder -= step;\n        }\n        Money[] result = new Money[shares.length];"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/Money.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenAllocateRemainderTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenAllocateRemainderTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenAllocateRemainderTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

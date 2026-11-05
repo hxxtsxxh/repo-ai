@@ -1,0 +1,568 @@
+{
+  "schema": 1,
+  "mode": "offline",
+  "suite": "tasks",
+  "tasks": 24,
+  "localization": {
+    "summary": {
+      "tasks": 24,
+      "repo_ai": {
+        "recall_at_5": 0.496,
+        "all_gold_at_5": 0.458,
+        "mrr": 0.403
+      },
+      "naive": {
+        "recall_at_5": 0.683,
+        "all_gold_at_5": 0.667,
+        "mrr": 0.428
+      },
+      "hook_injection_rate": 0.958,
+      "hook_payload_has_all_gold": 0.458,
+      "hook_tokens_est_mean": 253.391,
+      "regressions_vs_naive": [
+        "java-ledger-001-month-end-balance",
+        "java-ledger-004-failed-transfer-leaks-debit",
+        "java-ledger-005-uneven-expense-split",
+        "java-ledger-006-trial-balance-totals",
+        "py-shop-011-dedupe-money-formatting",
+        "py-shop-015-payment-retry-idempotency",
+        "py-shop-016-plus-address-signup",
+        "ts-workspace-002-backoff-ignores-max",
+        "ts-workspace-003-caret-range-zero-major",
+        "ts-workspace-005-cursor-pagination-gaps",
+        "ts-workspace-007-cli-duration-syntax",
+        "ts-workspace-010-read-only-key-can-write",
+        "ts-workspace-011-flag-value-with-equals"
+      ]
+    },
+    "tasks": [
+      {
+        "id": "java-ledger-001-month-end-balance",
+        "category": "bugfix",
+        "language": "java",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 202
+      },
+      {
+        "id": "java-ledger-004-failed-transfer-leaks-debit",
+        "category": "integration",
+        "language": "java",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.333,
+          "first_rank": 3
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 89
+      },
+      {
+        "id": "java-ledger-005-uneven-expense-split",
+        "category": "bugfix",
+        "language": "java",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.0,
+          "first_rank": null
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.2,
+          "first_rank": 5
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 116
+      },
+      {
+        "id": "java-ledger-006-trial-balance-totals",
+        "category": "feature",
+        "language": "java",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.167,
+          "first_rank": 6
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 140
+      },
+      {
+        "id": "java-ledger-007-importer-account-id-rules",
+        "category": "refactor",
+        "language": "java",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 190
+      },
+      {
+        "id": "java-ledger-008-mixed-currency-sum",
+        "category": "bugfix",
+        "language": "java",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "naive": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.143,
+          "first_rank": 7
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 81
+      },
+      {
+        "id": "py-shop-004-session-lifetime",
+        "category": "bugfix",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.333,
+          "first_rank": 3
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.25,
+          "first_rank": 4
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 294
+      },
+      {
+        "id": "py-shop-007-accented-slugs",
+        "category": "bugfix",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 284
+      },
+      {
+        "id": "py-shop-011-dedupe-money-formatting",
+        "category": "refactor",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 0.5,
+          "all_at_k": false,
+          "mrr": 0.333,
+          "first_rank": 3
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 324
+      },
+      {
+        "id": "py-shop-012-pagination-contract-tests",
+        "category": "test",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 195
+      },
+      {
+        "id": "py-shop-015-payment-retry-idempotency",
+        "category": "integration",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.077,
+          "first_rank": 13
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 170
+      },
+      {
+        "id": "py-shop-016-plus-address-signup",
+        "category": "bugfix",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.111,
+          "first_rank": 9
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.25,
+          "first_rank": 4
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 301
+      },
+      {
+        "id": "py-shop-017-saturday-delivery-estimate",
+        "category": "bugfix",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.25,
+          "first_rank": 4
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 300
+      },
+      {
+        "id": "py-shop-019-page-size-limit",
+        "category": "config",
+        "language": "python",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.125,
+          "first_rank": 8
+        },
+        "naive": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.048,
+          "first_rank": 21
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 304
+      },
+      {
+        "id": "ts-workspace-002-backoff-ignores-max",
+        "category": "bugfix",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.143,
+          "first_rank": 7
+        },
+        "naive": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.167,
+          "first_rank": 6
+        },
+        "confidence": "low",
+        "hook_injected": false,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 0
+      },
+      {
+        "id": "ts-workspace-003-caret-range-zero-major",
+        "category": "bugfix",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.0,
+          "first_rank": null
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 313
+      },
+      {
+        "id": "ts-workspace-004-daily-job-runs-twice",
+        "category": "bugfix",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "naive": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.167,
+          "first_rank": 6
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 344
+      },
+      {
+        "id": "ts-workspace-005-cursor-pagination-gaps",
+        "category": "bugfix",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.0,
+          "first_rank": null
+        },
+        "naive": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.125,
+          "first_rank": 8
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 291
+      },
+      {
+        "id": "ts-workspace-007-cli-duration-syntax",
+        "category": "monorepo",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.077,
+          "first_rank": 13
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 333
+      },
+      {
+        "id": "ts-workspace-008-pause-and-resume-jobs",
+        "category": "monorepo",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 0.4,
+          "all_at_k": false,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "naive": {
+          "recall_at_k": 0.4,
+          "all_at_k": false,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 345
+      },
+      {
+        "id": "ts-workspace-009-rate-limit-never-recovers",
+        "category": "bugfix",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.143,
+          "first_rank": 7
+        },
+        "naive": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.125,
+          "first_rank": 8
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 347
+      },
+      {
+        "id": "ts-workspace-010-read-only-key-can-write",
+        "category": "bugfix",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.333,
+          "first_rank": 3
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "high",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 326
+      },
+      {
+        "id": "ts-workspace-011-flag-value-with-equals",
+        "category": "bugfix",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.0,
+          "first_rank": null
+        },
+        "naive": {
+          "recall_at_k": 0.0,
+          "all_at_k": false,
+          "mrr": 0.045,
+          "first_rank": 22
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": false,
+        "hook_tokens_est": 324
+      },
+      {
+        "id": "ts-workspace-013-root-test-script",
+        "category": "ci",
+        "language": "typescript",
+        "repo_ai": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 1.0,
+          "first_rank": 1
+        },
+        "naive": {
+          "recall_at_k": 1.0,
+          "all_at_k": true,
+          "mrr": 0.5,
+          "first_rank": 2
+        },
+        "confidence": "medium",
+        "hook_injected": true,
+        "hook_gold_in_payload": true,
+        "hook_tokens_est": 215
+      }
+    ]
+  },
+  "counts": {
+    "by_language": {
+      "java": 6,
+      "python": 8,
+      "typescript": 10
+    },
+    "by_category": {
+      "bugfix": 14,
+      "ci": 1,
+      "config": 1,
+      "feature": 1,
+      "integration": 2,
+      "monorepo": 2,
+      "refactor": 2,
+      "test": 1
+    },
+    "by_base": {
+      "java-ledger": 6,
+      "py-shop": 8,
+      "ts-workspace": 10
+    }
+  },
+  "elapsed_s": 12.1
+}

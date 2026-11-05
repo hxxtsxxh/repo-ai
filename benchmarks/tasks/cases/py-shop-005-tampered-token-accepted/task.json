@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-005-tampered-token-accepted",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Security review finding (high): the API accepts bearer tokens whose signature has been\ntampered with, as long as the beginning of the signature is intact. Take a valid token\nfrom `POST /auth/login`, change the last character of the signature part, and\n`GET /users/me` still returns 200. Only the exact signature should be accepted.",
+  "setup": [
+    {
+      "file": "shop/services/auth.py",
+      "find": "if not hmac.compare_digest(signature, expected):",
+      "replace": "if not hmac.compare_digest(signature[:16], expected[:16]):"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/services/auth.py",
+      "find": "if not hmac.compare_digest(signature[:16], expected[:16]):",
+      "replace": "if not hmac.compare_digest(signature, expected):"
+    }
+  ],
+  "gold_files": [
+    "shop/services/auth.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_token_tamper.py",
+      "dest": "tests/test_hidden_token_tamper.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_token_tamper"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

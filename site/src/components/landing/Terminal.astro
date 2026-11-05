@@ -1,0 +1,91 @@
+---
+/**
+ * Tabbed terminal walkthrough. Without JavaScript every step is shown in order;
+ * with it, steps become an ARIA tablist (arrow keys, Home/End).
+ */
+import { transcripts } from '../../data/transcripts';
+---
+
+<div class="term" data-term>
+  <div class="term__bar">
+    <span class="term__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <div class="term__tabs" role="tablist" aria-label="Walkthrough steps" hidden data-term-tabs>
+      {
+        transcripts.map((t, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`term-tab-${t.id}`}
+            aria-controls={`term-panel-${t.id}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? 0 : -1}
+            class="term__tab"
+          >
+            <span class="term__tab-n" aria-hidden="true">{i + 1}</span>
+            {t.label}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+  {
+    transcripts.map((t, i) => (
+      <div class="term__panel" id={`term-panel-${t.id}`} data-term-panel data-tab={`term-tab-${t.id}`}>
+        <p class="term__summary">
+          <span class="term__step">Step {i + 1}</span> {t.summary}
+        </p>
+        <pre class="term__pre" role="region" tabindex="0" aria-label={`Output of repo-ai ${t.label}`}><code>{t.lines.map((l, j) => (
+          <span class={`l l--${l.k}`} style={`--i:${Math.min(j, 18)}`}>{l.k === 'cmd' ? <><span class="l__ps" aria-hidden="true">$ </span>{l.t}</> : l.t || ' '}{'\n'}</span>
+        ))}</code></pre>
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  function initTerminal(root: HTMLElement) {
+    const tablist = root.querySelector<HTMLElement>('[data-term-tabs]');
+    if (!tablist) return;
+    const tabs = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-term-panel]'));
+    tablist.hidden = false;
+    root.classList.add('term--tabs');
+    panels.forEach((p) => {
+      p.setAttribute('role', 'tabpanel');
+      p.setAttribute('aria-labelledby', p.dataset.tab ?? '');
+    });
+
+    function select(index: number, focus = false) {
+      tabs.forEach((tab, i) => {
+        const on = i === index;
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        tab.tabIndex = on ? 0 : -1;
+        panels[i].hidden = !on;
+        if (on) {
+          panels[i].classList.remove('is-in');
+          // restart the line reveal
+          void panels[i].offsetWidth;
+          panels[i].classList.add('is-in');
+        }
+      });
+      if (focus) tabs[index].focus();
+    }
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(i));
+      tab.addEventListener('keydown', (e) => {
+        let next = -1;
+        if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = tabs.length - 1;
+        if (next >= 0) {
+          e.preventDefault();
+          select(next, true);
+        }
+      });
+    });
+    select(0);
+  }
+  document.querySelectorAll<HTMLElement>('[data-term]').forEach(initTerminal);
+</script>

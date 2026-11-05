@@ -1,0 +1,86 @@
+/* Starlight theme mapped onto the repo-ai tokens. */
+:root {
+  --sl-font: var(--ri-font-sans);
+  --sl-font-mono: var(--ri-font-mono);
+
+  --sl-color-accent-low: #0f2a20;
+  --sl-color-accent: #3fae84;
+  --sl-color-accent-high: #a8f0cf;
+
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #e8ede9;
+  --sl-color-gray-2: #c4cec9;
+  --sl-color-gray-3: #a4b0ab;
+  --sl-color-gray-4: #5f6d68;
+  --sl-color-gray-5: #34433e;
+  --sl-color-gray-6: #18201e;
+  --sl-color-black: #0e1211;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d3eee2;
+  --sl-color-accent: #08704d;
+  --sl-color-accent-high: #064a34;
+
+  --sl-color-white: #131816;
+  --sl-color-gray-1: #1f2724;
+  --sl-color-gray-2: #34403c;
+  --sl-color-gray-3: #4a5551;
+  --sl-color-gray-4: #6b7672;
+  --sl-color-gray-5: #bfbcb0;
+  --sl-color-gray-6: #ecebe3;
+  --sl-color-gray-7: #f6f5f0;
+  --sl-color-black: #ffffff;
+}
+
+/* Tables: compact, scrollable on narrow screens, aligned to the top. */
+.sl-markdown-content table {
+  font-size: 0.875rem;
+}
+.sl-markdown-content table td,
+.sl-markdown-content table th {
+  vertical-align: top;
+}
+
+/* Status chips usable from Markdown via <span class="ri-chip ri-chip--pass">…</span>. */
+.ri-chip {
+  display: inline-block;
+  padding: 0 0.4em;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-family: var(--ri-font-mono);
+  font-size: 0.78em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.ri-chip--pass { color: var(--ri-pass); }
+.ri-chip--fail { color: var(--ri-fail); }
+.ri-chip--pre { color: var(--ri-pre); }
+.ri-chip--abstain { color: var(--ri-abstain); }
+.ri-chip--unknown { color: var(--ri-unknown); }
+
+/* The custom header links (Home, source availability). */
+.ri-header-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: var(--sl-text-sm);
+}
+.ri-header-links a {
+  color: var(--sl-color-gray-2);
+  text-decoration: none;
+}
+.ri-header-links a:hover {
+  color: var(--sl-color-white);
+}
+.ri-header-links .ri-header-source {
+  color: var(--sl-color-gray-3);
+}
+
+/* Brand wordmark in the docs header. */
+.site-title {
+  font-family: var(--ri-font-mono);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--sl-color-white);
+}

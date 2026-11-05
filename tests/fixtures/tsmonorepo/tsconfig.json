@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shop/core/*": ["packages/core/src/*"],
+      "@ui/*": ["packages/ui/src/*"]
+    }
+  }
+}

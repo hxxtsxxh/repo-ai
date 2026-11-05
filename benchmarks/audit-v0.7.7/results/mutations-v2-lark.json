@@ -1,0 +1,156 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "lark/parsers/lalr_interactive_parser.py",
+   "func": "copy",
+   "start": 70,
+   "end": 71,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cache",
+    "tests.test_grammar",
+    "tests.test_parser.tests.test_parser",
+    "tests.test_tools"
+   ]
+  },
+  {
+   "file": "lark/lexer.py",
+   "func": "__init__",
+   "start": 396,
+   "end": 403,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/lexer.py",
+   "func": "_future_new",
+   "start": 217,
+   "end": 227,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/parsers/earley_forest.py",
+   "func": "visit_packed_node_out",
+   "start": 252,
+   "end": 252,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/indenter.py",
+   "func": "tab_len",
+   "start": 124,
+   "end": 124,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/tools/nearley.py",
+   "func": "_extra_rule",
+   "start": 69,
+   "end": 76,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/lark.py",
+   "func": "__init__",
+   "start": 198,
+   "end": 227,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/indenter.py",
+   "func": "OPEN_PAREN_types",
+   "start": 93,
+   "end": 93,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/parsers/grammar_analysis.py",
+   "func": "__init__",
+   "start": 18,
+   "end": 21,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/indenter.py",
+   "func": "DEDENT_type",
+   "start": 118,
+   "end": 118,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/lark.py",
+   "func": "_load",
+   "start": 560,
+   "end": 591,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_parser.tests.test_parser",
+    "tests.test_tools"
+   ]
+  },
+  {
+   "file": "lark/parser_frontends.py",
+   "func": "lex",
+   "start": 53,
+   "end": 57,
+   "indent": 16,
+   "failing_modules": [
+    "tests.test_cache",
+    "tests.test_parser",
+    "tests.test_parser.tests.test_parser"
+   ]
+  },
+  {
+   "file": "lark/load_grammar.py",
+   "func": "maybe",
+   "start": 376,
+   "end": 379,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/lexer.py",
+   "func": "_build_scanner",
+   "start": 641,
+   "end": 656,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "lark/parsers/earley_forest.py",
+   "func": "visit_packed_node_in",
+   "start": 624,
+   "end": 628,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cache",
+    "tests.test_grammar",
+    "tests.test_parser",
+    "tests.test_parser.tests.test_parser",
+    "tests.test_reconstructor",
+    "tests.test_tree_forest_transformer",
+    "tests.test_tree_templates"
+   ]
+  },
+  {
+   "file": "lark/parsers/cyk.py",
+   "func": "match",
+   "start": 17,
+   "end": 18,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_parser.tests.test_parser"
+   ]
+  }
+ ]
+}

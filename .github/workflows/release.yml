@@ -1,0 +1,165 @@
+name: release
+
+# Publishes a stable release when a maintainer pushes a tag vX.Y.Z whose
+# version matches src/repo_ai/__init__.py. Pre-release tags (v0.9.0-dev4, ...)
+# do not match the pattern and are never published to PyPI.
+#
+# PyPI uses Trusted Publishing (OIDC): no API token is stored anywhere. The
+# owner registers the publisher once on pypi.org (project repo-ai-cli, owner
+# hxxtsxxh, repository repo-ai, workflow release.yml, environment pypi).
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Tag matches the package version
+        id: version
+        run: |
+          version=$(python -c "import re,pathlib; print(re.search(r'__version__ = \"([^\"]+)\"', pathlib.Path('src/repo_ai/__init__.py').read_text()).group(1))")
+          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v${version}"; exit 1; }
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+      - run: python -m pip install build twine
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Wheel rebuilt from the sdist is byte-identical
+        run: |
+          mkdir rebuild && tar -xzf dist/*.tar.gz -C rebuild
+          python -m build --wheel --outdir rebuilt rebuild/*/
+          a=$(sha256sum dist/*.whl | cut -d' ' -f1); b=$(sha256sum rebuilt/*.whl | cut -d' ' -f1)
+          echo "direct $a"; echo "from-sdist $b"; test "$a" = "$b"
+      - name: Release artifacts carry no research data
+        run: |
+          python - <<'PY'
+          import glob, tarfile, zipfile
+          sdist = tarfile.open(glob.glob("dist/*.tar.gz")[0]).getnames()
+          wheel = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          bad = [n for n in sdist if "/benchmarks/" in n and "/benchmarks/tasks/" not in n]
+          bad += [n for n in wheel if n.startswith(("benchmarks/", "repo_ai/benchmarks/"))]
+          bad += [n for n in sdist + wheel if any(k in n for k in ("sealed-v2", "authoring", "verify-eval"))]
+          bad += [n for n in sdist + wheel if "docs/research/" in n or "docs/launch/" in n]
+          assert not bad, f"research data in release artifacts: {bad[:5]}"
+          print(f"sdist {len(sdist)} entries, wheel {len(wheel)} entries: clean")
+          PY
+      - run: python -m twine check --strict dist/*
+      - name: SBOM (CycloneDX, runtime environment of the wheel)
+        run: |
+          python -m venv sbom-env
+          sbom-env/bin/python -m pip install dist/*.whl
+          python -m pip install cyclonedx-bom
+          cyclonedx-py environment sbom-env --output-format JSON --output-file "repo_ai-${{ steps.version.outputs.version }}.cdx.json"
+      - name: Checksums
+        run: |
+          cp repo_ai-*.cdx.json dist/
+          (cd dist && sha256sum -- * > SHA256SUMS && cat SHA256SUMS)
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  smoke:
+    needs: build
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install the wheel in a clean venv and run the offline journey
+        shell: bash
+        run: |
+          python -m venv "$RUNNER_TEMP/v"
+          if [ -x "$RUNNER_TEMP/v/bin/python" ]; then BIN="$RUNNER_TEMP/v/bin"; else BIN="$RUNNER_TEMP/v/Scripts"; fi
+          "$BIN/python" -m pip install dist/*.whl
+          "$BIN/python" -m pip check
+          "$BIN/repo-ai" --version | grep -F "repo-ai ${{ needs.build.outputs.version }}"
+          mkdir "$RUNNER_TEMP/p" && cd "$RUNNER_TEMP/p"
+          printf 'def add(a, b):\n    return a + b\n' > calc.py
+          printf 'from calc import add\n\ndef test_add():\n    assert add(1, 2) == 3\n' > test_calc.py
+          git init -q && git add -A && git -c user.email=ci@example.invalid -c user.name=ci commit -qm init
+          "$BIN/repo-ai" quickstart
+          "$BIN/repo-ai" "do" "make add handle None" --dry-run
+          "$BIN/repo-ai" agents list
+          "$BIN/repo-ai" init --agent none -q
+          "$BIN/repo-ai" context "add numbers" --format paths
+          "$BIN/repo-ai" verify
+          "$BIN/repo-ai" privacy audit
+          "$BIN/repo-ai" uninstall --agent all --yes
+          test -z "$(git status --porcelain)" || { git status --short; echo "uninstall left changes"; exit 1; }
+
+  publish-pypi:
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/repo-ai-cli/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write       # Trusted Publishing
+      attestations: write   # build provenance
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8  # v4.2.2
+        with:
+          subject-path: "dist/*.whl, dist/*.tar.gz"
+      - name: Keep only the distributions for upload
+        run: mkdir upload && mv dist/*.whl dist/*.tar.gz upload/
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # v1.14.3
+        with:
+          packages-dir: upload/
+
+  github-release:
+    needs: [build, publish-pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Create the GitHub release with the exact PyPI artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          python3 - <<'PY' > notes.md
+          import os, re, pathlib
+          v = os.environ["VERSION"]
+          text = pathlib.Path("CHANGELOG.md").read_text()
+          m = re.search(rf"^## {re.escape(v)}\b.*?(?=^## )", text, re.S | re.M)
+          print(m.group(0) if m else f"## {v}\n\nSee CHANGELOG.md.")
+          print("\nInstall: `python -m pip install repo-ai-cli==" + v + "` (the command is `repo-ai`)")
+          print("\nVerify: compare `SHA256SUMS`; provenance: `gh attestation verify <file> -R hxxtsxxh/repo-ai`.")
+          PY
+          gh release create "$GITHUB_REF_NAME" dist/* --title "repo-ai $VERSION" --notes-file notes.md --verify-tag

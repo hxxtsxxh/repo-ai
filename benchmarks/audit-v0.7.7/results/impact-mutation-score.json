@@ -1,0 +1,422 @@
+{
+ "oss-bottle": {
+  "mutations_detected": 13,
+  "of": 16,
+  "test_files": 25,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 1.0,
+    "no_miss": "13/13",
+    "mean_selected_frac": 1.0
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 1.0,
+    "no_miss": "13/13",
+    "mean_selected_frac": 1.0
+   },
+   "grep: test imports module": {
+    "mean_recall": 1.0,
+    "no_miss": "13/13",
+    "mean_selected_frac": 1.0
+   },
+   "test filename matches module": {
+    "mean_recall": 0.0,
+    "no_miss": "0/13",
+    "mean_selected_frac": 0.0
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.257,
+    "no_miss": "2/13",
+    "mean_selected_frac": 0.052
+   },
+   "union grep import|mention": {
+    "mean_recall": 1.0,
+    "no_miss": "13/13",
+    "mean_selected_frac": 1.0
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "13/13",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "oss-cachetools": {
+  "mutations_detected": 16,
+  "of": 16,
+  "test_files": 13,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 1.0,
+    "no_miss": "16/16",
+    "mean_selected_frac": 0.918
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 1.0,
+    "no_miss": "16/16",
+    "mean_selected_frac": 0.928
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.675,
+    "no_miss": "10/16",
+    "mean_selected_frac": 0.644
+   },
+   "test filename matches module": {
+    "mean_recall": 0.138,
+    "no_miss": "1/16",
+    "mean_selected_frac": 0.029
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.449,
+    "no_miss": "5/16",
+    "mean_selected_frac": 0.173
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.852,
+    "no_miss": "12/16",
+    "mean_selected_frac": 0.712
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "16/16",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "oss-markdown": {
+  "mutations_detected": 13,
+  "of": 16,
+  "test_files": 31,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 0.368,
+    "no_miss": "1/13",
+    "mean_selected_frac": 0.218
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 0.532,
+    "no_miss": "4/13",
+    "mean_selected_frac": 0.452
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.095,
+    "no_miss": "0/13",
+    "mean_selected_frac": 0.012
+   },
+   "test filename matches module": {
+    "mean_recall": 0.135,
+    "no_miss": "0/13",
+    "mean_selected_frac": 0.012
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.023,
+    "no_miss": "0/13",
+    "mean_selected_frac": 0.032
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.118,
+    "no_miss": "0/13",
+    "mean_selected_frac": 0.045
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "13/13",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "oss-pyflakes": {
+  "mutations_detected": 15,
+  "of": 16,
+  "test_files": 13,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 1.0,
+    "no_miss": "15/15",
+    "mean_selected_frac": 0.877
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 1.0,
+    "no_miss": "15/15",
+    "mean_selected_frac": 0.877
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.629,
+    "no_miss": "5/15",
+    "mean_selected_frac": 0.472
+   },
+   "test filename matches module": {
+    "mean_recall": 0.067,
+    "no_miss": "1/15",
+    "mean_selected_frac": 0.005
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.156,
+    "no_miss": "2/15",
+    "mean_selected_frac": 0.046
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.629,
+    "no_miss": "5/15",
+    "mean_selected_frac": 0.472
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "15/15",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "oss-simplejson": {
+  "mutations_detected": 9,
+  "of": 16,
+  "test_files": 33,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 0.99,
+    "no_miss": "7/9",
+    "mean_selected_frac": 0.976
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 0.99,
+    "no_miss": "7/9",
+    "mean_selected_frac": 0.976
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.252,
+    "no_miss": "0/9",
+    "mean_selected_frac": 0.279
+   },
+   "test filename matches module": {
+    "mean_recall": 0.037,
+    "no_miss": "0/9",
+    "mean_selected_frac": 0.007
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.206,
+    "no_miss": "0/9",
+    "mean_selected_frac": 0.121
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.257,
+    "no_miss": "0/9",
+    "mean_selected_frac": 0.3
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "9/9",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "oss-tomli": {
+  "mutations_detected": 16,
+  "of": 16,
+  "test_files": 3,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 0.875,
+    "no_miss": "14/16",
+    "mean_selected_frac": 0.875
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 0.875,
+    "no_miss": "14/16",
+    "mean_selected_frac": 0.875
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.0,
+    "no_miss": "0/16",
+    "mean_selected_frac": 0.0
+   },
+   "test filename matches module": {
+    "mean_recall": 0.0,
+    "no_miss": "0/16",
+    "mean_selected_frac": 0.0
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.125,
+    "no_miss": "2/16",
+    "mean_selected_frac": 0.083
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.125,
+    "no_miss": "2/16",
+    "mean_selected_frac": 0.083
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "16/16",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "v2-asn1crypto": {
+  "mutations_detected": 11,
+  "of": 16,
+  "test_files": 14,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 1.0,
+    "no_miss": "11/11",
+    "mean_selected_frac": 0.773
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 1.0,
+    "no_miss": "11/11",
+    "mean_selected_frac": 0.773
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.715,
+    "no_miss": "6/11",
+    "mean_selected_frac": 0.357
+   },
+   "test filename matches module": {
+    "mean_recall": 0.534,
+    "no_miss": "4/11",
+    "mean_selected_frac": 0.071
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.758,
+    "no_miss": "8/11",
+    "mean_selected_frac": 0.253
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.867,
+    "no_miss": "9/11",
+    "mean_selected_frac": 0.487
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "11/11",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "v2-lark": {
+  "mutations_detected": 4,
+  "of": 16,
+  "test_files": 13,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 0.792,
+    "no_miss": "3/4",
+    "mean_selected_frac": 0.75
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 0.792,
+    "no_miss": "3/4",
+    "mean_selected_frac": 0.769
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.042,
+    "no_miss": "0/4",
+    "mean_selected_frac": 0.058
+   },
+   "test filename matches module": {
+    "mean_recall": 0.0,
+    "no_miss": "0/4",
+    "mean_selected_frac": 0.0
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.333,
+    "no_miss": "1/4",
+    "mean_selected_frac": 0.173
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.375,
+    "no_miss": "1/4",
+    "mean_selected_frac": 0.231
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "4/4",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "v2-more-itertools": {
+  "mutations_detected": 15,
+  "of": 16,
+  "test_files": 2,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 1.0,
+    "no_miss": "15/15",
+    "mean_selected_frac": 1.0
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 1.0,
+    "no_miss": "15/15",
+    "mean_selected_frac": 1.0
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.0,
+    "no_miss": "0/15",
+    "mean_selected_frac": 0.0
+   },
+   "test filename matches module": {
+    "mean_recall": 0.933,
+    "no_miss": "14/15",
+    "mean_selected_frac": 0.5
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.933,
+    "no_miss": "14/15",
+    "mean_selected_frac": 0.5
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.933,
+    "no_miss": "14/15",
+    "mean_selected_frac": 0.5
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "15/15",
+    "mean_selected_frac": 1.0
+   }
+  }
+ },
+ "v2-pyasn1": {
+  "mutations_detected": 11,
+  "of": 16,
+  "test_files": 19,
+  "methods": {
+   "repo-ai impact <file>": {
+    "mean_recall": 1.0,
+    "no_miss": "11/11",
+    "mean_selected_frac": 0.512
+   },
+   "repo-ai impact <symbol>": {
+    "mean_recall": 1.0,
+    "no_miss": "11/11",
+    "mean_selected_frac": 0.531
+   },
+   "grep: test imports module": {
+    "mean_recall": 0.727,
+    "no_miss": "6/11",
+    "mean_selected_frac": 0.273
+   },
+   "test filename matches module": {
+    "mean_recall": 0.509,
+    "no_miss": "5/11",
+    "mean_selected_frac": 0.139
+   },
+   "grep: test mentions function": {
+    "mean_recall": 0.138,
+    "no_miss": "1/11",
+    "mean_selected_frac": 0.024
+   },
+   "union grep import|mention": {
+    "mean_recall": 0.742,
+    "no_miss": "6/11",
+    "mean_selected_frac": 0.282
+   },
+   "all tests": {
+    "mean_recall": 1.0,
+    "no_miss": "11/11",
+    "mean_selected_frac": 1.0
+   }
+  }
+ }
+}

@@ -1,0 +1,82 @@
+{
+  "id": "py-shop-011-dedupe-money-formatting",
+  "base": "py-shop",
+  "language": "python",
+  "category": "refactor",
+  "difficulty": "medium",
+  "prompt": "Money formatting has been copy-pasted into a couple of places and the copies have\ndrifted from the shared helper:\n\n- refund e-mails read \"Refund for order ...: $-5.00\", and a one-cent refund shows as \"$-1.99\"\n- e-mails for EUR orders show a \"$\" sign\n- the API's `display` strings don't know about GBP\n\n`shop.utils.money.format_money` already does all of this correctly. Please get rid of\nthe ad-hoc copies so every customer-facing amount (API and notifications) goes\nthrough the shared helper.",
+  "setup": [
+    {
+      "file": "shop/services/notifications.py",
+      "find": "from shop.utils.dates import format_date\nfrom shop.utils.money import format_money\n",
+      "replace": "from shop.utils.dates import format_date\n"
+    },
+    {
+      "file": "shop/services/notifications.py",
+      "find": "class Notifier:\n",
+      "replace": "def _money(cents, currency=\"USD\"):\n    # Local copy so e-mail wording can be tweaked without touching the API.\n    return \"$%d.%02d\" % (cents // 100, cents % 100)\n\n\nclass Notifier:\n"
+    },
+    {
+      "file": "shop/services/notifications.py",
+      "find": "    def order_placed(self, order) -> Message:\n        lines = [f\"Thanks for your order {order.id}.\"]\n        for line in order.lines:\n            lines.append(\n                f\"  {line.quantity} x {line.sku} @ \"\n                f\"{format_money(line.unit_price_cents, order.currency)}\"\n            )\n        if order.discount_cents:\n            lines.append(f\"Discount: {format_money(-order.discount_cents, order.currency)}\")\n        lines.append(f\"Total: {format_money(order.total_cents, order.currency)}\")\n        return self._send(order.user_id, f\"Order {order.id} received\", \"\\n\".join(lines))\n\n    def payment_received(self, order, payment) -> Message:\n        body = (\n            f\"We received your payment of \"\n            f\"{format_money(payment.amount_cents, payment.currency)} for order {order.id}.\"\n        )\n        return self._send(order.user_id, f\"Payment received for {order.id}\", body)\n\n    def order_shipped(self, order, estimate=None) -> Message:\n        body = f\"Order {order.id} is on its way.\"\n        if estimate is not None:\n            body += f\" Estimated delivery: {format_date(estimate)}.\"\n        return self._send(order.user_id, f\"Order {order.id} shipped\", body)\n\n    def order_cancelled(self, order) -> Message:\n        return self._send(\n            order.user_id, f\"Order {order.id} cancelled\", f\"Order {order.id} was cancelled.\"\n        )\n\n    def refund_issued(self, order, amount_cents: int) -> Message:\n        body = f\"Refund for order {order.id}: {format_money(-amount_cents, order.currency)}\"\n        return self._send(order.user_id, f\"Refund for {order.id}\", body)\n",
+      "replace": "    def order_placed(self, order) -> Message:\n        lines = [f\"Thanks for your order {order.id}.\"]\n        for line in order.lines:\n            lines.append(\n                f\"  {line.quantity} x {line.sku} @ \"\n                f\"{_money(line.unit_price_cents, order.currency)}\"\n            )\n        if order.discount_cents:\n            lines.append(f\"Discount: {_money(-order.discount_cents, order.currency)}\")\n        lines.append(f\"Total: {_money(order.total_cents, order.currency)}\")\n        return self._send(order.user_id, f\"Order {order.id} received\", \"\\n\".join(lines))\n\n    def payment_received(self, order, payment) -> Message:\n        body = (\n            f\"We received your payment of \"\n            f\"{_money(payment.amount_cents, payment.currency)} for order {order.id}.\"\n        )\n        return self._send(order.user_id, f\"Payment received for {order.id}\", body)\n\n    def order_shipped(self, order, estimate=None) -> Message:\n        body = f\"Order {order.id} is on its way.\"\n        if estimate is not None:\n            body += f\" Estimated delivery: {format_date(estimate)}.\"\n        return self._send(order.user_id, f\"Order {order.id} shipped\", body)\n\n    def order_cancelled(self, order) -> Message:\n        return self._send(\n            order.user_id, f\"Order {order.id} cancelled\", f\"Order {order.id} was cancelled.\"\n        )\n\n    def refund_issued(self, order, amount_cents: int) -> Message:\n        body = f\"Refund for order {order.id}: {_money(-amount_cents, order.currency)}\"\n        return self._send(order.user_id, f\"Refund for {order.id}\", body)\n"
+    },
+    {
+      "file": "shop/api/serializers.py",
+      "find": "from shop.utils.money import format_money, from_cents\n",
+      "replace": "from shop.utils.money import from_cents\n\n_SYMBOLS = {\"USD\": \"$\", \"EUR\": \"\\u20ac\"}\n\n\ndef _display(cents: int, currency: str) -> str:\n    sign = \"-\" if cents < 0 else \"\"\n    return f\"{sign}{_SYMBOLS.get(currency, '')}{abs(cents) / 100:,.2f}\"\n"
+    },
+    {
+      "file": "shop/api/serializers.py",
+      "find": "\"display\": format_money(cents, currency),",
+      "replace": "\"display\": _display(cents, currency),"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/api/serializers.py",
+      "find": "\"display\": _display(cents, currency),",
+      "replace": "\"display\": format_money(cents, currency),"
+    },
+    {
+      "file": "shop/api/serializers.py",
+      "find": "from shop.utils.money import from_cents\n\n_SYMBOLS = {\"USD\": \"$\", \"EUR\": \"\\u20ac\"}\n\n\ndef _display(cents: int, currency: str) -> str:\n    sign = \"-\" if cents < 0 else \"\"\n    return f\"{sign}{_SYMBOLS.get(currency, '')}{abs(cents) / 100:,.2f}\"\n",
+      "replace": "from shop.utils.money import format_money, from_cents\n"
+    },
+    {
+      "file": "shop/services/notifications.py",
+      "find": "    def order_placed(self, order) -> Message:\n        lines = [f\"Thanks for your order {order.id}.\"]\n        for line in order.lines:\n            lines.append(\n                f\"  {line.quantity} x {line.sku} @ \"\n                f\"{_money(line.unit_price_cents, order.currency)}\"\n            )\n        if order.discount_cents:\n            lines.append(f\"Discount: {_money(-order.discount_cents, order.currency)}\")\n        lines.append(f\"Total: {_money(order.total_cents, order.currency)}\")\n        return self._send(order.user_id, f\"Order {order.id} received\", \"\\n\".join(lines))\n\n    def payment_received(self, order, payment) -> Message:\n        body = (\n            f\"We received your payment of \"\n            f\"{_money(payment.amount_cents, payment.currency)} for order {order.id}.\"\n        )\n        return self._send(order.user_id, f\"Payment received for {order.id}\", body)\n\n    def order_shipped(self, order, estimate=None) -> Message:\n        body = f\"Order {order.id} is on its way.\"\n        if estimate is not None:\n            body += f\" Estimated delivery: {format_date(estimate)}.\"\n        return self._send(order.user_id, f\"Order {order.id} shipped\", body)\n\n    def order_cancelled(self, order) -> Message:\n        return self._send(\n            order.user_id, f\"Order {order.id} cancelled\", f\"Order {order.id} was cancelled.\"\n        )\n\n    def refund_issued(self, order, amount_cents: int) -> Message:\n        body = f\"Refund for order {order.id}: {_money(-amount_cents, order.currency)}\"\n        return self._send(order.user_id, f\"Refund for {order.id}\", body)\n",
+      "replace": "    def order_placed(self, order) -> Message:\n        lines = [f\"Thanks for your order {order.id}.\"]\n        for line in order.lines:\n            lines.append(\n                f\"  {line.quantity} x {line.sku} @ \"\n                f\"{format_money(line.unit_price_cents, order.currency)}\"\n            )\n        if order.discount_cents:\n            lines.append(f\"Discount: {format_money(-order.discount_cents, order.currency)}\")\n        lines.append(f\"Total: {format_money(order.total_cents, order.currency)}\")\n        return self._send(order.user_id, f\"Order {order.id} received\", \"\\n\".join(lines))\n\n    def payment_received(self, order, payment) -> Message:\n        body = (\n            f\"We received your payment of \"\n            f\"{format_money(payment.amount_cents, payment.currency)} for order {order.id}.\"\n        )\n        return self._send(order.user_id, f\"Payment received for {order.id}\", body)\n\n    def order_shipped(self, order, estimate=None) -> Message:\n        body = f\"Order {order.id} is on its way.\"\n        if estimate is not None:\n            body += f\" Estimated delivery: {format_date(estimate)}.\"\n        return self._send(order.user_id, f\"Order {order.id} shipped\", body)\n\n    def order_cancelled(self, order) -> Message:\n        return self._send(\n            order.user_id, f\"Order {order.id} cancelled\", f\"Order {order.id} was cancelled.\"\n        )\n\n    def refund_issued(self, order, amount_cents: int) -> Message:\n        body = f\"Refund for order {order.id}: {format_money(-amount_cents, order.currency)}\"\n        return self._send(order.user_id, f\"Refund for {order.id}\", body)\n"
+    },
+    {
+      "file": "shop/services/notifications.py",
+      "find": "def _money(cents, currency=\"USD\"):\n    # Local copy so e-mail wording can be tweaked without touching the API.\n    return \"$%d.%02d\" % (cents // 100, cents % 100)\n\n\nclass Notifier:\n",
+      "replace": "class Notifier:\n"
+    },
+    {
+      "file": "shop/services/notifications.py",
+      "find": "from shop.utils.dates import format_date\n",
+      "replace": "from shop.utils.dates import format_date\nfrom shop.utils.money import format_money\n"
+    }
+  ],
+  "gold_files": [
+    "shop/services/notifications.py",
+    "shop/api/serializers.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_money_display.py",
+      "dest": "tests/test_hidden_money_display.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_money_display"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

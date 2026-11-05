@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-010-read-only-key-can-write",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "We handed an API key with only the `jobs:read` scope to the reporting team, and they\nwere able to create and cancel jobs with it. Anything that changes jobs should need\n`jobs:write` (or `admin`); read-only keys should only be able to look.",
+  "setup": [
+    {
+      "file": "packages/api/src/auth.ts",
+      "find": "  return principal.scopes.includes(\"admin\") || principal.scopes.includes(scope);",
+      "replace": "  const [resource] = scope.split(\":\");\n  return principal.scopes.includes(\"admin\") || principal.scopes.some((s) => s.split(\":\")[0] === resource);"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/api/src/auth.ts",
+      "find": "  const [resource] = scope.split(\":\");\n  return principal.scopes.includes(\"admin\") || principal.scopes.some((s) => s.split(\":\")[0] === resource);",
+      "replace": "  return principal.scopes.includes(\"admin\") || principal.scopes.includes(scope);"
+    }
+  ],
+  "gold_files": [
+    "packages/api/src/auth.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_write_scope.test.ts",
+      "dest": "packages/api/test/hidden_write_scope.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/api/test/hidden_write_scope.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

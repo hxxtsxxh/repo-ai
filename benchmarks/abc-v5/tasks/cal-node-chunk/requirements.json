@@ -1,0 +1,41 @@
+{
+  "schema": "repo-ai.requirements/1",
+  "requirements": [
+    {
+      "text": "R1: the last chunk may be shorter",
+      "kind": "change",
+      "tests": [
+        "keeps the remainder"
+      ]
+    },
+    {
+      "text": "R2: size must be an integer >= 1, otherwise RangeError",
+      "kind": "change",
+      "tests": [
+        "rejects zero size"
+      ]
+    },
+    {
+      "text": "R3: the input is never modified and chunks are new arrays",
+      "kind": "preserve",
+      "tests": [
+        "does not mutate input"
+      ]
+    },
+    {
+      "text": "R4: items must be an array, otherwise TypeError",
+      "kind": "change",
+      "tests": [
+        "rejects non-array"
+      ]
+    },
+    {
+      "text": "R5: empty input and exact multiples are unchanged",
+      "kind": "preserve",
+      "tests": [
+        "exact multiples",
+        "empty input"
+      ]
+    }
+  ]
+}

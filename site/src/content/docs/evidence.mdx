@@ -1,0 +1,17 @@
+---
+title: Evidence Lab
+description: Every claim repo-ai makes about itself, with its status, date, sample size, method, limits and source, including the negative and inconclusive results.
+---
+
+import EvidenceLab from '../../components/evidence/EvidenceLab.astro';
+
+This page is rendered from `docs/engineering/evidence-matrix.json` in the source tree, a condensed, machine-readable
+ledger of [`docs/STATUS.md`](https://github.com/hxxtsxxh/repo-ai/blob/main/docs/STATUS.md),
+[`docs/launch/ACCEPTANCE.json`](https://github.com/hxxtsxxh/repo-ai/blob/main/docs/launch/ACCEPTANCE.json) and the study
+results they cite. When an entry and its source disagree, the source is the record. Results that did not go
+repo-ai's way stay here on purpose.
+
+Read every number with its scope. Most agent studies are small, synthetic and written by an AI agent: they are not
+independent evaluations. How the studies were run is on [Evaluation & methodology](/repo-ai/docs/evaluation/).
+
+<EvidenceLab variant="full" level={2} />

@@ -1,0 +1,647 @@
+{
+ "protocol": "journey-offline-v2",
+ "commit": "fc329dc7cf57d92fdd7dbebb2a7ad543d89694b1",
+ "run_at": "2026-11-01T02:40:12Z",
+ "gates": {
+  "defects": 7,
+  "J1_false_assurance": {
+   "cases": [],
+   "pass": true
+  },
+  "J2_fix_passes_where_native_passes": [
+   [
+    "jpadilla/pyjwt@33022c25",
+    false
+   ],
+   [
+    "python-humanize/humanize@2968d442",
+    true
+   ],
+   [
+    "python-humanize/humanize@43d6dc61",
+    true
+   ],
+   [
+    "more-itertools/more-itertools@719a333b",
+    false
+   ],
+   [
+    "more-itertools/more-itertools@146113bb",
+    false
+   ],
+   [
+    "marshmallow-code/marshmallow@de5e842a",
+    true
+   ]
+  ],
+  "J3_uninstall_restores_base": [
+   [
+    "jpadilla/pyjwt@33022c25",
+    true
+   ],
+   [
+    "jpadilla/pyjwt@6dc23b3c",
+    true
+   ],
+   [
+    "python-humanize/humanize@2968d442",
+    true
+   ],
+   [
+    "python-humanize/humanize@43d6dc61",
+    true
+   ],
+   [
+    "more-itertools/more-itertools@719a333b",
+    true
+   ],
+   [
+    "more-itertools/more-itertools@146113bb",
+    true
+   ],
+   [
+    "marshmallow-code/marshmallow@de5e842a",
+    true
+   ]
+  ]
+ },
+ "projects": [
+  {
+   "project": "jpadilla/pyjwt",
+   "ref": "2.10.1",
+   "defects": [
+    {
+     "commit": "33022c25525c1020869c71ce2a4109e44ae4ced1",
+     "base": "783f324e5d2155462515ced45718fc164dd04db2",
+     "subject": "Merge commit from fork",
+     "test_files": [
+      "tests/test_api_jwt.py"
+     ],
+     "steps": {
+      "quickstart": {
+       "exit": 0,
+       "seconds": 0.243,
+       "tail": "o-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+      },
+      "init": {
+       "exit": 0,
+       "seconds": 0.505,
+       "tail": "padilla__pyjwt\n[  0.09s] scan complete: 79 indexable files (90 seen, 17 skipped, 0 unchanged)\n[  0.09s] parsing 79 files (stdlib ast + regex fallback)\n[  0.14s] found 3 manifests, 15 declared dependencies\n[  0.26s] git: HEAD@783f324, 877 commits, 187 contributors\n[  0.30s] analysis complete in 0.3s\n"
+      },
+      "record": {
+       "exit": 0,
+       "seconds": 11.122,
+       "tail": "ithms.py: pass (1.0s)\n  recorded tests/test_exceptions.py: pass (0.3s)\n  recorded tests/test_jwt.py: pass (0.3s)\n  recorded tests/test_utils.py: pass (0.2s)\n  recorded tests/test_jwks_client.py: fail (4.5s)\n  measured the full suite as one process: 5.2s (fail), for choosing how to run later changes\n"
+      },
+      "test_without_fix": {
+       "native": {
+        "exit": 1,
+        "seconds": 5.124,
+        "tail": "KIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\nFAILED tests/test_api_jwt.py::TestJWT::test_rasise_exception_on_partial_issuer_match - Failed: DID NOT RAISE InvalidIssuerError\n1 failed, 286 passed, 4 skipped in 4.96s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 1.341,
+        "verdict": "regression",
+        "new_failures": [
+         {
+          "test_file": "tests/test_api_jwt.py",
+          "tests": [
+           "tests/test_api_jwt.py::TestJWT::test_rasise_exception_on_partial_issuer_match"
+          ],
+          "status": "fail"
+         }
+        ],
+        "pre_existing": [],
+        "passed_files": 0,
+        "tail": ""
+       }
+      },
+      "fix": {
+       "native": {
+        "exit": 0,
+        "seconds": 5.144,
+        "tail": "                                                 [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 4.97s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 5.478,
+        "verdict": "failing (all failures pre-existing at the base)",
+        "new_failures": [],
+        "pre_existing": [
+         "tests/test_jwks_client.py"
+        ],
+        "passed_files": 4,
+        "tail": ""
+       }
+      },
+      "uninstall": {
+       "exit": 0,
+       "tail": "repo-ai removed.\n",
+       "tracked_diff_from_base": "",
+       "untracked": ""
+      }
+     }
+    },
+    {
+     "commit": "6dc23b3c9beeb33a45b7e34b39b086b063de48bf",
+     "base": "310962b535d53f1ccc8cf9f484fe8beb89234af8",
+     "subject": "Validate `sub` and `jti` claims for the token (#1005)",
+     "test_files": [
+      "tests/test_api_jwt.py"
+     ],
+     "steps": {
+      "quickstart": {
+       "exit": 0,
+       "seconds": 0.151,
+       "tail": "o-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+      },
+      "init": {
+       "exit": 0,
+       "seconds": 0.464,
+       "tail": "padilla__pyjwt\n[  0.08s] scan complete: 79 indexable files (90 seen, 17 skipped, 0 unchanged)\n[  0.08s] parsing 79 files (stdlib ast + regex fallback)\n[  0.13s] found 3 manifests, 15 declared dependencies\n[  0.24s] git: HEAD@310962b, 861 commits, 187 contributors\n[  0.28s] analysis complete in 0.3s\n"
+      },
+      "record": {
+       "exit": 0,
+       "seconds": 11.06,
+       "tail": "tions.py: pass (0.3s)\n  recorded tests/test_jwt.py: pass (0.3s)\n  recorded tests/test_algorithms.py: pass (1.1s)\n  recorded tests/test_utils.py: pass (0.2s)\n  recorded tests/test_jwks_client.py: fail (4.4s)\n  measured the full suite as one process: 5.2s (fail), for choosing how to run later changes\n"
+      },
+      "test_without_fix": {
+       "native": {
+        "exit": 2,
+        "seconds": 0.31,
+        "tail": "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_api_jwt.py:10: in <module>\n    from jwt.exceptions import (\nE   ImportError: cannot import name 'InvalidJTIError' from 'jwt.exceptions' (/home/runner/work/_temp/journey2/jpadilla__pyjwt/jwt/exceptions.py). Did you mean: 'InvalidKeyError'?\n=========================== short test summary info ============================\nERROR tests/test_api_jwt.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.14s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 1.151,
+        "verdict": "regression",
+        "new_failures": [
+         {
+          "test_file": "tests/test_api_jwt.py",
+          "tests": [
+           "tests/test_api_jwt.py"
+          ],
+          "status": "fail"
+         }
+        ],
+        "pre_existing": [],
+        "passed_files": 0,
+        "tail": ""
+       }
+      },
+      "fix": {
+       "status": "APPLY_FAILED"
+      },
+      "uninstall": {
+       "exit": 0,
+       "tail": "repo-ai removed.\n",
+       "tracked_diff_from_base": "",
+       "untracked": ""
+      }
+     }
+    }
+   ],
+   "rejected": [],
+   "tried": 2,
+   "status": "RAN"
+  },
+  {
+   "project": "python-humanize/humanize",
+   "ref": "4.12.3",
+   "defects": [
+    {
+     "commit": "2968d44280a68f775db73ddeb2f2fc6c05edac84",
+     "base": "8059ebe1732c89177709476165f6e87cc76fe1b7",
+     "subject": "Fix regression in `naturalsize` for float and str (#250)",
+     "test_files": [
+      "tests/test_filesize.py"
+     ],
+     "steps": {
+      "quickstart": {
+       "exit": 0,
+       "seconds": 0.16,
+       "tail": "o-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+      },
+      "init": {
+       "exit": 0,
+       "seconds": 0.431,
+       "tail": "anize__humanize\n[  0.08s] scan complete: 81 indexable files (84 seen, 7 skipped, 0 unchanged)\n[  0.08s] parsing 81 files (stdlib ast + regex fallback)\n[  0.11s] found 3 manifests, 13 declared dependencies\n[  0.21s] git: HEAD@8059ebe, 972 commits, 148 contributors\n[  0.24s] analysis complete in 0.2s\n"
+      },
+      "record": {
+       "exit": 0,
+       "seconds": 3.122,
+       "tail": "s/test_lists.py: pass (0.3s)\n  recorded tests/test_filesize.py: pass (0.3s)\n  recorded tests/test_number.py: pass (0.5s)\n  recorded tests/test_i18n.py: pass (0.4s)\n  recorded tests/test_time.py: pass (0.9s)\n  measured the full suite as one process: 1.1s (pass), for choosing how to run later changes\n"
+      },
+      "test_without_fix": {
+       "native": {
+        "exit": 1,
+        "seconds": 1.036,
+        "tail": "nError: assert '1.0 Byte' == '1 Byte'\n  \n  \u001b[0m\u001b[91m- 1 Byte\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n  \u001b[92m+ 1.0 Byte\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n  ?  ++\u001b[90m\u001b[39;49;00m\n\u001b[31mFAILED\u001b[0m tests/test_filesize.py::\u001b[1mtest_naturalsize[test_args59-1 Byte]\u001b[0m - AssertionError: assert '1.0 Byte' == '1 Byte'\n  \n  \u001b[0m\u001b[91m- 1 Byte\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n  \u001b[92m+ 1.0 Byte\u001b[39;49;00m\u001b[90m\u001b[39;49;00m\n  ?  ++\u001b[90m\u001b[39;49;00m\n\u001b[31m\u001b[31m\u001b[1m2 failed\u001b[0m, \u001b[32m605 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[31m in 0.85s\u001b[0m\u001b[0m\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 1.291,
+        "verdict": "regression",
+        "new_failures": [
+         {
+          "test_file": "tests/test_filesize.py",
+          "tests": [
+           "tests/test_filesize.py::test_naturalsize[test_args58-1 Byte]",
+           "tests/test_filesize.py::test_naturalsize[test_args59-1 Byte]"
+          ],
+          "status": "fail"
+         }
+        ],
+        "pre_existing": [],
+        "passed_files": 0,
+        "tail": ""
+       }
+      },
+      "fix": {
+       "native": {
+        "exit": 0,
+        "seconds": 0.927,
+        "tail": "\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                  [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m607 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[32m in 0.76s\u001b[0m\u001b[0m\n"
+       },
+       "verify": {
+        "exit": 0,
+        "seconds": 0.791,
+        "verdict": "selected-passed (full suite not run)",
+        "new_failures": [],
+        "pre_existing": [],
+        "passed_files": 1,
+        "tail": ""
+       }
+      },
+      "uninstall": {
+       "exit": 0,
+       "tail": "repo-ai removed.\n",
+       "tracked_diff_from_base": "",
+       "untracked": ""
+      }
+     }
+    },
+    {
+     "commit": "43d6dc611e5fa1176da04c2553ffbeea4d560ad0",
+     "base": "5cb0323fa93ea9b70da385f521da8df70861963a",
+     "subject": "`metric`: Fix precision format (#159)",
+     "test_files": [
+      "tests/test_number.py"
+     ],
+     "steps": {
+      "quickstart": {
+       "exit": 0,
+       "seconds": 0.158,
+       "tail": "o-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+      },
+      "init": {
+       "exit": 0,
+       "seconds": 0.406,
+       "tail": "manize__humanize\n[  0.08s] scan complete: 74 indexable files (76 seen, 6 skipped, 0 unchanged)\n[  0.08s] parsing 74 files (stdlib ast + regex fallback)\n[  0.11s] found 2 manifests, 9 declared dependencies\n[  0.18s] git: HEAD@5cb0323, 799 commits, 148 contributors\n[  0.21s] analysis complete in 0.2s\n"
+      },
+      "record": {
+       "exit": 0,
+       "seconds": 2.889,
+       "tail": " copy: 76 files (copy, 0.0s)\n  recorded tests/test_filesize.py: pass (0.3s)\n  recorded tests/test_number.py: pass (0.4s)\n  recorded tests/test_i18n.py: pass (0.4s)\n  recorded tests/test_time.py: pass (1.0s)\n  measured the full suite as one process: 1.1s (pass), for choosing how to run later changes\n"
+      },
+      "test_without_fix": {
+       "native": {
+        "exit": 1,
+        "seconds": 1.103,
+        "tail": "Format specifier missing precision\n\u001b[31mFAILED\u001b[0m tests/test_number.py::\u001b[1mtest_metric[[10, '', 1]-10]\u001b[0m - ValueError: Format specifier missing precision\n\u001b[31mFAILED\u001b[0m tests/test_number.py::\u001b[1mtest_metric[[100, '', 1]-100]\u001b[0m - ValueError: Format specifier missing precision\n\u001b[31mFAILED\u001b[0m tests/test_number.py::\u001b[1mtest_metric[[100, '', 2]-100]\u001b[0m - ValueError: Format specifier missing precision\n\u001b[31m\u001b[31m\u001b[1m10 failed\u001b[0m, \u001b[32m538 passed\u001b[0m, \u001b[33m23 skipped\u001b[0m\u001b[31m in 0.93s\u001b[0m\u001b[0m\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 1.512,
+        "verdict": "regression",
+        "new_failures": [
+         {
+          "test_file": "tests/test_number.py",
+          "tests": [
+           "tests/test_number.py::test_metric[[1, '', 0]-1]",
+           "tests/test_number.py::test_metric[[1.5123, '', 0]-2]",
+           "tests/test_number.py::test_metric[[10, '', 0]-10]",
+           "tests/test_number.py::test_metric[[10, '', 1]-10]",
+           "tests/test_number.py::test_metric[[10.5123, '', 0]-11]",
+           "tests/test_number.py::test_metric[[10.5123, '', 1]-11]",
+           "tests/test_number.py::test_metric[[100, '', 0]-100]",
+           "tests/test_number.py::test_metric[[100, '', 1]-100]",
+           "tests/test_number.py::test_metric[[100, '', 2]-100]",
+           "tests/test_number.py::test_metric[[1000, '', 0]-1 k]"
+          ],
+          "status": "fail"
+         }
+        ],
+        "pre_existing": [],
+        "passed_files": 0,
+        "tail": ""
+       }
+      },
+      "fix": {
+       "native": {
+        "exit": 0,
+        "seconds": 0.938,
+        "tail": "m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m      [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m548 passed\u001b[0m, \u001b[33m23 skipped\u001b[0m\u001b[32m in 0.76s\u001b[0m\u001b[0m\n"
+       },
+       "verify": {
+        "exit": 0,
+        "seconds": 0.86,
+        "verdict": "selected-passed (full suite not run)",
+        "new_failures": [],
+        "pre_existing": [],
+        "passed_files": 1,
+        "tail": ""
+       }
+      },
+      "uninstall": {
+       "exit": 0,
+       "tail": "repo-ai removed.\n",
+       "tracked_diff_from_base": "",
+       "untracked": ""
+      }
+     }
+    }
+   ],
+   "rejected": [
+    {
+     "commit": "c11c08add7cfe22de4f27cd275c89a789c970dae",
+     "why": "base suite does not pass",
+     "exit": 1
+    },
+    {
+     "commit": "19b43d3b8d80959d75097d8e145690be811465bd",
+     "why": "base suite does not pass",
+     "exit": 1
+    },
+    {
+     "commit": "56b4fa812b0961cddc528764b5e2508cfe68e6f1",
+     "why": "base suite does not pass",
+     "exit": 1
+    },
+    {
+     "commit": "218a86ecf1e87802ec6ce31299c5933f0870c7d6",
+     "why": "base suite does not pass",
+     "exit": 1
+    },
+    {
+     "commit": "1399e049734bd7c779b38fa64dd02742b6aadb06",
+     "why": "base suite does not pass",
+     "exit": 1
+    }
+   ],
+   "tried": 7,
+   "status": "RAN"
+  },
+  {
+   "project": "more-itertools/more-itertools",
+   "ref": "v10.7.0",
+   "defects": [
+    {
+     "commit": "719a333bccd20ced15a7b4688fb6d47f05d8606d",
+     "base": "c8baa10e66de18662114b71edcfa32f5dfdd2881",
+     "subject": "Merge pull request #720 from elliotwutingfeng/unique_in_window",
+     "test_files": [
+      "tests/test_more.py"
+     ],
+     "steps": {
+      "quickstart": {
+       "exit": 0,
+       "seconds": 0.162,
+       "tail": "o-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+      },
+      "init": {
+       "exit": 0,
+       "seconds": 0.785,
+       "tail": "_more-itertools\n[  0.10s] scan complete: 31 indexable files (33 seen, 6 skipped, 0 unchanged)\n[  0.10s] parsing 31 files (stdlib ast + regex fallback)\n[  0.23s] found 5 manifests, 1 declared dependencies\n[  0.54s] git: HEAD@c8baa10, 1458 commits, 187 contributors\n[  0.58s] analysis complete in 0.6s\n"
+      },
+      "record": {
+       "exit": 1,
+       "seconds": 0.298,
+       "tail": "recording runtime evidence for 0 test file(s) in the bwrap sandbox, in a disposable copy of the working tree (runs the test suite)\u2026\n  command:   [none found]\nerror: no trustworthy test command; pass --test-command\n"
+      },
+      "test_without_fix": {
+       "native": {
+        "exit": 1,
+        "seconds": 1.607,
+        "tail": "additional elements.\nFirst extra element 4:\n4\n\n- [1, 2, 3, 4]\n+ [1, 2, 3, 4, 4, 4]\n?           ++++++\nSUBFAILED(expected=[0, 1, 0, 2, 3, 4, ...]) tests/test_more.py::UniqueInWindowTests::test_basic - AssertionError: Lists differ: [0, 1, 2, 3, 4, 2] != [0, 1, 0, 2, 3, 4, 2]\n\nFirst differing element 2:\n2\n0\n\nSecond list contains 1 additional elements.\nFirst extra element 6:\n2\n\n- [0, 1, 2, 3, 4, 2]\n+ [0, 1, 0, 2, 3, 4, 2]\n?        +++\n2 failed, 595 passed, 14 warnings, 2228 subtests passed in 1.43s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 0.636,
+        "verdict": null,
+        "new_failures": null,
+        "pre_existing": null,
+        "passed_files": null,
+        "tail": "error: no test command was established, so nothing can be run; pass --test-command \"...\" (it is shown before anything runs)\n"
+       }
+      },
+      "fix": {
+       "native": {
+        "exit": 0,
+        "seconds": 1.402,
+        "tail": "ests::test_basic\ntests/test_recipes.py::MatMulTests::test_m_by_n\ntests/test_recipes.py::MatMulTests::test_n_by_n\n  /home/runner/work/_temp/journey2/more-itertools__more-itertools/more_itertools/recipes.py:877: DeprecationWarning: batched will be removed in a future version of more-itertools. Use the standard library itertools.batched function instead\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n595 passed, 14 warnings, 2230 subtests passed in 1.23s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 0.809,
+        "verdict": null,
+        "new_failures": null,
+        "pre_existing": null,
+        "passed_files": null,
+        "tail": "error: no test command was established, so nothing can be run; pass --test-command \"...\" (it is shown before anything runs)\n"
+       }
+      },
+      "uninstall": {
+       "exit": 0,
+       "tail": "repo-ai removed.\n",
+       "tracked_diff_from_base": "",
+       "untracked": ""
+      }
+     }
+    },
+    {
+     "commit": "146113bb4bbe93df0e86000c4de820748d8bd139",
+     "base": "3ac895f9e065f993a35d05a072eabfa28a819cfd",
+     "subject": "Merge pull request #714 from pochmann/patch-6",
+     "test_files": [
+      "tests/test_more.py"
+     ],
+     "steps": {
+      "quickstart": {
+       "exit": 0,
+       "seconds": 0.176,
+       "tail": "o-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+      },
+      "init": {
+       "exit": 0,
+       "seconds": 0.793,
+       "tail": "_more-itertools\n[  0.10s] scan complete: 31 indexable files (33 seen, 6 skipped, 0 unchanged)\n[  0.10s] parsing 31 files (stdlib ast + regex fallback)\n[  0.24s] found 5 manifests, 1 declared dependencies\n[  0.55s] git: HEAD@3ac895f, 1449 commits, 187 contributors\n[  0.59s] analysis complete in 0.6s\n"
+      },
+      "record": {
+       "exit": 1,
+       "seconds": 0.305,
+       "tail": "recording runtime evidence for 0 test file(s) in the bwrap sandbox, in a disposable copy of the working tree (runs the test suite)\u2026\n  command:   [none found]\nerror: no trustworthy test command; pass --test-command\n"
+      },
+      "test_without_fix": {
+       "native": {
+        "exit": 1,
+        "seconds": 1.659,
+        "tail": "t_more.py::PartialProductTests::test_no_iterables - AssertionError: Tuples differ: () != ((),)\n\nSecond tuple contains 1 additional elements.\nFirst extra element 0:\n()\n\n- ()\n+ ((),)\nFAILED tests/test_more.py::PartialProductTests::test_one_iterable - AssertionError: Tuples differ: ('A', 'B', 'C', 'D') != (('A',), ('B',), ('C',), ('D',))\n\nFirst differing element 0:\n'A'\n('A',)\n\n- ('A', 'B', 'C', 'D')\n+ (('A',), ('B',), ('C',), ('D',))\n3 failed, 592 passed, 14 warnings, 2229 subtests passed in 1.47s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 0.614,
+        "verdict": null,
+        "new_failures": null,
+        "pre_existing": null,
+        "passed_files": null,
+        "tail": "error: no test command was established, so nothing can be run; pass --test-command \"...\" (it is shown before anything runs)\n"
+       }
+      },
+      "fix": {
+       "native": {
+        "exit": 0,
+        "seconds": 1.452,
+        "tail": "ests::test_basic\ntests/test_recipes.py::MatMulTests::test_m_by_n\ntests/test_recipes.py::MatMulTests::test_n_by_n\n  /home/runner/work/_temp/journey2/more-itertools__more-itertools/more_itertools/recipes.py:877: DeprecationWarning: batched will be removed in a future version of more-itertools. Use the standard library itertools.batched function instead\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n595 passed, 14 warnings, 2229 subtests passed in 1.27s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 0.852,
+        "verdict": null,
+        "new_failures": null,
+        "pre_existing": null,
+        "passed_files": null,
+        "tail": "error: no test command was established, so nothing can be run; pass --test-command \"...\" (it is shown before anything runs)\n"
+       }
+      },
+      "uninstall": {
+       "exit": 0,
+       "tail": "repo-ai removed.\n",
+       "tracked_diff_from_base": "",
+       "untracked": ""
+      }
+     }
+    }
+   ],
+   "rejected": [
+    {
+     "commit": "50cde16acafb216ee76957544fdf0dd2f28a9256",
+     "why": "tests pass without the fix"
+    },
+    {
+     "commit": "4bd0bd876273a8ff2171352c937b91a8c053d00b",
+     "why": "tests pass without the fix"
+    },
+    {
+     "commit": "9429fbe0b598641601ed3e889b04c04fd17cc01b",
+     "why": "tests pass without the fix"
+    }
+   ],
+   "tried": 5,
+   "status": "RAN"
+  },
+  {
+   "project": "pallets/itsdangerous",
+   "ref": "2.2.0",
+   "defects": [],
+   "rejected": [],
+   "tried": 0,
+   "status": "RAN"
+  },
+  {
+   "project": "marshmallow-code/marshmallow",
+   "ref": "4.0.0",
+   "defects": [
+    {
+     "commit": "de5e842aeaf7eacfa42e9231f8b18e0792851c45",
+     "base": "c7152171fbe7c12f5ac77800a43dc7ad8ae2e2cf",
+     "subject": "Check for fields declared as instances at class declaration rather than at instantiation (#2772)",
+     "test_files": [
+      "tests/test_schema.py"
+     ],
+     "steps": {
+      "quickstart": {
+       "exit": 0,
+       "seconds": 0.167,
+       "tail": "o-ai review --changed                       # pre-PR change passport\n    repo-ai learn status                           # what repo-ai learned and why\n    repo-ai privacy audit                          # what is stored where\n    repo-ai uninstall --agent claude --dry-run     # exact removal preview\n"
+      },
+      "init": {
+       "exit": 0,
+       "seconds": 0.935,
+       "tail": "_marshmallow\n[  0.16s] scan complete: 86 indexable files (94 seen, 13 skipped, 0 unchanged)\n[  0.16s] parsing 86 files (stdlib ast + regex fallback)\n[  0.31s] found 1 manifests, 13 declared dependencies\n[  0.61s] git: HEAD@c7152171, 3538 commits, 248 contributors\n[  0.73s] analysis complete in 0.7s\n"
+      },
+      "record": {
+       "exit": 0,
+       "seconds": 4.566,
+       "tail": "on.py: pass (1.1s)\n  recorded tests/test_utils.py: pass (0.4s)\n  recorded tests/test_serialization.py: pass (0.6s)\n  recorded tests/test_schema.py: pass (0.8s)\n  recorded tests/test_validate.py: pass (0.5s)\n  measured the full suite as one process: 1.7s (pass), for choosing how to run later changes\n"
+      },
+      "test_without_fix": {
+       "native": {
+        "exit": 1,
+        "seconds": 0.858,
+        "tail": "_____\n\nuser = <User Monty>\n\n    def test_fields_must_be_declared_as_instances(user):\n>       with pytest.raises(\n            TypeError, match='Field for \"name\" must be declared as a Field instance'\n        ):\nE       Failed: DID NOT RAISE TypeError\n\ntests/test_schema.py:540: Failed\n=========================== short test summary info ============================\nFAILED tests/test_schema.py::test_fields_must_be_declared_as_instances - Failed: DID NOT RAISE TypeError\n1 failed, 1103 passed in 0.65s\n"
+       },
+       "verify": {
+        "exit": 1,
+        "seconds": 1.624,
+        "verdict": "regression",
+        "new_failures": [
+         {
+          "test_file": "tests/test_schema.py",
+          "tests": [
+           "tests/test_schema.py::test_fields_must_be_declared_as_instances"
+          ],
+          "status": "fail"
+         }
+        ],
+        "pre_existing": [],
+        "passed_files": 0,
+        "tail": ""
+       }
+      },
+      "fix": {
+       "native": {
+        "exit": 0,
+        "seconds": 0.845,
+        "tail": "....................................................................... [ 71%]\n........................................................................ [ 78%]\n........................................................................ [ 84%]\n........................................................................ [ 91%]\n........................................................................ [ 97%]\n........................                                                 [100%]\n1104 passed in 0.63s\n"
+       },
+       "verify": {
+        "exit": 0,
+        "seconds": 1.882,
+        "verdict": "selected-passed (full suite not run)",
+        "new_failures": [],
+        "pre_existing": [],
+        "passed_files": 12,
+        "tail": ""
+       }
+      },
+      "uninstall": {
+       "exit": 0,
+       "tail": "repo-ai removed.\n",
+       "tracked_diff_from_base": "",
+       "untracked": ""
+      }
+     }
+    }
+   ],
+   "rejected": [
+    {
+     "commit": "9cddff67b733987fedc0ae37c1a4ed2eb61e89cb",
+     "why": "tests pass without the fix"
+    },
+    {
+     "commit": "01fab376b36b094484752f9825c2fffc2ba9252c",
+     "why": "tests pass without the fix"
+    },
+    {
+     "commit": "8f493e66b38d71269a8388b120b537a7fbd60ca8",
+     "why": "base suite does not pass",
+     "exit": 4
+    }
+   ],
+   "tried": 4,
+   "status": "RAN"
+  }
+ ]
+}

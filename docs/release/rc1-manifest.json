@@ -1,0 +1,361 @@
+{
+  "schema": "repo-ai.release-manifest/1",
+  "candidate": "0.8.0rc1",
+  "frozen": "2026-10-27",
+  "qualified": false,
+  "release_status": "blocked_pending_full_ci_of_xcode_corrected_candidate",
+  "content": {
+    "branch": "codex/rc1-completion-20261026",
+    "base_main": "903984a46efccba4d19550587372ce688653ecad",
+    "previous_candidate": "893b65db49c1784376837ae7a55db0bf6b4ce98e",
+    "code_head": "75a55bf67063392247c5efa9ad458bbf1a4dda46",
+    "src_tree": "1dc129aa879a4c7d53801f4b10ae1e9e3ed8f5f8",
+    "tests_tree": "8a6ebe8a4419f60f266492de139b76fea01ca2ce",
+    "final_commit_and_sdist": "external release-evidence.json and SHA256SUMS beside artifacts; not embedded in the sdist whose hash they record"
+  },
+  "packages": {
+    "wheel": {
+      "file": "repo_ai-0.8.0rc1-py3-none-any.whl",
+      "sha256": "c4787870a1b889aeb9fd5de45ccfd29cd6a9db4d9818c533cac6abc170f499a2",
+      "reproducible": true,
+      "build": "Python 3.12.14; build 1.6.1; hatchling 1.32.4; clean git archive; --no-isolation; SOURCE_DATE_EPOCH unset",
+      "contains_docs": false
+    },
+    "sdist": {
+      "reproducible_at_code_freeze": true,
+      "final_docs_build": "Reproducibility, exact commit and hashes recorded externally in release-evidence.json"
+    }
+  },
+  "qualification": {
+    "prior_authority": "Session A",
+    "prior_status": "CONDITIONAL_WITH_EXPLICIT_LIMITATIONS",
+    "prior_commit": "903984a46efccba4d19550587372ce688653ecad",
+    "heldout7": {
+      "status": "completed on prior commit; not rerun",
+      "projects": 5,
+      "runners": [
+        "pytest",
+        "node --test"
+      ],
+      "backend": "podman",
+      "false_assurances": 0,
+      "failing_states": 127,
+      "new_failure_classified_preexisting": 0,
+      "false_alarms": 0,
+      "runtime_no_miss_percent": 96.7,
+      "tree_unchanged": "234/234"
+    },
+    "delta_review": "Independent Codex continuation reviewer: PASS on static Apple launcher resolution, repository containment, tracked-target rejection, nonexecuting freshness, and fresh wheel; not new held-out qualification",
+    "exact_candidate_ci": "Pending full matrix of new candidate; targeted macOS diagnostic passed24 tests with identical src/tests trees",
+    "prooflab_certification": "blocked by prior safety stop; not retried or circumvented"
+  },
+  "ci": [
+    {
+      "run": 40246695220,
+      "head": "4d91b8557b381cba04360758f2220e7c345c2117",
+      "jobs": "13/13",
+      "macos": true,
+      "relation": "ancestor only"
+    },
+    {
+      "run": 40251611104,
+      "head": "765cc3ca8f3a560982dc16b285f7703e6d695521",
+      "pr_merge_commit": "3fde01dc44664381639f6e96751b2ad346e3a756",
+      "jobs": "12/12",
+      "macos": false,
+      "relation": "src and tests equal main 903984a; not this candidate"
+    },
+    {
+      "run": 40448692912,
+      "head": "893b65db49c1784376837ae7a55db0bf6b4ce98e",
+      "jobs": "12/13",
+      "macos": true,
+      "relation": "exact final candidate commit",
+      "conclusion": "failure",
+      "attempt": 1,
+      "macos_result": "1 failed, 1714 passed, 4 skipped, 8 xfailed",
+      "failure": "test_status_json_names_the_false_proof expected supported, received incomplete; cause not established"
+    },
+    {
+      "run": 40448692912,
+      "attempt": 2,
+      "head": "893b65db49c1784376837ae7a55db0bf6b4ce98e",
+      "jobs": "12 prior successful results copied; macOS retry cancelled",
+      "conclusion": "cancelled",
+      "relation": "unchanged final candidate",
+      "reason": "Codex watchdog miscounted copied prior jobs as new executions; cancelled conservatively before diagnostic result",
+      "new_billable_minutes": 2,
+      "estimated_additional_usd": 0.124
+    },
+    {
+      "run": 40448692912,
+      "attempt": 3,
+      "head": "893b65db49c1784376837ae7a55db0bf6b4ce98e",
+      "jobs": "12 inherited passes; unchanged macOS retry failed identically",
+      "conclusion": "failure",
+      "macos_result": "1 failed, 1714 passed, 4 skipped, 8 xfailed;1023.84s",
+      "reason": "test_status_json_names_the_false_proof: incomplete instead of supported; underlying reason still truncated"
+    },
+    {
+      "run": 40457826905,
+      "head": "658443c4f3094ea18174f0e81d82e9c402845010",
+      "kind": "diagnostic only",
+      "conclusion": "failure",
+      "relation": "source/tests equal893b65d; full passports exposed missing per-test reports"
+    },
+    {
+      "run": 40459287275,
+      "head": "35674575df5c090fa0ccffb09588ebca295f2d1b",
+      "kind": "diagnostic only",
+      "conclusion": "failure",
+      "relation": "source/tests equal893b65d; xcrun error hash exactly matched passports; direct runtime startup succeeded"
+    },
+    {
+      "run": 40469522924,
+      "head": "19a81d61303d679d9d629f1479f53d36c340b113",
+      "kind": "diagnostic only",
+      "conclusion": "success",
+      "result": "24 passed in19.02s",
+      "relation": "src/tests equal75a55bf; original failing module plus18 launcher regressions; not full qualification"
+    }
+  ],
+  "not_rerun_in_ci": [
+    "Full matrix after Apple launcher correction75a55bf; targeted diagnostic only"
+  ],
+  "local": [
+    {
+      "check": "failing-first regressions",
+      "commit": "b209166",
+      "result": "8 failed as expected"
+    },
+    {
+      "check": "initial focused corrective suite",
+      "result": "58 passed, 3 sandbox-dependent skips"
+    },
+    {
+      "check": "first interrupted full suite",
+      "result": "778 passed, 2 xfailed, 5 failed; template corrected; four environment failures passed with explicit test virtualenv"
+    },
+    {
+      "check": "full host suite",
+      "commit": "7e576878682266b09c1f2af5cb4df40c6ebeac14",
+      "result": "1729 passed, 8 xfailed",
+      "environment": {
+        "platform": "macOS-26.5.1-arm64-arm-64bit",
+        "macos": "26.5.1",
+        "machine": "arm64",
+        "python": "3.12.14"
+      },
+      "duration_seconds": 1994.79
+    },
+    {
+      "check": "preliminary wheel journey",
+      "result": "21 checks passed"
+    },
+    {
+      "check": "final wheel journey",
+      "result": "27 checks passed",
+      "wheel_sha256": "21c3cd1f4faa1421af22029699a80a92f9d6c9301c4847ec6b9e7080dd99428b",
+      "runners": [
+        "pytest",
+        "node --test"
+      ],
+      "backend": "macOS seatbelt"
+    },
+    {
+      "check": "retrieval regression benchmark",
+      "cases": 26,
+      "recall_at_5": 1.0,
+      "mrr": 0.942,
+      "false_injection_rate": 0
+    },
+    {
+      "check": "artifact byte audit at code freeze",
+      "commit": "7e576878682266b09c1f2af5cb4df40c6ebeac14",
+      "result": "1907 wheel source/eval files and 2167 sdist git files match; 1911 hashed RECORD entries valid (plus RECORD itself); eight upstream license files present; no excluded research data"
+    },
+    {
+      "check": "final lint/type/plugin recheck",
+      "commit": "7e576878682266b09c1f2af5cb4df40c6ebeac14",
+      "result": "ruff passed; mypy passed on 93 source files; plugin bundle current; git diff --check passed"
+    },
+    {
+      "check": "failed CI scenario diagnosis",
+      "result": "status module6/6 passed; ten separate executions of failing test passed",
+      "driver": "Python3.13.14",
+      "scenario": "Apple Python3.9.6 via fixture PATH",
+      "environment": "macOS26.5.1; differs from CI macOS26.6.2",
+      "interpretation": "not reproduced; no root cause or confirmed infrastructure flake"
+    },
+    {
+      "check": "Apple launcher regressions before fix",
+      "commit": "893b65d",
+      "result": "13 failed,1 passed; initial test set"
+    },
+    {
+      "check": "review finding regression",
+      "result": "canonical launcher self-reference failed before final correction"
+    },
+    {
+      "check": "final Apple launcher regressions",
+      "commit": "75a55bf",
+      "result": "18 passed"
+    },
+    {
+      "check": "focused interpreter/security/freshness/status suite",
+      "result": "74 passed before canonical self-reference correction"
+    },
+    {
+      "check": "full host suite on corrected frozen source",
+      "commit": "75a55bf67063392247c5efa9ad458bbf1a4dda46",
+      "result": "1745 passed,2 skipped,8 xfailed",
+      "duration_seconds": 1989.51,
+      "environment": {
+        "platform": "macOS26.5.1 arm64",
+        "python": "3.13.14",
+        "sandbox": "seatbelt"
+      },
+      "skips": "two real-Ruff capability checks: Ruff absent from PATH; both passed separately with installed Ruff (2 passed in3.84s)"
+    },
+    {
+      "check": "corrected installed wheel journey",
+      "result": "27 checks passed",
+      "wheel_sha256": "c4787870a1b889aeb9fd5de45ccfd29cd6a9db4d9818c533cac6abc170f499a2",
+      "runners": [
+        "pytest",
+        "node --test"
+      ],
+      "backend": "macOS seatbelt"
+    },
+    {
+      "check": "corrected source quality",
+      "result": "Ruff passed; mypy93 source files passed; plugin bundle current; pip check passed; git diff --check passed"
+    }
+  ],
+  "reviews": [
+    {
+      "authority": "Independent Codex read-only reviewer",
+      "target": "7e576878682266b09c1f2af5cb4df40c6ebeac14",
+      "result": "PASS after missing/malformed host identity and unreadable retained directory corrections"
+    },
+    {
+      "authority": "Independent Codex read-only reviewer",
+      "target": "wheel 21c3cd1f4faa1421af22029699a80a92f9d6c9301c4847ec6b9e7080dd99428b",
+      "result": "PASS: 1907 source/eval files byte-identical to git; 1912 RECORD entries valid; metadata, labels, notices and exclusions checked"
+    },
+    {
+      "authority": "Session A",
+      "target": "8556495 historical candidate",
+      "result": "recovered suite: 1 failed, 1707 passed, 6 xfailed; provenance test received RECORD digest only"
+    },
+    {
+      "authority": "Independent Codex continuation reviewer",
+      "target": "75a55bf67063392247c5efa9ad458bbf1a4dda46",
+      "result": "PASS after canonical self-reference correction;18 regressions independently passed"
+    },
+    {
+      "authority": "Independent Codex continuation reviewer",
+      "target": "wheel c4787870a1b889aeb9fd5de45ccfd29cd6a9db4d9818c533cac6abc170f499a2",
+      "result": "PASS:1907 source/eval files match git;1912 RECORD entries validate; only execute.py and RECORD differ from previous wheel; metadata/licenses/exclusions unchanged"
+    }
+  ],
+  "supported_scope": [
+    "local repository intelligence and agent setup",
+    "pytest and node --test verification (prior held-out qualification in podman only)",
+    "host sandbox implementations: macOS seatbelt, Linux bubblewrap (suite/CI evidence, no host holdout)",
+    "freshness checks and opt-in completion gate reading"
+  ],
+  "experimental": [
+    "ProofLab: NOT QUALIFIED, no automatic hook or gate use",
+    "capability discovery and plugin inspection",
+    "third-party skills",
+    "--smart, learning and optimization",
+    "adaptive verification shapes/reuse and --image",
+    "agent benefit of completion gate and full feature set"
+  ],
+  "not_qualified": [
+    "unittest-only projects",
+    "TypeScript",
+    "Windows containers",
+    "host sandbox held-out behavior"
+  ],
+  "unsupported": [
+    "Windows host sandbox",
+    "Jest/Vitest/Mocha attribution",
+    "multi-runner monorepos"
+  ],
+  "excluded": [
+    "PR #52 evidence graph",
+    "PR #57 retrieval prototype",
+    "Mission Control",
+    "sealed ProofLab certification work"
+  ],
+  "known_false_proofs": [
+    {
+      "id": "always-equal-class",
+      "feature": "prove",
+      "open": true
+    },
+    {
+      "id": "swallowed-assertion",
+      "feature": "prove",
+      "open": true
+    },
+    {
+      "id": "importorskip-zero-entry-points",
+      "feature": "prove",
+      "open": true
+    }
+  ],
+  "known_expected_failures": [
+    "three ProofLab scope controls",
+    "three open ProofLab false-proof classes",
+    "two capability matcher cases",
+    "Windows tree-identity instability (R13, platform-specific non-strict)"
+  ],
+  "spending": {
+    "cap_usd": 10,
+    "prior_estimated_spent_usd": 8.61,
+    "prior_estimated_remaining_usd": 1.39,
+    "continuation_actions_runs": 4,
+    "continuation_paid_model_evaluations": 0,
+    "billing_verified": true,
+    "billing_limit": "GitHub user scope authorized; billing API readable",
+    "historical_full_run": {
+      "linux_minutes": 42,
+      "windows_minutes": 37,
+      "macos_minutes": 16,
+      "estimated_usd": 2.21
+    },
+    "additional_final_ci_authorization_usd": 3.5,
+    "final_ci_estimate_usd": 3.148,
+    "additional_allowance_remaining_estimate_usd": 0.352,
+    "pre_run_monthly_repo_ai_net_usd": 87.716,
+    "final_ci_attempts": 3,
+    "cost_basis": "Initial matrix1.722 + cancelled macOS retry.124 + unchanged failed retry1.116 + three one-minute macOS diagnostics.186; estimates at verified current rates, invoice may lag",
+    "approved_retry": "User approved $3.50 cumulative cap; one macOS retry, attempt3",
+    "guard_review": "Corrected copied-job accounting and launch-error lifecycle independently reviewed; no code or artifact change",
+    "diagnostic_runs": 3
+  },
+  "publication": {
+    "private": true,
+    "tag_created": false,
+    "release_published": false,
+    "public_registry": false,
+    "draft_pr": "https://github.com/hxxtsxxh/repo-ai/pull/60",
+    "existing_v0_7_7_tag_object": "89112c0c550b0cfd09ed89eacdee186496e71a06"
+  },
+  "final_independent_review": {
+    "verdict": "BLOCKED",
+    "reason": "Full CI still required for new candidate; source and wheel review passed; targeted CI passed",
+    "source_packaging_manifest_blockers": [],
+    "scope": "bounded read-only review; not new held-out qualification; ProofLab excluded"
+  },
+  "resolved_ci_failure": {
+    "test": "test_status_json_names_the_false_proof",
+    "cause": "Apple system Python launcher invokes xcrun inside sandbox; Xcode developer directory unreadable",
+    "stderr_sha256": "85cbcf16e35fcf0a562bda5c1bbec3bb674eded646e7882cfc3ac6edb3c92db1",
+    "correction": "Resolve exact Darwin /usr/bin/python3 statically to selected runtime; preserve invalid-selection fail-closed behavior, nonexecuting freshness, virtualenv paths and repository safeguards; sandbox permissions unchanged",
+    "verification": "matching original stderr hash; direct-runtime probe;18 local regressions;24 CI diagnostic tests"
+  }
+}

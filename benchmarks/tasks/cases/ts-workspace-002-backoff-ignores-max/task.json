@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-002-backoff-ignores-max",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "A flaky job that has been failing all weekend is now waiting *days* between attempts.\nThe retry policy is supposed to top out at the configured maximum delay (30s unless\noverridden), but the delay just keeps doubling forever.",
+  "setup": [
+    {
+      "file": "packages/core/src/retry.ts",
+      "find": "const capped = Math.min(exponential, opts.maxMs);",
+      "replace": "const capped = exponential;"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/retry.ts",
+      "find": "const capped = exponential;",
+      "replace": "const capped = Math.min(exponential, opts.maxMs);"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/retry.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_backoff_cap.test.ts",
+      "dest": "packages/core/test/hidden_backoff_cap.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/core/test/hidden_backoff_cap.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

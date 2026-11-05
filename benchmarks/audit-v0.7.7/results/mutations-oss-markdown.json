@@ -1,0 +1,317 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "markdown/blockprocessors.py",
+   "func": "__init__",
+   "start": 452,
+   "end": 454,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_extensions",
+    "tests.test_legacy",
+    "tests.test_syntax.blocks.test_blockquotes",
+    "tests.test_syntax.blocks.test_code_blocks",
+    "tests.test_syntax.blocks.test_headers",
+    "tests.test_syntax.blocks.test_hr",
+    "tests.test_syntax.blocks.test_html_blocks",
+    "tests.test_syntax.blocks.test_paragraphs",
+    "tests.test_syntax.blocks.test_reference_links",
+    "tests.test_syntax.blocks.test_ul",
+    "tests.test_syntax.extensions.test_abbr",
+    "tests.test_syntax.extensions.test_admonition",
+    "tests.test_syntax.extensions.test_attr_list",
+    "tests.test_syntax.extensions.test_code_hilite",
+    "tests.test_syntax.extensions.test_def_list",
+    "tests.test_syntax.extensions.test_fenced_code",
+    "tests.test_syntax.extensions.test_footnotes",
+    "tests.test_syntax.extensions.test_legacy_attrs",
+    "tests.test_syntax.extensions.test_legacy_em",
+    "tests.test_syntax.extensions.test_md_in_html",
+    "tests.test_syntax.extensions.test_smarty",
+    "tests.test_syntax.extensions.test_tables",
+    "tests.test_syntax.extensions.test_toc",
+    "tests.test_syntax.inline.test_autolinks",
+    "tests.test_syntax.inline.test_code",
+    "tests.test_syntax.inline.test_emphasis",
+    "tests.test_syntax.inline.test_entities",
+    "tests.test_syntax.inline.test_images",
+    "tests.test_syntax.inline.test_links",
+    "tests.test_syntax.inline.test_raw_html"
+   ]
+  },
+  {
+   "file": "markdown/extensions/toc.py",
+   "func": "__init__",
+   "start": 243,
+   "end": 265,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_legacy",
+    "tests.test_syntax.extensions.test_smarty",
+    "tests.test_syntax.extensions.test_toc"
+   ]
+  },
+  {
+   "file": "markdown/inlinepatterns.py",
+   "func": "handleMatch",
+   "start": 306,
+   "end": 306,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "markdown/extensions/md_in_html.py",
+   "func": "get_state",
+   "start": 91,
+   "end": 108,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_legacy",
+    "tests.test_syntax.extensions.test_md_in_html"
+   ]
+  },
+  {
+   "file": "markdown/htmlparser.py",
+   "func": "get_starttag_text",
+   "start": 404,
+   "end": 404,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_legacy",
+    "tests.test_syntax.blocks.test_code_blocks",
+    "tests.test_syntax.blocks.test_html_blocks",
+    "tests.test_syntax.extensions.test_abbr",
+    "tests.test_syntax.extensions.test_code_hilite",
+    "tests.test_syntax.extensions.test_fenced_code",
+    "tests.test_syntax.extensions.test_footnotes",
+    "tests.test_syntax.extensions.test_md_in_html",
+    "tests.test_syntax.extensions.test_smarty",
+    "tests.test_syntax.extensions.test_toc",
+    "tests.test_syntax.inline.test_autolinks",
+    "tests.test_syntax.inline.test_code",
+    "tests.test_syntax.inline.test_emphasis",
+    "tests.test_syntax.inline.test_images",
+    "tests.test_syntax.inline.test_links",
+    "tests.test_syntax.inline.test_raw_html"
+   ]
+  },
+  {
+   "file": "markdown/preprocessors.py",
+   "func": "run",
+   "start": 70,
+   "end": 75,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_extensions",
+    "tests.test_legacy",
+    "tests.test_syntax.blocks.test_blockquotes",
+    "tests.test_syntax.blocks.test_code_blocks",
+    "tests.test_syntax.blocks.test_headers",
+    "tests.test_syntax.blocks.test_hr",
+    "tests.test_syntax.blocks.test_html_blocks",
+    "tests.test_syntax.blocks.test_paragraphs",
+    "tests.test_syntax.blocks.test_reference_links",
+    "tests.test_syntax.blocks.test_ul",
+    "tests.test_syntax.extensions.test_abbr",
+    "tests.test_syntax.extensions.test_admonition",
+    "tests.test_syntax.extensions.test_attr_list",
+    "tests.test_syntax.extensions.test_code_hilite",
+    "tests.test_syntax.extensions.test_def_list",
+    "tests.test_syntax.extensions.test_fenced_code",
+    "tests.test_syntax.extensions.test_footnotes",
+    "tests.test_syntax.extensions.test_legacy_attrs",
+    "tests.test_syntax.extensions.test_legacy_em",
+    "tests.test_syntax.extensions.test_md_in_html",
+    "tests.test_syntax.extensions.test_smarty",
+    "tests.test_syntax.extensions.test_tables",
+    "tests.test_syntax.extensions.test_toc",
+    "tests.test_syntax.inline.test_autolinks",
+    "tests.test_syntax.inline.test_code",
+    "tests.test_syntax.inline.test_emphasis",
+    "tests.test_syntax.inline.test_entities",
+    "tests.test_syntax.inline.test_images",
+    "tests.test_syntax.inline.test_links",
+    "tests.test_syntax.inline.test_raw_html"
+   ]
+  },
+  {
+   "file": "markdown/serializers.py",
+   "func": "_serialize_html",
+   "start": 120,
+   "end": 192,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_extensions",
+    "tests.test_legacy",
+    "tests.test_syntax.blocks.test_blockquotes",
+    "tests.test_syntax.blocks.test_code_blocks",
+    "tests.test_syntax.blocks.test_headers",
+    "tests.test_syntax.blocks.test_hr",
+    "tests.test_syntax.blocks.test_html_blocks",
+    "tests.test_syntax.blocks.test_paragraphs",
+    "tests.test_syntax.blocks.test_reference_links",
+    "tests.test_syntax.blocks.test_ul",
+    "tests.test_syntax.extensions.test_abbr",
+    "tests.test_syntax.extensions.test_admonition",
+    "tests.test_syntax.extensions.test_attr_list",
+    "tests.test_syntax.extensions.test_code_hilite",
+    "tests.test_syntax.extensions.test_def_list",
+    "tests.test_syntax.extensions.test_fenced_code",
+    "tests.test_syntax.extensions.test_footnotes",
+    "tests.test_syntax.extensions.test_legacy_attrs",
+    "tests.test_syntax.extensions.test_legacy_em",
+    "tests.test_syntax.extensions.test_md_in_html",
+    "tests.test_syntax.extensions.test_smarty",
+    "tests.test_syntax.extensions.test_tables",
+    "tests.test_syntax.extensions.test_toc",
+    "tests.test_syntax.inline.test_autolinks",
+    "tests.test_syntax.inline.test_code",
+    "tests.test_syntax.inline.test_emphasis",
+    "tests.test_syntax.inline.test_entities",
+    "tests.test_syntax.inline.test_images",
+    "tests.test_syntax.inline.test_links",
+    "tests.test_syntax.inline.test_raw_html"
+   ]
+  },
+  {
+   "file": "markdown/inlinepatterns.py",
+   "func": "makeTag",
+   "start": 1267,
+   "end": 1272,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_syntax.extensions.test_legacy_attrs",
+    "tests.test_syntax.inline.test_images"
+   ]
+  },
+  {
+   "file": "markdown/extensions/footnotes.py",
+   "func": "setFootnote",
+   "start": 179,
+   "end": 179,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_legacy",
+    "tests.test_syntax.extensions.test_footnotes",
+    "tests.test_syntax.extensions.test_md_in_html",
+    "tests.test_syntax.extensions.test_toc"
+   ]
+  },
+  {
+   "file": "markdown/inlinepatterns.py",
+   "func": "unescape",
+   "start": 237,
+   "end": 251,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_extensions",
+    "tests.test_legacy",
+    "tests.test_syntax.blocks.test_html_blocks",
+    "tests.test_syntax.blocks.test_reference_links",
+    "tests.test_syntax.extensions.test_abbr",
+    "tests.test_syntax.extensions.test_footnotes",
+    "tests.test_syntax.extensions.test_legacy_attrs",
+    "tests.test_syntax.extensions.test_md_in_html",
+    "tests.test_syntax.extensions.test_smarty",
+    "tests.test_syntax.extensions.test_toc",
+    "tests.test_syntax.inline.test_autolinks",
+    "tests.test_syntax.inline.test_emphasis",
+    "tests.test_syntax.inline.test_images",
+    "tests.test_syntax.inline.test_links",
+    "tests.test_syntax.inline.test_raw_html"
+   ]
+  },
+  {
+   "file": "markdown/util.py",
+   "func": "reset",
+   "start": 246,
+   "end": 247,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_extensions",
+    "tests.test_legacy",
+    "tests.test_syntax.blocks.test_blockquotes",
+    "tests.test_syntax.blocks.test_code_blocks",
+    "tests.test_syntax.blocks.test_headers",
+    "tests.test_syntax.blocks.test_hr",
+    "tests.test_syntax.blocks.test_html_blocks",
+    "tests.test_syntax.blocks.test_paragraphs",
+    "tests.test_syntax.blocks.test_reference_links",
+    "tests.test_syntax.blocks.test_ul",
+    "tests.test_syntax.extensions.test_abbr",
+    "tests.test_syntax.extensions.test_admonition",
+    "tests.test_syntax.extensions.test_attr_list",
+    "tests.test_syntax.extensions.test_code_hilite",
+    "tests.test_syntax.extensions.test_def_list",
+    "tests.test_syntax.extensions.test_fenced_code",
+    "tests.test_syntax.extensions.test_footnotes",
+    "tests.test_syntax.extensions.test_legacy_attrs",
+    "tests.test_syntax.extensions.test_legacy_em",
+    "tests.test_syntax.extensions.test_md_in_html",
+    "tests.test_syntax.extensions.test_smarty",
+    "tests.test_syntax.extensions.test_tables",
+    "tests.test_syntax.extensions.test_toc",
+    "tests.test_syntax.inline.test_autolinks",
+    "tests.test_syntax.inline.test_code",
+    "tests.test_syntax.inline.test_emphasis",
+    "tests.test_syntax.inline.test_entities",
+    "tests.test_syntax.inline.test_images",
+    "tests.test_syntax.inline.test_links",
+    "tests.test_syntax.inline.test_raw_html"
+   ]
+  },
+  {
+   "file": "markdown/inlinepatterns.py",
+   "func": "handleMatch",
+   "start": 496,
+   "end": 502,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "markdown/extensions/abbr.py",
+   "func": "__init__",
+   "start": 44,
+   "end": 54,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_legacy",
+    "tests.test_syntax.extensions.test_abbr",
+    "tests.test_syntax.extensions.test_md_in_html"
+   ]
+  },
+  {
+   "file": "markdown/treeprocessors.py",
+   "func": "run",
+   "start": 72,
+   "end": 72,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "markdown/extensions/wikilinks.py",
+   "func": "handleMatch",
+   "start": 76,
+   "end": 87,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_extensions",
+    "tests.test_legacy"
+   ]
+  },
+  {
+   "file": "markdown/extensions/smarty.py",
+   "func": "educateQuotes",
+   "start": 236,
+   "end": 257,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_extensions",
+    "tests.test_legacy",
+    "tests.test_syntax.extensions.test_smarty"
+   ]
+  }
+ ]
+}

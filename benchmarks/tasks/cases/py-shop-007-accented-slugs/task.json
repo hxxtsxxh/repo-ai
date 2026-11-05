@@ -1,0 +1,41 @@
+{
+  "id": "py-shop-007-accented-slugs",
+  "base": "py-shop",
+  "language": "python",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Product URLs for names with accents are mangled. The \"Crème Brûlée Mug\" lives at\n`/products/crme-brle-mug` instead of `/products/creme-brulee-mug`, which is what\nmarketing printed on the flyers. Accented letters should turn into their plain\nletter, not disappear.",
+  "setup": [
+    {
+      "file": "shop/utils/slugify.py",
+      "find": "normalized = unicodedata.normalize(\"NFKD\", text)",
+      "replace": "normalized = text"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/utils/slugify.py",
+      "find": "normalized = text",
+      "replace": "normalized = unicodedata.normalize(\"NFKD\", text)"
+    }
+  ],
+  "gold_files": [
+    "shop/utils/slugify.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_accent_slugs.py",
+      "dest": "tests/test_hidden_accent_slugs.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_accent_slugs"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

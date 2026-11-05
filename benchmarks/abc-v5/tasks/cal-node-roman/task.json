@@ -1,0 +1,48 @@
+{
+  "acceptance_tests": [
+    "roman.acceptance.test.js"
+  ],
+  "cluster": "node_roman_numerals",
+  "id": "cal-node-roman",
+  "language": "node",
+  "map_policy": "requirements.json and acceptance/ were written from the statement only and committed (stage-1 freeze, manifest.w.json) before any candidate, decoy or hidden test existed.",
+  "prompt": "In roman.js (CommonJS), fix fromRoman(s) so that the module meets every requirement below. R1: fromRoman understands subtractive pairs IV 4, IX 9, XL 40, XC 90, CD 400 and CM 900, so fromRoman('MCMXCIV') === 1994. R2: fromRoman accepts only canonical numerals, i.e. exactly the strings toRoman returns for 1..3999; any other string of Roman letters (for example 'IIII', 'VV', 'IC', 'XM', 'IIV', 'MMMM', 'VX') throws RangeError. R3: fromRoman throws TypeError when its argument is not a string, and RangeError for '' or for any character other than the uppercase letters I V X L C D M (so lowercase 'iv' throws RangeError). R4: toRoman is unchanged: toRoman(1994) === 'MCMXCIV', toRoman(3999) === 'MMMCMXCIX', and 0, 4000 or 1.5 throw RangeError.",
+  "provenance": {
+    "author": "AI agent (Claude Opus 5.5 session acting as abc-v5 calibration author); single author for every role",
+    "kind": "synthetic",
+    "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+    "note": "SYNTHETIC calibration task. Not upstream code, never confirmatory, never reused in a confirmatory split.",
+    "upstream_commit": null,
+    "upstream_url": null
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "kind": "change",
+      "text": "fromRoman understands subtractive pairs IV 4, IX 9, XL 40, XC 90, CD 400 and CM 900, so fromRoman('MCMXCIV') === 1994"
+    },
+    {
+      "id": "R2",
+      "kind": "change",
+      "text": "fromRoman accepts only canonical numerals, i.e. exactly the strings toRoman returns for 1..3999; any other string of Roman letters (for example 'IIII', 'VV', 'IC', 'XM', 'IIV', 'MMMM', 'VX') throws RangeError"
+    },
+    {
+      "id": "R3",
+      "kind": "change",
+      "text": "fromRoman throws TypeError when its argument is not a string, and RangeError for '' or for any character other than the uppercase letters I V X L C D M (so lowercase 'iv' throws RangeError)"
+    },
+    {
+      "id": "R4",
+      "kind": "preserve",
+      "text": "toRoman is unchanged: toRoman(1994) === 'MCMXCIV', toRoman(3999) === 'MMMCMXCIX', and 0, 4000 or 1.5 throw RangeError"
+    }
+  ],
+  "shipped_tests": [
+    "roman.test.js"
+  ],
+  "split": "calibration",
+  "test_command": "node --test",
+  "write_paths": [
+    "roman.js"
+  ]
+}

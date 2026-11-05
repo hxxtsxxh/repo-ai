@@ -1,0 +1,40 @@
+{
+  "id": "ts-workspace-005-cursor-pagination-gaps",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "bugfix",
+  "difficulty": "medium",
+  "prompt": "Paging through `GET /jobs` loses jobs. With 5 jobs and `limit=2`, following\n`nextCursor` gives me jobs 1 and 2, then 4 and 5 -- job 3 never shows up. The CLI's\n`jobs list --all --limit 2` is missing the same jobs.",
+  "setup": [
+    {
+      "file": "packages/api/src/pagination.ts",
+      "find": "nextCursor: hasMore ? encodeCursor(page[page.length - 1].id) : null,",
+      "replace": "nextCursor: hasMore ? encodeCursor(items[start + limit].id) : null,"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/api/src/pagination.ts",
+      "find": "nextCursor: hasMore ? encodeCursor(items[start + limit].id) : null,",
+      "replace": "nextCursor: hasMore ? encodeCursor(page[page.length - 1].id) : null,"
+    }
+  ],
+  "gold_files": [
+    "packages/api/src/pagination.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_cursor_walk.test.ts",
+      "dest": "packages/api/test/hidden_cursor_walk.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/api/test/hidden_cursor_walk.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

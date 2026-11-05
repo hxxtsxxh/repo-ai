@@ -1,0 +1,48 @@
+{
+  "id": "java-ledger-001-month-end-balance",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "bugfix",
+  "difficulty": "easy",
+  "prompt": "Month-end numbers don't line up. Whenever there is a transaction dated on the last day\nof the month, the April statement's opening balance doesn't match March's closing\nbalance. Asking the ledger for the balance of ACC-0001 as of 2026-03-31 also leaves out\nthat day's transactions -- \"as of\" a date should include the date itself.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "            if (!tx.date().isAfter(asOf)) {",
+      "replace": "            if (tx.date().isBefore(asOf)) {"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "            if (tx.date().isBefore(asOf)) {",
+      "replace": "            if (!tx.date().isAfter(asOf)) {"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/Ledger.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenMonthEndTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenMonthEndTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenMonthEndTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

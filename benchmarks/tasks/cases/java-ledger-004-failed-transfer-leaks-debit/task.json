@@ -1,0 +1,68 @@
+{
+  "id": "java-ledger-004-failed-transfer-leaks-debit",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "integration",
+  "difficulty": "hard",
+  "prompt": "Transferring money into a frozen account correctly fails with\n\n    com.example.ledger.AccountFrozenException: account ACC-0002 is frozen\n\nbut by then the money has already left the source account: after the failed transfer,\nchecking is $100 short and nothing in the journal explains where it went. Other\nrejected postings seem to behave the same way (e.g. a currency mismatch on a later\nentry of a multi-entry transaction, or a rejected row during CSV import).",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "        Map<String, Money> pending = new LinkedHashMap<>();\n        for (Entry entry : tx.entries()) {\n            Account account = account(entry.accountId());",
+      "replace": "        for (Entry entry : tx.entries()) {\n            Account account = account(entry.accountId());"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "            Money current = pending.getOrDefault(account.id(), balances.get(account.id()));",
+      "replace": "            Money current = balances.get(account.id());"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "            pending.put(account.id(), next);\n        }\n        balances.putAll(pending);",
+      "replace": "            balances.put(account.id(), next);\n        }"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "            balances.put(account.id(), next);\n        }",
+      "replace": "            pending.put(account.id(), next);\n        }\n        balances.putAll(pending);"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "            Money current = balances.get(account.id());",
+      "replace": "            Money current = pending.getOrDefault(account.id(), balances.get(account.id()));"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/Ledger.java",
+      "find": "        for (Entry entry : tx.entries()) {\n            Account account = account(entry.accountId());",
+      "replace": "        Map<String, Money> pending = new LinkedHashMap<>();\n        for (Entry entry : tx.entries()) {\n            Account account = account(entry.accountId());"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/Ledger.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenAtomicPostingTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenAtomicPostingTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenAtomicPostingTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

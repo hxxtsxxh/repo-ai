@@ -1,0 +1,128 @@
+{
+  "content_sha256": "a1f623eeeb872deb0156cc7f8651d049761a62a4015ef36ed9a0a61da9496db5",
+  "manifest_version": 1,
+  "policy": "Calibration only. Nothing in this manifest is confirmatory and no calibration task, cluster, candidate or hidden test may be reused in a confirmatory split. No live model or provider is invoked by any file here. Any change after a freeze is a dated amendment with a new manifest version.",
+  "seed": 20261029,
+  "sha256": {
+    "PREREGISTRATION.md": "297a79df57547a8cabd6c2c2d98fa9ce5f30adf5393c407016d9a27df55e50aa",
+    "make_manifest.py": "b11dfdc1d2184fae31b55b84d705a94c0ed520fbb11c590cc07f65b2a390e95f",
+    "manifest.schema.json": "e81b9c02c97774fdb88a9e4a378cb68e26503ec34f20261cd7d790c1b2a377f4",
+    "power.py": "b11c83e1c225842d233dcf91ba616ab30f25318f4875f97758170d8e5201b084",
+    "tasks/cal-node-chunk/acceptance/chunk.acceptance.test.js": "dd6c57409d22a964831b73334b1c505051527d8a171363bdb9de58368ee063dc",
+    "tasks/cal-node-chunk/followup/chunk.followup.test.js": "f5a7dfd9616a1809b748d82f73d060ea815b508bcb4b3fb8eed1f58b6384a666",
+    "tasks/cal-node-chunk/followup/map.json": "b230e362e90db30f04e9cd8f0b8bad622d27e2194412274009fe05a511bc94d7",
+    "tasks/cal-node-chunk/repo/chunk.js": "e4d1655964d2f53aae96c7b100b657ceec2f13d49fb04d05f5acef29de7a653b",
+    "tasks/cal-node-chunk/repo/chunk.test.js": "1158a91a8093cd9b467d292d219d18eb8fb2686ebbc2638e7cc95d61ab229237",
+    "tasks/cal-node-chunk/repo/package.json": "ad4bcad3fb4fa4e0c33cfc41313cee82f79832c841471db21991498ab46a9dbe",
+    "tasks/cal-node-chunk/requirements.json": "c81a5eb9e498b6e554376de283b1f211dd5bea07caf5aa470ff7e66cfda41905",
+    "tasks/cal-node-chunk/task.json": "c04a817cfe8de461018a58a9f24664b7455406b43f654e9a5015aeaf2eec44b8",
+    "tasks/cal-node-roman/acceptance/roman.acceptance.test.js": "cad4f30f10370b1733641edd6b0bf9aa1383bff56ebfcc08fb0bdc68d9c13c3a",
+    "tasks/cal-node-roman/followup/map.json": "88ec2e8fa5a3e512ce963683d20ec64fe44327514971b34bd390c4eedd541255",
+    "tasks/cal-node-roman/followup/roman.followup.test.js": "698a03ed9623608a1e7a99c6af3e9cd987e1cf55ae2fca45e86ec955ccb57ff4",
+    "tasks/cal-node-roman/repo/package.json": "4206a738f41f88584a61eb26a4682295070c68cec39e6c6f1d29fa53333c6f6e",
+    "tasks/cal-node-roman/repo/roman.js": "0e5aa1aed2d5ae418b26a0e890f2d9d3affe229258cd6caed97e149e2482d7e2",
+    "tasks/cal-node-roman/repo/roman.test.js": "5db7f8eb19abae30f6f3235bbac38aedc3a55539d74c3a3bb972084e47dbbc38",
+    "tasks/cal-node-roman/requirements.json": "f9dacdf8d46d2deed473ef353c4cbf62a0a2122208bf5782d9071f34600a6349",
+    "tasks/cal-node-roman/task.json": "653f474d24af0f46467e9dcec490837863b722f34ed67f52fb0192ad74150dc0",
+    "tasks/cal-py-backoff/acceptance/test_backoff_acceptance.py": "bd9bcb75b37ee93ad2f1a4d26b1840d5cd7477bb066b4c9647ff319b805d63d9",
+    "tasks/cal-py-backoff/followup/map.json": "63162175f7acf9fdc23ad9b02cd1d6e600e96cee3575adaf6de1f2d8ede7b2d3",
+    "tasks/cal-py-backoff/followup/test_backoff_followup.py": "0da572c7a1972c9fe6f82ceaa97cfb52f4c9e219bee1cfc355ba8f76ed71df68",
+    "tasks/cal-py-backoff/repo/backoff.py": "98bacabc3f1350770edafb354c653ec17d9814530b89cdd5ad465891eefce7d2",
+    "tasks/cal-py-backoff/repo/pyproject.toml": "66b60cd9325cb12072ed38afce8be6f11edcff150f14b64b68403c364e207a24",
+    "tasks/cal-py-backoff/repo/test_backoff.py": "4905993ffd0289ce1c04774aa793a04688092de6d9422dac2e4ab471b5ff14e2",
+    "tasks/cal-py-backoff/requirements.json": "4be788ba2e5e390e1b1488b8e9cb3f813d7b62c815272d2eafdb19d823546287",
+    "tasks/cal-py-backoff/task.json": "2c0af1d0ffab8375debe35155627b4bad9a171e6463aa5de227e5e2f7ea9b389",
+    "tasks/cal-py-sizes/acceptance/test_sizes_acceptance.py": "2885d7da354c1635294189997345a9a72a9cf309cf64a238a57a9c82b370f45d",
+    "tasks/cal-py-sizes/followup/map.json": "63162175f7acf9fdc23ad9b02cd1d6e600e96cee3575adaf6de1f2d8ede7b2d3",
+    "tasks/cal-py-sizes/followup/test_sizes_followup.py": "e8a2db60f3383dde4c06033e639d88d629774056e6ba2996d6fc4bbce4113b22",
+    "tasks/cal-py-sizes/repo/pyproject.toml": "fd92b450a1f7bffa928edfc26cd5844ec1378af048c2628b3cf4d74b397c7598",
+    "tasks/cal-py-sizes/repo/sizes.py": "137b59d6fa24deace1b866e33cff1213026c5e356c5289496af66eee33fd554c",
+    "tasks/cal-py-sizes/repo/test_sizes.py": "3f4371af1a4cd35af423fea2a18ddb5d3908ce8ef7e01e9f447d1d97b8bfefe8",
+    "tasks/cal-py-sizes/requirements.json": "2fb8af0e87d25b27edacb326f475567ecbcbf3b91d96e1de385d14cc782f31dc",
+    "tasks/cal-py-sizes/task.json": "95ebf0ac09f9eba445bbd3d966ff6f69a5823f8996e7f850725d8915806f6165"
+  },
+  "stage": "W",
+  "status": "W_FROZEN_BEFORE_CANDIDATES",
+  "study": "abc-v5",
+  "tasks": {
+    "cal-node-chunk": {
+      "cluster": "node_array_chunking",
+      "language": "node",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "split": "calibration",
+      "test_command": "node --test",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "chunk.js"
+      ]
+    },
+    "cal-node-roman": {
+      "cluster": "node_roman_numerals",
+      "language": "node",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4"
+      ],
+      "split": "calibration",
+      "test_command": "node --test",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "roman.js"
+      ]
+    },
+    "cal-py-backoff": {
+      "cluster": "python_retry_backoff_schedule",
+      "language": "python",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "split": "calibration",
+      "test_command": "python -m pytest",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "backoff.py"
+      ]
+    },
+    "cal-py-sizes": {
+      "cluster": "python_byte_size_parsing",
+      "language": "python",
+      "licence": "MIT (same as repo-ai, see /LICENSE); original code written for this benchmark",
+      "provenance_kind": "synthetic",
+      "requirement_ids": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "split": "calibration",
+      "test_command": "python -m pytest",
+      "upstream_commit": null,
+      "upstream_url": null,
+      "write_paths": [
+        "sizes.py"
+      ]
+    }
+  }
+}

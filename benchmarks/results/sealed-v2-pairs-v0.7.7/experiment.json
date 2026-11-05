@@ -1,0 +1,306 @@
+{
+ "id": "20261021-103834-40bc",
+ "suite": "sealed-v2",
+ "arms": {
+  "baseline": [],
+  "core": [
+   "hooks",
+   "packet",
+   "rules"
+  ]
+ },
+ "repo_ai_version": "0.7.7",
+ "seed": 0,
+ "model": "claude-sonnet-5-5",
+ "effort": "medium",
+ "max_turns": 60,
+ "timeout_s": 1800,
+ "repeat": 1,
+ "budget_usd": 20.0,
+ "max_cost_per_run_usd": 1.5,
+ "reservation_per_run_usd": 1.875,
+ "completion_budget_usd": 93.75,
+ "planned_runs": 50,
+ "worst_case_usd": 93.75,
+ "tasks": [
+  "v2-dns-004",
+  "v2-ac-001",
+  "v2-mi-001",
+  "v2-asn-001",
+  "v2-mk-001",
+  "v2-lk-002",
+  "v2-sg-004",
+  "v2-te-001",
+  "v2-dns-005",
+  "v2-asn-002",
+  "v2-sg-005",
+  "v2-lk-001",
+  "v2-ac-003",
+  "v2-sg-007",
+  "v2-ac-002",
+  "v2-dns-003",
+  "v2-ac-004",
+  "v2-sg-006",
+  "v2-dns-002",
+  "v2-dns-001",
+  "v2-sg-008",
+  "v2-sg-003",
+  "v2-dns-006",
+  "v2-sg-002",
+  "v2-sg-001"
+ ],
+ "fake": false,
+ "blind": true,
+ "task_order": "interleave",
+ "max_invalid_rate": 0.2,
+ "schedule": [
+  {
+   "rep": 0,
+   "task": "v2-dns-004",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-mi-001",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-asn-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-mk-001",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-lk-002",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-004",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-te-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-005",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-asn-002",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-005",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-lk-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-003",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-007",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-002",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-003",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-ac-004",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-006",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-002",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-001",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-008",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-003",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-dns-006",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-002",
+   "order": [
+    "baseline",
+    "core"
+   ]
+  },
+  {
+   "rep": 0,
+   "task": "v2-sg-001",
+   "order": [
+    "core",
+    "baseline"
+   ]
+  }
+ ],
+ "permissions": {
+  "mode": "dontAsk",
+  "allowed": [
+   "Read",
+   "Edit",
+   "Write",
+   "MultiEdit",
+   "Glob",
+   "Grep",
+   "TodoWrite",
+   "Task",
+   "Bash(python -m unittest:*)",
+   "Bash(python3 -m unittest:*)",
+   "Bash(python -m pytest:*)",
+   "Bash(python3 -m pytest:*)",
+   "Bash(pytest:*)",
+   "Bash(node --test:*)",
+   "Bash(npm test:*)",
+   "Bash(javac:*)",
+   "Bash(java -cp:*)",
+   "Bash(make test:*)",
+   "Bash(ls:*)",
+   "Bash(git status:*)",
+   "Bash(git diff:*)",
+   "Bash(git log:*)",
+   "Bash(repo-ai context:*)",
+   "Bash(repo-ai impact:*)",
+   "Bash(repo-ai explain:*)",
+   "Bash(repo-ai symbol:*)",
+   "Bash(repo-ai related:*)",
+   "Bash(repo-ai packet:*)",
+   "Bash(repo-ai status:*)"
+  ],
+  "disallowed": [
+   "WebFetch",
+   "WebSearch",
+   "Bash(curl:*)",
+   "Bash(wget:*)",
+   "Bash(git push:*)",
+   "Bash(pip install:*)",
+   "Bash(npm install:*)"
+  ]
+ },
+ "cost_note": "reported costs are Claude Code client-side estimates, not billing",
+ "started": "2026-10-21T10:38:34",
+ "stopped": null,
+ "spent_usd_charged": 7.8762,
+ "finished": "2026-10-21T11:30:56"
+}

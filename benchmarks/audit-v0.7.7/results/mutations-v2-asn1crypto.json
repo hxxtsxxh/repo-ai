@@ -1,0 +1,188 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "asn1crypto/x509.py",
+   "func": "key_identifier",
+   "start": 2593,
+   "end": 2596,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/util.py",
+   "func": "__eq__",
+   "start": 735,
+   "end": 742,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_core",
+    "tests.test_util",
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/core.py",
+   "func": "native",
+   "start": 4975,
+   "end": 4990,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cms",
+    "tests.test_core",
+    "tests.test_ocsp",
+    "tests.test_tsp",
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/core.py",
+   "func": "__nonzero__",
+   "start": 1889,
+   "end": 1889,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "asn1crypto/crl.py",
+   "func": "critical_extensions",
+   "start": 335,
+   "end": 337,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "asn1crypto/ocsp.py",
+   "func": "critical_extensions",
+   "start": 651,
+   "end": 653,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "asn1crypto/parser.py",
+   "func": "_parse",
+   "start": 167,
+   "end": 243,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_algos",
+    "tests.test_cms",
+    "tests.test_core",
+    "tests.test_crl",
+    "tests.test_csr",
+    "tests.test_keys",
+    "tests.test_ocsp",
+    "tests.test_parser",
+    "tests.test_pkcs12",
+    "tests.test_tsp",
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/x509.py",
+   "func": "freshest_crl_value",
+   "start": 2432,
+   "end": 2434,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "asn1crypto/core.py",
+   "func": "load",
+   "start": 1394,
+   "end": 1394,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_core",
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/core.py",
+   "func": "native",
+   "start": 4066,
+   "end": 4088,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cms",
+    "tests.test_core",
+    "tests.test_csr",
+    "tests.test_keys",
+    "tests.test_ocsp",
+    "tests.test_tsp",
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/algos.py",
+   "func": "signature_algo",
+   "start": 399,
+   "end": 455,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_algos",
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/core.py",
+   "func": "_as_chunk",
+   "start": 783,
+   "end": 783,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_algos",
+    "tests.test_cms",
+    "tests.test_core",
+    "tests.test_csr",
+    "tests.test_keys",
+    "tests.test_ocsp",
+    "tests.test_pkcs12",
+    "tests.test_tsp",
+    "tests.test_x509"
+   ]
+  },
+  {
+   "file": "asn1crypto/util.py",
+   "func": "hour",
+   "start": 571,
+   "end": 571,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_util"
+   ]
+  },
+  {
+   "file": "asn1crypto/util.py",
+   "func": "second",
+   "start": 589,
+   "end": 589,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_util"
+   ]
+  },
+  {
+   "file": "asn1crypto/ocsp.py",
+   "func": "nonce_value",
+   "start": 665,
+   "end": 667,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "asn1crypto/util.py",
+   "func": "year",
+   "start": 347,
+   "end": 347,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_util"
+   ]
+  }
+ ]
+}

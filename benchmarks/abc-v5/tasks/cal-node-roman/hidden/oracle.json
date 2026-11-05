@@ -1,0 +1,31 @@
+{
+  "decoy_feasibility": {
+    "R1": "infeasible: subtractive pairs pinned by acceptance test",
+    "R4": "infeasible: toRoman pinned"
+  },
+  "hidden_tests": [
+    "r1 subtractive pairs",
+    "r2 non-canonical rejected",
+    "r2 round trip",
+    "r3 bad characters are RangeError",
+    "r3 non-string is TypeError",
+    "r4 toRoman unchanged"
+  ],
+  "note": "Frozen expected test IDs. Every ID must be observed and pass; skipped or missing is not a pass.",
+  "requirement_of": {
+    "r1 subtractive pairs": "R1",
+    "r2 non-canonical rejected": "R2",
+    "r2 round trip": "R2",
+    "r3 bad characters are RangeError": "R3",
+    "r3 non-string is TypeError": "R3",
+    "r4 toRoman unchanged": "R4"
+  },
+  "visible_tests": [
+    "rejects IIII",
+    "rejects empty string",
+    "rejects non-string with TypeError",
+    "subtractive pairs",
+    "toRoman basics",
+    "toRoman range"
+  ]
+}

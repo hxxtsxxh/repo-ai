@@ -1,0 +1,99 @@
+{
+  "id": "ts-workspace-015-key-validity-last-day",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "auth",
+  "difficulty": "medium",
+  "prompt": "We started issuing time-limited API keys: entries in the key table can carry a\n`validUntil` date (e.g. `\"validUntil\": \"2026-03-31\"`), and `jobs whoami` shows how long\nthe key in use is still good for. `validUntil` is meant to be inclusive: the key works\nfor the whole of that day (UTC) and stops working at midnight after it.\n\nThe reporting partner whose key is valid until 2026-03-31 says:\n\n* on 2 March `jobs whoami` printed `key expires in 28 days (2026-03-31)`; by their\n  calendar (and ours) it's 29;\n* we checked with a key that is valid until today: every request fails with\n  `401 API key expired`, and `whoami` can't even tell us that it's the last day.\n\nPlease make expiry and the days-left figure agree with the documented meaning of\n`validUntil`, everywhere they show up (API and CLI).",
+  "setup": [
+    {
+      "file": "packages/core/src/dates.ts",
+      "create": "// Calendar dates (\"YYYY-MM-DD\", always UTC), used for API key validity.\n// A key whose validUntil is \"2026-03-31\" may be used throughout 31 March (UTC).\n\nconst DATE_RE = /^(\\d{4})-(\\d{2})-(\\d{2})$/;\nexport const DAY_MS = 86_400_000;\n\n// Milliseconds since the epoch at 00:00 UTC on `date`.\nexport function startOfDay(date: string): number {\n  const match = DATE_RE.exec(date.trim());\n  if (!match) throw new SyntaxError(`invalid date: \"${date}\"`);\n  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];\n  const ms = Date.UTC(year, month - 1, day);\n  if (new Date(ms).getUTCDate() !== day) throw new RangeError(`invalid date: \"${date}\"`);\n  return ms;\n}\n\n// True once a key valid until `validUntil` may no longer be used.\nexport function isExpired(validUntil: string, now: Date): boolean {\n  return now.getTime() >= startOfDay(validUntil);\n}\n\n// Whole calendar days left on a key: 0 on its last valid day.\nexport function daysLeft(validUntil: string, now: Date): number {\n  return Math.floor((startOfDay(validUntil) - now.getTime()) / DAY_MS);\n}\n"
+    },
+    {
+      "file": "packages/core/src/index.ts",
+      "find": "export * from \"./strings.ts\";\n",
+      "replace": "export * from \"./strings.ts\";\nexport * from \"./dates.ts\";\n"
+    },
+    {
+      "file": "packages/api/src/auth.ts",
+      "find": "import { forbidden, unauthorized } from \"./errors.ts\";\n",
+      "replace": "import { forbidden, unauthorized } from \"./errors.ts\";\nimport { daysLeft, isExpired } from \"../../core/src/dates.ts\";\n"
+    },
+    {
+      "file": "packages/api/src/auth.ts",
+      "find": "  scopes: Scope[];\n}\n\nexport type KeyTable = Record<string, { name: string; scopes: Scope[] }>;",
+      "replace": "  scopes: Scope[];\n  validUntil?: string;\n}\n\n// validUntil (optional, \"YYYY-MM-DD\", inclusive): the last day the key may be used.\nexport type KeyTable = Record<string, { name: string; scopes: Scope[]; validUntil?: string }>;"
+    },
+    {
+      "file": "packages/api/src/auth.ts",
+      "find": "export function authenticate(request: ApiRequest, keys: KeyTable): Principal {",
+      "replace": "export function authenticate(request: ApiRequest, keys: KeyTable, now: Date = new Date()): Principal {"
+    },
+    {
+      "file": "packages/api/src/auth.ts",
+      "find": "  if (!entry) throw unauthorized();\n  return { name: entry.name, key, scopes: entry.scopes };\n}",
+      "replace": "  if (!entry) throw unauthorized();\n  if (entry.validUntil !== undefined && isExpired(entry.validUntil, now)) throw unauthorized(\"API key expired\");\n  return { name: entry.name, key, scopes: entry.scopes, validUntil: entry.validUntil };\n}\n\nexport function describeKey(principal: Principal, now: Date) {\n  return {\n    name: principal.name,\n    scopes: [...principal.scopes],\n    validUntil: principal.validUntil ?? null,\n    daysLeft: principal.validUntil === undefined ? null : daysLeft(principal.validUntil, now),\n  };\n}"
+    },
+    {
+      "file": "packages/api/src/server.ts",
+      "find": "import { authenticate, requireScope } from \"./auth.ts\";",
+      "replace": "import { authenticate, describeKey, requireScope } from \"./auth.ts\";"
+    },
+    {
+      "file": "packages/api/src/server.ts",
+      "find": "    .add(\"GET\", \"/health\", () => json(200, { status: \"ok\" }))\n",
+      "replace": "    .add(\"GET\", \"/health\", () => json(200, { status: \"ok\" }))\n    .add(\"GET\", \"/auth/whoami\", (_req, _p, principal) => json(200, describeKey(principal as Principal, clock())))\n"
+    },
+    {
+      "file": "packages/api/src/server.ts",
+      "find": "        principal = authenticate(request, keys);",
+      "replace": "        principal = authenticate(request, keys, clock());"
+    },
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "import { renderTable } from \"./table.ts\";\n",
+      "replace": "import { renderTable } from \"./table.ts\";\nimport { pluralize } from \"../../core/src/strings.ts\";\n"
+    },
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "export const COMMANDS: Record<string, Command> = {",
+      "replace": "interface KeyInfo {\n  name: string;\n  scopes: string[];\n  validUntil: string | null;\n  daysLeft: number | null;\n}\n\nconst whoami: Command = {\n  summary: \"Show the API key in use\",\n  usage: \"jobs whoami\",\n  run(ctx) {\n    const me = ctx.client.request<KeyInfo>(\"GET\", \"/auth/whoami\");\n    ctx.io.out(`${me.name} (${me.scopes.join(\", \")})`);\n    if (me.validUntil === null || me.daysLeft === null) {\n      ctx.io.out(\"key does not expire\");\n    } else if (me.daysLeft === 0) {\n      ctx.io.out(`key expires today (${me.validUntil})`);\n    } else {\n      ctx.io.out(`key expires in ${pluralize(me.daysLeft, \"day\")} (${me.validUntil})`);\n    }\n    return 0;\n  },\n};\n\nexport const COMMANDS: Record<string, Command> = {"
+    },
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "  next,\n};",
+      "replace": "  next,\n  whoami,\n};"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/core/src/dates.ts",
+      "find": "export function isExpired(validUntil: string, now: Date): boolean {\n  return now.getTime() >= startOfDay(validUntil);\n}",
+      "replace": "export function isExpired(validUntil: string, now: Date): boolean {\n  return now.getTime() >= startOfDay(validUntil) + DAY_MS;\n}"
+    },
+    {
+      "file": "packages/core/src/dates.ts",
+      "find": "  return Math.floor((startOfDay(validUntil) - now.getTime()) / DAY_MS);",
+      "replace": "  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());\n  return Math.round((startOfDay(validUntil) - today) / DAY_MS);"
+    }
+  ],
+  "gold_files": [
+    "packages/core/src/dates.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_key_validity.test.ts",
+      "dest": "packages/api/test/hidden_key_validity.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/api/test/hidden_key_validity.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

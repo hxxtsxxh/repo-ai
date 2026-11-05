@@ -1,0 +1,203 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "cachetools/__init__.py",
+   "func": "__getlink",
+   "start": 587,
+   "end": 589,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_func",
+    "tests.test_ttl"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "__setstate__",
+   "start": 530,
+   "end": 537,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_ttl"
+   ]
+  },
+  {
+   "file": "cachetools/_descriptor.py",
+   "func": "__init__",
+   "start": 29,
+   "end": 31,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cachedmethod",
+    "tests.test_classmethod",
+    "tests.test_threading"
+   ]
+  },
+  {
+   "file": "cachetools/_cached.py",
+   "func": "_uncached",
+   "start": 236,
+   "end": 241,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_cached"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "__touch",
+   "start": 323,
+   "end": 326,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_classmethod",
+    "tests.test_func",
+    "tests.test_lru",
+    "tests.test_threading"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "popitem",
+   "start": 191,
+   "end": 196,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_fifo"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "expire",
+   "start": 679,
+   "end": 696,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_tlru"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "__init__",
+   "start": 291,
+   "end": 292,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_classmethod",
+    "tests.test_func",
+    "tests.test_lru",
+    "tests.test_threading"
+   ]
+  },
+  {
+   "file": "cachetools/keys.py",
+   "func": "methodkey",
+   "start": 48,
+   "end": 48,
+   "indent": 4,
+   "failing_modules": [
+    "tests.test_cached",
+    "tests.test_cachedmethod",
+    "tests.test_classmethod",
+    "tests.test_keys",
+    "tests.test_threading"
+   ]
+  },
+  {
+   "file": "cachetools/_cachedmethod.py",
+   "func": "cache_clear",
+   "start": 207,
+   "end": 209,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cachedmethod",
+    "tests.test_classmethod"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "getsizeof",
+   "start": 168,
+   "end": 168,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cache",
+    "tests.test_cached",
+    "tests.test_cachedmethod",
+    "tests.test_classmethod",
+    "tests.test_fifo",
+    "tests.test_func",
+    "tests.test_lfu",
+    "tests.test_lru",
+    "tests.test_rr",
+    "tests.test_threading",
+    "tests.test_tlru",
+    "tests.test_ttl"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "ttl",
+   "start": 542,
+   "end": 542,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_ttl"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "__setitem__",
+   "start": 78,
+   "end": 96,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cache",
+    "tests.test_cached",
+    "tests.test_cachedmethod",
+    "tests.test_classmethod",
+    "tests.test_fifo",
+    "tests.test_func",
+    "tests.test_lfu",
+    "tests.test_lru",
+    "tests.test_rr",
+    "tests.test_threading",
+    "tests.test_tlru",
+    "tests.test_ttl"
+   ]
+  },
+  {
+   "file": "cachetools/__init__.py",
+   "func": "__init__",
+   "start": 610,
+   "end": 613,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_tlru"
+   ]
+  },
+  {
+   "file": "cachetools/_cached.py",
+   "func": "wrapper",
+   "start": 191,
+   "end": 205,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cached",
+    "tests.test_threading"
+   ]
+  },
+  {
+   "file": "cachetools/_descriptor.py",
+   "func": "__init__",
+   "start": 112,
+   "end": 113,
+   "indent": 8,
+   "failing_modules": [
+    "tests.test_cachedmethod"
+   ]
+  }
+ ]
+}

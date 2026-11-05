@@ -1,0 +1,298 @@
+---
+/**
+ * The Evidence Lab: every claim repo-ai makes about itself, with its status, date, sample size,
+ * method and source. Rendered from docs/engineering/evidence-matrix.json (via the generated
+ * src/data/release-facts.json); nothing here is typed by hand.
+ *
+ * variant="landing": featured entries only, compact. variant="full": every entry, with limits.
+ */
+import StatusChip from './StatusChip.astro';
+import { evidence, evidenceStatuses, statusTone, byStatus, EVIDENCE_STATUSES, type EvidenceEntry } from '../../data/facts';
+
+interface Props {
+  variant?: 'landing' | 'full';
+  /** Heading level for the status groups; entry titles use the next level. */
+  level?: 2 | 3;
+}
+const { variant = 'full', level = 2 } = Astro.props;
+const full = variant === 'full';
+const shown: EvidenceEntry[] = full ? evidence : evidence.filter((e) => e.featured);
+// Full page: grouped under status headings. Landing: one flat grid in status order, a chip on each card.
+const groups = full ? byStatus(shown) : [{ status: null, items: byStatus(shown).flatMap((g) => g.items) }];
+const counts = Object.fromEntries(EVIDENCE_STATUSES.map((s) => [s, evidence.filter((e) => e.status === s).length]));
+const GroupTag = `h${level}` as 'h2' | 'h3';
+// The landing grid has no group headings, so its entry titles sit at `level` itself.
+const TitleTag = (full ? `h${level + 1}` : `h${level}`) as 'h2' | 'h3' | 'h4';
+const slug = (s: string) => `ev-${s.toLowerCase().replace(/_/g, '-')}`;
+---
+
+<div class:list={['ri-lab', 'not-content', `ri-lab--${variant}`]}>
+  <div class="ri-lab__legend" role="group" aria-label="Evidence statuses">
+    <p class="ri-lab__legend-title">{full ? 'Statuses' : `Statuses across all ${evidence.length} entries`}</p>
+    <ul class="ri-lab__legend-list">
+      {
+        EVIDENCE_STATUSES.map((s) => (
+          <li>
+            {shown.some((e) => e.status === s) ? (
+              <a href={full ? `#${slug(s)}` : `#ev-${shown.find((e) => e.status === s)!.id}`} class="ri-lab__legend-link">
+                <StatusChip label={s} {...statusTone[s]} />
+                <span class="ri-lab__count">{counts[s]}</span>
+              </a>
+            ) : (
+              <span class="ri-lab__legend-link">
+                <StatusChip label={s} {...statusTone[s]} />
+                <span class="ri-lab__count">{counts[s]}</span>
+              </span>
+            )}
+            {full && <span class="ri-lab__def">{evidenceStatuses[s]}</span>}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  {
+    groups.map((g) => (
+      <section class="ri-lab__group" aria-labelledby={g.status ? slug(g.status) : undefined} aria-label={g.status ? undefined : 'Featured evidence'}>
+        {g.status && (
+          <GroupTag class="ri-lab__group-title" id={slug(g.status)}>
+            <StatusChip label={g.status} {...statusTone[g.status]} />
+            <span class="ri-lab__group-def">{evidenceStatuses[g.status]}</span>
+          </GroupTag>
+        )}
+        <ul class="ri-lab__grid">
+          {g.items.map((e) => (
+            <li class="ri-lab__card" id={full ? e.id : `ev-${e.id}`}>
+              <div class="ri-lab__top">
+                {!full && <StatusChip label={e.status} {...statusTone[e.status]} />}
+                {e.stat && e.stat !== '—' && <p class="ri-lab__stat">{e.stat}</p>}
+              </div>
+              <TitleTag class="ri-lab__title">{e.title}</TitleTag>
+              <p class="ri-lab__result">{e.result}</p>
+              <dl class="ri-lab__meta">
+                <div>
+                  <dt>Date</dt>
+                  <dd>
+                    <time datetime={e.date}>{e.date}</time>
+                    {full && e.date_note && <span class="ri-lab__note"> ({e.date_note})</span>}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Sample</dt>
+                  <dd>{e.sample_size}</dd>
+                </div>
+                <div>
+                  <dt>Method</dt>
+                  <dd>{e.method}</dd>
+                </div>
+                {full && e.limits && (
+                  <div>
+                    <dt>Limits</dt>
+                    <dd>{e.limits}</dd>
+                  </div>
+                )}
+              </dl>
+              {e.source_url && (
+                <a class="ri-lab__source" href={e.source_url} rel="noopener">
+                  Source<span class="visually-hidden-lab"> for “{e.title}”</span>: <code>{e.source}</code>
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</div>
+
+<style>
+  .ri-lab {
+    display: grid;
+    gap: 2rem;
+    color: var(--ri-fg);
+  }
+  .ri-lab__legend {
+    border: 1px solid var(--ri-line);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    background: var(--ri-bg-raised);
+  }
+  .ri-lab__legend-title {
+    margin: 0 0 0.6rem;
+    font-family: var(--ri-font-mono);
+    font-size: 0.75rem;
+    color: var(--ri-muted);
+  }
+  .ri-lab__legend-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.1rem;
+  }
+  .ri-lab--full .ri-lab__legend-list {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .ri-lab--full .ri-lab__legend-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 14.5rem) minmax(0, 1fr);
+    gap: 0.25rem 0.8rem;
+    align-items: baseline;
+  }
+  @media (max-width: 640px) {
+    .ri-lab--full .ri-lab__legend-list li {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  .ri-lab__legend-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    color: var(--ri-fg);
+  }
+  a.ri-lab__legend-link:hover .ri-lab__count,
+  a.ri-lab__legend-link:focus-visible .ri-lab__count {
+    text-decoration: underline;
+  }
+  .ri-lab__count {
+    font-family: var(--ri-font-mono);
+    font-size: 0.8rem;
+    color: var(--ri-fg);
+  }
+  .ri-lab__def {
+    font-size: 0.85rem;
+    color: var(--ri-muted);
+  }
+  .ri-lab__group-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.7rem;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid var(--ri-line-strong);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    scroll-margin-top: 5rem;
+  }
+  .ri-lab__group-def {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--ri-muted);
+  }
+  .ri-lab__grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  @media (min-width: 760px) {
+    .ri-lab__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1100px) {
+    .ri-lab--landing .ri-lab__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .ri-lab__card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ri-line);
+    border-radius: 10px;
+    background: var(--ri-bg);
+    scroll-margin-top: 5rem;
+  }
+  .ri-lab__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem 0.75rem;
+  }
+  .ri-lab__top:empty {
+    display: none;
+  }
+  /* Neutral colour: a big green number on a negative result would read as good news. */
+  .ri-lab__stat {
+    margin: 0;
+    font-family: var(--ri-font-mono);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ri-fg);
+    overflow-wrap: anywhere;
+  }
+  .ri-lab__title {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--ri-fg);
+  }
+  .ri-lab__result {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--ri-fg);
+    line-height: 1.5;
+  }
+  .ri-lab__meta {
+    margin: 0.2rem 0 0;
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+  .ri-lab__meta div {
+    display: grid;
+    grid-template-columns: 4.2rem minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+  .ri-lab__meta dt {
+    font-family: var(--ri-font-mono);
+    font-size: 0.72rem;
+    color: var(--ri-muted);
+    padding-top: 0.1rem;
+  }
+  .ri-lab__meta dd {
+    margin: 0;
+    color: var(--ri-muted);
+    overflow-wrap: anywhere;
+  }
+  .ri-lab__note {
+    color: var(--ri-muted);
+  }
+  .ri-lab__source {
+    margin-top: auto;
+    padding-top: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--ri-accent-text);
+    overflow-wrap: anywhere;
+  }
+  .ri-lab__source code {
+    font-family: var(--ri-font-mono);
+    font-size: 0.76rem;
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+  .visually-hidden-lab {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

@@ -1,0 +1,4 @@
+fastapi==0.110.0
+sqlalchemy>=2.0
+pyjwt>=2.8
+stripe>=7.0

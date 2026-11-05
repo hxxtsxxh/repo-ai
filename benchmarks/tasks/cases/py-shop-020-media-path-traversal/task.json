@@ -1,0 +1,60 @@
+{
+  "id": "py-shop-020-media-path-traversal",
+  "base": "py-shop",
+  "language": "python",
+  "category": "security",
+  "difficulty": "medium",
+  "prompt": "Pen-test finding (severity: high) against the product media endpoint.\n\nWith `MEDIA_ROOT=/srv/shop/media`, the testers requested\n\n    GET /media/..%2Fmedia-backups%2Fcustomers.csv\n\nand got back the customer export that lives in `/srv/shop/media-backups/`, a directory\nnext to the media folder. The obvious `..%2F..%2Fetc%2Fpasswd` style requests are\nrefused with a 404, so some containment check exists but it doesn't hold up. Nothing\noutside the media root may be served, whatever the encoding. Nested paths inside the\nroot (e.g. `thumbs%2Ftee.png`) still have to work.",
+  "setup": [
+    {
+      "file": "shop/api/media.py",
+      "create": "\"\"\"Product media (photos, size charts) served from ``config.MEDIA_ROOT``.\n\n``GET /media/{name}`` serves one file below the media root. Clients\nURL-encode ``name``, so ``thumbs%2Ftee.png`` addresses\n``<MEDIA_ROOT>/thumbs/tee.png``.\n\"\"\"\n\nimport mimetypes\nimport os\nfrom urllib.parse import unquote\n\nfrom shop import config\nfrom shop.errors import NotFound\n\n\ndef media_root() -> str:\n    return os.path.abspath(config.MEDIA_ROOT)\n\n\ndef resolve_media_path(name: str) -> str:\n    \"\"\"Absolute path of the media file addressed by ``name`` (URL-encoded).\"\"\"\n    root = media_root()\n    candidate = os.path.normpath(os.path.join(root, unquote(name)))\n    if not candidate.startswith(root):\n        raise NotFound(f\"media {name} not found\")\n    return candidate\n\n\ndef get_media(ctx, request, name):\n    path = resolve_media_path(name)\n    if not os.path.isfile(path):\n        raise NotFound(f\"media {name} not found\")\n    with open(path, \"rb\") as handle:\n        data = handle.read()\n    content_type = mimetypes.guess_type(path)[0] or \"application/octet-stream\"\n    return {\"status\": 200, \"headers\": {\"Content-Type\": content_type}, \"body\": data}\n"
+    },
+    {
+      "file": "shop/api/routes.py",
+      "find": "from shop.api import orders, payments, products, users",
+      "replace": "from shop.api import media, orders, payments, products, users"
+    },
+    {
+      "file": "shop/api/routes.py",
+      "find": "    (\"GET /health\", health),\n",
+      "replace": "    (\"GET /health\", health),\n    (\"GET /media/{name}\", media.get_media),\n"
+    },
+    {
+      "file": "shop/config.py",
+      "find": "# --- Notifications",
+      "replace": "# --- Media ----------------------------------------------------------------\n# Product photos and size charts are served from this directory.\nMEDIA_ROOT = os.environ.get(\"SHOP_MEDIA_ROOT\", \"media\")\n\n# --- Notifications"
+    }
+  ],
+  "solution": [
+    {
+      "file": "shop/api/media.py",
+      "find": "def media_root() -> str:\n    return os.path.abspath(config.MEDIA_ROOT)",
+      "replace": "def media_root() -> str:\n    return os.path.realpath(config.MEDIA_ROOT)"
+    },
+    {
+      "file": "shop/api/media.py",
+      "find": "    candidate = os.path.normpath(os.path.join(root, unquote(name)))\n    if not candidate.startswith(root):\n        raise NotFound(f\"media {name} not found\")",
+      "replace": "    candidate = os.path.realpath(os.path.join(root, unquote(name)))\n    if candidate == root or os.path.commonpath([root, candidate]) != root:\n        raise NotFound(f\"media {name} not found\")"
+    }
+  ],
+  "gold_files": [
+    "shop/api/media.py"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/test_hidden_media_paths.py",
+      "dest": "tests/test_hidden_media_paths.py"
+    }
+  ],
+  "commands": [
+    [
+      "{python}",
+      "-m",
+      "unittest",
+      "tests.test_hidden_media_paths"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

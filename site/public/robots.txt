@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hxxtsxxh.github.io/repo-ai/sitemap-index.xml

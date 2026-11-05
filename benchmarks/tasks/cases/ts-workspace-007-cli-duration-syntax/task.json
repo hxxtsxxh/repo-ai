@@ -1,0 +1,50 @@
+{
+  "id": "ts-workspace-007-cli-duration-syntax",
+  "base": "ts-workspace",
+  "language": "typescript",
+  "category": "monorepo",
+  "difficulty": "medium",
+  "prompt": "`jobs create nightly --command backup.sh --timeout 2h` fails with\n\n```\nerror: --timeout: invalid duration \"2h\" (use e.g. 30s or 5m)\n```\n\nand `--backoff 1m30s` is rejected too, yet sending exactly the same values to the API\ndirectly works. The CLI should accept the same duration syntax as the server, and we\ndon't want two sets of parsing rules drifting apart again.",
+  "setup": [
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "import { parseDuration } from \"../../core/src/duration.ts\";\n",
+      "replace": ""
+    },
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "function durationFlag(args: ParsedArgs, name: string): number | undefined {\n  const raw = flagString(args.flags, name);\n  if (raw === undefined) return undefined;\n  try {\n    return parseDuration(raw);",
+      "replace": "// Accepts \"30s\" or \"5m\".\nfunction toMilliseconds(raw: string): number {\n  const match = /^(\\d+)(s|m)$/.exec(raw.trim());\n  if (!match) throw new Error(`invalid duration \"${raw}\" (use e.g. 30s or 5m)`);\n  return Number(match[1]) * (match[2] === \"m\" ? 60_000 : 1_000);\n}\n\nfunction durationFlag(args: ParsedArgs, name: string): number | undefined {\n  const raw = flagString(args.flags, name);\n  if (raw === undefined) return undefined;\n  try {\n    return toMilliseconds(raw);"
+    }
+  ],
+  "solution": [
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "import { nextRun, parseSchedule } from \"../../core/src/schedule.ts\";\n",
+      "replace": "import { parseDuration } from \"../../core/src/duration.ts\";\nimport { nextRun, parseSchedule } from \"../../core/src/schedule.ts\";\n"
+    },
+    {
+      "file": "packages/cli/src/commands.ts",
+      "find": "// Accepts \"30s\" or \"5m\".\nfunction toMilliseconds(raw: string): number {\n  const match = /^(\\d+)(s|m)$/.exec(raw.trim());\n  if (!match) throw new Error(`invalid duration \"${raw}\" (use e.g. 30s or 5m)`);\n  return Number(match[1]) * (match[2] === \"m\" ? 60_000 : 1_000);\n}\n\nfunction durationFlag(args: ParsedArgs, name: string): number | undefined {\n  const raw = flagString(args.flags, name);\n  if (raw === undefined) return undefined;\n  try {\n    return toMilliseconds(raw);",
+      "replace": "function durationFlag(args: ParsedArgs, name: string): number | undefined {\n  const raw = flagString(args.flags, name);\n  if (raw === undefined) return undefined;\n  try {\n    return parseDuration(raw);"
+    }
+  ],
+  "gold_files": [
+    "packages/cli/src/commands.ts"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/hidden_flag_durations.test.ts",
+      "dest": "packages/cli/test/hidden_flag_durations.test.ts"
+    }
+  ],
+  "commands": [
+    [
+      "{node}",
+      "--test",
+      "packages/cli/test/hidden_flag_durations.test.ts"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

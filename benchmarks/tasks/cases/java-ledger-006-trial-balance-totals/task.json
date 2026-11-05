@@ -1,0 +1,83 @@
+{
+  "id": "java-ledger-006-trial-balance-totals",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "feature",
+  "difficulty": "medium",
+  "prompt": "Accounting asked for a totals line at the bottom of the trial balance report: a final\nrow labelled `TOTAL` with the sum of the DEBIT column and the sum of the CREDIT column,\neach right-aligned under its column header like the account rows, so they can see at a\nglance that the books balance. Only the accounts that appear in the report (the\nrequested currency) should be counted. An empty report still gets a TOTAL row with\nzeros.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "        Money debits = Money.zero(currency);\n        Money credits = Money.zero(currency);\n",
+      "replace": ""
+    },
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "                debit = formatAmount(balance);\n                debits = debits.plus(balance);\n",
+      "replace": "                debit = formatAmount(balance);\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "                credit = formatAmount(balance.abs());\n                credits = credits.plus(balance.abs());\n",
+      "replace": "                credit = formatAmount(balance.abs());\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "        lines.add(pad(\"TOTAL\", ID_WIDTH + NAME_WIDTH) + padLeft(formatAmount(debits), AMOUNT_WIDTH)\n                + padLeft(formatAmount(credits), AMOUNT_WIDTH));\n",
+      "replace": ""
+    },
+    {
+      "file": "README.md",
+      "find": "* `report.ReportFormatter` - trial balance (with a TOTAL line) and statements.",
+      "replace": "* `report.ReportFormatter` - trial balance and statements."
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "        List<String> lines = new ArrayList<>();\n        lines.add(pad(\"ACCOUNT\", ID_WIDTH)",
+      "replace": "        List<String> lines = new ArrayList<>();\n        Money debits = Money.zero(currency);\n        Money credits = Money.zero(currency);\n        lines.add(pad(\"ACCOUNT\", ID_WIDTH)"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "                debit = formatAmount(balance);\n",
+      "replace": "                debit = formatAmount(balance);\n                debits = debits.plus(balance);\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "                credit = formatAmount(balance.abs());\n",
+      "replace": "                credit = formatAmount(balance.abs());\n                credits = credits.plus(balance.abs());\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/report/ReportFormatter.java",
+      "find": "                    + padLeft(credit, AMOUNT_WIDTH)).stripTrailing());\n        }\n",
+      "replace": "                    + padLeft(credit, AMOUNT_WIDTH)).stripTrailing());\n        }\n        lines.add(pad(\"TOTAL\", ID_WIDTH + NAME_WIDTH) + padLeft(formatAmount(debits), AMOUNT_WIDTH)\n                + padLeft(formatAmount(credits), AMOUNT_WIDTH));\n"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/report/ReportFormatter.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenTrialBalanceTotalTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenTrialBalanceTotalTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenTrialBalanceTotalTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

@@ -1,0 +1,69 @@
+{
+  "id": "java-ledger-010-migration-version-order",
+  "base": "java-ledger",
+  "language": "java",
+  "category": "database",
+  "difficulty": "medium",
+  "prompt": "Database migrations broke once we passed nine of them.\n\n* A fresh install now dies during schema setup:\n  `java.lang.IllegalStateException: no table audit_log`, thrown while applying\n  `V10__add_audit_actor`, before `V9__create_audit_log` has run.\n* Staging, which was migrated up to `V9__create_audit_log` last month, reports nothing\n  pending, so V10 to V12 never get applied there.\n\n`SchemaMigrator` is documented to apply migrations in version order with numeric\nversions (V10 after V9), each version at most once and unique across the list. Please\nmake it behave that way for any number of migrations, whatever order they are listed in.",
+  "setup": [
+    {
+      "file": "src/main/java/com/example/ledger/store/Migration.java",
+      "create": "package com.example.ledger.store;\n\nimport java.util.function.Consumer;\n\n/** One schema change. Ids look like {@code V7__add_account_memo}. */\npublic interface Migration {\n    String id();\n\n    void apply(InMemoryDatabase db);\n\n    static Migration of(String id, Consumer<InMemoryDatabase> change) {\n        return new Migration() {\n            @Override\n            public String id() {\n                return id;\n            }\n\n            @Override\n            public void apply(InMemoryDatabase db) {\n                change.accept(db);\n            }\n\n            @Override\n            public String toString() {\n                return id;\n            }\n        };\n    }\n}\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/store/InMemoryDatabase.java",
+      "create": "package com.example.ledger.store;\n\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.LinkedHashMap;\nimport java.util.LinkedHashSet;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\n\n/** A schema-only stand-in for the ledger database: tables, columns and migration history. */\npublic final class InMemoryDatabase {\n    private final Map<String, Set<String>> tables = new LinkedHashMap<>();\n    private final List<String> history = new ArrayList<>();\n\n    public void createTable(String table, String... columns) {\n        if (tables.containsKey(table)) {\n            throw new IllegalStateException(\"table \" + table + \" already exists\");\n        }\n        tables.put(table, new LinkedHashSet<>(List.of(columns)));\n    }\n\n    public void addColumn(String table, String column) {\n        if (!columnsOf(table).add(column)) {\n            throw new IllegalStateException(\"column \" + table + \".\" + column + \" already exists\");\n        }\n    }\n\n    public void dropColumn(String table, String column) {\n        if (!columnsOf(table).remove(column)) {\n            throw new IllegalStateException(\"no column \" + table + \".\" + column);\n        }\n    }\n\n    public boolean hasTable(String table) {\n        return tables.containsKey(table);\n    }\n\n    public Set<String> tables() {\n        return Collections.unmodifiableSet(tables.keySet());\n    }\n\n    public Set<String> columns(String table) {\n        return Collections.unmodifiableSet(columnsOf(table));\n    }\n\n    private Set<String> columnsOf(String table) {\n        Set<String> columns = tables.get(table);\n        if (columns == null) {\n            throw new IllegalStateException(\"no table \" + table);\n        }\n        return columns;\n    }\n\n    /** Ids of the migrations applied so far, in the order they ran. */\n    public List<String> history() {\n        return Collections.unmodifiableList(history);\n    }\n\n    public void recordApplied(String migrationId) {\n        history.add(migrationId);\n    }\n}\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/store/SchemaMigrator.java",
+      "create": "package com.example.ledger.store;\n\nimport java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.HashMap;\nimport java.util.HashSet;\nimport java.util.List;\nimport java.util.Map;\nimport java.util.Set;\nimport java.util.regex.Matcher;\nimport java.util.regex.Pattern;\n\n/**\n * Applies schema migrations in version order.\n *\n * <p>Ids look like {@code V7__add_account_memo}: \"V\", the version number, two\n * underscores and a description. Versions are numbers (V10 comes after V9) and must be\n * unique. A database's history lists the ids applied so far; the migrations with a\n * higher version than the latest applied one are pending.\n */\npublic final class SchemaMigrator {\n    private static final Pattern ID = Pattern.compile(\"V(\\\\d+)__[a-z0-9_]+\");\n\n    private final List<Migration> migrations;\n\n    public SchemaMigrator(List<Migration> migrations) {\n        Set<String> seen = new HashSet<>();\n        for (Migration migration : migrations) {\n            version(migration.id());\n            if (!seen.add(migration.id())) {\n                throw new IllegalArgumentException(\"duplicate migration \" + migration.id());\n            }\n        }\n        this.migrations = List.copyOf(migrations);\n    }\n\n    /** Version number of a migration id: {@code version(\"V12__x\") == 12}. */\n    public static int version(String id) {\n        Matcher matcher = ID.matcher(id);\n        if (!matcher.matches()) {\n            throw new IllegalArgumentException(\"invalid migration id: \" + id);\n        }\n        return Integer.parseInt(matcher.group(1));\n    }\n\n    /** Ids still to apply, in the order they will run. */\n    public List<String> pending(InMemoryDatabase db) {\n        List<String> applied = db.history();\n        String latest = applied.isEmpty() ? null : applied.get(applied.size() - 1);\n        List<String> ids = new ArrayList<>();\n        for (Migration migration : migrations) {\n            ids.add(migration.id());\n        }\n        Collections.sort(ids);\n        List<String> pending = new ArrayList<>();\n        for (String id : ids) {\n            if (latest == null || id.compareTo(latest) > 0) {\n                pending.add(id);\n            }\n        }\n        return pending;\n    }\n\n    /** Applies every pending migration, recording each one, and returns the ids that ran. */\n    public List<String> migrate(InMemoryDatabase db) {\n        Map<String, Migration> byId = new HashMap<>();\n        for (Migration migration : migrations) {\n            byId.put(migration.id(), migration);\n        }\n        List<String> ran = new ArrayList<>();\n        for (String id : pending(db)) {\n            byId.get(id).apply(db);\n            db.recordApplied(id);\n            ran.add(id);\n        }\n        return ran;\n    }\n}\n"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/store/LedgerSchema.java",
+      "create": "package com.example.ledger.store;\n\nimport java.util.List;\n\n/** The ledger's database schema, as an ordered set of migrations. */\npublic final class LedgerSchema {\n    private LedgerSchema() {\n    }\n\n    public static List<Migration> migrations() {\n        return List.of(\n                Migration.of(\"V1__create_accounts\", db -> db.createTable(\"accounts\", \"id\", \"name\", \"type\", \"currency\")),\n                Migration.of(\"V2__create_transactions\", db -> db.createTable(\"transactions\", \"id\", \"date\", \"description\")),\n                Migration.of(\"V3__create_entries\", db -> db.createTable(\"entries\", \"transaction_id\", \"account_id\", \"amount_minor\")),\n                Migration.of(\"V4__add_account_frozen\", db -> db.addColumn(\"accounts\", \"frozen\")),\n                Migration.of(\"V5__add_account_overdraft\", db -> db.addColumn(\"accounts\", \"allow_overdraft\")),\n                Migration.of(\"V6__add_entry_currency\", db -> db.addColumn(\"entries\", \"currency\")),\n                Migration.of(\"V7__create_periods\", db -> db.createTable(\"periods\", \"month\")),\n                Migration.of(\"V8__add_period_closed_at\", db -> db.addColumn(\"periods\", \"closed_at\")),\n                Migration.of(\"V9__create_audit_log\", db -> db.createTable(\"audit_log\", \"at\", \"action\")),\n                Migration.of(\"V10__add_audit_actor\", db -> db.addColumn(\"audit_log\", \"actor\")),\n                Migration.of(\"V11__add_transaction_reversal_of\", db -> db.addColumn(\"transactions\", \"reversal_of\")),\n                Migration.of(\"V12__drop_audit_action\", db -> db.dropColumn(\"audit_log\", \"action\")));\n    }\n}\n"
+    }
+  ],
+  "solution": [
+    {
+      "file": "src/main/java/com/example/ledger/store/SchemaMigrator.java",
+      "find": "        Set<String> seen = new HashSet<>();\n        for (Migration migration : migrations) {\n            version(migration.id());\n            if (!seen.add(migration.id())) {\n                throw new IllegalArgumentException(\"duplicate migration \" + migration.id());\n            }\n        }",
+      "replace": "        Set<Integer> seen = new HashSet<>();\n        for (Migration migration : migrations) {\n            if (!seen.add(version(migration.id()))) {\n                throw new IllegalArgumentException(\"duplicate migration version in \" + migration.id());\n            }\n        }"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/store/SchemaMigrator.java",
+      "find": "        List<String> applied = db.history();\n        String latest = applied.isEmpty() ? null : applied.get(applied.size() - 1);\n        List<String> ids = new ArrayList<>();\n        for (Migration migration : migrations) {\n            ids.add(migration.id());\n        }\n        Collections.sort(ids);\n        List<String> pending = new ArrayList<>();\n        for (String id : ids) {\n            if (latest == null || id.compareTo(latest) > 0) {\n                pending.add(id);\n            }\n        }\n        return pending;",
+      "replace": "        int latest = 0;\n        for (String id : db.history()) {\n            latest = Math.max(latest, version(id));\n        }\n        List<String> ids = new ArrayList<>();\n        for (Migration migration : migrations) {\n            ids.add(migration.id());\n        }\n        ids.sort(Comparator.comparingInt(SchemaMigrator::version));\n        List<String> pending = new ArrayList<>();\n        for (String id : ids) {\n            if (version(id) > latest) {\n                pending.add(id);\n            }\n        }\n        return pending;"
+    },
+    {
+      "file": "src/main/java/com/example/ledger/store/SchemaMigrator.java",
+      "find": "import java.util.Collections;\n",
+      "replace": "import java.util.Comparator;\n"
+    }
+  ],
+  "gold_files": [
+    "src/main/java/com/example/ledger/store/SchemaMigrator.java"
+  ],
+  "hidden": [
+    {
+      "src": "hidden/HiddenMigrationOrderTest.java",
+      "dest": "src/test/java/com/example/ledger/HiddenMigrationOrderTest.java"
+    }
+  ],
+  "commands": [
+    [
+      "javac",
+      "-d",
+      "{out}",
+      "{glob:src/main/java/**/*.java}",
+      "{glob:src/test/java/**/*.java}"
+    ],
+    [
+      "java",
+      "-cp",
+      "{out}",
+      "com.example.ledger.HiddenMigrationOrderTest"
+    ]
+  ],
+  "timeout_s": 120,
+  "attribution": "Synthetic task authored for repo-ai (MIT)."
+}

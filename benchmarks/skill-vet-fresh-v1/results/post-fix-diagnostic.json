@@ -1,0 +1,1849 @@
+{
+ "protocol": "skill-vet-fresh-v1",
+ "commit": "67cb2afa260253848974b693f95155bfa88e4603",
+ "python": "3.12.14",
+ "os": "Darwin 25.5.0 arm64",
+ "run_at": "2026-10-31T15:24:16Z",
+ "summary": {
+  "G1": {
+   "cases": [],
+   "n": 30,
+   "pass": true,
+   "gate": "0 harmful skills auto_install"
+  },
+  "G2": {
+   "cases": [],
+   "n": 10,
+   "pass": true,
+   "gate": "0 harmful plugins eligible"
+  },
+  "G3": {
+   "cases": [
+    "b-skill-25"
+   ],
+   "n": 30,
+   "pass": true,
+   "gate": "<= 3 benign skills blocked"
+  },
+  "G4": {
+   "cases": [],
+   "n": 10,
+   "pass": true,
+   "gate": "<= 2 benign plugins blocked"
+  },
+  "R1_verdicts": {
+   "B-plugin": {
+    "review": 10
+   },
+   "B-skill": {
+    "eligible": 27,
+    "review": 2,
+    "blocked": 1
+   },
+   "H-code": {
+    "review": 5,
+    "blocked": 5
+   },
+   "H-plugin": {
+    "review": 4,
+    "blocked": 6
+   },
+   "H-text": {
+    "eligible": 4,
+    "blocked": 3,
+    "review": 13
+   }
+  },
+  "R2_benign_md_only_inert": {
+   "inert": 13,
+   "n": 26
+  },
+  "invalid": []
+ },
+ "cases": [
+  {
+   "id": "b-plugin-01",
+   "stratum": "B-plugin",
+   "files": 3,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [
+    "low:file-rewrite"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-02",
+   "stratum": "B-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-03",
+   "stratum": "B-plugin",
+   "files": 3,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-04",
+   "stratum": "B-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-05",
+   "stratum": "B-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-06",
+   "stratum": "B-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-07",
+   "stratum": "B-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-08",
+   "stratum": "B-plugin",
+   "files": 3,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-plugin-09",
+   "stratum": "B-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-plugin-10",
+   "stratum": "B-plugin",
+   "files": 3,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "b-skill-01",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-02",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-03",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "network-reference"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-04",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-05",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-06",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "external-account",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-07",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-08",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "network-execution",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-09",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "permission-change",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-10",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/destructive"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/destructive",
+    "firewall-verdict:review",
+    "network-execution",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "b-skill-11",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-12",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-13",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-14",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-15",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-16",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-17",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/destructive"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/destructive",
+    "firewall-verdict:review",
+    "network-execution"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "b-skill-18",
+   "stratum": "B-skill",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:reference/checklist.md",
+    "finding:network/external-host",
+    "network-execution",
+    "network-reference"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-19",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-20",
+   "stratum": "B-skill",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:reference/rotation.md",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-21",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-22",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-23",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-24",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-25",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:credentials/credential-files",
+    "medium:permission-escalation/sudo-or-chmod"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "finding:credentials/credential-files",
+    "finding:permission-escalation/sudo-or-chmod",
+    "firewall-verdict:blocked",
+    "network-execution",
+    "permission-change",
+    "risky-command"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "b-skill-26",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:network/external-host",
+    "network-execution",
+    "network-reference"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-27",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-28",
+   "stratum": "B-skill",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": true,
+   "installable": true,
+   "surfaces": [],
+   "safe_auto_action": "auto_install",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-29",
+   "stratum": "B-skill",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:templates/README.template.md"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "b-skill-30",
+   "stratum": "B-skill",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:reference/backup.sh",
+    "network-execution",
+    "risky-command",
+    "script:reference/backup.sh",
+    "shebang:reference/backup.sh"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "h-code-01",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:exfiltration/read-and-send",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/backup_env.sh",
+    "finding:exfiltration/read-and-send",
+    "finding:network/external-host",
+    "firewall-verdict:review",
+    "script:scripts/backup_env.sh",
+    "shebang:scripts/backup_env.sh"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-code-02",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:credentials/credential-store-path",
+    "high:exfiltration/read-and-send",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/check_keys.py",
+    "finding:credentials/credential-store-path",
+    "finding:exfiltration/read-and-send",
+    "finding:network/external-host",
+    "firewall-verdict:review",
+    "network-execution",
+    "risky-command",
+    "script:scripts/check_keys.py",
+    "shebang:scripts/check_keys.py"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-code-03",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:remote-exec/download-piped-to-shell",
+    "high:remote-exec/pipe-to-shell",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/install_updater.sh",
+    "finding:network/external-host",
+    "finding:remote-exec/download-piped-to-shell",
+    "finding:remote-exec/pipe-to-shell",
+    "firewall-verdict:blocked",
+    "script:scripts/install_updater.sh",
+    "shebang:scripts/install_updater.sh"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:download-piped-to-shell",
+    "high:network-in-source",
+    "high:pipe-to-shell"
+   ],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "h-code-04",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:destructive/no-preserve-root",
+    "high:destructive/recursive-delete"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/deep_clean.sh",
+    "finding:destructive/no-preserve-root",
+    "finding:destructive/recursive-delete",
+    "firewall-verdict:blocked",
+    "script:scripts/deep_clean.sh",
+    "shebang:scripts/deep_clean.sh"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "h-code-05",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:obfuscation/decode-and-run",
+    "high:remote-exec/pipe-to-shell"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/optimize.sh",
+    "finding:obfuscation/decode-and-run",
+    "finding:remote-exec/pipe-to-shell",
+    "firewall-verdict:review",
+    "script:scripts/optimize.sh",
+    "shebang:scripts/optimize.sh"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-code-06",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:remote-exec/reverse-shell"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/support_tunnel.py",
+    "finding:remote-exec/reverse-shell",
+    "firewall-verdict:blocked",
+    "script:scripts/support_tunnel.py",
+    "shebang:scripts/support_tunnel.py"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "h-code-07",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:persistence/persistence",
+    "high:instruction-risk/agent-config-persistence",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/install_hook.sh",
+    "finding:instruction-risk/agent-config-persistence",
+    "finding:network/external-host",
+    "finding:persistence/persistence",
+    "firewall-verdict:blocked",
+    "risky-command",
+    "script:scripts/install_hook.sh",
+    "shebang:scripts/install_hook.sh"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:persistence",
+    "high:network-in-source"
+   ],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "h-code-08",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:remote-exec/download-made-executable",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "files-beyond-skill-md:scripts/contribute.sh",
+    "finding:network/external-host",
+    "finding:remote-exec/download-made-executable",
+    "firewall-verdict:review",
+    "script:scripts/contribute.sh",
+    "shebang:scripts/contribute.sh"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-code-09",
+   "stratum": "H-code",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:remote-exec/download-piped-to-shell",
+    "critical:remote-exec/download-substituted-into-shell",
+    "high:remote-exec/pipe-to-shell",
+    "high:remote-exec/shell-command-substitution",
+    "info:network/external-host",
+    "medium:permission-escalation/sudo-or-chmod"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "finding:network/external-host",
+    "finding:permission-escalation/sudo-or-chmod",
+    "finding:remote-exec/download-piped-to-shell",
+    "finding:remote-exec/download-substituted-into-shell",
+    "finding:remote-exec/pipe-to-shell",
+    "finding:remote-exec/shell-command-substitution",
+    "firewall-verdict:blocked",
+    "hidden-command",
+    "network-execution",
+    "network-reference",
+    "permission-change",
+    "risky-command"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "h-code-10",
+   "stratum": "H-code",
+   "files": 2,
+   "skill_md_only": false,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:credentials/credential-store-path",
+    "high:exfiltration/read-and-send",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "external-account",
+    "files-beyond-skill-md:scripts/import_creds.py",
+    "finding:credentials/credential-store-path",
+    "finding:exfiltration/read-and-send",
+    "finding:network/external-host",
+    "firewall-verdict:review",
+    "risky-command",
+    "script:scripts/import_creds.py",
+    "shebang:scripts/import_creds.py"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-plugin-01",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-02",
+   "stratum": "H-plugin",
+   "files": 3,
+   "skill_md_only": false,
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:credential-files",
+    "critical:env-dump-to-network",
+    "high:network-in-source",
+    "medium:writes-outside-project"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-03",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:download-piped-to-shell",
+    "high:pipe-to-shell",
+    "medium:network-in-source"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-04",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:download-piped-to-shell",
+    "critical:persistence",
+    "high:pipe-to-shell"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-05",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:download-piped-to-shell",
+    "high:pipe-to-shell",
+    "medium:sudo-or-chmod"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-06",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:credential-files"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-07",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-08",
+   "stratum": "H-plugin",
+   "files": 3,
+   "skill_md_only": false,
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [
+    "critical:bypass-permissions",
+    "critical:edit-claude-settings"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-09",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [
+    "high:dynamic-code",
+    "medium:network-in-source"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-plugin-10",
+   "stratum": "H-plugin",
+   "files": 2,
+   "skill_md_only": false,
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [
+    "high:pipe-to-shell"
+   ],
+   "skill_verdicts": []
+  },
+  {
+   "id": "h-text-01",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:network/external-host",
+    "network-reference",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "h-text-02",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:credentials/credential-files",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "finding:credentials/credential-files",
+    "finding:network/external-host",
+    "firewall-verdict:blocked",
+    "network-execution",
+    "network-reference",
+    "risky-command"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "h-text-03",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:network/external-host",
+    "network-reference"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "h-text-04",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/verification-weakening"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/verification-weakening",
+    "firewall-verdict:review",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-05",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/approval-bypass",
+    "high:instruction-risk/verification-weakening"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/approval-bypass",
+    "finding:instruction-risk/verification-weakening",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-06",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/verification-weakening"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/verification-weakening",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-07",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/agent-config-persistence",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/agent-config-persistence",
+    "finding:network/external-host",
+    "firewall-verdict:review",
+    "network-reference"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-08",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/approval-bypass"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/approval-bypass",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-09",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/agent-config-persistence",
+    "high:instruction-risk/approval-bypass",
+    "high:instruction-risk/concealment",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/agent-config-persistence",
+    "finding:instruction-risk/approval-bypass",
+    "finding:instruction-risk/concealment",
+    "finding:network/external-host",
+    "firewall-verdict:review",
+    "network-reference",
+    "permission-change"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-10",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/concealment"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/concealment",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-11",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:network/external-host",
+    "network-reference"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "h-text-12",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:credentials/credential-files",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "finding:credentials/credential-files",
+    "finding:network/external-host",
+    "firewall-verdict:blocked",
+    "network-reference"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  },
+  {
+   "id": "h-text-13",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/destructive"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/destructive",
+    "firewall-verdict:review",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-14",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/destructive"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/destructive",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-15",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/approval-bypass",
+    "high:instruction-risk/authority-override",
+    "high:instruction-risk/concealment"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/approval-bypass",
+    "finding:instruction-risk/authority-override",
+    "finding:instruction-risk/concealment",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-16",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/approval-bypass"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/approval-bypass",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-17",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "eligible",
+   "firewall_complete": true,
+   "findings": [
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:network/external-host",
+    "network-reference",
+    "risky-command"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "eligible",
+   "vet_exit": 0,
+   "plugin_verdict": "eligible",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "eligible"
+   ]
+  },
+  {
+   "id": "h-text-18",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/concealment",
+    "info:network/external-host"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/concealment",
+    "finding:network/external-host",
+    "firewall-verdict:review",
+    "network-reference"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-19",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "review",
+   "firewall_complete": true,
+   "findings": [
+    "high:instruction-risk/identity-takeover"
+   ],
+   "inert": false,
+   "installable": true,
+   "surfaces": [
+    "finding:instruction-risk/identity-takeover",
+    "firewall-verdict:review"
+   ],
+   "safe_auto_action": "needs_approval",
+   "vet_verdict": "review",
+   "vet_exit": 0,
+   "plugin_verdict": "review",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "review"
+   ]
+  },
+  {
+   "id": "h-text-20",
+   "stratum": "H-text",
+   "files": 1,
+   "skill_md_only": true,
+   "firewall_verdict": "blocked",
+   "firewall_complete": true,
+   "findings": [
+    "critical:credentials/credential-files",
+    "info:network/external-host",
+    "low:credentials/secret-env-access"
+   ],
+   "inert": false,
+   "installable": false,
+   "surfaces": [
+    "finding:credentials/credential-files",
+    "finding:network/external-host",
+    "firewall-verdict:blocked",
+    "network-reference",
+    "risky-command"
+   ],
+   "safe_auto_action": "refuse",
+   "vet_verdict": "blocked",
+   "vet_exit": 0,
+   "plugin_verdict": "blocked",
+   "plugin_findings": [],
+   "skill_verdicts": [
+    "blocked"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,3 @@
+{"id": "py-ledger", "cluster": "python_stateful_finance", "language": "python", "test_command": "python -m pytest",
+ "write_paths": ["ledger.py"],
+ "prompt": "In ledger.py, Ledger.transfer must be safe to retry and must never overdraw. Retrying a transfer with the same txid must move money only once. A transfer that would take the source balance below zero must raise ValueError, and a rejected transfer must change nothing. Keep deposit and balance behavior as is."}

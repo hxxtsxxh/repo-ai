@@ -1,0 +1,18 @@
+{
+  "schema": "repo-ai.development-evidence/1",
+  "base": "ed936f5",
+  "branch": "codex/reality-engine-20261027",
+  "tests": "108 passed",
+  "live_provider": "NOT_RUN",
+  "product_lift": "NOT_YET_DEMONSTRATED",
+  "independent_final_review": "NOT_COMPLETED_NATIVE_AGENT_USAGE_LIMIT",
+  "artifact_root": "dist/reality-engine",
+  "sha256": {
+    "p0-tests.log": "75a852f16e33e65684d221e8682f952273a77413ef3eab8d81d9e290a16fae2a",
+    "p0-build.log": "8041c79726f8537a19cb3e59cf269872ce6e9670e5ace7ea892b5d6900034176",
+    "p0-wheel-demo.log": "0d3027587631dc9e3e06d0165ec51d1525870753a0a990b846fe10f4be0cf2e6",
+    "p0-wheel-demo/transcript.json": "1e4ff63c7b02e78ef0935d43bb7cc476f8771022b2dba7d542f95cd8dbb73787",
+    "p0-artifacts/repo_ai-0.8.0rc1-py3-none-any.whl": "f6be8ab2eb10386602d5d620cd20996f14dddf64f6efca9798ba1a81975e8171",
+    "p0-artifacts/repo_ai-0.8.0rc1.tar.gz": "88f980664183650df54d5987bb7c52e60b213fd22d971ab70519e55f85cd1112"
+  }
+}

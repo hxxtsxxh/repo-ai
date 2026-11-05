@@ -1,0 +1,30 @@
+{
+  "decoy_feasibility": {
+    "R1": "infeasible: remainder pinned",
+    "R4": "not attempted: plausible array-like mistakes throw TypeError anyway",
+    "R5": "infeasible: pinned by shipped tests"
+  },
+  "hidden_tests": [
+    "r1 last chunk may be shorter",
+    "r2 bad sizes are RangeError",
+    "r3 input untouched and chunks are new arrays",
+    "r4 non-arrays are TypeError",
+    "r5 empty and exact multiples unchanged"
+  ],
+  "note": "Frozen expected test IDs. Every ID must be observed and pass; skipped or missing is not a pass.",
+  "requirement_of": {
+    "r1 last chunk may be shorter": "R1",
+    "r2 bad sizes are RangeError": "R2",
+    "r3 input untouched and chunks are new arrays": "R3",
+    "r4 non-arrays are TypeError": "R4",
+    "r5 empty and exact multiples unchanged": "R5"
+  },
+  "visible_tests": [
+    "does not mutate input",
+    "empty input",
+    "exact multiples",
+    "keeps the remainder",
+    "rejects non-array",
+    "rejects zero size"
+  ]
+}

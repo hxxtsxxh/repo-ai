@@ -1,0 +1,145 @@
+[
+ {
+  "id": "24086367",
+  "task": "t3",
+  "oracle": "7/7",
+  "visible": [
+   "7 passed in 0.01s"
+  ],
+  "tools": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Glob",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "outside": [],
+  "cost": 0.004566790000000001,
+  "result": "success",
+  "skill_loaded": true,
+  "arm": "skill"
+ },
+ {
+  "id": "2dcc7a69",
+  "task": "t2",
+  "oracle": "4/7",
+  "visible": [
+   "5 passed in 0.01s"
+  ],
+  "tools": [
+   "Glob",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "outside": [],
+  "cost": 0.00406896,
+  "result": "success",
+  "skill_loaded": false,
+  "arm": "control"
+ },
+ {
+  "id": "c84fd528",
+  "task": "t1",
+  "oracle": "6/8",
+  "visible": [
+   "5 passed in 0.01s"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Bash"
+  ],
+  "outside": [],
+  "cost": 0.004589960000000001,
+  "result": "success",
+  "skill_loaded": true,
+  "arm": "skill"
+ },
+ {
+  "id": "ccb90fd7",
+  "task": "t2",
+  "oracle": "7/7",
+  "visible": [
+   "11 passed in 0.01s"
+  ],
+  "tools": [
+   "Skill",
+   "Read",
+   "Glob",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "outside": [],
+  "cost": 0.00534858,
+  "result": "success",
+  "skill_loaded": true,
+  "arm": "skill"
+ },
+ {
+  "id": "ce33981a",
+  "task": "t1",
+  "oracle": "8/8",
+  "visible": [
+   "5 passed in 0.01s"
+  ],
+  "tools": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Glob",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0034912400000000005,
+  "result": "success",
+  "skill_loaded": false,
+  "arm": "control"
+ },
+ {
+  "id": "d9e0724f",
+  "task": "t3",
+  "oracle": "7/7",
+  "visible": [
+   "8 passed in 0.01s"
+  ],
+  "tools": [
+   "Glob",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "outside": [],
+  "cost": 0.0034695800000000003,
+  "result": "success",
+  "skill_loaded": false,
+  "arm": "control"
+ }
+]

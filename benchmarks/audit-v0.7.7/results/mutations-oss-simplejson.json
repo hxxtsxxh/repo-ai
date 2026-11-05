@@ -1,0 +1,247 @@
+{
+ "baseline_failures": [],
+ "baseline_rc": 0,
+ "mutations": [
+  {
+   "file": "simplejson/encoder.py",
+   "func": "_iterencode_method",
+   "start": 536,
+   "end": 553,
+   "indent": 8,
+   "failing_modules": [
+    "simplejson.tests.test_check_circular",
+    "simplejson.tests.test_custom_method_cycles",
+    "simplejson.tests.test_dump",
+    "simplejson.tests.test_errors",
+    "simplejson.tests.test_for_json",
+    "simplejson.tests.test_namedtuple"
+   ]
+  },
+  {
+   "file": "simplejson/decoder.py",
+   "func": "__init__",
+   "start": 375,
+   "end": 391,
+   "indent": 8,
+   "failing_modules": [
+    "simplejson.tests"
+   ]
+  },
+  {
+   "file": "simplejson/ordered_dict.py",
+   "func": "__repr__",
+   "start": 82,
+   "end": 84,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "simplejson/ordered_dict.py",
+   "func": "__iter__",
+   "start": 39,
+   "end": 43,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "simplejson/ordered_dict.py",
+   "func": "clear",
+   "start": 20,
+   "end": 23,
+   "indent": 8,
+   "failing_modules": []
+  },
+  {
+   "file": "simplejson/decoder.py",
+   "func": "scan_four_digit_hex",
+   "start": 59,
+   "end": 66,
+   "indent": 4,
+   "failing_modules": [
+    "simplejson.tests.test_encode_for_html",
+    "simplejson.tests.test_pass1",
+    "simplejson.tests.test_scanstring",
+    "simplejson.tests.test_unicode"
+   ]
+  },
+  {
+   "file": "simplejson/__init__.py",
+   "func": "_toggle_speedups",
+   "start": 543,
+   "end": 565,
+   "indent": 4,
+   "failing_modules": []
+  },
+  {
+   "file": "simplejson/errors.py",
+   "func": "__init__",
+   "start": 41,
+   "end": 50,
+   "indent": 8,
+   "failing_modules": [
+    "simplejson.tests.test_decode",
+    "simplejson.tests.test_errors",
+    "simplejson.tests.test_fail",
+    "simplejson.tests.test_float",
+    "simplejson.tests.test_scanstring",
+    "simplejson.tests.test_unicode"
+   ]
+  },
+  {
+   "file": "simplejson/__init__.py",
+   "func": "dump",
+   "start": 243,
+   "end": 274,
+   "indent": 4,
+   "failing_modules": [
+    "simplejson.tests.test_decimal",
+    "simplejson.tests.test_dump",
+    "simplejson.tests.test_indent",
+    "simplejson.tests.test_item_sort_key",
+    "simplejson.tests.test_namedtuple",
+    "simplejson.tests.test_tool",
+    "simplejson.tests.test_tuple"
+   ]
+  },
+  {
+   "file": "simplejson/scanner.py",
+   "func": "_scan_once",
+   "start": 37,
+   "end": 72,
+   "indent": 8,
+   "failing_modules": [
+    "simplejson.tests.test_bigint_as_string",
+    "simplejson.tests.test_bitsize_int_as_string",
+    "simplejson.tests.test_custom_method_cycles",
+    "simplejson.tests.test_decimal",
+    "simplejson.tests.test_decode",
+    "simplejson.tests.test_dump",
+    "simplejson.tests.test_encode_for_html",
+    "simplejson.tests.test_errors",
+    "simplejson.tests.test_fail",
+    "simplejson.tests.test_float",
+    "simplejson.tests.test_for_json",
+    "simplejson.tests.test_indent",
+    "simplejson.tests.test_iterable",
+    "simplejson.tests.test_namedtuple",
+    "simplejson.tests.test_pass1",
+    "simplejson.tests.test_pass2",
+    "simplejson.tests.test_pass3",
+    "simplejson.tests.test_raw_json",
+    "simplejson.tests.test_separators",
+    "simplejson.tests.test_str_subclass",
+    "simplejson.tests.test_subclass",
+    "simplejson.tests.test_tool",
+    "simplejson.tests.test_unicode"
+   ]
+  },
+  {
+   "file": "simplejson/encoder.py",
+   "func": "_encoder",
+   "start": 381,
+   "end": 383,
+   "indent": 16,
+   "failing_modules": [
+    "simplejson.tests.test_dump"
+   ]
+  },
+  {
+   "file": "simplejson/__init__.py",
+   "func": "_import_OrderedDict",
+   "start": 138,
+   "end": 143,
+   "indent": 4,
+   "failing_modules": [
+    "simplejson.tests"
+   ]
+  },
+  {
+   "file": "simplejson/__init__.py",
+   "func": "loads",
+   "start": 513,
+   "end": 539,
+   "indent": 4,
+   "failing_modules": [
+    "simplejson.tests.test_bigint_as_string",
+    "simplejson.tests.test_bitsize_int_as_string",
+    "simplejson.tests.test_custom_method_cycles",
+    "simplejson.tests.test_decimal",
+    "simplejson.tests.test_decode",
+    "simplejson.tests.test_dump",
+    "simplejson.tests.test_errors",
+    "simplejson.tests.test_fail",
+    "simplejson.tests.test_float",
+    "simplejson.tests.test_for_json",
+    "simplejson.tests.test_indent",
+    "simplejson.tests.test_iterable",
+    "simplejson.tests.test_namedtuple",
+    "simplejson.tests.test_pass1",
+    "simplejson.tests.test_pass2",
+    "simplejson.tests.test_pass3",
+    "simplejson.tests.test_raw_json",
+    "simplejson.tests.test_separators",
+    "simplejson.tests.test_str_subclass",
+    "simplejson.tests.test_subclass",
+    "simplejson.tests.test_tool",
+    "simplejson.tests.test_unicode"
+   ]
+  },
+  {
+   "file": "simplejson/errors.py",
+   "func": "errmsg",
+   "start": 16,
+   "end": 23,
+   "indent": 4,
+   "failing_modules": [
+    "simplejson.tests.test_decode",
+    "simplejson.tests.test_errors",
+    "simplejson.tests.test_fail",
+    "simplejson.tests.test_float",
+    "simplejson.tests.test_scanstring",
+    "simplejson.tests.test_unicode"
+   ]
+  },
+  {
+   "file": "simplejson/encoder.py",
+   "func": "__init__",
+   "start": 286,
+   "end": 309,
+   "indent": 8,
+   "failing_modules": [
+    "simplejson.tests"
+   ]
+  },
+  {
+   "file": "simplejson/decoder.py",
+   "func": "raw_decode",
+   "start": 417,
+   "end": 430,
+   "indent": 8,
+   "failing_modules": [
+    "simplejson.tests.test_bigint_as_string",
+    "simplejson.tests.test_bitsize_int_as_string",
+    "simplejson.tests.test_custom_method_cycles",
+    "simplejson.tests.test_decimal",
+    "simplejson.tests.test_decode",
+    "simplejson.tests.test_dump",
+    "simplejson.tests.test_encode_for_html",
+    "simplejson.tests.test_errors",
+    "simplejson.tests.test_fail",
+    "simplejson.tests.test_float",
+    "simplejson.tests.test_for_json",
+    "simplejson.tests.test_indent",
+    "simplejson.tests.test_iterable",
+    "simplejson.tests.test_namedtuple",
+    "simplejson.tests.test_pass1",
+    "simplejson.tests.test_pass2",
+    "simplejson.tests.test_pass3",
+    "simplejson.tests.test_raw_json",
+    "simplejson.tests.test_separators",
+    "simplejson.tests.test_str_subclass",
+    "simplejson.tests.test_subclass",
+    "simplejson.tests.test_tool",
+    "simplejson.tests.test_unicode"
+   ]
+  }
+ ]
+}

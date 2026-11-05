@@ -1,0 +1,13 @@
+{
+  "note": "Repository profiles for the ten stack names used by the capability task corpora. Written from the stack names alone, before either corpus was scored.",
+  "python-cli": {"languages": ["Python"], "frameworks": [], "dependencies": ["click"]},
+  "python-web-django": {"languages": ["Python", "HTML", "JavaScript"], "frameworks": ["Django"], "dependencies": ["django"]},
+  "python-fastapi": {"languages": ["Python"], "frameworks": ["FastAPI"], "dependencies": ["fastapi", "pydantic", "sqlalchemy"]},
+  "ts-react-frontend": {"languages": ["TypeScript", "JavaScript", "CSS"], "frameworks": ["React"], "dependencies": ["react", "react-dom", "vite"]},
+  "ts-node-api": {"languages": ["TypeScript"], "frameworks": ["Express"], "dependencies": ["express", "zod"]},
+  "go-service": {"languages": ["Go"], "frameworks": [], "dependencies": ["github.com/go-chi/chi"]},
+  "rust-lib": {"languages": ["Rust"], "frameworks": [], "dependencies": ["serde"]},
+  "java-spring": {"languages": ["Java"], "frameworks": ["Spring Boot"], "dependencies": ["spring-boot-starter-web"]},
+  "docs-only": {"languages": [], "frameworks": [], "dependencies": []},
+  "mixed-monorepo": {"languages": ["Python", "TypeScript", "Go"], "frameworks": ["React", "FastAPI"], "dependencies": ["react", "fastapi"]}
+}
