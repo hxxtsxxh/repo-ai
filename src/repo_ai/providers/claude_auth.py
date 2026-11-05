@@ -34,6 +34,8 @@ import json
 import os
 import re
 import shlex
+import stat
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -60,6 +62,7 @@ class ClaudeAuthPlan:
     config_dir: Path | None
     env_vars: tuple[str, ...]  # names (never values) passed through to the provider
     problems: tuple[str, ...]
+    notes: tuple[str, ...] = ()  # informational; never makes the plan unusable
 
     @property
     def usable(self) -> bool:
@@ -67,7 +70,7 @@ class ClaudeAuthPlan:
 
     def to_json(self) -> dict[str, object]:
         return {"mode": self.mode, "config_dir": str(self.config_dir) if self.config_dir else None,
-                "env_vars": list(self.env_vars), "problems": list(self.problems)}
+                "env_vars": list(self.env_vars), "problems": list(self.problems), "notes": list(self.notes)}
 
 
 def default_config_dir(environ: Mapping[str, str] | None = None) -> Path:
@@ -121,12 +124,22 @@ def relogin_command(source: str) -> str:
 
 
 def audit_config_dir(path: Path) -> list[str]:
-    """What would make a dedicated config dir unsafe or unlike plain Claude Code. Empty means usable."""
+    """What would make a dedicated config dir unsafe or unlike plain Claude Code. Empty means usable. A directory
+    repo-ai cannot read is a problem, not a crash."""
+    try:
+        return _audit_config_dir(path)
+    except OSError as exc:
+        return [f"{path} could not be inspected ({type(exc).__name__}); repo-ai needs to read its Claude login directory"]
+
+
+def _audit_config_dir(path: Path) -> list[str]:
     problems: list[str] = []
     if not path.is_dir():
         return [f"no dedicated Claude login for repo-ai; run once: {login_command(path)}"]
     if path.is_symlink():
         return [f"{path} is a symlink; use a real directory owned by repo-ai"]
+    if not os.access(path, os.R_OK | os.X_OK):  # explicit: Path.is_dir() raises before 3.14 and is silent after
+        raise PermissionError(f"{path} is not readable")
     home = Path.home().resolve()
     resolved = path.resolve()
     if resolved == home or resolved in home.parents or too_broad(resolved) or \
@@ -167,19 +180,42 @@ def audit_config_dir(path: Path) -> list[str]:
     return problems
 
 
-def plan(environ: Mapping[str, str] | None = None) -> ClaudeAuthPlan:
+PLAINTEXT_CREDENTIALS = ".credentials.json"
+
+
+def plaintext_credentials_note(config_dir: Path, platform: str | None = None) -> str | None:
+    """On macOS a login lives in the Keychain; a plaintext credentials file in the dedicated directory means Claude
+    Code fell back to a file (observed when a revoked login failed inside a run, 2026-11-04). Existence only (lstat):
+    the file is never opened or read."""
+    if (platform or sys.platform) != "darwin":
+        return None
+    try:
+        st = os.lstat(config_dir / PLAINTEXT_CREDENTIALS)
+    except OSError:
+        return None
+    if not stat.S_ISREG(st.st_mode):
+        return None
+    return (f"{shell_path(config_dir / PLAINTEXT_CREDENTIALS)} exists: a plaintext credentials file Claude Code writes "
+            "when it cannot use the macOS Keychain (seen after a revoked login). It may hold a live or an old token, "
+            "and a successful run does not show which store supplied the login. To find out whether you still need it, "
+            "move it aside (do not delete it) and run once; if the login is refused, move it back")
+
+
+def plan(environ: Mapping[str, str] | None = None, platform: str | None = None) -> ClaudeAuthPlan:
     """Decide how a live run authenticates. Reads no credential values, only which variables are set."""
     environ = os.environ if environ is None else environ
     present = tuple(v for v in TOKEN_ENV_VARS if environ.get(v))
-    if present:
-        return ClaudeAuthPlan("token_env", None, present, ())
+    if present:  # the dedicated directory is unused, but a plaintext token left in it is still worth knowing about
+        left = plaintext_credentials_note(default_config_dir(environ), platform)
+        return ClaudeAuthPlan("token_env", None, present, (), (left,) if left else ())
     cfg = default_config_dir(environ)
     problems = audit_config_dir(cfg)
     if not environ.get("USER"):
         problems.append("USER is not set; Claude Code finds its keychain login by account name")
     if not cfg.is_dir():
         return ClaudeAuthPlan("none", cfg, (), tuple(problems))
-    return ClaudeAuthPlan("dedicated_config", cfg.resolve(), (), tuple(problems))
+    note = plaintext_credentials_note(cfg, platform)
+    return ClaudeAuthPlan("dedicated_config", cfg.resolve(), (), tuple(problems), (note,) if note else ())
 
 
 def missing_flags(help_text: str) -> list[str]:

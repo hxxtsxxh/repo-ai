@@ -30,6 +30,12 @@
   `strategy` now records `basis` (`forced`, `no-estimates`, `compared`, `kept`, `switched`), `previous` and
   `margin_s` (how much faster the selection had to be), and the `--json` summary `strategy_basis`. Not re-measured:
   no speed claim; a kept full suite can cost up to `margin_s`.
+- `repo-ai agents setup claude` notes (never as a problem) a plaintext `.credentials.json` in repo-ai's dedicated
+  Claude login directory on macOS, where the login normally lives in the Keychain: Claude Code wrote one when a
+  revoked login failed inside a run. It may hold a live or an old token; the note says to move it aside and run once
+  rather than delete it. The file is only checked for existence (`lstat`), never opened or removed; a token user is
+  told too. A Claude login directory repo-ai cannot read is now reported as a problem instead of crashing
+  `agents setup claude` and the live-run preflight.
 
 ## 0.12.5 — Node per-requirement lines; a false FULL fixed; exact re-login advice; refusal paths
 
