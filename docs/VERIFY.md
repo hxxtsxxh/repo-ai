@@ -122,6 +122,7 @@ evidence: none yet for this repository
 `--json` returns the same as data, with a `summary` object for agents:
 - `verdict`, `new_failures` (file and tests), `pre_existing` (with `sandbox_network_suspected`), `unconfirmed`;
 - `passed`, `no_tests`, `strategy` (with `strategy_basis`), `seconds`, `processes`, `reused`;
+- `untested_edits`: changed files no test ran or read (see "An edit no test runs");
 - `source_tree_unchanged`.
 
 `repo-ai evidence` later tells you whether that result still covers the
@@ -248,8 +249,21 @@ in disposable copies, with the same integrity checks.
     per-test report shows no outcome for the file, so it runs on its own
     afterwards, and its result counts like the selection's. Without a
     per-test report from a passing full suite, every selected file runs on
-    its own. If that cannot happen (no time left in `--deadline`), the run
-    is "not verified", never a pass.
+    its own, and the full suite is not chosen for speed again in that
+    environment (it would never be the faster shape there). If that cannot
+    happen (no time left in `--deadline`), the run is "not verified", never
+    a pass.
+  - **An edit no test runs:** after `verify --record`, a file named like a
+    test that pytest's own collection leaves out (marshmallow's
+    `tests/mypy_test_cases` under `norecursedirs`) is not a test here. An
+    edit to it still requires the full suite, which is what the project's
+    own command runs, but the full suite passes without it. Unless another
+    test imports, opens or names it, the run says so first among its
+    notes ("pytest's recorded collection never runs it; no test exercised
+    this edit") and lists it in `untested_edits`. The verdict stays the
+    full suite's, as for a changed source file no test executes: it is
+    evidence about the tests that ran, and the project's own command never
+    runs that file.
 - **The selected files**, otherwise: balanced into at most `--workers`
   processes (unittest and pytest), or one `node --test` invocation (Node runs
   each file in its own child process).

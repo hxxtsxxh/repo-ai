@@ -997,6 +997,13 @@ def _run_full(ctx: _Ctx, rec: dict[str, Any], argv: list[str], decision: strateg
         # without a trusted report nothing shows which selected files the suite ran
         missed = unreached(att, to_run) if trusted and att is not None else (to_run if runner.per_file else [])
         ctx.full_reached_all = trusted and not missed
+        if not trusted and missed:
+            # every selected file runs again below, so here the full suite is never the faster shape: the cost
+            # model learns it (as it does for a failing full suite it cannot attribute), whoever asked for this run
+            why = (att.reason if att is not None and att.reason else "") or "the full suite gave no per-test report"
+            ctx.timings.note_full_unusable(why)
+            rec["full_suite"]["reason"] = (f"not chosen for speed again here: it gave no usable per-test report "
+                                           f"({why}), so the selected files ran on their own as well")
         return _run_unreached(ctx, rec, rows, missed, "" if trusted else "the full suite gave no per-test report")
     if trusted and att is not None:
         rec["full_suite"]["failing_files"] = att.failing_files()

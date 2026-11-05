@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- After `verify --record`, an edit to a file named like a test that pytest's own recorded collection leaves out
+  (marshmallow's `tests/mypy_test_cases` under `norecursedirs`) required the full suite, which passed without the
+  file ever running, and the run read as if the edit was tested (the only note called it a "test helper"). Now, unless
+  another test imports, opens or names it, the run's first note says "<file>: pytest's recorded collection never runs
+  it; no test exercised this edit", the plan and the `--json` summary list it in `untested_edits`, and the full-suite
+  trigger says the file is never collected. The verdict and exit status are unchanged, as for a changed source file no
+  test executes; what the project's own command runs is unchanged.
+- A passing full suite without a usable per-test report re-runs every selected file (0.12.6), so it is never the
+  faster shape there: verify now records it as not chosen for speed again in that environment (as it already did
+  for a failing full suite it cannot attribute), whether the run was chosen for speed, required or requested.
+- Tests: end to end, Node's unreached path (a new failing file under a dot-directory, which `node --test`'s own
+  patterns skip and repo-ai's name match does not) and the trusted-failing full path (a failure already present at
+  the base elsewhere and a new failing file the full suite never collects give `regression`).
+
 ## 0.12.6 — verify never passes a selected file the full suite skipped; steadier run shape
 
 - Fixed (found reviewing #152; older than it, present in 0.12.5 and earlier): `verify --run` could report

@@ -188,6 +188,8 @@ def summarize(rec: dict[str, Any]) -> dict[str, Any]:
         "no_tests": [r["test"] for r in rows if r["status"] == "no-tests"],
         "not_run": [x["test"] for x in rec.get("not_run") or []],
         "strategy": (rec.get("strategy") or {}).get("kind"),
+        # changed files no test ran or read: the verdict says nothing about these edits
+        "untested_edits": list((rec.get("plan") or {}).get("untested_edits") or []),
         # why: "forced", "no-estimates", "compared", "kept" (the suite's earlier shape) or "switched"
         "strategy_basis": (rec.get("strategy") or {}).get("basis"),
         "seconds": (rec.get("timing") or {}).get("total_s"),
@@ -327,7 +329,9 @@ def _outcome(rec: dict[str, Any], s: dict[str, Any], uncertainty: list[str], aft
     tree = rec.get("source_tree") or {}
     if tree:
         out.append("  source tree unchanged" if tree.get("unchanged") else "  SOURCE TREE CHANGED: evidence invalid")
-    for u in uncertainty[:3]:
+    # every edit no test ran is named (they come first), then the first few other gaps
+    untested = len((rec.get("plan") or {}).get("untested_edits") or [])
+    for u in uncertainty[:3 + min(untested, 20)]:
         out.append(f"  ! {u}")
     if after_run:
         out.append(("evidence reused" if rec.get("reused") else "evidence saved")

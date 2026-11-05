@@ -317,7 +317,9 @@ def new_record(plan_json: dict[str, Any], backend: str, interpreter: str) -> dic
     created = datetime.now().astimezone().isoformat(timespec="seconds")
     return {"schema": SCHEMA, "created": created, "repo_ai_version": __version__,
             "base": plan_json["base"], "fingerprint": plan_json["fingerprint"], "backend": backend,
-            "interpreter": interpreter, "plan": {k: plan_json[k] for k in (
+            "interpreter": interpreter, "plan": {**{k: plan_json[k] for k in (
                 "confidence", "full_suite_required", "triggers", "uncertainty", "runner",
                 "test_files_total", "targeted_commands", "full_suite_command")},
+                # changed files no test runs or reads (an edit to a file pytest's recorded collection leaves out)
+                "untested_edits": list(plan_json.get("untested_edits") or [])},
             "selected": [s["test"] for s in plan_json["selected"]], "results": [], "full_suite": None}
