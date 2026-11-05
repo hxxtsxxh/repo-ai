@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.6 — verify never passes a selected file the full suite skipped; steadier run shape
 
 - Fixed (found reviewing #152; older than it, present in 0.12.5 and earlier): `verify --run` could report
   `selected-and-full-suite-passed` for a selected test file the full suite never ran. When the project's own command
