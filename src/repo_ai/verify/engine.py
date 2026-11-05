@@ -910,10 +910,17 @@ def _run_isolated(root: Path, layout, p: Plan, change: ch.Change, executor: Exec
     timings.save()
     cut = ctx.deadline_hit
     rec["verdict"] = evidence.verdict(rec["results"], rec["full_suite"], len(p.selected), p.full_suite_required,
-                                      behavioural=_behavioural(p),
+                                      behavioural=_behavioural(p), untested_only=_untested_only(p),
                                       incomplete=f"the time budget of {deadline_s:g} s ran out before every test "
                                       "ran" if cut and deadline_s is not None else "")
     return rec
+
+
+def _untested_only(p) -> bool:
+    """Every behavioural changed file is one no run executes (`Plan.untested_edits`)."""
+    untested = set(getattr(p, "untested_edits", None) or [])
+    changed = [f.path for f in p.files if f.behavioral and f.kind != "docs"]
+    return bool(untested) and bool(changed) and all(f in untested for f in changed)
 
 
 def _behavioural(p) -> bool:

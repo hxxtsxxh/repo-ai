@@ -64,6 +64,10 @@ def is_passing(verdict: object) -> bool:
 
 
 NOT_VERIFIED_UNLINKED = "not verified: no test is linked to the behavioural change (nothing was selected)"
+# every behavioural changed file is one no run executes (a file pytest's recorded collection leaves out, which no test
+# imports, opens or names), yet tests ran (`--full`, or tests a documentation change names): they say nothing about it
+NOT_VERIFIED_UNTESTED = ("not verified: the tests that ran never run the changed file(s) "
+                         "(pytest's recorded collection leaves them out)")
 NOT_VERIFIED_FULL_NOT_RUN = "not verified: the full suite is required for this change and could not be run"
 
 # The test runner itself is missing from the environment verify ran in: every test fails the same way at the base
@@ -86,7 +90,7 @@ def runner_missing(output: str) -> str | None:
 
 
 def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected: int,
-            full_required: bool, behavioural: bool = True, incomplete: str = "") -> str:
+            full_required: bool, behavioural: bool = True, incomplete: str = "", untested_only: bool = False) -> str:
     """One phrase for the whole run. Anything that is not a pass is reported
     as a failure; a failure is called pre-existing only when the base run
     showed the same tests failing. `behavioural`: the change alters code
@@ -96,7 +100,9 @@ def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected
     `incomplete`: why the run could not finish (its time budget ran out). A
     new failure observed before that still is a regression; anything else is
     "not verified", never a pass. A file the budget cut (`deadline`) says
-    nothing about the change by itself."""
+    nothing about the change by itself. `untested_only`: every behavioural
+    changed file is one no run executes (`Plan.untested_edits`): whatever
+    ran, short of a reproduced new failure, is not a pass for it."""
     if incomplete:
         results = [r for r in results if not r.get("deadline")]
     failed = [r for r in results if r["status"] not in {"pass", "no-tests"}]
@@ -124,6 +130,9 @@ def verdict(results: list[dict[str, Any]], full: dict[str, Any] | None, selected
         return "regression"  # whatever else happened, these failures are new and reproduced
     if incomplete:
         return f"not verified: {incomplete}"
+    if untested_only and (results or (full is not None and full.get("status") not in {None, "not-run"})):
+        # `--full` passing (or failing as at the base) without ever running the edited file is no evidence about it
+        return NOT_VERIFIED_UNTESTED
     not_reached = [r for r in results if r.get("not_reached")]
     if not_reached:
         # the full suite's own collection left these selected files out and they could not run on their own:

@@ -10,8 +10,12 @@
   test is linked to is: `not verified: no test is linked to the behavioural change`, exit 1. Next to other changes,
   their tests decide. Either way the run's first note says "<file>: pytest's recorded collection never runs it; no
   test exercised this edit", and the plan, the evidence and the `--json` summary list it in `untested_edits`. As for
-  an unlinked source edit, a CI that runs `verify --run` fails on such an edit until a test covers it (`--full` still
-  runs the project's own suite and reports its pass, with the note).
+  an unlinked source edit, a CI that runs `verify --run` fails on such an edit until a test covers it. When every
+  behavioural change is such an edit, `--full` (or tests a documentation change names) no longer turns that into a
+  pass: the verdict is `not verified: the tests that ran never run the changed file(s) (pytest's recorded collection
+  leaves them out)`, exit 1, with the full suite's own result still shown; only a new failure they reproduce is
+  reported (as a regression). An unlinked source edit under `--full` still passes on the full suite, which runs the
+  project's tests against the new code and can reach code no link showed.
 - A passing full suite chosen for speed but without a usable per-test report re-runs every selected file (0.12.6),
   so it is never the faster shape there: verify now records it as not chosen for speed again in that environment (as
   it already did for a failing full suite it cannot attribute). A full suite the change or `--full` forced leaves

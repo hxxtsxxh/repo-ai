@@ -156,6 +156,63 @@ def test_an_excluded_file_another_test_reads_is_linked_not_named(tmp_path: Path)
     assert "tests/test_cases_read.py" in out["evidence"]["selected"], out["evidence"]["selected"]
 
 
+@needs_sandbox
+def test_full_does_not_turn_an_edit_no_test_runs_into_a_pass(tmp_path: Path):
+    """`--full` runs the project's suite, which never runs the edited file: still not verified, exit 1, with the
+    full suite's own result shown (#155 final review)."""
+    root = _marshmallow_like(tmp_path)
+    (root / OLD).write_text("from pkg.core import f\n\n\ndef test_old():\n    assert f() == 3\n")
+    code, out = _run_exit(root, "--full")
+    ev = out["evidence"]
+    assert code == 1 and ev["full_suite"]["status"] == "pass"
+    assert ev["verdict"] == evidence.NOT_VERIFIED_UNTESTED, ev["verdict"]
+    assert out["summary"]["untested_edits"] == [OLD]
+    shown = run_cli(root, "verify", "--run", "--full", "--test-command", PY_CMD)   # the reused record, as printed
+    assert shown.returncode == 1 and "NOT VERIFIED" in shown.stdout and "PASSED" not in shown.stdout, shown.stdout
+    assert "the full suite passed, without running the changed file(s)" in shown.stdout
+    assert f"! {LINE}" in shown.stdout and "No test ran" not in shown.stdout
+
+
+@needs_sandbox
+def test_full_with_a_tested_change_next_to_it_still_passes(tmp_path: Path):
+    root = _marshmallow_like(tmp_path)
+    (root / OLD).write_text("from pkg.core import f\n\n\ndef test_old():\n    assert f() == 3\n")
+    (root / "pkg" / "core.py").write_text("def f():\n    return 0 + 1\n")
+    code, out = _run_exit(root, "--full")
+    ev = out["evidence"]
+    assert code == 0 and ev["verdict"] == "selected-and-full-suite-passed", ev["verdict"]
+    assert ev["plan"]["uncertainty"][0] == LINE and out["summary"]["untested_edits"] == [OLD]
+
+
+def test_the_verdict_for_edits_no_run_executes():
+    full_pass = {"status": "pass"}
+    assert evidence.verdict([], full_pass, 0, False, untested_only=True) == evidence.NOT_VERIFIED_UNTESTED
+    pre = [{"test": "tests/a.py", "status": "fail", "baseline": "fail", "shape": "full"}]
+    assert evidence.verdict(pre, {"status": "fail", "attributed": True}, 0, False, untested_only=True) \
+        == evidence.NOT_VERIFIED_UNTESTED                       # failing as at the base says nothing either
+    new = [{"test": "tests/a.py", "status": "fail", "baseline": "pass", "shape": "full"}]
+    assert evidence.verdict(new, full_pass, 0, False, untested_only=True) == "regression"   # a new failure stands
+    # nothing ran at all: the unlinked rule, as before
+    assert evidence.verdict([], None, 0, False, untested_only=True) == evidence.NOT_VERIFIED_UNLINKED
+    # a docs change naming a test ran it; it does not run the edited file either
+    docs = [{"test": "tests/a.py", "status": "pass"}]
+    assert evidence.verdict(docs, None, 1, False, untested_only=True) == evidence.NOT_VERIFIED_UNTESTED
+    # otherwise unchanged: an unlinked source edit under --full still passes (the suite may run that code)
+    assert evidence.verdict([], full_pass, 0, False) == "selected-and-full-suite-passed"
+
+
+def test_untested_only_needs_every_behavioural_file_to_be_untested():
+    def plan(files, untested):
+        return SimpleNamespace(untested_edits=untested, files=[SimpleNamespace(path=f, behavioral=b, kind=k)
+                                                               for f, b, k in files])
+    assert engine._untested_only(plan([(OLD, True, "test-helper")], [OLD]))
+    assert engine._untested_only(plan([(OLD, True, "test-helper"), ("README.md", True, "docs"),
+                                       ("pkg/core.py", False, "source")], [OLD]))   # docs, comment-only: ignored
+    assert not engine._untested_only(plan([(OLD, True, "test-helper"), ("pkg/core.py", True, "source")], [OLD]))
+    assert not engine._untested_only(plan([("pkg/core.py", True, "source")], []))
+    assert not engine._untested_only(plan([], []))
+
+
 # -- 2: an untrusted passing full suite is not chosen for speed again -------------------
 def test_a_passing_full_suite_without_a_trusted_report_is_marked_unusable_for_speed(tmp_path: Path, monkeypatch):
     timings = cache.Timings(tmp_path, "env")
