@@ -1,12 +1,37 @@
 # Omniprovider mission — report
 
-Status: **0.12.5 publicly shipped and verified (2026-11-05 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.6 publicly shipped and verified (2026-11-05 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.6 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.6` at `905358e` (#153), pushed with the owner's approval on 2026-11-05; release run 42091064941 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release) |
+| Wheel | `repo_ai_cli-0.12.6-py3-none-any.whl` sha256 `67b7fd95ccd3c215f037a1b75f58f20dd4a2eb4e0028382143118abb9eb0e561` |
+| sdist | `repo_ai_cli-0.12.6.tar.gz` sha256 `e3e2481e17eb8845ec2984cc29e38efadc9574c4128326540531370feb09afdb` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | attestations verified for both |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.6`; `init` in a scratch repository |
+| Site | sitemap URLs 200 (the new `docs/reproduce` too), a missing page 404, the changelog shows 0.12.6; release facts move to 0.12.6 with this record |
+
+Contents:
+- #152 **false assurance fixed**: `verify --run` reported `selected-and-full-suite-passed` when it ran the full suite
+  and the project's own collection skipped a selected test file (a new failing file under pytest `norecursedirs`; a
+  unittest package whose `load_tests` hides it). Found by the adversarial review of the C16 change, reproduced end to
+  end, present in 0.12.5 and earlier. Such files now run on their own (a failure is a `regression`); if they cannot,
+  the verdict is not verified. Low follow-ups in QUEUE row 36.
+- #152 (C16) an unchanged suite keeps a full-suite run shape instead of flipping on close timings; steadiness only
+  ever leans toward the full suite (an earlier version leaned toward the selection and was rejected by the review).
+- #151 `agents setup claude` notes a plaintext credentials file left in the dedicated login directory (macOS).
+- Docs: #150 "Repeat our journeys" (C21), #148 RELEASING.md (C23).
+- Process note: a scratchpad clone under /private/tmp lost tracked files to macOS's periodic cleanup, and one PR-branch
+  commit staged ~2,600 deletions (#151, reverted on the branch, never merged; every merged PR checked).
 
 ### Release 0.12.5 (verified after publication)
 
