@@ -505,6 +505,8 @@ def _agents_setup(args) -> int:
     print(f'claude: {modes[plan.mode]}')
     for problem in plan.problems:
         print(f'  - {problem}')
+    for note in plan.notes:
+        print(f'  note: {note}')
     if plan.usable:
         print('Ready to try. A live run still needs --allow-live-provider (or agents authorize claude) and a USD '
               'ceiling (--max-cost-usd > 0), and is checked by its result, not by this command.')

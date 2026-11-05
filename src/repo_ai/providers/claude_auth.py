@@ -34,6 +34,8 @@ import json
 import os
 import re
 import shlex
+import stat
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -60,6 +62,7 @@ class ClaudeAuthPlan:
     config_dir: Path | None
     env_vars: tuple[str, ...]  # names (never values) passed through to the provider
     problems: tuple[str, ...]
+    notes: tuple[str, ...] = ()  # informational; never makes the plan unusable
 
     @property
     def usable(self) -> bool:
@@ -67,7 +70,7 @@ class ClaudeAuthPlan:
 
     def to_json(self) -> dict[str, object]:
         return {"mode": self.mode, "config_dir": str(self.config_dir) if self.config_dir else None,
-                "env_vars": list(self.env_vars), "problems": list(self.problems)}
+                "env_vars": list(self.env_vars), "problems": list(self.problems), "notes": list(self.notes)}
 
 
 def default_config_dir(environ: Mapping[str, str] | None = None) -> Path:
@@ -167,6 +170,27 @@ def audit_config_dir(path: Path) -> list[str]:
     return problems
 
 
+PLAINTEXT_CREDENTIALS = ".credentials.json"
+
+
+def plaintext_credentials_note(config_dir: Path, platform: str | None = None) -> str | None:
+    """On macOS a login lives in the Keychain; a plaintext credentials file in the dedicated directory means Claude
+    Code fell back to a file (observed when a revoked login failed inside a run, 2026-11-04). Existence only (lstat):
+    the file is never opened or read."""
+    if (platform or sys.platform) != "darwin":
+        return None
+    try:
+        st = os.lstat(config_dir / PLAINTEXT_CREDENTIALS)
+    except OSError:
+        return None
+    if not stat.S_ISREG(st.st_mode):
+        return None
+    return (f"{shell_path(config_dir / PLAINTEXT_CREDENTIALS)} exists: a plaintext credentials file Claude Code writes "
+            "when it cannot use the macOS Keychain (seen after a revoked login). It may hold an old token. In the "
+            "case observed, Claude Code used the Keychain login instead; once a run with your current login succeeds, "
+            "you can delete the file")
+
+
 def plan(environ: Mapping[str, str] | None = None) -> ClaudeAuthPlan:
     """Decide how a live run authenticates. Reads no credential values, only which variables are set."""
     environ = os.environ if environ is None else environ
@@ -179,7 +203,8 @@ def plan(environ: Mapping[str, str] | None = None) -> ClaudeAuthPlan:
         problems.append("USER is not set; Claude Code finds its keychain login by account name")
     if not cfg.is_dir():
         return ClaudeAuthPlan("none", cfg, (), tuple(problems))
-    return ClaudeAuthPlan("dedicated_config", cfg.resolve(), (), tuple(problems))
+    note = plaintext_credentials_note(cfg)
+    return ClaudeAuthPlan("dedicated_config", cfg.resolve(), (), tuple(problems), (note,) if note else ())
 
 
 def missing_flags(help_text: str) -> list[str]:
