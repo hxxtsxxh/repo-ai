@@ -151,3 +151,14 @@ gates (L6 for the re-run: ≤ 2 sessions / ≤ $2.00).
   repeated. A session that ends BLOCKED, FAIL or INCONCLUSIVE again is reported as such, with its cause.
 - Results are added to `RESULTS.md` as a separate re-run section with raw records under `results/`; the 2026-11-03
   verdicts are not replaced. pyjwt (PASS) and marshmallow (INCONCLUSIVE by design) are not re-run.
+
+**Amendment 5 (2026-11-04, before the retry; repo-ai 0.12.4): one retry of the two amendment-4 sessions.** Both
+amendment-4 sessions ended BLOCKED before any model turn: the dedicated login had been revoked server-side
+(`authentication_failed`), $0.00 OBSERVED each. The owner logged the dedicated login in again and approved one more
+attempt under the same scope: **humanize and more-itertools, at most 2 Claude sessions, $1.00 cap each, $2.00 in
+total** (Claude Code's reported `total_cost_usd`; unreported cost is UNKNOWN). It runs in a third work directory
+(`journey-live-v1-retry`) with prep and the positive control again and `run --max-sessions 2`; everything else is as
+in amendment 4. If it fails again for an external reason (login, quota, service), it is recorded and not retried.
+Observed before the retry, recorded as is: the failed amendment-4 run left a plaintext `.credentials.json` in the
+dedicated config directory, created at the moment of the failure (the login before it lived only in the Keychain);
+the new login went to the Keychain and did not change that file.
