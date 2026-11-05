@@ -1,9 +1,17 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.6, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.7, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.7
+
+- **Fixed** after `verify --record`, an edit to a test-named file that pytest's own collection never runs (for example
+  under `norecursedirs`), with nothing else changed, was reported as passed because the full suite passed without
+  running it. It is now not verified (exit 1), also with `--full`; next to tested changes the edit is named as untested.
+- **Changed** a full suite without a usable per-test report is no longer chosen for speed in that environment, until a
+  later full run reports normally.
 
 ## 0.12.6
 

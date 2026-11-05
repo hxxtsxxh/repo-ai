@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.7 — an edit no test runs is never reported as verified
 
 - Fixed (found reviewing #152, older than it): after `verify --record`, an edit to a file named like a test that
   pytest's own recorded collection leaves out (marshmallow's `tests/mypy_test_cases` under `norecursedirs`) required
