@@ -1,0 +1,81 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..842ac99 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -57,8 +57,13 @@ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+         text=args.grep,
+         ignore=config.ignore,
+     )
+-    for record in records:
+-        sys.stdout.write(record.line + "\n")
++    if args.output is None:
++        for record in records:
++            sys.stdout.write(record.line + "\n")
++        return 0
++    write_text(args.output, "".join(record.line + "\n" for record in records), force=args.force)
++    noun = "line" if len(records) == 1 else "lines"
++    _info(f"wrote {len(records)} {noun} to {args.output}")
+     return 0
+ 
+ 
+@@ -94,6 +99,10 @@ def build_parser() -> argparse.ArgumentParser:
+         "--component", action="append", default=[], metavar="NAME", help="keep this component (repeatable)"
+     )
+     filter_.add_argument("--grep", metavar="TEXT", help="keep messages containing TEXT")
++    filter_.add_argument(
++        "-o", "--output", metavar="PATH", help="write the matching lines to PATH instead of printing them"
++    )
++    filter_.add_argument("--force", action="store_true", help="replace PATH if it exists (with --output)")
+     filter_.set_defaults(handler=cmd_filter)
+ 
+     top = commands.add_parser("top", help="list the most frequent messages")
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..3b58488 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -49,6 +49,45 @@ def test_filter_grep(sample_log, capsys):
+     assert capsys.readouterr().out == "2026-03-04T10:01:00Z WARNING db: slow query took 1200 ms\n"
+ 
+ 
++def test_filter_output_writes_matching_lines_to_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "web-errors.log"
++    assert main(["filter", str(sample_log), "--level", "error", "--component", "web", "-o", str(out)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: wrote 2 lines to {out}\n"
++    assert out.read_text(encoding="utf-8") == (
++        "2026-03-04T10:04:00Z ERROR web: request 991 failed\n"
++        "2026-03-04T10:05:00Z CRITICAL web: worker crashed\n"
++    )
++
++
++def test_filter_output_long_option_with_no_matches(sample_log, tmp_path, capsys):
++    out = tmp_path / "none.log"
++    assert main(["filter", str(sample_log), "--grep", "nothing-matches", "--output", str(out)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: wrote 0 lines to {out}\n"
++    assert out.read_text(encoding="utf-8") == ""
++
++
++def test_filter_output_refuses_existing_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "keep.log"
++    out.write_text("keep\n", encoding="utf-8")
++    assert main(["filter", str(sample_log), "-o", str(out)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: {out} already exists (use --force to overwrite)\n"
++    assert out.read_text(encoding="utf-8") == "keep\n"
++
++
++def test_filter_output_force_replaces_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "replaced.log"
++    out.write_text("old\n", encoding="utf-8")
++    assert main(["filter", str(sample_log), "--grep", "slow", "-o", str(out), "--force"]) == 0
++    assert out.read_text(encoding="utf-8") == "2026-03-04T10:01:00Z WARNING db: slow query took 1200 ms\n"
++    assert capsys.readouterr().err == f"logsift: wrote 1 line to {out}\n"
++
++
+ def test_top_text_with_limit(sample_log, capsys):
+     assert main(["top", str(sample_log), "--limit", "2"]) == 0
+     assert capsys.readouterr().out == (

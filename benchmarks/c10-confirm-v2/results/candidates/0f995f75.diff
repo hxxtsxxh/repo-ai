@@ -1,0 +1,105 @@
+diff --git a/logsift/config.py b/logsift/config.py
+index 37d1c50..684a4b4 100644
+--- a/logsift/config.py
++++ b/logsift/config.py
+@@ -9,7 +9,7 @@ Example::
+ import tomllib
+ from dataclasses import dataclass
+ 
+-from .errors import ConfigError
++from .errors import ConfigError, LogsiftError
+ 
+ _KNOWN_KEYS = {"ignore"}
+ 
+@@ -19,6 +19,26 @@ class Config:
+     ignore: tuple[str, ...] = ()
+ 
+ 
++def read_name_list(path: str) -> list[str]:
++    """Read component names, one per line, from a UTF-8 text file.
++
++    Names are returned in file order with surrounding whitespace removed.
++    Blank lines and lines whose first non-space character is ``#`` are skipped.
++    """
++    names = []
++    try:
++        with open(path, encoding="utf-8") as handle:
++            for line in handle:
++                name = line.strip()
++                if name and not name.startswith("#"):
++                    names.append(name)
++    except OSError as exc:
++        raise LogsiftError(f"cannot read {path}: {exc.strerror}") from exc
++    except UnicodeDecodeError as exc:
++        raise LogsiftError(f"cannot read {path}: not valid UTF-8") from exc
++    return names
++
++
+ def load_config(path: str) -> Config:
+     """Read the ``[logsift]`` table of a TOML file."""
+     try:
+diff --git a/tests/test_render_output_config.py b/tests/test_render_output_config.py
+index d7aec1a..2d590e9 100644
+--- a/tests/test_render_output_config.py
++++ b/tests/test_render_output_config.py
+@@ -1,7 +1,7 @@
+ import pytest
+ 
+-from logsift.config import Config, load_config
+-from logsift.errors import ConfigError, OutputExistsError
++from logsift.config import Config, load_config, read_name_list
++from logsift.errors import ConfigError, LogsiftError, OutputExistsError
+ from logsift.output import write_text
+ from logsift.render import render_json, render_table, rows_to_objects
+ 
+@@ -62,3 +62,50 @@ def test_load_config_errors(tmp_path, content, message):
+     path.write_text(content, encoding="utf-8")
+     with pytest.raises(ConfigError, match=message):
+         load_config(str(path))
++
++
++def test_read_name_list_keeps_file_order(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("web\ndb\nhealthcheck\n", encoding="utf-8")
++    assert read_name_list(str(path)) == ["web", "db", "healthcheck"]
++
++
++def test_read_name_list_strips_whitespace(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("  web  \n\tdb\t\r\n", encoding="utf-8")
++    assert read_name_list(str(path)) == ["web", "db"]
++
++
++def test_read_name_list_skips_blank_and_comment_lines(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text(
++        "# components to ignore\n\n   \nweb\n  # indented comment\n\tdb # not a comment\n",
++        encoding="utf-8",
++    )
++    assert read_name_list(str(path)) == ["web", "db # not a comment"]
++
++
++def test_read_name_list_reads_utf8(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_bytes("café\n".encode("utf-8"))
++    assert read_name_list(str(path)) == ["café"]
++
++
++def test_read_name_list_empty_file(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("", encoding="utf-8")
++    assert read_name_list(str(path)) == []
++
++
++def test_read_name_list_missing_file(tmp_path):
++    path = tmp_path / "missing.txt"
++    with pytest.raises(LogsiftError) as info:
++        read_name_list(str(path))
++    assert str(info.value) == f"cannot read {path}: No such file or directory"
++
++
++def test_read_name_list_rejects_invalid_utf8(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_bytes(b"web\n\xff\n")
++    with pytest.raises(LogsiftError, match="not valid UTF-8"):
++        read_name_list(str(path))

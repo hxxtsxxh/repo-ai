@@ -1,0 +1,168 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..6592e14 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -10,7 +10,7 @@ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+ from .render import render_json, render_table, rows_to_objects
+-from .stats import count_by, top_messages
++from .stats import bytes_by_component, count_by, top_messages
+ 
+ PROG = "logsift"
+ 
+@@ -49,6 +49,12 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_traffic(args: argparse.Namespace, config: Config) -> int:
++    records = filter_records(read_records(args.files), ignore=config.ignore)
++    _emit_report(args, ["component", "bytes"], list(bytes_by_component(records).items()))
++    return 0
++
++
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(
+         read_records(args.files),
+@@ -87,6 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
+     summary.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     summary.set_defaults(handler=cmd_summary)
+ 
++    traffic = commands.add_parser("traffic", help="total the bytes=<n> response sizes by component")
++    traffic.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    traffic.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    traffic.set_defaults(handler=cmd_traffic)
++
+     filter_ = commands.add_parser("filter", help="print the lines that match")
+     filter_.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     filter_.add_argument("--level", type=_level, help="lowest level to keep")
+diff --git a/logsift/stats.py b/logsift/stats.py
+index 8962111..4914021 100644
+--- a/logsift/stats.py
++++ b/logsift/stats.py
+@@ -7,6 +7,7 @@ from collections.abc import Iterable
+ from .records import LogRecord
+ 
+ _DIGITS_RE = re.compile(r"\d+")
++_BYTES_RE = re.compile(r"\bbytes=([0-9]+)")
+ 
+ 
+ def sort_counts(counts: Counter[str]) -> list[tuple[str, int]]:
+@@ -28,3 +29,18 @@ def top_messages(records: Iterable[LogRecord], limit: int) -> list[tuple[str, in
+     """Return the ``limit`` most frequent normalized messages."""
+     counts = Counter(normalize_message(record.message) for record in records)
+     return sort_counts(counts)[:limit]
++
++
++def bytes_by_component(records: Iterable[LogRecord]) -> dict[str, int]:
++    """Sum the ``bytes=<n>`` value logged in each record, per component.
++
++    Records whose message has no ``bytes=<n>`` are ignored, and components
++    without any such record are left out. Ordered by total, highest first.
++    """
++    totals: Counter[str] = Counter()
++    for record in records:
++        match = _BYTES_RE.search(record.message)
++        if match is None:
++            continue
++        totals[record.component] += int(match.group(1))
++    return dict(sort_counts(totals))
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 097cf31..01e83fc 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -18,3 +18,21 @@ def sample_log(tmp_path):
+     path = tmp_path / "app.log"
+     path.write_text(SAMPLE, encoding="utf-8")
+     return path
++
++
++TRAFFIC = """\
++2026-03-04T10:00:00Z INFO cdn: GET /assets/app.js 200 bytes=48213
++2026-03-04T10:00:01Z INFO cdn: GET /assets/logo.png 200 bytes=1000
++2026-03-04T10:00:02Z INFO api: GET /v1/items 200 bytes=512
++2026-03-04T10:00:03Z INFO api: POST /v1/items 201
++2026-03-04T10:00:04Z ERROR worker: job failed
++2026-03-04T10:00:05Z INFO static: GET /robots.txt 200 bytes=0
++2026-03-04T10:00:06Z INFO cdn: GET /x 200 sentbytes=999
++"""
++
++
++@pytest.fixture
++def traffic_log(tmp_path):
++    path = tmp_path / "traffic.log"
++    path.write_text(TRAFFIC, encoding="utf-8")
++    return path
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..29442aa 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,34 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++def test_traffic_text(traffic_log, capsys):
++    assert main(["traffic", str(traffic_log)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == (
++        "component  bytes\n"
++        "cdn        49213\n"
++        "api          512\n"
++        "static         0\n"
++    )
++    assert captured.err == ""
++
++
++def test_traffic_json(traffic_log, capsys):
++    assert main(["traffic", str(traffic_log), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"component": "cdn", "bytes": 49213},
++        {"component": "api", "bytes": 512},
++        {"component": "static", "bytes": 0},
++    ]
++
++
++def test_traffic_of_several_files(traffic_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z INFO cdn: GET /a 200 bytes=7\n", encoding="utf-8")
++    assert main(["traffic", str(traffic_log), str(other)]) == 0
++    assert capsys.readouterr().out.splitlines()[1] == "cdn        49220"
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (
+diff --git a/tests/test_filters_stats.py b/tests/test_filters_stats.py
+index fdec742..3dd4681 100644
+--- a/tests/test_filters_stats.py
++++ b/tests/test_filters_stats.py
+@@ -1,6 +1,6 @@
+ from logsift.filters import filter_records
+ from logsift.records import read_records
+-from logsift.stats import count_by, normalize_message, top_messages
++from logsift.stats import bytes_by_component, count_by, normalize_message, top_messages
+ 
+ 
+ def test_filter_by_min_level(sample_log):
+@@ -34,3 +34,21 @@ def test_normalize_message_replaces_digit_runs():
+ def test_top_messages_limit(sample_log):
+     records = read_records([str(sample_log)])
+     assert top_messages(records, 2) == [("connection # lost", 2), ("ok", 1)]
++
++
++def test_bytes_by_component_sums_logged_sizes(traffic_log):
++    records = read_records([str(traffic_log)])
++    totals = bytes_by_component(records)
++    assert totals == {"cdn": 49213, "api": 512, "static": 0}
++    assert list(totals) == ["cdn", "api", "static"]
++
++
++def test_bytes_by_component_ignores_records_without_bytes(traffic_log):
++    records = read_records([str(traffic_log)])
++    totals = bytes_by_component(records)
++    assert "worker" not in totals
++    assert "sentbytes" not in str(totals)
++
++
++def test_bytes_by_component_empty_input():
++    assert bytes_by_component([]) == {}

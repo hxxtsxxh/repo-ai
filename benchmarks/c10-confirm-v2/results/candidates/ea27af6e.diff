@@ -1,0 +1,166 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..6306700 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -2,6 +2,7 @@
+ 
+ import argparse
+ import sys
++from collections import Counter
+ from collections.abc import Sequence
+ 
+ from .config import Config, load_config
+@@ -68,6 +69,20 @@ def cmd_top(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_sources(args: argparse.Namespace, config: Config) -> int:
++    # Every record is counted; config.ignore applies to reports, not to file totals.
++    counts = Counter(record.source for record in read_records(args.files))
++    # One row per distinct file, ordered by count (highest first), then by file name.
++    rows = [(path, counts[path]) for path in dict.fromkeys(args.files)]
++    rows.sort(key=lambda row: (-row[1], row[0]))
++    headers = ["file", "count"]
++    if args.format == "json":
++        sys.stdout.write(render_json(rows_to_objects(headers, rows)))
++    else:
++        sys.stdout.write(render_table(headers, rows, header=not args.no_header))
++    return 0
++
++
+ def cmd_export(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(read_records(args.files), min_level=args.level, ignore=config.ignore)
+     write_text(args.output, records_to_jsonl(records), force=args.force)
+@@ -103,6 +118,12 @@ def build_parser() -> argparse.ArgumentParser:
+     top.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     top.set_defaults(handler=cmd_top)
+ 
++    sources = commands.add_parser("sources", help="count the records in each file")
++    sources.add_argument("files", nargs="+", metavar="FILE", help="log files to count")
++    sources.add_argument("--no-header", action="store_true", help="leave out the header line of the table")
++    sources.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    sources.set_defaults(handler=cmd_sources)
++
+     export = commands.add_parser("export", help="write records to a JSON Lines file")
+     export.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     export.add_argument("-o", "--output", required=True, metavar="PATH", help="file to write")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..89ec421 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -5,13 +5,17 @@ from collections.abc import Sequence
+ from typing import Any
+ 
+ 
+-def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+-    """Render rows as aligned columns under a header line.
++def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]], *, header: bool = True) -> str:
++    """Render rows as aligned columns, optionally under a header line.
+ 
+     Integer columns are right-aligned, all others left-aligned; columns are
+-    separated by two spaces.
++    separated by two spaces. Without the header line, column widths are taken
++    from the rows alone, and no rows gives an empty string.
+     """
+-    cells = [list(headers)] + [[str(value) for value in row] for row in rows]
++    body = [[str(value) for value in row] for row in rows]
++    cells = ([list(headers)] if header else []) + body
++    if not cells:
++        return ""
+     widths = [max(len(line[i]) for line in cells) for i in range(len(headers))]
+     numeric = [bool(rows) and all(isinstance(row[i], int) for row in rows) for i in range(len(headers))]
+     lines = []
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..d85fea0 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,89 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++def _one_record_log(tmp_path, name="other.log"):
++    path = tmp_path / name
++    path.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    return path
++
++
++def test_sources_text_counts_each_file(sample_log, tmp_path, capsys):
++    other = _one_record_log(tmp_path)
++    assert main(["sources", str(sample_log), str(other)]) == 0
++    captured = capsys.readouterr()
++    width = max(len("file"), len(str(sample_log)), len(str(other)))
++    assert captured.out == (
++        f"{'file'.ljust(width)}  count\n"
++        f"{str(sample_log).ljust(width)}      8\n"
++        f"{str(other).ljust(width)}      1\n"
++    )
++    assert captured.err == ""
++
++
++def test_sources_orders_by_count_then_file_name(sample_log, tmp_path, capsys):
++    other = _one_record_log(tmp_path)
++    b = tmp_path / "b.log"
++    a = tmp_path / "a.log"
++    b.write_text("2026-03-05T08:00:00Z INFO web: one\n", encoding="utf-8")
++    a.write_text("2026-03-05T08:00:00Z INFO web: two\n", encoding="utf-8")
++    # Given as b, other, a: the 8-record file comes first, then the two 1-record files by name.
++    assert main(["sources", str(b), str(sample_log), str(other), str(a), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"count": 8, "file": str(sample_log)},
++        {"count": 1, "file": str(a)},
++        {"count": 1, "file": str(b)},
++        {"count": 1, "file": str(other)},
++    ]
++
++
++def test_sources_no_header_leaves_out_header_line(sample_log, tmp_path, capsys):
++    other = _one_record_log(tmp_path)
++    assert main(["sources", str(sample_log), str(other), "--no-header"]) == 0
++    captured = capsys.readouterr()
++    width = max(len(str(sample_log)), len(str(other)))
++    assert captured.out == (
++        f"{str(sample_log).ljust(width)}  8\n"
++        f"{str(other).ljust(width)}  1\n"
++    )
++    assert captured.err == ""
++
++
++def test_sources_json_output(sample_log, tmp_path, capsys):
++    other = _one_record_log(tmp_path)
++    assert main(["sources", str(sample_log), str(other), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"count": 8, "file": str(sample_log)},
++        {"count": 1, "file": str(other)},
++    ]
++
++
++def test_sources_empty_file_counts_zero(sample_log, tmp_path, capsys):
++    empty = tmp_path / "empty.log"
++    empty.write_text("", encoding="utf-8")
++    assert main(["sources", str(sample_log), str(empty), "--no-header"]) == 0
++    lines = capsys.readouterr().out.splitlines()
++    assert lines[-1].endswith("  0")
++    assert lines[-1].startswith(str(empty))
++
++
++def test_sources_repeated_file_gets_one_row(sample_log, capsys):
++    assert main(["sources", str(sample_log), str(sample_log), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [{"count": 8, "file": str(sample_log)}]
++
++
++def test_sources_missing_file_is_an_error(sample_log, tmp_path, capsys):
++    missing = tmp_path / "nope.log"
++    assert main(["sources", str(sample_log), str(missing)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: cannot read {missing}: No such file or directory\n"
++
++
++def test_sources_requires_a_file(capsys):
++    assert main(["sources"]) == 2
++    assert "usage: logsift" in capsys.readouterr().err
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (

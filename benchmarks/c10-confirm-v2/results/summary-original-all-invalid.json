@@ -1,0 +1,259 @@
+{
+ "model": "claude-haiku-5-5",
+ "versions": {
+  "repo_ai": "repo-ai 0.12.8",
+  "claude_code": "2.1.319",
+  "python": "3.12.14"
+ },
+ "primary_skill_vs_control": {
+  "per_task": {
+   "t1": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   },
+   "t2": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   },
+   "t3": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   },
+   "t4": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   },
+   "t5": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   },
+   "t6": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   },
+   "t7": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   },
+   "t8": {
+    "skill": null,
+    "control": null,
+    "diff": null
+   }
+  },
+  "skill_higher": 0,
+  "control_higher": 0,
+  "ties": 8,
+  "sign_test_p": 1.0,
+  "sign_test_p_reverse": 1.0,
+  "verdict": "NEGATIVE"
+ },
+ "secondary_skill_vs_claudemd": {
+  "per_task": {
+   "t1": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   },
+   "t2": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   },
+   "t3": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   },
+   "t4": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   },
+   "t5": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   },
+   "t6": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   },
+   "t7": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   },
+   "t8": {
+    "skill": null,
+    "claudemd": null,
+    "diff": null
+   }
+  },
+  "skill_higher": 0,
+  "claudemd_higher": 0,
+  "ties": 8,
+  "sign_test_p": 1.0,
+  "sign_test_p_reverse": 1.0,
+  "verdict": "NO_DIFFERENCE_SHOWN"
+ },
+ "tertiary_claudemd_vs_control": {
+  "per_task": {
+   "t1": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   },
+   "t2": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   },
+   "t3": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   },
+   "t4": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   },
+   "t5": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   },
+   "t6": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   },
+   "t7": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   },
+   "t8": {
+    "claudemd": null,
+    "control": null,
+    "diff": null
+   }
+  },
+  "claudemd_higher": 0,
+  "control_higher": 0,
+  "ties": 8,
+  "sign_test_p": 1.0,
+  "sign_test_p_reverse": 1.0,
+  "verdict": "NEGATIVE"
+ },
+ "per_arm": {
+  "skill": {
+   "convention": null,
+   "baseline": null,
+   "runs": 24,
+   "skill_called": 24,
+   "result_not_success": 0,
+   "cost": 0.2387
+  },
+  "claudemd": {
+   "convention": null,
+   "baseline": null,
+   "runs": 24,
+   "skill_called": 0,
+   "result_not_success": 1,
+   "cost": 0.3312
+  },
+  "control": {
+   "convention": null,
+   "baseline": null,
+   "runs": 24,
+   "skill_called": 0,
+   "result_not_success": 0,
+   "cost": 0.2098
+  }
+ },
+ "invalid": [
+  "00639e9e",
+  "06c89a86",
+  "0a353310",
+  "0bef29b7",
+  "0e345336",
+  "0f995f75",
+  "127201f0",
+  "13c03a9c",
+  "1def97a0",
+  "2313b9ea",
+  "24fe5134",
+  "2538af58",
+  "25be3af4",
+  "29313750",
+  "2a4c4af9",
+  "2eaff49d",
+  "329c3914",
+  "3ac98bb7",
+  "3bafff97",
+  "42fa6a4c",
+  "48d1afc0",
+  "4cc800a0",
+  "4ddc3ffa",
+  "4de70695",
+  "55ba94f9",
+  "5957bd89",
+  "5d9a5b3c",
+  "5e36a28a",
+  "5eac7d56",
+  "6224902f",
+  "6c0bc9ee",
+  "6f4dd097",
+  "70bd65db",
+  "72e26a84",
+  "74a67f8c",
+  "78bda8c7",
+  "7c7019a0",
+  "89615de0",
+  "8961bb95",
+  "8b5573f5",
+  "8f43fe66",
+  "9061c88c",
+  "92ae564a",
+  "93094c67",
+  "96ad4e0f",
+  "9d682ded",
+  "9f5df341",
+  "a9e16f1e",
+  "adaea2b7",
+  "b16b744a",
+  "b31b6c6f",
+  "b6fcd836",
+  "b8111e21",
+  "bff8ebf6",
+  "c04a9a82",
+  "c0b3db51",
+  "cabd8f6c",
+  "ccf5c24c",
+  "de8cbf5c",
+  "e755ef8a",
+  "e9baefa3",
+  "e9c7956e",
+  "ea27af6e",
+  "edf55ee4",
+  "f020f209",
+  "f2c4bf94",
+  "f346d896",
+  "f6f08eff",
+  "f776acf1",
+  "f8462268",
+  "fd38318a",
+  "fe03e74a"
+ ],
+ "cost": 0.7798
+}

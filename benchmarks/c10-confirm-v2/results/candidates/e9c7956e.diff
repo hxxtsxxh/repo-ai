@@ -1,0 +1,222 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..e05eed0 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -3,6 +3,7 @@
+ import argparse
+ import sys
+ from collections.abc import Sequence
++from typing import Any
+ 
+ from .config import Config, load_config
+ from .errors import LogsiftError
+@@ -10,9 +11,10 @@ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+ from .render import render_json, render_table, rows_to_objects
+-from .stats import count_by, top_messages
++from .stats import count_by, span_by_component, top_messages
+ 
+ PROG = "logsift"
++SPAN_HEADERS = ["component", "count", "first", "last", "duration"]
+ 
+ 
+ def _level(value: str) -> str:
+@@ -36,7 +38,7 @@ def _info(message: str) -> None:
+     print(f"{PROG}: {message}", file=sys.stderr)
+ 
+ 
+-def _emit_report(args: argparse.Namespace, headers: list[str], rows: list[tuple[str, int]]) -> None:
++def _emit_report(args: argparse.Namespace, headers: list[str], rows: Sequence[Sequence[Any]]) -> None:
+     if args.format == "json":
+         sys.stdout.write(render_json(rows_to_objects(headers, rows)))
+     else:
+@@ -49,6 +51,16 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_span(args: argparse.Namespace, config: Config) -> int:
++    records = filter_records(read_records(args.files), ignore=config.ignore)
++    rows = [
++        (component, count, first.isoformat(), last.isoformat(), duration.total_seconds())
++        for component, count, first, last, duration in span_by_component(records)
++    ]
++    _emit_report(args, SPAN_HEADERS, rows)
++    return 0
++
++
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(
+         read_records(args.files),
+@@ -87,6 +99,11 @@ def build_parser() -> argparse.ArgumentParser:
+     summary.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     summary.set_defaults(handler=cmd_summary)
+ 
++    span = commands.add_parser("span", help="show each component's record count and time span")
++    span.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    span.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    span.set_defaults(handler=cmd_span)
++
+     filter_ = commands.add_parser("filter", help="print the lines that match")
+     filter_.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     filter_.add_argument("--level", type=_level, help="lowest level to keep")
+diff --git a/logsift/stats.py b/logsift/stats.py
+index 8962111..7cb50db 100644
+--- a/logsift/stats.py
++++ b/logsift/stats.py
+@@ -1,8 +1,9 @@
+ """Counting records."""
+ 
+ import re
+-from collections import Counter
++from collections import Counter, defaultdict
+ from collections.abc import Iterable
++from datetime import datetime, timedelta
+ 
+ from .records import LogRecord
+ 
+@@ -19,6 +20,25 @@ def count_by(records: Iterable[LogRecord], field: str) -> list[tuple[str, int]]:
+     return sort_counts(Counter(getattr(record, field) for record in records))
+ 
+ 
++def span_by_component(
++    records: Iterable[LogRecord],
++) -> list[tuple[str, int, datetime, datetime, timedelta]]:
++    """For each component, return ``(component, count, first, last, duration)``.
++
++    Components are ordered by name; ``duration`` is the time from the first
++    record to the last one.
++    """
++    times: dict[str, list[datetime]] = defaultdict(list)
++    for record in records:
++        times[record.component].append(record.time)
++    spans = []
++    for component in sorted(times):
++        stamps = times[component]
++        first, last = min(stamps), max(stamps)
++        spans.append((component, len(stamps), first, last, last - first))
++    return spans
++
++
+ def normalize_message(message: str) -> str:
+     """Replace every run of digits with ``#`` so that similar messages group together."""
+     return _DIGITS_RE.sub("#", message)
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..02e724b 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,81 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++def test_span_text(sample_log, capsys):
++    assert main(["span", str(sample_log)]) == 0
++    captured = capsys.readouterr()
++    lines = [line.split() for line in captured.out.splitlines()]
++    assert lines == [
++        ["component", "count", "first", "last", "duration"],
++        ["db", "4", "2026-03-04T10:00:05+00:00", "2026-03-04T10:02:30+00:00", "145.0"],
++        ["healthcheck", "1", "2026-03-04T10:03:00+00:00", "2026-03-04T10:03:00+00:00", "0.0"],
++        ["web", "3", "2026-03-04T10:00:00+00:00", "2026-03-04T10:05:00+00:00", "300.0"],
++    ]
++    assert captured.err == ""
++
++
++def test_span_json(sample_log, capsys):
++    assert main(["span", str(sample_log), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {
++            "component": "db",
++            "count": 4,
++            "first": "2026-03-04T10:00:05+00:00",
++            "last": "2026-03-04T10:02:30+00:00",
++            "duration": 145.0,
++        },
++        {
++            "component": "healthcheck",
++            "count": 1,
++            "first": "2026-03-04T10:03:00+00:00",
++            "last": "2026-03-04T10:03:00+00:00",
++            "duration": 0.0,
++        },
++        {
++            "component": "web",
++            "count": 3,
++            "first": "2026-03-04T10:00:00+00:00",
++            "last": "2026-03-04T10:05:00+00:00",
++            "duration": 300.0,
++        },
++    ]
++
++
++def test_span_across_several_files(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["span", str(sample_log), str(other), "--format", "json"]) == 0
++    db = json.loads(capsys.readouterr().out)[0]
++    assert db == {
++        "component": "db",
++        "count": 5,
++        "first": "2026-03-04T10:00:05+00:00",
++        "last": "2026-03-05T08:00:00+00:00",
++        "duration": 79195.0,
++    }
++
++
++def test_span_respects_config_ignore(sample_log, tmp_path, capsys):
++    config = tmp_path / "logsift.toml"
++    config.write_text('[logsift]\nignore = ["healthcheck"]\n', encoding="utf-8")
++    assert main(["--config", str(config), "span", str(sample_log), "--format", "json"]) == 0
++    components = [row["component"] for row in json.loads(capsys.readouterr().out)]
++    assert components == ["db", "web"]
++
++
++def test_span_of_no_records_prints_only_header(tmp_path, capsys):
++    path = tmp_path / "empty.log"
++    path.write_text("\n", encoding="utf-8")
++    assert main(["span", str(path)]) == 0
++    assert capsys.readouterr().out == "component  count  first  last  duration\n"
++
++
++def test_span_missing_input_is_an_error(tmp_path, capsys):
++    missing = tmp_path / "nope.log"
++    assert main(["span", str(missing)]) == 1
++    assert capsys.readouterr().err == f"logsift: error: cannot read {missing}: No such file or directory\n"
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (
+diff --git a/tests/test_filters_stats.py b/tests/test_filters_stats.py
+index fdec742..8bdb2af 100644
+--- a/tests/test_filters_stats.py
++++ b/tests/test_filters_stats.py
+@@ -1,6 +1,8 @@
+ from logsift.filters import filter_records
+ from logsift.records import read_records
+-from logsift.stats import count_by, normalize_message, top_messages
++from datetime import timedelta
++
++from logsift.stats import count_by, normalize_message, span_by_component, top_messages
+ 
+ 
+ def test_filter_by_min_level(sample_log):
+@@ -27,6 +29,18 @@ def test_count_by_orders_by_count_then_key(sample_log):
+     assert count_by(records, "component") == [("db", 4), ("web", 3), ("healthcheck", 1)]
+ 
+ 
++def test_span_by_component(sample_log):
++    spans = span_by_component(read_records([str(sample_log)]))
++    assert [(c, n, d) for c, n, _, _, d in spans] == [
++        ("db", 4, timedelta(seconds=145)),
++        ("healthcheck", 1, timedelta(0)),
++        ("web", 3, timedelta(seconds=300)),
++    ]
++    db_first, db_last = spans[0][2], spans[0][3]
++    assert db_first.isoformat() == "2026-03-04T10:00:05+00:00"
++    assert db_last.isoformat() == "2026-03-04T10:02:30+00:00"
++
++
+ def test_normalize_message_replaces_digit_runs():
+     assert normalize_message("request 991 failed after 3 tries") == "request # failed after # tries"
+ 

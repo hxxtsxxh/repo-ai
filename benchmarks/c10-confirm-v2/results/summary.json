@@ -1,0 +1,186 @@
+{
+ "model": "claude-haiku-5-5",
+ "versions": {
+  "repo_ai": "repo-ai 0.12.8",
+  "claude_code": "2.1.319",
+  "python": "3.12.14"
+ },
+ "primary_skill_vs_control": {
+  "per_task": {
+   "t1": {
+    "skill": 1.0,
+    "control": 0.0,
+    "diff": 1.0
+   },
+   "t2": {
+    "skill": 1.0,
+    "control": 0.75,
+    "diff": 0.25
+   },
+   "t3": {
+    "skill": 1.0,
+    "control": 0.0,
+    "diff": 1.0
+   },
+   "t4": {
+    "skill": 1.0,
+    "control": 0.7777777777777777,
+    "diff": 0.2222
+   },
+   "t5": {
+    "skill": 1.0,
+    "control": 1.0,
+    "diff": 0.0
+   },
+   "t6": {
+    "skill": 1.0,
+    "control": 0.5,
+    "diff": 0.5
+   },
+   "t7": {
+    "skill": 1.0,
+    "control": 0.3333333333333333,
+    "diff": 0.6667
+   },
+   "t8": {
+    "skill": 1.0,
+    "control": 0.3333333333333333,
+    "diff": 0.6667
+   }
+  },
+  "skill_higher": 7,
+  "control_higher": 0,
+  "ties": 1,
+  "sign_test_p": 0.0078,
+  "sign_test_p_reverse": 1.0,
+  "verdict": "SUPPORTED"
+ },
+ "secondary_skill_vs_claudemd": {
+  "per_task": {
+   "t1": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   },
+   "t2": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   },
+   "t3": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   },
+   "t4": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   },
+   "t5": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   },
+   "t6": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   },
+   "t7": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   },
+   "t8": {
+    "skill": 1.0,
+    "claudemd": 1.0,
+    "diff": 0.0
+   }
+  },
+  "skill_higher": 0,
+  "claudemd_higher": 0,
+  "ties": 8,
+  "sign_test_p": 1.0,
+  "sign_test_p_reverse": 1.0,
+  "verdict": "NO_DIFFERENCE_SHOWN"
+ },
+ "tertiary_claudemd_vs_control": {
+  "per_task": {
+   "t1": {
+    "claudemd": 1.0,
+    "control": 0.0,
+    "diff": 1.0
+   },
+   "t2": {
+    "claudemd": 1.0,
+    "control": 0.75,
+    "diff": 0.25
+   },
+   "t3": {
+    "claudemd": 1.0,
+    "control": 0.0,
+    "diff": 1.0
+   },
+   "t4": {
+    "claudemd": 1.0,
+    "control": 0.7777777777777777,
+    "diff": 0.2222
+   },
+   "t5": {
+    "claudemd": 1.0,
+    "control": 1.0,
+    "diff": 0.0
+   },
+   "t6": {
+    "claudemd": 1.0,
+    "control": 0.5,
+    "diff": 0.5
+   },
+   "t7": {
+    "claudemd": 1.0,
+    "control": 0.3333333333333333,
+    "diff": 0.6667
+   },
+   "t8": {
+    "claudemd": 1.0,
+    "control": 0.3333333333333333,
+    "diff": 0.6667
+   }
+  },
+  "claudemd_higher": 7,
+  "control_higher": 0,
+  "ties": 1,
+  "sign_test_p": 0.0078,
+  "sign_test_p_reverse": 1.0,
+  "verdict": "TEXT_HIGHER"
+ },
+ "per_arm": {
+  "skill": {
+   "convention": 1.0,
+   "baseline": 1.0,
+   "runs": 24,
+   "skill_called": 24,
+   "result_not_success": 0,
+   "cost": 0.2387
+  },
+  "claudemd": {
+   "convention": 1.0,
+   "baseline": 1.0,
+   "runs": 24,
+   "skill_called": 0,
+   "result_not_success": 1,
+   "cost": 0.3312
+  },
+  "control": {
+   "convention": 0.4618,
+   "baseline": 1.0,
+   "runs": 24,
+   "skill_called": 0,
+   "result_not_success": 0,
+   "cost": 0.2098
+  }
+ },
+ "invalid": [],
+ "cost": 0.7798
+}

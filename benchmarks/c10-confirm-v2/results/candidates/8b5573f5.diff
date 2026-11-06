@@ -1,0 +1,151 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..5c07b11 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -3,9 +3,10 @@
+ import argparse
+ import sys
+ from collections.abc import Sequence
++from pathlib import Path
+ 
+ from .config import Config, load_config
+-from .errors import LogsiftError
++from .errors import LogsiftError, OutputExistsError
+ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+@@ -50,15 +51,28 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+ 
+ 
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+-    records = filter_records(
+-        read_records(args.files),
+-        min_level=args.level,
+-        components=args.component,
+-        text=args.grep,
+-        ignore=config.ignore,
++    records = list(
++        filter_records(
++            read_records(args.files),
++            min_level=args.level,
++            components=args.component,
++            text=args.grep,
++            ignore=config.ignore,
++        )
+     )
+-    for record in records:
+-        sys.stdout.write(record.line + "\n")
++    if args.output is None:
++        for record in records:
++            sys.stdout.write(record.line + "\n")
++        return 0
++    if args.dry_run:
++        if Path(args.output).exists() and not args.force:
++            raise OutputExistsError(args.output)
++        sys.stdout.write(f"would write {args.output}\n")
++        return 0
++    text = "".join(record.line + "\n" for record in records)
++    write_text(args.output, text, force=args.force)
++    noun = "line" if len(records) == 1 else "lines"
++    _info(f"wrote {len(records)} {noun} to {args.output}")
+     return 0
+ 
+ 
+@@ -94,6 +108,11 @@ def build_parser() -> argparse.ArgumentParser:
+         "--component", action="append", default=[], metavar="NAME", help="keep this component (repeatable)"
+     )
+     filter_.add_argument("--grep", metavar="TEXT", help="keep messages containing TEXT")
++    filter_.add_argument("-o", "--output", metavar="PATH", help="write the matching lines to PATH instead of printing")
++    filter_.add_argument("--force", action="store_true", help="replace PATH if it exists (requires -o)")
++    filter_.add_argument(
++        "--dry-run", action="store_true", help="report the file that would be written, without writing it (requires -o)"
++    )
+     filter_.set_defaults(handler=cmd_filter)
+ 
+     top = commands.add_parser("top", help="list the most frequent messages")
+@@ -117,6 +136,8 @@ def main(argv: Sequence[str] | None = None) -> int:
+     parser = build_parser()
+     try:
+         args = parser.parse_args(argv)
++        if args.command == "filter" and args.output is None and (args.force or args.dry_run):
++            parser.error("--force and --dry-run require -o/--output")
+     except SystemExit as exc:
+         if exc.code is None:
+             return 0
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..5e39103 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -49,6 +49,72 @@ def test_filter_grep(sample_log, capsys):
+     assert capsys.readouterr().out == "2026-03-04T10:01:00Z WARNING db: slow query took 1200 ms\n"
+ 
+ 
++def test_filter_output_writes_matching_lines_to_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "web-errors.log"
++    assert main(["filter", str(sample_log), "--level", "error", "--component", "web", "-o", str(out)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: wrote 2 lines to {out}\n"
++    assert out.read_text(encoding="utf-8") == (
++        "2026-03-04T10:04:00Z ERROR web: request 991 failed\n"
++        "2026-03-04T10:05:00Z CRITICAL web: worker crashed\n"
++    )
++
++
++def test_filter_output_long_option_and_single_line_wording(sample_log, tmp_path, capsys):
++    out = tmp_path / "slow.log"
++    assert main(["filter", str(sample_log), "--grep", "slow", "--output", str(out)]) == 0
++    assert capsys.readouterr().err == f"logsift: wrote 1 line to {out}\n"
++    assert out.read_text(encoding="utf-8") == "2026-03-04T10:01:00Z WARNING db: slow query took 1200 ms\n"
++
++
++def test_filter_output_with_no_matches_writes_empty_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "none.log"
++    assert main(["filter", str(sample_log), "--grep", "no such text", "-o", str(out)]) == 0
++    assert capsys.readouterr().err == f"logsift: wrote 0 lines to {out}\n"
++    assert out.read_bytes() == b""
++
++
++def test_filter_output_refuses_existing_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "keep.log"
++    out.write_text("keep\n", encoding="utf-8")
++    assert main(["filter", str(sample_log), "-o", str(out)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: {out} already exists (use --force to overwrite)\n"
++    assert out.read_text(encoding="utf-8") == "keep\n"
++
++
++def test_filter_output_force_replaces_existing_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "old.log"
++    out.write_text("old\n", encoding="utf-8")
++    assert main(["filter", str(sample_log), "--grep", "slow", "-o", str(out), "--force"]) == 0
++    assert capsys.readouterr().err == f"logsift: wrote 1 line to {out}\n"
++    assert out.read_text(encoding="utf-8") == "2026-03-04T10:01:00Z WARNING db: slow query took 1200 ms\n"
++
++
++def test_filter_dry_run_writes_nothing(sample_log, tmp_path, capsys):
++    out = tmp_path / "planned.log"
++    assert main(["filter", str(sample_log), "--level", "error", "-o", str(out), "--dry-run"]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == f"would write {out}\n"
++    assert captured.err == ""
++    assert not out.exists()
++
++
++def test_filter_dry_run_still_refuses_existing_file(sample_log, tmp_path, capsys):
++    out = tmp_path / "keep.log"
++    out.write_text("keep\n", encoding="utf-8")
++    assert main(["filter", str(sample_log), "-o", str(out), "--dry-run"]) == 1
++    assert capsys.readouterr().err == f"logsift: error: {out} already exists (use --force to overwrite)\n"
++    assert out.read_text(encoding="utf-8") == "keep\n"
++
++
++def test_filter_force_without_output_is_usage_error(sample_log, capsys):
++    assert main(["filter", str(sample_log), "--force"]) == 2
++    assert "--force and --dry-run require -o/--output" in capsys.readouterr().err
++
++
+ def test_top_text_with_limit(sample_log, capsys):
+     assert main(["top", str(sample_log), "--limit", "2"]) == 0
+     assert capsys.readouterr().out == (

@@ -1,0 +1,318 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..b0f7bb8 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -9,8 +9,16 @@ from .errors import LogsiftError
+ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+-from .render import render_json, render_table, rows_to_objects
+-from .stats import count_by, top_messages
++from .render import (
++    format_duration,
++    format_timestamp,
++    format_timestamp_json,
++    render_json,
++    render_table,
++    rows_to_objects,
++    whole_seconds,
++)
++from .stats import component_spans, count_by, top_messages
+ 
+ PROG = "logsift"
+ 
+@@ -68,6 +76,38 @@ def cmd_top(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++SPAN_HEADERS = ["component", "count", "first", "last", "duration"]
++
++
++def cmd_span(args: argparse.Namespace, config: Config) -> int:
++    spans = component_spans(filter_records(read_records(args.files), ignore=config.ignore))
++    if args.format == "json":
++        objects = [
++            {
++                "component": span.component,
++                "count": span.count,
++                "first": format_timestamp_json(span.first),
++                "last": format_timestamp_json(span.last),
++                "duration": whole_seconds(span.duration),
++            }
++            for span in spans
++        ]
++        sys.stdout.write(render_json(objects))
++    else:
++        rows = [
++            [
++                span.component,
++                span.count,
++                format_timestamp(span.first),
++                format_timestamp(span.last),
++                format_duration(whole_seconds(span.duration)),
++            ]
++            for span in spans
++        ]
++        sys.stdout.write(render_table(SPAN_HEADERS, rows))
++    return 0
++
++
+ def cmd_export(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(read_records(args.files), min_level=args.level, ignore=config.ignore)
+     write_text(args.output, records_to_jsonl(records), force=args.force)
+@@ -103,6 +143,11 @@ def build_parser() -> argparse.ArgumentParser:
+     top.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     top.set_defaults(handler=cmd_top)
+ 
++    span = commands.add_parser("span", help="show each component's first and last record times")
++    span.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    span.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    span.set_defaults(handler=cmd_span)
++
+     export = commands.add_parser("export", help="write records to a JSON Lines file")
+     export.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     export.add_argument("-o", "--output", required=True, metavar="PATH", help="file to write")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..987d9c5 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -2,6 +2,7 @@
+ 
+ import json
+ from collections.abc import Sequence
++from datetime import datetime, timedelta
+ from typing import Any
+ 
+ 
+@@ -32,3 +33,25 @@ def rows_to_objects(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> li
+ def render_json(value: Any) -> str:
+     """Render a value as indented JSON with sorted keys."""
+     return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
++
++
++def format_timestamp(value: datetime) -> str:
++    """Format a UTC time for text output, such as ``2026-01-31 23:05:09``."""
++    return value.strftime("%Y-%m-%d %H:%M:%S")
++
++
++def format_timestamp_json(value: datetime) -> str:
++    """Format a UTC time for JSON output, such as ``2026-01-31T23:05:09Z``."""
++    return value.strftime("%Y-%m-%dT%H:%M:%SZ")
++
++
++def whole_seconds(value: timedelta) -> int:
++    """Return a duration as whole seconds, dropping any fraction."""
++    return value // timedelta(seconds=1)
++
++
++def format_duration(seconds: int) -> str:
++    """Format whole seconds as ``H:MM:SS``; hours are not padded and may exceed 24."""
++    hours, rest = divmod(seconds, 3600)
++    minutes, secs = divmod(rest, 60)
++    return f"{hours}:{minutes:02d}:{secs:02d}"
+diff --git a/logsift/stats.py b/logsift/stats.py
+index 8962111..c0a93a7 100644
+--- a/logsift/stats.py
++++ b/logsift/stats.py
+@@ -3,12 +3,40 @@
+ import re
+ from collections import Counter
+ from collections.abc import Iterable
++from dataclasses import dataclass
++from datetime import datetime, timedelta
+ 
+ from .records import LogRecord
+ 
+ _DIGITS_RE = re.compile(r"\d+")
+ 
+ 
++@dataclass(frozen=True)
++class ComponentSpan:
++    """How many records a component has and when they start and end (UTC)."""
++
++    component: str
++    count: int
++    first: datetime
++    last: datetime
++
++    @property
++    def duration(self) -> timedelta:
++        return self.last - self.first
++
++
++def component_spans(records: Iterable[LogRecord]) -> list[ComponentSpan]:
++    """Summarize each component's records; ordered by count, highest first, then by component name."""
++    times: dict[str, list[datetime]] = {}
++    for record in records:
++        times.setdefault(record.component, []).append(record.time)
++    spans = [
++        ComponentSpan(component=name, count=len(stamps), first=min(stamps), last=max(stamps))
++        for name, stamps in times.items()
++    ]
++    return sorted(spans, key=lambda span: (-span.count, span.component))
++
++
+ def sort_counts(counts: Counter[str]) -> list[tuple[str, int]]:
+     """Order counted keys by count, highest first, then by key."""
+     return sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..b64f66d 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -145,6 +145,89 @@ def test_unknown_level_is_usage_error(sample_log, capsys):
+     assert "unknown level 'loud'" in capsys.readouterr().err
+ 
+ 
++def test_span_text(sample_log, capsys):
++    assert main(["span", str(sample_log)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == (
++        "component" + " " * 4 + "count  first" + " " * 16 + "last" + " " * 17 + "duration\n"
++        + "db" + " " * 15 + "4  2026-03-04 10:00:05  2026-03-04 10:02:30  0:02:25\n"
++        + "web" + " " * 14 + "3  2026-03-04 10:00:00  2026-03-04 10:05:00  0:05:00\n"
++        + "healthcheck" + " " * 6 + "1  2026-03-04 10:03:00  2026-03-04 10:03:00  0:00:00\n"
++    )
++    assert captured.err == ""
++
++
++def test_span_json(sample_log, capsys):
++    assert main(["span", str(sample_log), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {
++            "component": "db",
++            "count": 4,
++            "first": "2026-03-04T10:00:05Z",
++            "last": "2026-03-04T10:02:30Z",
++            "duration": 145,
++        },
++        {
++            "component": "web",
++            "count": 3,
++            "first": "2026-03-04T10:00:00Z",
++            "last": "2026-03-04T10:05:00Z",
++            "duration": 300,
++        },
++        {
++            "component": "healthcheck",
++            "count": 1,
++            "first": "2026-03-04T10:03:00Z",
++            "last": "2026-03-04T10:03:00Z",
++            "duration": 0,
++        },
++    ]
++
++
++def test_span_json_keys_match_text_headers(sample_log, capsys):
++    assert main(["span", str(sample_log), "--format", "json"]) == 0
++    headers = {"component", "count", "first", "last", "duration"}
++    assert all(set(item) == headers for item in json.loads(capsys.readouterr().out))
++
++
++def test_span_of_several_files_spans_both(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["span", str(sample_log), str(other), "--format", "json"]) == 0
++    db = json.loads(capsys.readouterr().out)[0]
++    assert db == {
++        "component": "db",
++        "count": 5,
++        "first": "2026-03-04T10:00:05Z",
++        "last": "2026-03-05T08:00:00Z",
++        "duration": 79195,
++    }
++
++
++def test_span_respects_config_ignore(sample_log, tmp_path, capsys):
++    config = tmp_path / "logsift.toml"
++    config.write_text('[logsift]\nignore = ["healthcheck"]\n', encoding="utf-8")
++    assert main(["--config", str(config), "span", str(sample_log), "--format", "json"]) == 0
++    components = [item["component"] for item in json.loads(capsys.readouterr().out)]
++    assert components == ["db", "web"]
++
++
++def test_span_of_empty_file_has_header_only(tmp_path, capsys):
++    path = tmp_path / "empty.log"
++    path.write_text("", encoding="utf-8")
++    assert main(["span", str(path)]) == 0
++    assert capsys.readouterr().out == "component  count  first  last  duration\n"
++    assert main(["span", str(path), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == []
++
++
++def test_span_malformed_line_is_an_error(tmp_path, capsys):
++    path = tmp_path / "bad.log"
++    path.write_text("broken\n", encoding="utf-8")
++    assert main(["span", str(path)]) == 1
++    assert capsys.readouterr().err == f"logsift: error: cannot parse {path} line 1: 'broken'\n"
++
++
+ def test_help_returns_zero(capsys):
+     assert main(["--help"]) == 0
+     assert "summary" in capsys.readouterr().out
+diff --git a/tests/test_span.py b/tests/test_span.py
+new file mode 100644
+index 0000000..031ceeb
+--- /dev/null
++++ b/tests/test_span.py
+@@ -0,0 +1,61 @@
++from datetime import timedelta
++
++from logsift.records import parse_line
++from logsift.render import format_duration, format_timestamp, format_timestamp_json, whole_seconds
++from logsift.stats import component_spans
++
++
++def _records(*lines):
++    return [parse_line(line, "t.log", n) for n, line in enumerate(lines, start=1)]
++
++
++def test_format_duration():
++    assert format_duration(0) == "0:00:00"
++    assert format_duration(3725) == "1:02:05"
++    assert format_duration(90000) == "25:00:00"
++
++
++def test_whole_seconds_truncates_fraction():
++    assert whole_seconds(timedelta(seconds=3725.9)) == 3725
++
++
++def test_timestamp_formats():
++    value = parse_line("2026-01-31T23:05:09.250Z INFO web: ok").time
++    assert format_timestamp(value) == "2026-01-31 23:05:09"
++    assert format_timestamp_json(value) == "2026-01-31T23:05:09Z"
++
++
++def test_component_spans_use_earliest_and_latest_time():
++    spans = component_spans(
++        _records(
++            "2026-03-04T10:05:00Z INFO web: late",
++            "2026-03-04T10:00:00Z INFO web: early",
++            "2026-03-04T10:02:00Z INFO web: middle",
++        )
++    )
++    assert len(spans) == 1
++    assert spans[0].count == 3
++    assert format_timestamp(spans[0].first) == "2026-03-04 10:00:00"
++    assert format_timestamp(spans[0].last) == "2026-03-04 10:05:00"
++    assert whole_seconds(spans[0].duration) == 300
++
++
++def test_component_spans_order_by_count_then_name():
++    spans = component_spans(
++        _records(
++            "2026-03-04T10:00:00Z INFO zeta: a",
++            "2026-03-04T10:00:00Z INFO alpha: a",
++            "2026-03-04T10:00:00Z INFO mid: a",
++            "2026-03-04T10:00:00Z INFO mid: b",
++        )
++    )
++    assert [span.component for span in spans] == ["mid", "alpha", "zeta"]
++
++
++def test_component_spans_of_no_records_is_empty():
++    assert component_spans([]) == []
++
++
++def test_single_record_has_zero_duration():
++    (span,) = component_spans(_records("2026-03-04T10:00:00Z INFO web: a"))
++    assert span.duration == timedelta(0)

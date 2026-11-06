@@ -1,0 +1,139 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..fd3cd2c 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -36,11 +36,13 @@ def _info(message: str) -> None:
+     print(f"{PROG}: {message}", file=sys.stderr)
+ 
+ 
+-def _emit_report(args: argparse.Namespace, headers: list[str], rows: list[tuple[str, int]]) -> None:
++def _emit_report(
++    args: argparse.Namespace, headers: list[str], rows: list[tuple[str, int]], header: bool = True
++) -> None:
+     if args.format == "json":
+         sys.stdout.write(render_json(rows_to_objects(headers, rows)))
+     else:
+-        sys.stdout.write(render_table(headers, rows))
++        sys.stdout.write(render_table(headers, rows, header=header))
+ 
+ 
+ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+@@ -68,6 +70,14 @@ def cmd_top(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_sources(args: argparse.Namespace, config: Config) -> int:
++    rows = [(path, len(read_records([path]))) for path in args.files]
++    # Report rows carry a count: highest count first, ties by file name.
++    rows.sort(key=lambda row: (-row[1], row[0]))
++    _emit_report(args, ["file", "count"], rows, header=not args.no_header)
++    return 0
++
++
+ def cmd_export(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(read_records(args.files), min_level=args.level, ignore=config.ignore)
+     write_text(args.output, records_to_jsonl(records), force=args.force)
+@@ -103,6 +113,12 @@ def build_parser() -> argparse.ArgumentParser:
+     top.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     top.set_defaults(handler=cmd_top)
+ 
++    sources = commands.add_parser("sources", help="count the records in each file")
++    sources.add_argument("files", nargs="+", metavar="FILE", help="log files to count")
++    sources.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    sources.add_argument("--no-header", action="store_true", help="leave out the table's header line")
++    sources.set_defaults(handler=cmd_sources)
++
+     export = commands.add_parser("export", help="write records to a JSON Lines file")
+     export.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     export.add_argument("-o", "--output", required=True, metavar="PATH", help="file to write")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..b06f145 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -5,8 +5,8 @@ from collections.abc import Sequence
+ from typing import Any
+ 
+ 
+-def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+-    """Render rows as aligned columns under a header line.
++def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]], header: bool = True) -> str:
++    """Render rows as aligned columns, under a header line unless ``header`` is false.
+ 
+     Integer columns are right-aligned, all others left-aligned; columns are
+     separated by two spaces.
+@@ -15,7 +15,7 @@ def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+     widths = [max(len(line[i]) for line in cells) for i in range(len(headers))]
+     numeric = [bool(rows) and all(isinstance(row[i], int) for row in rows) for i in range(len(headers))]
+     lines = []
+-    for line in cells:
++    for line in cells if header else cells[1:]:
+         padded = [
+             cell.rjust(width) if is_number else cell.ljust(width)
+             for cell, width, is_number in zip(line, widths, numeric)
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..eb5769d 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,62 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++def test_sources_text_counts_each_file(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["sources", str(sample_log), str(other)]) == 0
++    width = max(len("file"), len(str(sample_log)), len(str(other)))
++    captured = capsys.readouterr()
++    assert captured.out == (
++        f"{'file'.ljust(width)}  count\n"
++        f"{str(sample_log).ljust(width)}      8\n"
++        f"{str(other).ljust(width)}      1\n"
++    )
++    assert captured.err == ""
++
++
++def test_sources_no_header_leaves_out_header_line(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["sources", str(sample_log), str(other), "--no-header"]) == 0
++    width = max(len("file"), len(str(sample_log)), len(str(other)))
++    assert capsys.readouterr().out == (
++        f"{str(sample_log).ljust(width)}      8\n"
++        f"{str(other).ljust(width)}      1\n"
++    )
++
++
++def test_sources_json(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["sources", str(sample_log), str(other), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"file": str(sample_log), "count": 8},
++        {"file": str(other), "count": 1},
++    ]
++
++
++def test_sources_orders_ties_by_file_name(tmp_path, capsys):
++    line = "2026-03-05T08:00:00Z CRITICAL db: disk full\n"
++    first = tmp_path / "a.log"
++    second = tmp_path / "b.log"
++    first.write_text(line, encoding="utf-8")
++    second.write_text(line, encoding="utf-8")
++    assert main(["sources", str(second), str(first), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"file": str(first), "count": 1},
++        {"file": str(second), "count": 1},
++    ]
++
++
++def test_sources_missing_file_is_an_error(sample_log, tmp_path, capsys):
++    missing = tmp_path / "nope.log"
++    assert main(["sources", str(sample_log), str(missing)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: cannot read {missing}: No such file or directory\n"
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (

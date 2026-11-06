@@ -193,15 +193,17 @@
    "observations": [
     "paired run shows the instruction is followed, not that outcomes improve",
     "pilot 2026-10-30 (6 haiku calls, predeclared rule): INCONCLUSIVE - skill higher on t2 (per-line tax, 7/7 vs 4/7), control higher on t1 (6/8 vs 8/8; oracle rounding ambiguity found post hoc), tie on t3; skill invoked unprompted 3/3; evidence/SKILL-VALUE-PILOT-2026-10-30.md",
-    "2026-11-01 c10-confirm-v1, on one fixture project and 8 tasks (preregistered; fixture+skill, tasks+oracles and ambiguity review by three separate model sessions; 8 tasks x 2 arms x 3 repeats, sonnet, token_env with an empty config dir per run): SUPPORTED, skill arm higher on 8 of 8 tasks (sign test p = 0.0039); convention score 1.000 vs 0.319, baseline score 1.000 vs 0.875 (three control runs ended without editing after reading a mangled path; without them 8 of 8 holds and the control baseline is 1.000); skill invoked unprompted in 24 of 24; $3.25 notional (benchmarks/c10-confirm-v1/RESULTS.md)"
+    "2026-11-01 c10-confirm-v1, on one fixture project and 8 tasks (preregistered; fixture+skill, tasks+oracles and ambiguity review by three separate model sessions; 8 tasks x 2 arms x 3 repeats, sonnet, token_env with an empty config dir per run): SUPPORTED, skill arm higher on 8 of 8 tasks (sign test p = 0.0039); convention score 1.000 vs 0.319, baseline score 1.000 vs 0.875 (three control runs ended without editing after reading a mangled path; without them 8 of 8 holds and the control baseline is 1.000); skill invoked unprompted in 24 of 24; $3.25 notional (benchmarks/c10-confirm-v1/RESULTS.md)",
+    "2026-11-06 c10-confirm-v2 ran (preregistered; second fixture, a Python CLI by Author A with its own conventions skill, tasks and oracles by Author B, review by Reviewer C; claude-haiku-5-5; 8 tasks x 3 arms x 3 repeats = 72 sessions; $0.7798 notional). First grade: all 72 INVALID from two validity-rule defects (auth-only `schedule` built-in skill; path-dependent init fields), symmetric across arms; amendment 1 committed before any score was read, re-graded at $0. Primary skill vs control SUPPORTED (7 higher, 0 lower, 1 tie, p = 0.0078; convention 1.000 vs 0.462, baseline 1.000 both); secondary skill vs CLAUDE.md NO_DIFFERENCE_SHOWN (8 ties, both 1.000: a ceiling); tertiary CLAUDE.md vs control TEXT_HIGHER (p = 0.0078); skill invoked unprompted 24/24 (benchmarks/c10-confirm-v2/RESULTS.md)"
    ],
    "limits": [
-    "one fixture project, one model, one project-conventions skill (its value is by construction the rules the code does not show)",
+    "two fixture projects (a Python library, a Python CLI) and two models (Sonnet 5.5, Haiku 5.5); Python only; one project-conventions skill per project (its value is by construction the rules the code does not show)",
     "authors and reviewer were separate model sessions, not people; host mode only",
     "says nothing about third-party skills in general or about repo-ai's discovery choosing helpful skills",
-    "the control had no conventions text: shows conventions-as-installed-skill vs none, not the skill format vs the same text elsewhere (e.g. CLAUDE.md)"
+    "on project 2 with Haiku, the installed skill did no better than the same text in CLAUDE.md (both at the ceiling): the claim is about conventions text being present, not the skill format",
+    "c10-confirm-v2's validity rules were amended after the run (before any score was read); CLAUDE.md loading is not observed in the init event"
    ],
-   "next_action": "repeat on a second project and model; a third-party skill trial"
+   "next_action": "a third-party skill trial; a harder task set if the skill format vs CLAUDE.md question matters"
   },
   {
    "id": "C11",

@@ -1,0 +1,103 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..4502b22 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -76,6 +76,13 @@ def cmd_export(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_sources(args: argparse.Namespace, config: Config) -> int:
++    # Each file is counted on its own, in the order given; config filters do not apply.
++    rows = [(path, len(read_records([path]))) for path in args.files]
++    sys.stdout.write(render_table(["file", "count"], rows, header=not args.no_header))
++    return 0
++
++
+ def build_parser() -> argparse.ArgumentParser:
+     parser = argparse.ArgumentParser(prog=PROG, description="Summarize, filter and export application log files.")
+     parser.add_argument("--config", metavar="PATH", help="read settings from this TOML file")
+@@ -103,6 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
+     top.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     top.set_defaults(handler=cmd_top)
+ 
++    sources = commands.add_parser("sources", help="count the records in each file")
++    sources.add_argument("files", nargs="+", metavar="FILE", help="log files to count")
++    sources.add_argument("--no-header", action="store_true", help="omit the header line")
++    sources.set_defaults(handler=cmd_sources)
++
+     export = commands.add_parser("export", help="write records to a JSON Lines file")
+     export.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     export.add_argument("-o", "--output", required=True, metavar="PATH", help="file to write")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..d6b97d9 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -5,15 +5,19 @@ from collections.abc import Sequence
+ from typing import Any
+ 
+ 
+-def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+-    """Render rows as aligned columns under a header line.
++def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]], header: bool = True) -> str:
++    """Render rows as aligned columns, under a header line unless ``header`` is false.
+ 
+     Integer columns are right-aligned, all others left-aligned; columns are
+-    separated by two spaces.
++    separated by two spaces. Column widths always account for the headers, so
++    the output with ``header=False`` is the same as the output with it, minus
++    its first line.
+     """
+     cells = [list(headers)] + [[str(value) for value in row] for row in rows]
+     widths = [max(len(line[i]) for line in cells) for i in range(len(headers))]
+     numeric = [bool(rows) and all(isinstance(row[i], int) for row in rows) for i in range(len(headers))]
++    if not header:
++        cells = cells[1:]
+     lines = []
+     for line in cells:
+         padded = [
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..4bd9fa6 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,41 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++def test_sources_counts_each_file_in_order(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    empty = tmp_path / "empty.log"
++    empty.write_text("\n", encoding="utf-8")
++    assert main(["sources", str(sample_log), str(other), str(empty)]) == 0
++    captured = capsys.readouterr()
++    assert captured.err == ""
++    lines = captured.out.splitlines()
++    assert lines[0].split() == ["file", "count"]
++    rows = [line.rsplit(None, 1) for line in lines[1:]]
++    assert [(path, int(count)) for path, count in rows] == [
++        (str(sample_log), 8),
++        (str(other), 1),
++        (str(empty), 0),
++    ]
++
++
++def test_sources_no_header_drops_only_the_header_line(sample_log, capsys):
++    assert main(["sources", str(sample_log)]) == 0
++    with_header = capsys.readouterr().out
++    assert main(["sources", str(sample_log), "--no-header"]) == 0
++    without_header = capsys.readouterr().out
++    assert without_header == "".join(with_header.splitlines(keepends=True)[1:])
++    assert without_header.splitlines()[0].rsplit(None, 1) == [str(sample_log), "8"]
++
++
++def test_sources_missing_file_is_an_error(tmp_path, capsys):
++    missing = tmp_path / "nope.log"
++    assert main(["sources", str(missing)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: cannot read {missing}: No such file or directory\n"
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (

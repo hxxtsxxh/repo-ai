@@ -1,0 +1,96 @@
+diff --git a/logsift/config.py b/logsift/config.py
+index 37d1c50..bf71a2e 100644
+--- a/logsift/config.py
++++ b/logsift/config.py
+@@ -40,3 +40,25 @@ def load_config(path: str) -> Config:
+     if not isinstance(ignore, list) or not all(isinstance(item, str) for item in ignore):
+         raise ConfigError(f"{path}: 'ignore' must be a list of strings")
+     return Config(ignore=tuple(ignore))
++
++
++def read_name_list(path: str) -> list[str]:
++    """Read component names, one per line, skipping blanks and ``#`` comments.
++
++    Names are returned in file order with surrounding whitespace removed.
++    """
++    try:
++        with open(path, encoding="utf-8") as handle:
++            lines = handle.read().splitlines()
++    except OSError as exc:
++        raise ConfigError(f"cannot read {path}: {exc.strerror}") from exc
++    except UnicodeDecodeError as exc:
++        raise ConfigError(f"{path}: not valid UTF-8: {exc.reason}") from None
++
++    names = []
++    for line in lines:
++        name = line.strip()
++        if not name or name.startswith("#"):
++            continue
++        names.append(name)
++    return names
+diff --git a/tests/test_render_output_config.py b/tests/test_render_output_config.py
+index d7aec1a..2386f40 100644
+--- a/tests/test_render_output_config.py
++++ b/tests/test_render_output_config.py
+@@ -1,6 +1,6 @@
+ import pytest
+ 
+-from logsift.config import Config, load_config
++from logsift.config import Config, load_config, read_name_list
+ from logsift.errors import ConfigError, OutputExistsError
+ from logsift.output import write_text
+ from logsift.render import render_json, render_table, rows_to_objects
+@@ -49,6 +49,53 @@ def test_load_config_without_table(tmp_path):
+     assert load_config(str(path)) == Config()
+ 
+ 
++def test_read_name_list_keeps_file_order(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("web\ndb\nhealthcheck\n", encoding="utf-8")
++    assert read_name_list(str(path)) == ["web", "db", "healthcheck"]
++
++
++def test_read_name_list_strips_whitespace_and_skips_blanks_and_comments(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text(
++        "# components to ignore\n"
++        "\n"
++        "   \n"
++        "  web  \n"
++        "\t# indented comment\n"
++        "db # not a comment, part of the name\n"
++        "\r\n"
++        "metrics\r\n",
++        encoding="utf-8",
++    )
++    assert read_name_list(str(path)) == ["web", "db # not a comment, part of the name", "metrics"]
++
++
++def test_read_name_list_empty_file(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("# only comments\n\n", encoding="utf-8")
++    assert read_name_list(str(path)) == []
++
++
++def test_read_name_list_reads_utf8(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_bytes("café\n".encode("utf-8"))
++    assert read_name_list(str(path)) == ["café"]
++
++
++def test_read_name_list_missing_file(tmp_path):
++    path = tmp_path / "missing.txt"
++    with pytest.raises(ConfigError, match="cannot read"):
++        read_name_list(str(path))
++
++
++def test_read_name_list_rejects_invalid_utf8(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_bytes(b"web\n\xff\xfe\n")
++    with pytest.raises(ConfigError, match="not valid UTF-8"):
++        read_name_list(str(path))
++
++
+ @pytest.mark.parametrize(
+     ("content", "message"),
+     [

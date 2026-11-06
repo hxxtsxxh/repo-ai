@@ -1,0 +1,517 @@
+{
+ "seed": 352500379,
+ "skill": "logsift-conventions",
+ "approve": "646986bd233dd27720918b33e55657c9afefb0a0e1dcf5fbeeb50d54665241eb",
+ "model": "claude-haiku-5-5",
+ "versions": {
+  "repo_ai": "repo-ai 0.12.8",
+  "claude_code": "2.1.319",
+  "python": "3.12.14"
+ },
+ "runs": [
+  {
+   "task": "t1",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "f8462268",
+   "setup": "443c1dcbb4404ea50608941d9f48aa3772ed36e2"
+  },
+  {
+   "task": "t2",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "29313750",
+   "setup": "5a0f815f9fb2b3ac69166720b56faa02fa4ce8c2"
+  },
+  {
+   "task": "t5",
+   "arm": "control",
+   "repeat": 1,
+   "id": "78bda8c7",
+   "setup": "fcb2728bf95aac3367c0d236b02e4daa74b0f76f"
+  },
+  {
+   "task": "t7",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "ea27af6e",
+   "setup": "742f24acb1c16f5f52686429239a5fd8c5a92855"
+  },
+  {
+   "task": "t8",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "0e345336",
+   "setup": "3323a4bb5055095204cba50cc67d7a0364a4961b"
+  },
+  {
+   "task": "t7",
+   "arm": "control",
+   "repeat": 0,
+   "id": "8961bb95",
+   "setup": "b9e084e5320dc2ce4c485ab57b2359370637b513"
+  },
+  {
+   "task": "t6",
+   "arm": "control",
+   "repeat": 0,
+   "id": "a9e16f1e",
+   "setup": "e51141466616398a73ffcea6a6d810b05329317c"
+  },
+  {
+   "task": "t7",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "2a4c4af9",
+   "setup": "16f66e132686558f5e66b04e3e936ca7a6db0b92"
+  },
+  {
+   "task": "t6",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "6c0bc9ee",
+   "setup": "4aa24f2f30da7169ad7b3f716790415daaf9fe9f"
+  },
+  {
+   "task": "t4",
+   "arm": "control",
+   "repeat": 2,
+   "id": "2538af58",
+   "setup": "935fa7a08c4420cb6bdd9fe08bafa274f7c943bd"
+  },
+  {
+   "task": "t2",
+   "arm": "control",
+   "repeat": 1,
+   "id": "9d682ded",
+   "setup": "08a95d9ceb4b4ae95be138afcc912e85193cd6a7"
+  },
+  {
+   "task": "t4",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "93094c67",
+   "setup": "48617ac1ac965448dab22093e585d3fc96ed5c2d"
+  },
+  {
+   "task": "t2",
+   "arm": "control",
+   "repeat": 2,
+   "id": "f6f08eff",
+   "setup": "3efc837ce23aae541f9c9f34785c3c1877d820c2"
+  },
+  {
+   "task": "t7",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "92ae564a",
+   "setup": "4a147b26e1b6316da6c8ba912dc7309296ccf066"
+  },
+  {
+   "task": "t8",
+   "arm": "control",
+   "repeat": 2,
+   "id": "e9baefa3",
+   "setup": "a4fa41bf87eecb09b712e77424add66d18d6d949"
+  },
+  {
+   "task": "t8",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "6224902f",
+   "setup": "8428f01258bd28e171ee3a9f8992004788351444"
+  },
+  {
+   "task": "t2",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "de8cbf5c",
+   "setup": "2bb4aea507669aa4eb5161916e87524ed1cdd962"
+  },
+  {
+   "task": "t2",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "70bd65db",
+   "setup": "ba73a2a96801fc06291e8effd3ef540ba2036723"
+  },
+  {
+   "task": "t8",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "3ac98bb7",
+   "setup": "670f35fa237aa741258155af3befb13a05d41122"
+  },
+  {
+   "task": "t2",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "3bafff97",
+   "setup": "aa8a878482d2d377ec6153e6c13ddd7c47bf1e7e"
+  },
+  {
+   "task": "t1",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "8f43fe66",
+   "setup": "36e19fb3b3ccb88a9ab16925a9c3213018415ef9"
+  },
+  {
+   "task": "t6",
+   "arm": "control",
+   "repeat": 1,
+   "id": "b31b6c6f",
+   "setup": "ca07bceae9eea5e76bcf429e7463bf333e6c5520"
+  },
+  {
+   "task": "t3",
+   "arm": "control",
+   "repeat": 1,
+   "id": "96ad4e0f",
+   "setup": "1127acadebddfcb7fbfeac64b43fcbebcbb2521b"
+  },
+  {
+   "task": "t4",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "4ddc3ffa",
+   "setup": "c3945568096d632fe6b2a7631188d41b3f896b28"
+  },
+  {
+   "task": "t4",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "13c03a9c",
+   "setup": "4ae64235b4dec38f3248d51e1cf0c1df3ea7a283"
+  },
+  {
+   "task": "t4",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "0a353310",
+   "setup": "1c0ad3ec62e07ce4305222511e777adaef6889b2"
+  },
+  {
+   "task": "t7",
+   "arm": "control",
+   "repeat": 1,
+   "id": "fe03e74a",
+   "setup": "85729dcec70a6d4e4c6862fd9b858124bad0ce68"
+  },
+  {
+   "task": "t3",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "74a67f8c",
+   "setup": "be6cfca30199db8163fc95aac63ff018181b56ac"
+  },
+  {
+   "task": "t2",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "8b5573f5",
+   "setup": "cd7c458b0110f1878fb3776e67e424ca9fd29c98"
+  },
+  {
+   "task": "t7",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "42fa6a4c",
+   "setup": "a152984231a610b70e11b0d5ce1111b31b7a1ab9"
+  },
+  {
+   "task": "t2",
+   "arm": "control",
+   "repeat": 0,
+   "id": "4de70695",
+   "setup": "6004902204ff6b9c26c6ae072b4fa515447e160c"
+  },
+  {
+   "task": "t7",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "c04a9a82",
+   "setup": "52de1682aee231459f2f90d7d5e25c641a5597b5"
+  },
+  {
+   "task": "t5",
+   "arm": "control",
+   "repeat": 0,
+   "id": "9061c88c",
+   "setup": "dfe0383f0eee6b5909edff6e9caa28ff174a4428"
+  },
+  {
+   "task": "t3",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "0bef29b7",
+   "setup": "09d740aa8c235750b2d2bde24f88ecb926db31dc"
+  },
+  {
+   "task": "t8",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "0f995f75",
+   "setup": "cbb3ef48b9be384176db668d58e30fd03732cbee"
+  },
+  {
+   "task": "t6",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "5d9a5b3c",
+   "setup": "a3acdc93d089769532bf05d14788b1b6f0dd993b"
+  },
+  {
+   "task": "t4",
+   "arm": "control",
+   "repeat": 0,
+   "id": "24fe5134",
+   "setup": "306214698ed724c87b5275309b969825ac541a4a"
+  },
+  {
+   "task": "t1",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "c0b3db51",
+   "setup": "931179651977f4af2dd506711cb53e38bc09391c"
+  },
+  {
+   "task": "t3",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "f776acf1",
+   "setup": "b1df0decf3234ce4ab40ff49d04ab9ac332854e9"
+  },
+  {
+   "task": "t6",
+   "arm": "control",
+   "repeat": 2,
+   "id": "5957bd89",
+   "setup": "2954ce09f2ed39abad18fb36fc81b5a55c6f1014"
+  },
+  {
+   "task": "t7",
+   "arm": "control",
+   "repeat": 2,
+   "id": "f346d896",
+   "setup": "5e0e1b04b01f36486efe963eca5b7103779fa543"
+  },
+  {
+   "task": "t5",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "cabd8f6c",
+   "setup": "a3fc13ba468f532e878f3aeba2f6fa5296915e81"
+  },
+  {
+   "task": "t1",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "b16b744a",
+   "setup": "e72baddb25ee045051cf08084ff0f4f1c68a0ee9"
+  },
+  {
+   "task": "t8",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "06c89a86",
+   "setup": "e88b5ff9e24e1147b8dca75f9d84aa8ce12a5271"
+  },
+  {
+   "task": "t3",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "fd38318a",
+   "setup": "c21a9f857f2b554331532494e318e05ba0300c90"
+  },
+  {
+   "task": "t6",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "72e26a84",
+   "setup": "5b2ab132215260fbb635229db509da7b21b55aa9"
+  },
+  {
+   "task": "t3",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "2eaff49d",
+   "setup": "c1db52860559ec74140864227aac3a0127aaab4d"
+  },
+  {
+   "task": "t1",
+   "arm": "control",
+   "repeat": 0,
+   "id": "b6fcd836",
+   "setup": "165cb8114dd2ba66fb983b97d7ed546d4532e457"
+  },
+  {
+   "task": "t8",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "1def97a0",
+   "setup": "e29c1b23a1030ffc9a70f5d52d1caf5c69266cf5"
+  },
+  {
+   "task": "t1",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "48d1afc0",
+   "setup": "bf5825b773dfea4061547ff7afb8132034b39f6a"
+  },
+  {
+   "task": "t6",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "4cc800a0",
+   "setup": "89076771cff04451d6ca8c48bb6d1fd8cd2d18d3"
+  },
+  {
+   "task": "t3",
+   "arm": "control",
+   "repeat": 2,
+   "id": "5eac7d56",
+   "setup": "2382efe01b8a59d820ecdb5153a0de7a897cdbd1"
+  },
+  {
+   "task": "t1",
+   "arm": "control",
+   "repeat": 1,
+   "id": "e9c7956e",
+   "setup": "667bc267f3f5321aab6a07b0268aaf851ec72167"
+  },
+  {
+   "task": "t3",
+   "arm": "claudemd",
+   "repeat": 0,
+   "id": "f020f209",
+   "setup": "180ba6181faafe8d0be056401ff2dd677065a942"
+  },
+  {
+   "task": "t3",
+   "arm": "control",
+   "repeat": 0,
+   "id": "b8111e21",
+   "setup": "62c89cd56f8e7a072e4d47af1d1575ac7ec533e9"
+  },
+  {
+   "task": "t6",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "bff8ebf6",
+   "setup": "ec1e2e5e4cc930ee92975d8327c27a028588352e"
+  },
+  {
+   "task": "t7",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "329c3914",
+   "setup": "b2453a08cca7b1bb812fe9df89786029c544079e"
+  },
+  {
+   "task": "t8",
+   "arm": "control",
+   "repeat": 1,
+   "id": "e755ef8a",
+   "setup": "147db069ee8e7b163d5fffd8e9f0feef6a801e81"
+  },
+  {
+   "task": "t5",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "adaea2b7",
+   "setup": "941519028b349e679d5513f11556dd2b4dcd51f2"
+  },
+  {
+   "task": "t1",
+   "arm": "control",
+   "repeat": 2,
+   "id": "edf55ee4",
+   "setup": "14c86b280970ed1b52f6587ca31e843c19f5a244"
+  },
+  {
+   "task": "t8",
+   "arm": "control",
+   "repeat": 0,
+   "id": "25be3af4",
+   "setup": "eb7a02bac5c5af20b711989c9cf7b97d7d83c691"
+  },
+  {
+   "task": "t5",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "f2c4bf94",
+   "setup": "f3952737be7d692e6314a344a28e950569768eb2"
+  },
+  {
+   "task": "t4",
+   "arm": "control",
+   "repeat": 1,
+   "id": "55ba94f9",
+   "setup": "ed125c4ef05713fad63c8b53c6bf865130aee20c"
+  },
+  {
+   "task": "t2",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "7c7019a0",
+   "setup": "ec62e2f7561b3868dfa9cfd951a0dc29c08161a2"
+  },
+  {
+   "task": "t5",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "127201f0",
+   "setup": "9add1ef746df33a5e0616b4233a7ec151fb29016"
+  },
+  {
+   "task": "t4",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "5e36a28a",
+   "setup": "1fbfc56190c443273cd3bc0ea3b5b80e398e4c8a"
+  },
+  {
+   "task": "t6",
+   "arm": "claudemd",
+   "repeat": 1,
+   "id": "00639e9e",
+   "setup": "c80eba58db8aa99600afb432af30008debdb3f6e"
+  },
+  {
+   "task": "t4",
+   "arm": "skill",
+   "repeat": 1,
+   "id": "9f5df341",
+   "setup": "f06895c5c3da61f2bd19562209ae67108815ca12"
+  },
+  {
+   "task": "t5",
+   "arm": "skill",
+   "repeat": 2,
+   "id": "ccf5c24c",
+   "setup": "c60a712f328ad6b08eb090f18e5fac0d64a04e50"
+  },
+  {
+   "task": "t1",
+   "arm": "skill",
+   "repeat": 0,
+   "id": "89615de0",
+   "setup": "614b02a6bfe9181058915c9900cd44b70a4e0d06"
+  },
+  {
+   "task": "t5",
+   "arm": "control",
+   "repeat": 2,
+   "id": "2313b9ea",
+   "setup": "8e3df3c74a391eb27ece47ba2214a947389c079b"
+  },
+  {
+   "task": "t5",
+   "arm": "claudemd",
+   "repeat": 2,
+   "id": "6f4dd097",
+   "setup": "98cd5b34fdbb98df0e45461d85a27f64e9c7baa2"
+  }
+ ]
+}

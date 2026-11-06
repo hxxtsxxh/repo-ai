@@ -1,0 +1,134 @@
+diff --git a/logsift/config.py b/logsift/config.py
+index 37d1c50..d05f6a4 100644
+--- a/logsift/config.py
++++ b/logsift/config.py
+@@ -40,3 +40,27 @@ def load_config(path: str) -> Config:
+     if not isinstance(ignore, list) or not all(isinstance(item, str) for item in ignore):
+         raise ConfigError(f"{path}: 'ignore' must be a list of strings")
+     return Config(ignore=tuple(ignore))
++
++
++def read_name_list(path: str) -> list[str]:
++    """Read component names, one per line, from a UTF-8 text file.
++
++    Surrounding whitespace is removed from each line. Blank lines and lines
++    whose first non-space character is ``#`` are skipped. Names are returned
++    in file order.
++    """
++    names: list[str] = []
++    try:
++        # utf-8-sig also accepts a leading byte-order mark, which would
++        # otherwise stay attached to the first name.
++        with open(path, encoding="utf-8-sig") as handle:
++            for line in handle:
++                name = line.strip()
++                if not name or name.startswith("#"):
++                    continue
++                names.append(name)
++    except OSError as exc:
++        raise ConfigError(f"cannot read {path}: {exc.strerror}") from exc
++    except UnicodeDecodeError:
++        raise ConfigError(f"{path}: not valid UTF-8") from None
++    return names
+diff --git a/tests/test_config_name_list.py b/tests/test_config_name_list.py
+new file mode 100644
+index 0000000..e5266c7
+--- /dev/null
++++ b/tests/test_config_name_list.py
+@@ -0,0 +1,96 @@
++import pytest
++
++from logsift.config import read_name_list
++from logsift.errors import ConfigError, LogsiftError
++
++
++def write(tmp_path, content):
++    path = tmp_path / "names.txt"
++    data = content.encode("utf-8") if isinstance(content, str) else content
++    path.write_bytes(data)
++    return str(path)
++
++
++def test_returns_names_in_file_order(tmp_path):
++    path = write(tmp_path, "web\ndb\nhealthcheck\n")
++    assert read_name_list(path) == ["web", "db", "healthcheck"]
++
++
++def test_strips_surrounding_whitespace(tmp_path):
++    path = write(tmp_path, "  web \t\n\tdb\r\n   metrics   \n")
++    assert read_name_list(path) == ["web", "db", "metrics"]
++
++
++def test_skips_blank_and_whitespace_only_lines(tmp_path):
++    path = write(tmp_path, "\nweb\n\n   \n\t\ndb\n")
++    assert read_name_list(path) == ["web", "db"]
++
++
++def test_skips_comment_lines(tmp_path):
++    path = write(tmp_path, "# ignored list\nweb\n# db is noisy\ndb\n")
++    assert read_name_list(path) == ["web", "db"]
++
++
++def test_skips_indented_comment_lines(tmp_path):
++    path = write(tmp_path, "   # indented comment\n\t#tab comment\nweb\n")
++    assert read_name_list(path) == ["web"]
++
++
++def test_hash_not_at_start_is_part_of_name(tmp_path):
++    path = write(tmp_path, "web # trailing text\nworker#2\n")
++    assert read_name_list(path) == ["web # trailing text", "worker#2"]
++
++
++def test_last_line_without_newline(tmp_path):
++    path = write(tmp_path, "web\ndb")
++    assert read_name_list(path) == ["web", "db"]
++
++
++def test_empty_file_returns_empty_list(tmp_path):
++    path = write(tmp_path, "")
++    assert read_name_list(path) == []
++
++
++def test_only_comments_and_blanks_returns_empty_list(tmp_path):
++    path = write(tmp_path, "# nothing\n\n   \n# still nothing\n")
++    assert read_name_list(path) == []
++
++
++def test_duplicates_are_kept_in_order(tmp_path):
++    path = write(tmp_path, "db\nweb\ndb\n")
++    assert read_name_list(path) == ["db", "web", "db"]
++
++
++def test_non_ascii_names_are_read_as_utf8(tmp_path):
++    path = write(tmp_path, "café\nサービス\n")
++    assert read_name_list(path) == ["café", "サービス"]
++
++
++def test_leading_byte_order_mark_is_ignored(tmp_path):
++    path = write(tmp_path, "﻿web\ndb\n")
++    assert read_name_list(path) == ["web", "db"]
++
++
++def test_missing_file_raises_config_error(tmp_path):
++    missing = tmp_path / "does-not-exist.txt"
++    with pytest.raises(ConfigError) as info:
++        read_name_list(str(missing))
++    assert str(info.value) == f"cannot read {missing}: No such file or directory"
++
++
++def test_directory_raises_config_error(tmp_path):
++    with pytest.raises(ConfigError) as info:
++        read_name_list(str(tmp_path))
++    assert str(info.value).startswith(f"cannot read {tmp_path}: ")
++
++
++def test_invalid_utf8_raises_config_error(tmp_path):
++    path = write(tmp_path, b"web\n\xff\xfe bad\n")
++    with pytest.raises(ConfigError) as info:
++        read_name_list(path)
++    assert str(info.value) == f"{path}: not valid UTF-8"
++
++
++def test_errors_are_logsift_errors(tmp_path):
++    with pytest.raises(LogsiftError):
++        read_name_list(str(tmp_path / "missing.txt"))

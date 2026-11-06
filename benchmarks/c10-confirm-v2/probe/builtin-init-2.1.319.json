@@ -1,0 +1,99 @@
+{
+ "tools": [
+  "Edit",
+  "Glob",
+  "Grep",
+  "Read",
+  "Skill",
+  "Write"
+ ],
+ "mcp_servers": [],
+ "skills": [
+  "deep-research",
+  "design",
+  "design-sync",
+  "dataviz",
+  "update-config",
+  "verify",
+  "debug",
+  "code-review",
+  "simplify",
+  "batch",
+  "fewer-permission-prompts",
+  "doctor",
+  "loop",
+  "claude-api",
+  "workflow-authoring",
+  "run",
+  "run-skill-generator",
+  "plugin-authoring"
+ ],
+ "plugins": [
+  {
+   "name": "cc-plugin-agents-md",
+   "path": "builtin",
+   "source": "cc-plugin-agents-md@builtin"
+  },
+  {
+   "name": "cc-plugin-telemetry",
+   "path": "builtin",
+   "source": "cc-plugin-telemetry@builtin"
+  },
+  {
+   "name": "cc-plugin-privacy",
+   "path": "builtin",
+   "source": "cc-plugin-privacy@builtin"
+  },
+  {
+   "name": "cc-plugin-plugin-authoring",
+   "path": "builtin",
+   "source": "cc-plugin-plugin-authoring@builtin"
+  }
+ ],
+ "model": "repo-ai-isolation-probe-not-a-model",
+ "apiKeySource": "none",
+ "claude_code_version": "2.1.319",
+ "init_keys": [
+  "additional_directories",
+  "agents",
+  "analytics_disabled",
+  "apiKeySource",
+  "capabilities",
+  "claude_code_version",
+  "fast_mode_disabled_reason",
+  "fast_mode_state",
+  "mcp_servers",
+  "memory_paths",
+  "messaging_socket_path",
+  "model",
+  "original_cwd",
+  "output_style",
+  "per_turn_effort_active",
+  "permissionMode",
+  "plugins",
+  "product_feedback_disabled",
+  "skills",
+  "slash_commands",
+  "subtype",
+  "terminal_slash_commands",
+  "tools",
+  "type",
+  "ultrathink_available",
+  "ultrathink_typed_raises",
+  "view_mode"
+ ],
+ "claudemd_project_differs": {
+  "memory_paths": {
+   "auto": "/var/folders/zg/6k1gcymj4mn0g7m9bjqgm5n00000gn/T/c10v2cfg-fthu45mr/projects/-Users-heetshah-c10v2-work-probe-claudemd/memory/"
+  },
+  "messaging_socket_path": "/tmp/cc-socks/39242.sock",
+  "original_cwd": "/Users/heetshah/c10v2-work/probe-claudemd"
+ },
+ "claudemd_project_plain_values": {
+  "memory_paths": {
+   "auto": "/var/folders/zg/6k1gcymj4mn0g7m9bjqgm5n00000gn/T/c10v2cfg-t6q0_6cb/projects/-Users-heetshah-c10v2-work-probe-plain/memory/"
+  },
+  "messaging_socket_path": "/tmp/cc-socks/39232.sock",
+  "original_cwd": "/Users/heetshah/c10v2-work/probe-plain"
+ }
+}
