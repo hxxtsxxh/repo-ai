@@ -193,7 +193,8 @@
    "observations": [
     "paired run shows the instruction is followed, not that outcomes improve",
     "pilot 2026-10-30 (6 haiku calls, predeclared rule): INCONCLUSIVE - skill higher on t2 (per-line tax, 7/7 vs 4/7), control higher on t1 (6/8 vs 8/8; oracle rounding ambiguity found post hoc), tie on t3; skill invoked unprompted 3/3; evidence/SKILL-VALUE-PILOT-2026-10-30.md",
-    "2026-11-01 c10-confirm-v1, on one fixture project and 8 tasks (preregistered; fixture+skill, tasks+oracles and ambiguity review by three separate model sessions; 8 tasks x 2 arms x 3 repeats, sonnet, token_env with an empty config dir per run): SUPPORTED, skill arm higher on 8 of 8 tasks (sign test p = 0.0039); convention score 1.000 vs 0.319, baseline score 1.000 vs 0.875 (three control runs ended without editing after reading a mangled path; without them 8 of 8 holds and the control baseline is 1.000); skill invoked unprompted in 24 of 24; $3.25 notional (benchmarks/c10-confirm-v1/RESULTS.md)"
+    "2026-11-01 c10-confirm-v1, on one fixture project and 8 tasks (preregistered; fixture+skill, tasks+oracles and ambiguity review by three separate model sessions; 8 tasks x 2 arms x 3 repeats, sonnet, token_env with an empty config dir per run): SUPPORTED, skill arm higher on 8 of 8 tasks (sign test p = 0.0039); convention score 1.000 vs 0.319, baseline score 1.000 vs 0.875 (three control runs ended without editing after reading a mangled path; without them 8 of 8 holds and the control baseline is 1.000); skill invoked unprompted in 24 of 24; $3.25 notional (benchmarks/c10-confirm-v1/RESULTS.md)",
+    "2026-11-06 c10-confirm-v2 designed, not run; materials pending separate authors (benchmarks/c10-confirm-v2/PREREGISTRATION.md, AUTHOR-BRIEFS.md): a second fixture (a Python command-line application, written by Author A with its own conventions skill; tasks and oracles by Author B; review by Reviewer C), model claude-haiku-5-5, a third arm with the same text as CLAUDE.md; 8 tasks x 3 arms x 3 repeats = 72 sessions, $0.05 cap each, ceiling $3.60 (upper bound $3.65), expected about $0.30-0.45; needs the owner's batch approval; only the offline run.py check and self-test were run (no model call)"
    ],
    "limits": [
     "one fixture project, one model, one project-conventions skill (its value is by construction the rules the code does not show)",
@@ -201,7 +202,7 @@
     "says nothing about third-party skills in general or about repo-ai's discovery choosing helpful skills",
     "the control had no conventions text: shows conventions-as-installed-skill vs none, not the skill format vs the same text elsewhere (e.g. CLAUDE.md)"
    ],
-   "next_action": "repeat on a second project and model; a third-party skill trial"
+   "next_action": "c10-confirm-v2: dispatch author briefs A, B, C, freeze, $0 probe, owner batch approval, then the 72 runs; a third-party skill trial"
   },
   {
    "id": "C11",
