@@ -81,3 +81,26 @@ clearly differ from the buggy base. SAME is not equivalence: other inputs could 
 prompt (non-ASCII digits; int vs float), and found the two Node pairs behaving identically on everything they asked.
 In every case the probe's answer agreed with the hidden oracle's CORRECT for all eight candidates. Same caveats:
 four tasks, one provider pair, probes written by the feature's author.
+
+## Amendment 3 (2026-11-06, before any run of these probes): independent probe authors
+
+C12's next action is "independent probe authors". The probes above were written by the person who built the feature
+and ran the study. Four new probes, `probes-independent/`, were written by a separate agent instance that saw only
+each task's statement (`task.json`) and starting repository (`repo/`), copied into a scratch folder; it was given no
+candidate, no earlier probe and no result, and reported opening nothing outside that folder. It is not a human author
+(the study does not claim one). sha256:
+
+```
+e17b475488f0e6afb17cc99c5e94889f6f8bd9293ee18c93d1a819ae10481d9c  cal-node-chunk.js
+c4c0bb85ec5cde6b2f000b12975487e7bfdcf223ebffe128571747e9989a5bb6  cal-node-roman.js
+5c3f3c67eadc1f88fc9fec5bdd2b7225f8bec719f1df92505b0405fa47c32dbd  cal-py-backoff.py
+fe21ae5d0358a3e0da4bb66ecb876081f7469a1a74f7c3fcbf2170f689402d78  cal-py-sizes.py
+```
+
+**Run:** the same replay re-submission as amendments 1 and 2 (each task's two recorded candidate diffs applied to a fresh
+clone of its frozen repository and submitted as explicit replay proposals, no model call), now under repo-ai 0.12.8
+from PyPI, then `shortlist --probe probes-independent/<task>.<py|js>`. The original probes are also re-run in the same
+comparisons so both sets are compared on identical candidates. Reported per task: each probe set's verdict and every
+differing line, classified as inside or outside the spec as before, and whether the independent probe finds the same
+difference, a different one, or none. A refusal or an INCONCLUSIVE is reported as such. $0.
+
