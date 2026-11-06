@@ -1,0 +1,4 @@
+# The pytest image for tests/test_container_exercise.py (CI's sandbox job builds it as localhost/repo-ai-test-pytest:1
+# and sets REPO_AI_TEST_PYTEST_IMAGE). Only pytest on the image repo-ai already pulls for Python.
+FROM docker.io/library/python:3.12-slim
+RUN pip install --no-cache-dir "pytest==8.3.4"
