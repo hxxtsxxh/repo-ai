@@ -243,8 +243,7 @@ def observe(root: Path, command: str, timeout_s: float = 60,
             if changes.fingerprint(root, "HEAD") != fingerprint:
                 raise ValueError("source changed while preparing the observation")
             bound = executor.in_workspace(ws)
-            static = cache.static_environment(bound, runner)
-            environment = cache.environment_key(bound, runner)
+            environment, static = cache.environment_identity(bound, runner)
             observation.update(environment_static=static, environment_key=environment, isolation=ws.summary())
             argv, report = results.instrument(runner, runner.full, ws.path, bound.inside_root, _REPORT, native=True)
             result = bound.run(argv, cwd=runner.cwd, env=runner.env, timeout_s=timeout_s, toolchain=runner.language)
