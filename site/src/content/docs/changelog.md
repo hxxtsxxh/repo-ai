@@ -1,9 +1,21 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.8, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.9, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.9
+
+- **Fixed** `repo-ai coverage` on a container mission can now verify requirements: when the image is the only point a
+  read-only command cannot re-check and the mission passed, the observed outcomes count, and the report names the
+  image digest it ran in. It used to report every requirement as inconclusive.
+- **Added** per-requirement changed lines say whether the traced run behaved like the verified run: a test whose traced
+  outcome differs reads `DIVERGED` and its lines are informational only; a test that was traced but ran no changed
+  line says so, distinct from "not traced".
+- **Changed** `verify --run` reads each environment directory once per run instead of twice (about half the fixed
+  cost on large virtualenvs and `node_modules`; local profile only, no speed claim).
+- **Fixed** when there are no per-requirement changed lines, `coverage` says why from what the mission recorded.
 
 ## 0.12.8
 
