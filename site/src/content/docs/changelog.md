@@ -1,9 +1,17 @@
 ---
 title: Changelog
-description: Release notes for repo-ai 0.9.0 through 0.12.7, and the pre-releases that led to 0.9.0.
+description: Release notes for repo-ai 0.9.0 through 0.12.8, and the pre-releases that led to 0.9.0.
 ---
 
 A condensed view. The full history, back to 0.4.0, is `CHANGELOG.md` in the source tree.
+
+## 0.12.8
+
+- **Added** missions that run their tests in a container (`--sandbox podman/docker --image`) now get the
+  change-exercise measurement and `repo-ai coverage`'s per-requirement changed lines too, pinned to the image the
+  verified run used (a different image or sandbox backend is refused, never measured).
+- **Fixed** `repo-ai uninstall --dry-run` no longer says it removes agents `init` never configured.
+- **Docs** the landing page walkthrough and the quickstart show real 0.12.7 output, captured by a script in the repo.
 
 ## 0.12.7
 
