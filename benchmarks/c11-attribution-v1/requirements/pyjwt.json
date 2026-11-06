@@ -1,0 +1,9 @@
+{
+ "schema": "repo-ai.requirements/1",
+ "requirements": [
+  {"text": "decode with a str issuer rejects a token whose iss only partly matches it (iss \"urn:\" against issuer \"urn:expected\") with InvalidIssuerError: a str issuer is compared by equality, not with `in`", "kind": "change", "tests": ["tests/test_api_jwt.py::TestJWT::test_rasise_exception_on_partial_issuer_match"]},
+  {"text": "control (commit message: a str issuer is compared by equality): a token whose iss equals the str issuer is accepted; a different iss raises InvalidIssuerError", "kind": "preserve", "tests": ["tests/test_api_jwt.py::TestJWT::test_check_issuer_when_valid", "tests/test_api_jwt.py::TestJWT::test_raise_exception_invalid_issuer"]},
+  {"text": "control (commit message: a list issuer is checked by membership): a token whose iss is one of the listed issuers is accepted; one not listed raises InvalidIssuerError", "kind": "preserve", "tests": ["tests/test_api_jwt.py::TestJWT::test_check_issuer_list_when_valid", "tests/test_api_jwt.py::TestJWT::test_raise_exception_invalid_issuer_list"]},
+  {"text": "control (test right before the changed one): with an issuer required, a token without iss raises MissingRequiredClaimError for \"iss\"", "kind": "preserve", "tests": ["tests/test_api_jwt.py::TestJWT::test_raise_exception_token_without_issuer"]}
+ ]
+}
