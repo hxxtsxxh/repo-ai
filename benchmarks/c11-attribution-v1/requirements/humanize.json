@@ -1,0 +1,9 @@
+{
+ "schema": "repo-ai.requirements/1",
+ "requirements": [
+  {"text": "naturalsize accepts a float equal to 1 (1.0) and returns \"1 Byte\", as it does for the int 1 (upstream #250: regression for float)", "kind": "change", "tests": ["tests/test_filesize.py::test_naturalsize[test_args58-1 Byte]"]},
+  {"text": "naturalsize accepts a numeric string equal to 1 (\"1\") and returns \"1 Byte\" (upstream #250: regression for str)", "kind": "change", "tests": ["tests/test_filesize.py::test_naturalsize[test_args59-1 Byte]"]},
+  {"text": "control (case next to the changed ones): naturalsize(1) still returns \"1 Byte\"", "kind": "preserve", "tests": ["tests/test_filesize.py::test_naturalsize[test_args57-1 Byte]"]},
+  {"text": "control (cases next to the changed ones): sizes other than 1 keep their format: 1024 in GNU form is \"1.0K\", 3141592 with \"%.2f\" is \"3.14 MB\"", "kind": "preserve", "tests": ["tests/test_filesize.py::test_naturalsize[test_args56-1.0K]", "tests/test_filesize.py::test_naturalsize[test_args60-3.14 MB]"]}
+ ]
+}
