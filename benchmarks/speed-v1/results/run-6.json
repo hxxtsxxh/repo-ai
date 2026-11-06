@@ -1,0 +1,4481 @@
+{
+ "protocol": "speed-v1",
+ "commit": "5250fe3fcc693e1d3a8e8dc2e9a6de0278db8d87",
+ "python": "3.12.16",
+ "os": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+ "cpus": 4,
+ "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+ "run_at": "2026-11-06T19:50:17Z",
+ "summary": {
+  "valid_changes": 30,
+  "geometric_mean_cold_ratio": 1.997,
+  "slower_than_native": 28,
+  "per_project_median_cold_ratio": {
+   "jpadilla/pyjwt": 1.0405,
+   "python-humanize/humanize": 7.045,
+   "more-itertools/more-itertools": 1.0474999999999999,
+   "pallets/itsdangerous": 1.4095,
+   "marshmallow-code/marshmallow": 3.6245000000000003
+  },
+  "reading_rule_faster": false
+ },
+ "projects": [
+  {
+   "project": "jpadilla/pyjwt",
+   "ref": "2.10.1",
+   "changes": [
+    {
+     "commit": "37748dc1e328f120aa04ec98b2a71a0af6301a24",
+     "parent": "33022c25525c1020869c71ce2a4109e44ae4ced1",
+     "native": {
+      "seconds": [
+       5.451,
+       5.188,
+       5.287
+      ],
+      "median": 5.287,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 98%]\n...                                                                      [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 5.10s\n"
+     },
+     "verify_cold": {
+      "seconds": 6.073,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_exceptions.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwt.py tests/test_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.175,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_exceptions.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwt.py tests/test_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.458,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_exceptions.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwt.py tests/test_compressed_jwt.py tests/test_utils.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "ratio_cold": 1.149,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "33022c25525c1020869c71ce2a4109e44ae4ced1",
+     "parent": "783f324e5d2155462515ced45718fc164dd04db2",
+     "native": {
+      "seconds": [
+       5.293,
+       5.198,
+       5.172
+      ],
+      "median": 5.198,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 98%]\n...                                                                      [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 4.98s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.444,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.225,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.369,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 3,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "ratio_cold": 1.047,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "b032353bd93fee330cb79a351cc4d03affee19f5",
+     "parent": "a759c455cde3e9ff99afe25e9fc56278af666ff3",
+     "native": {
+      "seconds": [
+       5.38,
+       5.293,
+       5.171
+      ],
+      "median": 5.293,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 4.99s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.381,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_compressed_jwt.py tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_exceptions.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py tests/test_utils.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.169,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_compressed_jwt.py tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_exceptions.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py tests/test_utils.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.371,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jws.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwt.py tests/test_exceptions.py tests/test_utils.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "ratio_cold": 1.017,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "a759c455cde3e9ff99afe25e9fc56278af666ff3",
+     "parent": "b6b8bce07717b0b4bb7816b99c33ab9e6907059a",
+     "native": {
+      "seconds": [
+       5.303,
+       5.185,
+       5.153
+      ],
+      "median": 5.185,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 4.97s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.36,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py tests/test_exceptions.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.177,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py tests/test_exceptions.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.371,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py tests/test_exceptions.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 8,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "ratio_cold": 1.034,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f2df5b6594ca9da7dd06f0f264eacdf32e387bd0",
+     "parent": "4ceee5afa9da8c61c91fc3e44cbebdd50fcf4354",
+     "native": {
+      "seconds": [
+       5.333,
+       5.226,
+       5.214
+      ],
+      "median": 5.226,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 5.02s\n"
+     },
+     "verify_cold": {
+      "seconds": 5.398,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py tests/test_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 7,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.218,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_compressed_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py tests/test_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 7,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_rerun": {
+      "seconds": 5.444,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m pytest -q -p no:cacheprovider tests/test_compressed_jwt.py tests/test_jwks_client.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_algorithms.py tests/test_jwt.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jws.py tests/test_utils.py",
+       "python -m pytest -q -p no:cacheprovider tests/test_api_jwk.py tests/test_api_jwt.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 7,
+      "processes": 6,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "ratio_cold": 1.033,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "6dc23b3c9beeb33a45b7e34b39b086b063de48bf",
+     "parent": "310962b535d53f1ccc8cf9f484fe8beb89234af8",
+     "native": {
+      "seconds": [
+       5.412,
+       5.155,
+       5.342
+      ],
+      "median": 5.342,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n286 passed, 4 skipped in 5.15s\n"
+     },
+     "verify_cold": {
+      "seconds": 11.199,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "python -m pytest",
+       "duration_s": 5.38,
+       "reason": null
+      },
+      "commands": [
+       "python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "failed": 1,
+        "passed": 285,
+        "skipped": 4
+       },
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.231,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "python -m pytest",
+       "duration_s": 5.38,
+       "reason": null
+      },
+      "commands": [
+       "python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": true,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "failed": 1,
+        "passed": 285,
+        "skipped": 4
+       },
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "verify_rerun": {
+      "seconds": 11.198,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "python -m pytest",
+       "duration_s": 5.39,
+       "reason": null
+      },
+      "commands": [
+       "python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 7,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_jwks_client.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "failed": 1,
+        "passed": 285,
+        "skipped": 4
+       },
+       "sandbox_network_suspected": [
+        "tests/test_jwks_client.py"
+       ]
+      }
+     },
+     "ratio_cold": 2.096,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     5.781,
+     5.2,
+     5.159
+    ],
+    "median": 5.2,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "........................................................................ [ 24%]\n....................ss......s.......................................s... [ 49%]\n........................................................................ [ 74%]\n........................................................................ [ 98%]\n...                                                                      [100%]\n=========================== short test summary info ============================\nSKIPPED [1] tests/test_api_jwk.py:214: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:220: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jwk.py:324: Requires cryptography library not installed\nSKIPPED [1] tests/test_api_jws.py:472: Requires cryptography library not installed\n287 passed, 4 skipped in 4.98s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "python-humanize/humanize",
+   "ref": "4.12.3",
+   "changes": [
+    {
+     "commit": "f772e59bf67b14e8f5565d9f489966db1df45381",
+     "parent": "7c341b9d49f3b8687526d8e50cae5f5a5d31582d",
+     "native": {
+      "seconds": [
+       1.023,
+       1.013,
+       0.997
+      ],
+      "median": 1.013,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 80%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 91%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                    [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m605 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[32m in 0.81s\u001b[0m\u001b[0m\n"
+     },
+     "verify_cold": {
+      "seconds": 1.554,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.188,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.462,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (estimated from per-file times 1.1s as one process) is expected to be no slower than the selection (~1.0s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.07,
+       "est_full_source": "estimated from per-file times"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.14,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 605,
+        "skipped": 24
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.534,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "9528daf55fd7178c025f7294b8e349f8b3524175",
+     "parent": "87666f2a55f0a0d31a5c75c1ed0f2ad2cc6c5b17",
+     "native": {
+      "seconds": [
+       0.344,
+       0.151,
+       0.152
+      ],
+      "median": 0.152,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1397, in pytest_cmdline_parse\n    self.parse(args)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1758, in parse\n    self._capture_plugin_import_warnings()\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1342, in _capture_plugin_import_warnings\n    with self._catch_configured_warnings(record=True) as records:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1337, in _catch_configured_warnings\n    apply_warning_filters(config_filters, cmdline_filters)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 2.02,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.1s as one process) is expected to be no slower than the selection (~1.0s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.17,
+       "reason": "not required; its failures cannot be attributed to files (the process exited 1 without a failing test in its report)"
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.189,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.1s as one process) is expected to be no slower than the selection (~1.0s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.17,
+       "reason": "not required; its failures cannot be attributed to files (the process exited 1 without a failing test in its report)"
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": true,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.818,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the full suite is not chosen for speed here: its result cannot be attributed to files (the process exited 1 without a failing test in its report)",
+       "batches": 4,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 12,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 13.289,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "fb61d5aae902e4526cd733a90d7a96ecded11b0e",
+     "parent": "fd230cf1c51ae28a2c74ac3c62be2183d26b4c6a",
+     "native": {
+      "seconds": [
+       0.148,
+       0.154,
+       0.148
+      ],
+      "median": 0.148,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1397, in pytest_cmdline_parse\n    self.parse(args)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1758, in parse\n    self._capture_plugin_import_warnings()\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1342, in _capture_plugin_import_warnings\n    with self._catch_configured_warnings(record=True) as records:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1337, in _catch_configured_warnings\n    apply_warning_filters(config_filters, cmdline_filters)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 2.032,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.17,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.206,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.17,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": true,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.014,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.17,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 13,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py",
+        "tests/test_lists.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 13.73,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "d7f5dc5d60a4eb8f43b1ff6ddb842030062e9910",
+     "parent": "19b43d3b8d80959d75097d8e145690be811465bd",
+     "native": {
+      "seconds": [
+       0.152,
+       0.154,
+       0.148
+      ],
+      "median": 0.152,
+      "exit": [
+       1,
+       1,
+       1
+      ],
+      "tail": "__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1397, in pytest_cmdline_parse\n    self.parse(args)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1758, in parse\n    self._capture_plugin_import_warnings()\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1342, in _capture_plugin_import_warnings\n    with self._catch_configured_warnings(record=True) as records:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/contextlib.py\", line 137, in __enter__\n    return next(self.gen)\n           ^^^^^^^^^^^^^^\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1337, in _catch_configured_warnings\n    apply_warning_filters(config_filters, cmdline_filters)\n  File \"/home/runner/work/_temp/speed/python-humanize__humanize/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 2489, in apply_warning_filters\n    warnings.warn(\npytest.PytestConfigWarning: Failed to import filter module 'coverage': ignore:sys.monitoring isn't available, using default core:coverage.exceptions.CoverageWarning\n"
+     },
+     "verify_cold": {
+      "seconds": 1.735,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.16,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.174,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.16,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": true,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.73,
+      "exit": 1,
+      "verdict": "regression",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.17,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_lists.py"
+      ],
+      "command_count": 5,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 11,
+      "new_failures": 1,
+      "tail": "",
+      "detail": {
+       "new_failures": [
+        {
+         "test_file": "tests/test_lists.py",
+         "tests": [],
+         "status": "fail"
+        }
+       ],
+       "pre_existing": [
+        "tests/test_time.py",
+        "tests/test_i18n.py",
+        "tests/test_number.py",
+        "tests/test_filesize.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 11.414,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f8c144eb5d8abd7ba0d067d5724babde852ddccb",
+     "parent": "2635e6e4c15a9182f2a7273500f7f02b14fde343",
+     "native": {
+      "seconds": [
+       0.988,
+       0.934,
+       0.926
+      ],
+      "median": 0.934,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 81%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 95%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                  [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m504 passed\u001b[0m, \u001b[33m23 skipped\u001b[0m\u001b[32m in 0.74s\u001b[0m\u001b[0m\n"
+     },
+     "verify_cold": {
+      "seconds": 1.419,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the full suite is not chosen for speed here: its result cannot be attributed to files (the process exited 1 without a failing test in its report)",
+       "batches": 4,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.188,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the full suite is not chosen for speed here: its result cannot be attributed to files (the process exited 1 without a failing test in its report)",
+       "batches": 4,
+       "est_targeted_s": 1.05,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.411,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the full suite is not chosen for speed here: its result cannot be attributed to files (the process exited 1 without a failing test in its report)",
+       "batches": 4,
+       "est_targeted_s": 1.06,
+       "est_full_s": 1.14,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_time.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_i18n.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_number.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_filesize.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.519,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "1bf3f4c741979c7b5be62ef302ecbb858bbff83b",
+     "parent": "a09068a5d05b967dce1d8ee32b2af39b072d7048",
+     "native": {
+      "seconds": [
+       0.175,
+       0.176,
+       0.18
+      ],
+      "median": 0.176,
+      "exit": [
+       5,
+       5,
+       5
+      ],
+      "tail": "\nno tests ran in 0.01s\n"
+     },
+     "verify_cold": {
+      "seconds": 0.471,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "python -m pytest",
+       "duration_s": 0.18,
+       "reason": null
+      },
+      "commands": [],
+      "command_count": 0,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.178,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "python -m pytest",
+       "duration_s": 0.18,
+       "reason": null
+      },
+      "commands": [],
+      "command_count": 0,
+      "reused": true,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 0.464,
+      "exit": 1,
+      "verdict": "full-suite-failed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "fail",
+       "command": "python -m pytest",
+       "duration_s": 0.19,
+       "reason": null
+      },
+      "commands": [],
+      "command_count": 0,
+      "reused": false,
+      "passed_files": 0,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 2.676,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     1.195,
+     1.001,
+     1.003
+    ],
+    "median": 1.003,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 79%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m [ 91%]\n\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                  [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m607 passed\u001b[0m, \u001b[33m24 skipped\u001b[0m\u001b[32m in 0.81s\u001b[0m\u001b[0m\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "more-itertools/more-itertools",
+   "ref": "v10.7.0",
+   "changes": [
+    {
+     "commit": "e733192454b73bbea8645e4dcbee95b13eba714c",
+     "parent": "b2b3bf6ddc5cb652201545ba191d07400c4e89cf",
+     "native": {
+      "seconds": [
+       2.608,
+       2.441,
+       2.444
+      ],
+      "median": 2.444,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": ".......... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n............................................................................... [ 56%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n.................................................................................................................................s...........                                   [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1740: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n664 passed, 1 skipped, 8 warnings, 2325 subtests passed in 2.24s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.902,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 2,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.969,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 2,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": true,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 3.471,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (estimated from per-file times 1.7s as one process) is expected to be no slower than the selection (~1.6s in 2 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.56,
+       "est_full_s": 1.72,
+       "est_full_source": "estimated from per-file times"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "python -m unittest -v",
+       "duration_s": 2.29,
+       "reason": null
+      },
+      "commands": [
+       "python -m unittest -v"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.187,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4f4217c164eb99df5c09a3882b8c7222d7c74d6c",
+     "parent": "390a3db74c62c206fdb2edcf49373fea25d50adc",
+     "native": {
+      "seconds": [
+       2.207,
+       2.08,
+       2.043
+      ],
+      "median": 2.08,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "......................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n....................................................................................................................................... [ 64%]\n........................................................................................ [ 77%]\n.................................................................................................................... [ 95%]\n..................s...........                              [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1742: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n662 passed, 1 skipped, 8 warnings, 2332 subtests passed in 1.85s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.246,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.58,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.436,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.58,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": true,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.091,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.56,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.08,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "dab9518f9c1a17024fe0dd3d0f7f52398167e8da",
+     "parent": "8256ce36ea313bc063347f6021e3f4cc2ae2f47a",
+     "native": {
+      "seconds": [
+       2.09,
+       2.083,
+       2.049
+      ],
+      "median": 2.083,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "......................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n....................................................................................................................................... [ 64%]\n........................................................................................ [ 77%]\n.................................................................................................................... [ 95%]\n..................s...........                              [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1742: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n662 passed, 1 skipped, 8 warnings, 2332 subtests passed in 1.85s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.845,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.55,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.157,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.55,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": true,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.804,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.57,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 0.886,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "fc5773f42805fa315e7f7500623f8765a847ccb8",
+     "parent": "612a009deeaebb36e34cfe5ace1b7f67c4f3af41",
+     "native": {
+      "seconds": [
+       2.193,
+       2.071,
+       2.061
+      ],
+      "median": 2.071,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "..................................................................................... [ 12%]\n......................................................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n........................................................................ [ 55%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n...................................................................................................................................s...........                                 [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1744: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n659 passed, 1 skipped, 5 warnings, 2332 subtests passed in 1.87s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.996,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.57,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.193,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.57,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": true,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.826,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.59,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 0.964,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "612a009deeaebb36e34cfe5ace1b7f67c4f3af41",
+     "parent": "8927b5ccc52a16dfaca74af899acad43fd1679de",
+     "native": {
+      "seconds": [
+       2.08,
+       2.054,
+       2.088
+      ],
+      "median": 2.08,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "..................................................................................... [ 12%]\n......................................................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 44%]\n........................................................................ [ 55%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n...................................................................................................................................s...........                                 [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1744: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n659 passed, 1 skipped, 5 warnings, 2332 subtests passed in 1.88s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.112,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.56,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.424,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.56,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": true,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.124,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.56,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.015,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4bd0bd876273a8ff2171352c937b91a8c053d00b",
+     "parent": "17fd95a0c34763c34853f3a89048d60733815dc4",
+     "native": {
+      "seconds": [
+       2.217,
+       2.066,
+       2.076
+      ],
+      "median": 2.076,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "..................................................................................... [ 13%]\n......................................................... [ 21%]\n........................................................................ [ 32%]\n................................................................................ [ 45%]\n......................................................................... [ 56%]\n............................................................... [ 65%]\n...................... [ 69%]\n.................................................................. [ 79%]\n...........................................................................................................................s...........                                         [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1744: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n652 passed, 1 skipped, 5 warnings, 2331 subtests passed in 1.88s\n"
+     },
+     "verify_cold": {
+      "seconds": 2.861,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.6,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.948,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.6,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": true,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.711,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "the selection (~1.6s in 2 process(es)) is expected to be faster than the full suite (measured 2.3s)",
+       "batches": 2,
+       "est_targeted_s": 1.57,
+       "est_full_s": 2.29,
+       "est_full_source": "measured"
+      },
+      "full_suite": null,
+      "commands": [
+       "python -m unittest tests.test_more",
+       "python -m unittest tests.test_recipes"
+      ],
+      "command_count": 2,
+      "reused": false,
+      "passed_files": 2,
+      "processes": 2,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.378,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     11.6,
+     11.354,
+     11.277
+    ],
+    "median": 11.354,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": ".................................................................. [ 32%]\n................................................................................ [ 44%]\n............................................................................... [ 55%]\n............................................................... [ 65%]\n...................... [ 68%]\n.................................................................. [ 78%]\n............................................................................................................... [ 94%]\n.................s.. [ 97%]\n..............                                     [100%]\n=============================== warnings summary ===============================\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_equal\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::ZipEqualTest::test_unequal_lists\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\ntests/test_more.py::SortTogetherTest::test_strict\n  /home/runner/work/_temp/speed/more-itertools__more-itertools/more_itertools/more.py:1770: DeprecationWarning: zip_equal will be removed in a future version of more-itertools. Use the builtin zip function with strict=True instead.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n670 passed, 1 skipped, 8 warnings, 12037 subtests passed in 11.03s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "pallets/itsdangerous",
+   "ref": "2.2.0",
+   "changes": [
+    {
+     "commit": "7f4dcf83a07bb3d53f4e0e65ef1b43327b4cca90",
+     "parent": "93ae366874bbd4f69d90495c45b2cd336387496c",
+     "native": {
+      "seconds": [
+       0.682,
+       0.681,
+       0.693
+      ],
+      "median": 0.682,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n........................................................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.51s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.076,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_serializer.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_signer.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_timed.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_url_safe.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.191,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_serializer.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_signer.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_timed.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_url_safe.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.059,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no full-suite time yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": 0.68,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_url_safe.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_timed.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_serializer.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_signer.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 4,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.578,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "4712ab6f5b7ca291544ce5e2dad2beffb05291a7",
+     "parent": "f0daa0833c72a47baed68466a55f7e465096d26e",
+     "native": {
+      "seconds": [
+       0.733,
+       0.686,
+       0.684
+      ],
+      "median": 0.686,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 24%]\n........................................................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.50s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.031,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_encoding.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_url_safe.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_timed.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_serializer.py tests/test_itsdangerous/test_signer.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.168,
+      "exit": 0,
+      "verdict": "selected-passed (full suite not run)",
+      "strategy": "targeted",
+      "strategy_detail": {
+       "reason": "no per-file durations yet to compare the two (`repo-ai verify --record` measures them); running the selection",
+       "batches": 4,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": null,
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_encoding.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_url_safe.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_timed.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/test_itsdangerous/test_serializer.py tests/test_itsdangerous/test_signer.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 5,
+      "processes": 4,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": null,
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.043,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (estimated from per-file times 0.9s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 0.91,
+       "est_full_source": "estimated from per-file times"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.77,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 297
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.503,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "d21128d16131e77de453570f19958945724ee3be",
+     "parent": "0f372436f47a85a23023abb510e7cc6bc563c392",
+     "native": {
+      "seconds": [
+       0.947,
+       0.939,
+       0.926
+      ],
+      "median": 0.939,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.73s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.287,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 0.8s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 0.77,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.0,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.172,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 0.8s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 0.77,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.0,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.293,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 0.9s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 0.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.01,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.371,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "0f372436f47a85a23023abb510e7cc6bc563c392",
+     "parent": "d101100c395958d67368b8c37d95a9c404598c2e",
+     "native": {
+      "seconds": [
+       0.914,
+       0.941,
+       0.911
+      ],
+      "median": 0.914,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.73s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.284,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 0.9s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 0.95,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.01,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.173,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 0.9s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 0.95,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.01,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.302,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.0s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 0.98,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.02,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.405,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "195e5f77308d5464c085ba77d247c5589afab47f",
+     "parent": "05e5f04851f0e618a5ccee8296f039d3c471e7d2",
+     "native": {
+      "seconds": [
+       0.917,
+       0.925,
+       0.92
+      ],
+      "median": 0.92,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.73s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.301,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 1.0,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.99,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.191,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 1.0,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 0.99,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": true,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.314,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 1.0,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.02,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 3,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.414,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "c23001855d36962ee19e19f9c7286c1b2ec534b8",
+     "parent": "4bda48f53fac93ddd0b0fcf8b920a55a3f4f8f28",
+     "native": {
+      "seconds": [
+       0.936,
+       0.922,
+       0.931
+      ],
+      "median": 0.931,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [ 17%]\n........................................................................ [ 34%]\n........................................................................ [ 51%]\n........................................................................ [ 68%]\n........................................................................ [ 85%]\n.............................................................            [100%]\n421 passed in 0.74s\n"
+     },
+     "verify_cold": {
+      "seconds": 1.302,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.0s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 1.01,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.01,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.169,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.0s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 1.01,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.01,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": true,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 1.285,
+      "exit": 0,
+      "verdict": "selected-and-full-suite-passed",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.0s as one process) is expected to be no slower than the selection (~0.8s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 0.77,
+       "est_full_s": 1.01,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.01,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 1,
+      "reused": false,
+      "passed_files": 5,
+      "processes": 1,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 421
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 1.398,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     0.73,
+     0.681,
+     0.684
+    ],
+    "median": 0.684,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "........................................................................ [ 24%]\n........................................................................ [ 48%]\n........................................................................ [ 72%]\n........................................................................ [ 96%]\n.........                                                                [100%]\n297 passed in 0.50s\n"
+   },
+   "status": "MEASURED"
+  },
+  {
+   "project": "marshmallow-code/marshmallow",
+   "ref": "4.0.0",
+   "changes": [
+    {
+     "commit": "5c136b11f90f130d321ee2985bb7aaa764258fb9",
+     "parent": "df1daf03fa79aae61f8aaa85de2a16f1ff63a0de",
+     "native": {
+      "seconds": [
+       0.925,
+       0.903,
+       0.913
+      ],
+      "median": 0.913,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 0.69s\n"
+     },
+     "verify_cold": {
+      "seconds": 3.578,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.9,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.31,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": null,
+       "est_full_s": null,
+       "est_full_source": ""
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.9,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 3.427,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite is required for this change; it includes every selected test, so they are not run twice",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.9,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.89,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 3.919,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "2fc8207da9cf0cf1d9b9b4ab76d4d0478b588325",
+     "parent": "b7026f3b2622cffc981588b647526fa9525f063d",
+     "native": {
+      "seconds": [
+       0.954,
+       0.909,
+       0.929
+      ],
+      "median": 0.929,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 0.70s\n"
+     },
+     "verify_cold": {
+      "seconds": 3.835,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.9,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.89,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.623,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.9,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.89,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 3.756,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.88,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1117
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 4.128,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "f0c6afb430a6d032300658c898752d6c7732b188",
+     "parent": "ef06fbe2e51ab6f1626c758098d4fc6ecdd8368a",
+     "native": {
+      "seconds": [
+       1.212,
+       0.91,
+       0.938
+      ],
+      "median": 0.938,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n....................................                                     [100%]\n1116 passed in 0.70s\n"
+     },
+     "verify_cold": {
+      "seconds": 3.437,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.91,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.26,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.91,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 4,
+      "reused": true,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 3.335,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.9,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.89,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_schema.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 4,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 7,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [
+        "tests/mypy_test_cases/test_schema.py"
+       ],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 3.664,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "9cddff67b733987fedc0ae37c1a4ed2eb61e89cb",
+     "parent": "bc5cde04330ae53f7a23e6990f9a0ce9d9891a4a",
+     "native": {
+      "seconds": [
+       0.963,
+       0.925,
+       0.902
+      ],
+      "median": 0.925,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n....................................                                     [100%]\n1116 passed in 0.68s\n"
+     },
+     "verify_cold": {
+      "seconds": 3.316,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.88,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 3,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.57,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.88,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 3,
+      "reused": true,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 3.262,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.88,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 3,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1116
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 3.585,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "6c7b3fe007d179abd00843a0aa507624bcd76c25",
+     "parent": "8b1d061825bbf2b7125a5b178155497e2cac4c91",
+     "native": {
+      "seconds": [
+       1.335,
+       1.008,
+       0.912
+      ],
+      "median": 1.008,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 13%]\n........................................................................ [ 19%]\n........................................................................ [ 26%]\n........................................................................ [ 32%]\n........................................................................ [ 39%]\n........................................................................ [ 45%]\n........................................................................ [ 52%]\n........................................................................ [ 58%]\n........................................................................ [ 65%]\n........................................................................ [ 71%]\n........................................................................ [ 78%]\n........................................................................ [ 85%]\n........................................................................ [ 91%]\n........................................................................ [ 98%]\n.....................                                                    [100%]\n1101 passed in 0.67s\n"
+     },
+     "verify_cold": {
+      "seconds": 3.042,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.88,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.91,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 3,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.267,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.88,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.91,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 3,
+      "reused": true,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.907,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.9,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.88,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py",
+       "PYTHONPATH=src python -m pytest"
+      ],
+      "command_count": 3,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 3.018,
+     "status": "MEASURED"
+    },
+    {
+     "commit": "01fab376b36b094484752f9825c2fffc2ba9252c",
+     "parent": "d62c57113b9f932b0b665c1c719ec5470de3482f",
+     "native": {
+      "seconds": [
+       1.85,
+       0.919,
+       0.941
+      ],
+      "median": 0.941,
+      "exit": [
+       0,
+       0,
+       0
+      ],
+      "tail": "........................................................................ [  6%]\n........................................................................ [ 13%]\n........................................................................ [ 19%]\n........................................................................ [ 26%]\n........................................................................ [ 32%]\n........................................................................ [ 39%]\n........................................................................ [ 45%]\n........................................................................ [ 52%]\n........................................................................ [ 58%]\n........................................................................ [ 65%]\n........................................................................ [ 71%]\n........................................................................ [ 78%]\n........................................................................ [ 85%]\n........................................................................ [ 91%]\n........................................................................ [ 98%]\n.....................                                                    [100%]\n1101 passed in 0.71s\n"
+     },
+     "verify_cold": {
+      "seconds": 3.06,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.85,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 3,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_reuse": {
+      "seconds": 0.285,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.89,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.85,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 3,
+      "reused": true,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "verify_rerun": {
+      "seconds": 2.922,
+      "exit": 1,
+      "verdict": "failing (all failures pre-existing at the base)",
+      "strategy": "full",
+      "strategy_detail": {
+       "reason": "the full suite (measured 1.9s as one process) is expected to be no slower than the selection (~1.7s in 4 process(es)); it also runs every other test the project's own command collects",
+       "batches": 0,
+       "est_targeted_s": 1.67,
+       "est_full_s": 1.87,
+       "est_full_source": "measured"
+      },
+      "full_suite": {
+       "status": "pass",
+       "command": "PYTHONPATH=src python -m pytest",
+       "duration_s": 1.88,
+       "reason": null
+      },
+      "commands": [
+       "PYTHONPATH=src python -m pytest",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_class_registry.py",
+       "PYTHONPATH=src python -m pytest -q -p no:cacheprovider tests/mypy_test_cases/test_validation_error.py"
+      ],
+      "command_count": 3,
+      "reused": false,
+      "passed_files": 11,
+      "processes": 5,
+      "new_failures": 0,
+      "tail": "",
+      "detail": {
+       "new_failures": [],
+       "pre_existing": [
+        "tests/mypy_test_cases/test_class_registry.py",
+        "tests/mypy_test_cases/test_validation_error.py"
+       ],
+       "failing_differently": [],
+       "unconfirmed": [],
+       "not_compared": [],
+       "no_tests": [],
+       "not_run": [],
+       "full_suite_counts": {
+        "passed": 1101
+       },
+       "sandbox_network_suspected": []
+      }
+     },
+     "ratio_cold": 3.252,
+     "status": "MEASURED"
+    }
+   ],
+   "baseline": {
+    "seconds": [
+     2.211,
+     0.891,
+     0.901
+    ],
+    "median": 0.901,
+    "exit": [
+     0,
+     0,
+     0
+    ],
+    "tail": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 19%]\n........................................................................ [ 25%]\n........................................................................ [ 32%]\n........................................................................ [ 38%]\n........................................................................ [ 45%]\n........................................................................ [ 51%]\n........................................................................ [ 58%]\n........................................................................ [ 64%]\n........................................................................ [ 70%]\n........................................................................ [ 77%]\n........................................................................ [ 83%]\n........................................................................ [ 90%]\n........................................................................ [ 96%]\n.....................................                                    [100%]\n1117 passed in 0.67s\n"
+   },
+   "status": "MEASURED"
+  }
+ ]
+}

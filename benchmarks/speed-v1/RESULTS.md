@@ -262,3 +262,40 @@ selection (~1.18 s).
 differently between calls (above). For reuse calls the new fields describe the earlier run whose record was reused.
 `commands` holds the per-file result rows' display commands; a full suite run's command is in `full_suite.command`
 (so a `full`-only call can list no `commands`), and the base-comparison runs are not recorded.
+
+## Run 6: replication on 0.12.9 (Amendment 6)
+
+GitHub run 42281965907, commit 5250fe3 (main at 0.12.9 plus the amendment), ubuntu-latest, 4 vCPU AMD EPYC 9V74,
+Python 3.12.16, bubblewrap; `results/run-6.json`. Spend $0. Run 2 remains the speed-v1 result; runs are not pooled.
+
+| | run 5 | run 6 |
+|---|---|---|
+| cold ratio to the native suite (geometric mean) | 1.959x | **1.997x** |
+| slower than native | 28 of 30 | **28 of 30** |
+| reading rule: faster? | no | **no** |
+| median overhead (different CPUs; not compared) | +0.32 s | +0.43 s |
+| exit codes agree with the native suite | 24 of 30 | **18 of 30** |
+| cold vs `--rerun` chose different strategies | 4 of 30 | **4 of 30** |
+
+Per-project median cold ratios: pyjwt 1.04, humanize 7.05, more-itertools 1.05, itsdangerous 1.41, marshmallow 3.62.
+
+**Q1 (strategy within the run).** The same 4 changes as in run 5 differ between cold and `--rerun`, for the same
+recorded reasons: three cold calls had no per-file durations yet ("running the selection") and their re-runs, now
+with durations, estimated the full suite no slower (humanize f772e59b, more-itertools e7331924, itsdangerous
+4712ab6f); humanize 9528daf5 ran the full suite cold, and its re-run would not choose it for speed because the full
+suite's earlier report could not be attributed to files. The steadier strategy of #152 does not act on these: it
+keeps a remembered *full* suite, and three of the four start from a selection with no estimates.
+
+**Q2 (marshmallow 2fc8207d).** One verdict for one state now: cold and `--rerun` both exit 1, with the same strategy
+(full) and the same 4 commands. But the native suite exits 0, so the change agrees with itself and disagrees with
+the native suite.
+
+**Q3, and a regression in agreement.** Agreement fell from 24 to 18 of 30. The 6 pyjwt disagreements are unchanged
+(all `sandbox_network_suspected`, pre-existing at the base). The 6 new ones are all of marshmallow's changes: the full
+suite passes, then the selected files the full suite never reached run on their own (#152), and those are
+`tests/mypy_test_cases/*.py`, which marshmallow's pytest configuration excludes (`norecursedirs`) and which are
+matched to the change by name. They fail at the base as well, so the verdict is "failing (all failures pre-existing
+at the base)", exit 1. This is a false alarm, not false assurance: no change was reported as passing that the native
+suite failed, and no new failure was claimed. #152 removed a strategy-dependent false pass by running these files;
+the cost, seen here first, is that a project whose own configuration never runs them now gets exit 1 on every change.
+Not attributed further: many changes landed between run 5 and run 6.

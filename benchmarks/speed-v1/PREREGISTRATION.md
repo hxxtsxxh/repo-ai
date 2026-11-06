@@ -138,3 +138,26 @@ Questions, stated before the run:
    runs are not pooled.
 
 Run 5 is reported whatever it shows. Spend: $0 (GitHub-hosted runner).
+
+## Amendment 6 (2026-11-06, before run 6; a replication, analysis unchanged)
+
+Run 2 remains the speed-v1 result. **Run 6** repeats run 5 unchanged (projects, pinned refs, selection, measurements,
+reading rule, the Amendment 2 harness and the Amendment 5 instrumentation) on main after 0.12.9, which changed three
+things on verify's strategy and timing paths since run 5 (0.11.7-era main): the steadier strategy (#152: a full suite
+chosen before for the same test files and environment is kept unless the selection is faster by a margin), selected
+files the full suite never reached run on their own after it (#153), and one environment walk per run instead of two
+(#175). Questions, stated before the run:
+
+1. Within run 6, on how many of the 30 changes do the cold and `--rerun` calls choose different strategies (run 5:
+   4 of 30), and what reasons are recorded for each that differs?
+2. Does marshmallow 2fc8207d give one verdict for one state (cold and `--rerun` exit codes equal)? In run 5 both ran
+   the full suite with the same command; since #153 its selected files that the full suite does not collect should
+   run on their own.
+3. The cold ratio and exit-code agreement, reported next to runs 2–5 with the reading rule applied to run 6 alone; the
+   runs are not pooled, and only ratios are compared (runner CPUs may differ).
+
+Run 6 is reported whatever it shows. Many other changes landed between run 5 and run 6, so a difference cannot be
+attributed to any one of them. Spend: $0 (GitHub-hosted runner).
+
+Erratum (2026-11-06, after run 6 was dispatched; text only): the steadier strategy and "selected files the full suite
+never reached run on their own" both landed in #152 (#153 is the 0.12.6 release). Nothing else in Amendment 6 changes.
