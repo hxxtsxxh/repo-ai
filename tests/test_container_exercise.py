@@ -155,7 +155,12 @@ def test_node_mission_in_a_container_shows_per_file_lines_in_coverage(tmp_path, 
     assert rows['negative input is negated']['changed_lines_run'] == ['pick.js:1', 'pick.js:2', 'pick.js:3']
     assert rows['positive input unchanged']['changed_lines_run'] == ['pick.js:1', 'pick.js:2', 'pick.js:5']
     assert data['changed_lines_by_requirement']['granularity'] == 'file'
-    assert data['headline'] in {'ACCEPTANCE_MAPPED_ALL', 'INCONCLUSIVE'}, data['headline']
+    # the image is the only thing this read-only command cannot check: the observed outcomes count, labelled
+    assert data['headline'] == 'ACCEPTANCE_MAPPED_ALL' and data['follow_up_test_needed'] == [], data
+    assert data['image_check']['checked'] is False
+    assert data['image_check']['image_digest'] == state['candidate']['executor']['image_digest']
+    shown = run_cli(root, 'coverage', result['id'])
+    assert shown.returncode == 0 and 'Image: image not re-checked by this read-only command' in shown.stdout
 
 
 def test_pytest_exercise_and_per_test_record_run_in_the_container(tmp_path, pytest_backend):

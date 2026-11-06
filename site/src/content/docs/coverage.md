@@ -78,8 +78,11 @@ Since 0.11.9, a declared test that matched only by its trailing name, not as `fi
 
 ## Which changed lines each requirement's tests ran
 
-For a pytest mission run with a frozen declaration (`do --requirements FILE`; from 0.12.2), the
-change-exercise run also records which changed executable lines ran while each test ran. `coverage` lists, per
+For a mission run with a frozen declaration (`do --requirements FILE`), the change-exercise run also records which
+changed executable lines ran while each test ran: per test for pytest (from 0.12.2), per test **file** for
+`node --test` (from 0.12.5: each test file runs alone under V8 coverage, and every line it ran is credited to every
+test in it, so the output says `per test file`), on a host sandbox or, from 0.12.8, in a podman or docker container
+(in the image the verified run used). `coverage` lists, per
 requirement, the changed lines that ran during its own mapped tests (`changed_lines_run`), and under
 `changed_lines_by_requirement` the changed lines that ran only during tests no requirement names and those that ran
 outside any test (at import or collection: a module constant, a default argument, a decorator argument).
@@ -91,8 +94,9 @@ fixture's setup is credited to the tests whose call ran with it active (the defi
 parametrized and per-class runs separately; a skipped test gets nothing), and a run no test's call claimed counts as
 outside any test. A record is marked incomplete
 when a test started a child process (subprocess, multiprocessing, fork), the run stopped early (`-x`, `--maxfail`),
-or more tests ran changed lines than are kept. Missions without a frozen declaration, Node missions and container runs
-say `not measured`. The per-test record comes from a second, slower run in the time left after the usual measurement,
+or more tests ran changed lines than are kept. When there is no record, `coverage` says `not measured` and why: no
+declaration was frozen with the mission, the verdict was not PASS (the change exercise runs only after a PASS), the
+measurement itself was UNMEASURED (with its reason), or no executable line changed. The per-test record comes from a second, slower run in the time left after the usual measurement,
 so it never costs the change-exercise result; if it cannot finish, it is left out.
 
 ## Headline and exit code
@@ -104,6 +108,11 @@ so it never costs the change-exercise result; if it cannot finish, it is left ou
 | `ACCEPTANCE_UNMAPPED` | none are verified |
 | `STALE` | the mission's evidence no longer matches the source |
 | `INCONCLUSIVE` | the mission is not a fresh PASS |
+
+A container mission's image cannot be re-checked by this read-only command. When that is the only open point and the
+mission passed, `coverage` assesses the outcomes observed in that image (from 0.12.9; the rule `apply` uses), says so
+on an `Image:` line and in `image_check` (`checked: false` with the image digest), and the requirements can reach
+their observed status. Anything else that is not fresh still makes the headline `STALE` or `INCONCLUSIVE`.
 
 The command exits 0 only for `ACCEPTANCE_MAPPED_ALL`, so it can gate a script. The JSON also lists
 `follow_up_test_needed`: the requirements that still need a test. Since 0.11.9 it also lists `other_obligations`:

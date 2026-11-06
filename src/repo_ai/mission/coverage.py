@@ -223,8 +223,8 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
     if not isinstance(per_test, dict):
         why = (exercise or {}).get('per_test_reason')
         return {'measured': False, 'reason': f'not measured: {why}' if isinstance(why, str) and why else
-                'not measured (recorded for pytest and node --test missions run with a frozen --requirements '
-                'declaration)'}
+                'not measured (recorded for pytest and node --test missions, on a host or in a container, run with a '
+                'frozen --requirements declaration)'}
     if total <= 0:
         return {'measured': False, 'reason': 'no executable line changed'}
     per_file = (exercise or {}).get('per_test_granularity') == 'file'
@@ -342,7 +342,7 @@ def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, 
 def for_mission(root: Path, mission: str, decl: dict[str, Any] | None = None) -> dict[str, Any]:
     """`decl` None: the declaration frozen with the mission (`do --requirements`). A supplied one is marked as
     written at assessment time unless it is byte-for-byte the frozen one."""
-    from .runtime import status
+    from .runtime import image_only_pass, status
     state = status(root.resolve(), mission)
     frozen, problem = _frozen(state)
     if decl is None:
@@ -363,8 +363,25 @@ def for_mission(root: Path, mission: str, decl: dict[str, Any] | None = None) ->
     raw_scoped, raw_exercise = state.get('scoped'), state.get('exercise')
     scoped: dict[str, Any] = raw_scoped if isinstance(raw_scoped, dict) else {}
     exercise: dict[str, Any] = raw_exercise if isinstance(raw_exercise, dict) else {'assurance': 'NOT_RECORDED'}
-    report = assess(decl, base, cand, verdict=state['effective_verdict'], freshness=state['freshness'],
+    why = _why_no_per_test(state, exercise, frozen is not None)
+    if why and not exercise.get('per_test_reason'):
+        exercise = {**exercise, 'per_test_reason': why}
+    # a container mission's image cannot be re-checked by this read-only command; when that is the only open point
+    # and the mission passed, the observed outcomes count (the rule `apply` and recovery use), labelled as such
+    image_only = image_only_pass(state)
+    verdict, freshness = ('PASS', 'fresh') if image_only else (state['effective_verdict'], state['freshness'])
+    report = assess(decl, base, cand, verdict=verdict, freshness=freshness,
                     exercise=exercise, pre_existing=[str(t) for t in (scoped.get('pre_existing_failures') or [])])
+    if image_only:
+        ran_in = state['candidate'].get('executor') if isinstance(state['candidate'].get('executor'), dict) else {}
+        digest = str(ran_in.get('image_digest') or 'unknown')
+        report['freshness'] = state['freshness']
+        report['image_check'] = {'checked': False, 'image': str(ran_in.get('image') or ''), 'image_digest': digest,
+                                 'note': ('image not re-checked by this read-only command; the observation ran in '
+                                          f'image {digest}')}
+        report['limits'].append('The container image was not re-checked by this read-only command: the outcomes are '
+                                f'those observed in image {digest} on the current source (everything else is fresh); '
+                                '`repo-ai apply` re-runs the tests in that image before keeping the change.')
     report['mission'] = mission
     report['declaration'] = declared
     if declared in {'FROZEN_WITH_MISSION', 'FROZEN_AFTER_PRIOR_RUN'}:
@@ -384,6 +401,27 @@ def for_mission(root: Path, mission: str, decl: dict[str, Any] | None = None) ->
     return report
 
 
+def _why_no_per_test(state: dict[str, Any], exercise: dict[str, Any], frozen: bool) -> str:
+    """Why a mission has no per-test changed-line record, from what it actually recorded ("" when the exercise record
+    says it itself, or there is one)."""
+    if isinstance(exercise.get('per_test'), dict) or exercise.get('per_test_reason'):
+        return ''
+    if 'exercise' not in state or exercise.get('assurance') == 'NOT_RECORDED':
+        verdict = (state.get('passport') or {}).get('verdict') or state.get('effective_verdict') or 'not recorded'
+        if verdict != 'PASS':
+            return (f"the change exercise runs only after a PASS verdict, and this mission's verdict was {verdict}")
+        return 'the mission recorded no change-exercise measurement'
+    if exercise.get('assurance') == 'UNMEASURED':
+        reason = str(exercise.get('reason') or 'no reason recorded')[:200]
+        return f'the change-exercise measurement itself was UNMEASURED ({reason})'
+    if exercise.get('assurance') == 'NO_EXECUTABLE_CHANGE':
+        return 'no executable line changed'
+    if not frozen:
+        return ('no requirements declaration was frozen with the mission; per-test lines are recorded only for '
+                '`repo-ai do ... --requirements FILE`')
+    return ''
+
+
 def display_test_id(test: str) -> str:
     """A recorded identity is `file::runner-id`; pytest's id already starts with the file, so
     `f.py::f.py::test_x` reads as `f.py::test_x`. Display only: records and JSON keep the full key."""
@@ -394,6 +432,8 @@ def display_test_id(test: str) -> str:
 def render(report: dict[str, Any]) -> str:
     lines = [f"Acceptance coverage for {report.get('mission', 'mission')}: {report['headline']} "
              f"(task correctness: {report['task_correct']})"]
+    if (report.get('image_check') or {}).get('checked') is False:
+        lines.append('Image: ' + str(report['image_check'].get('note', '')))
     if report.get('declaration'):
         lines.append('Declaration: ' + {'FROZEN_WITH_MISSION': 'frozen before this mission ran',
                                         'FROZEN_AFTER_PRIOR_RUN': 'frozen before this mission ran, but after earlier '
