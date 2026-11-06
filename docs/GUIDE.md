@@ -5,15 +5,16 @@
 
 **Local, provider-neutral repository investigation and skeptical change verification.**
 
-The current development version is **0.9.0.dev4** (release candidate). The previous build, **0.9.0.dev3**, is published only as a GitHub pre-release
-([`v0.9.0-dev3`](https://github.com/hxxtsxxh/repo-ai/releases/tag/v0.9.0-dev3), wheel + sdist; not on PyPI).
+Releases are published on PyPI as [`repo-ai-cli`](https://pypi.org/project/repo-ai-cli/) (command `repo-ai`); the
+current version and its verification are in the [changelog](../CHANGELOG.md). Sections below that name a 0.9.0
+pre-release describe that build and are kept for history.
 It plans offline, retrieves source context, tests isolated candidates, compares
 alternatives, and supports explicit apply/undo for approved existing files.
 Coding providers are optional. Live calls require explicit consent; subscription
 quota and unknown dollar cost are separate from a spending ceiling.
 
 ```sh
-python -m pip install /path/to/repo_ai-0.9.0.dev4-py3-none-any.whl
+python -m pip install repo-ai-cli        # or: pipx install repo-ai-cli
 cd /path/to/your/git-project
 repo-ai quickstart
 repo-ai do "Fix duplicate charges under concurrent payment retries" --dry-run
@@ -189,14 +190,13 @@ pipx install /path/to/repo-ai                  # local clone
 repo-ai --version
 ```
 
-**Trying 0.9.0.dev4 next to an existing install.** If `repo-ai --version` already
-prints an older version (for example 0.7.x from an earlier `pipx install`), do not
-overwrite it to test a development build. Install the build under a different
-command name; both then coexist:
+**Trying another version next to an existing install.** If `repo-ai --version` already
+prints a version you want to keep, install the other one under a different command
+name; both then coexist:
 
 ```sh
-pipx install --suffix=-dev /path/to/repo_ai-0.9.0.dev4-py3-none-any.whl   # or a local clone
-repo-ai-dev --version        # 0.9.0.dev4
+pipx install --suffix=-dev 'repo-ai-cli==X.Y.Z'   # or a wheel, or a local clone
+repo-ai-dev --version        # X.Y.Z
 repo-ai --version            # your existing install, unchanged
 ```
 

@@ -13,6 +13,13 @@
   ignored, never credited. The record names the backend and the image, and for pytest the tracer's Python version and
   whether it used `sys.monitoring` (3.12+) or `settrace`. As before, the record is informational and never raises a
   verdict or the assurance level.
+- `repo-ai uninstall --dry-run` names the agent integrations `init` configured (or says none was), instead of
+  always "removing: bob, claude" even after `init --agent none`; leftover files of other agents are still removed.
+  `docs/GUIDE.md` no longer calls 0.9.0.dev4 the current version.
+- Site: the landing page's terminal walkthrough and the quickstart's output are re-captured from repo-ai 0.12.7
+  (PyPI); they were 0.9.0.dev4 output. The new `scripts/record_transcripts.py` records them in a temporary copy of
+  `tests/fixtures/pyweb` with a temporary HOME and REPO_AI_HOME; the raw record (argv, exit code, duration, output)
+  is `benchmarks/site-transcripts/transcripts-0.12.7.jsonl`.
 
 ## 0.12.7 — an edit no test runs is never reported as verified
 
