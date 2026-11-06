@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- The change-exercise measurement now refuses to run on another sandbox backend than the verified run used (with
+  `--sandbox auto` it could have run in a container while the verified run used the host sandbox, or the reverse):
+  the mission passes the backend its verified run recorded, and a mismatch is UNMEASURED before anything is copied or
+  run, like a different container image digest.
+- CI's docker sandbox job now builds a small pytest image (`tests/fixtures/containers/pytest/Containerfile`) for the
+  container change-exercise tests and sets `REPO_AI_REQUIRE_CONTAINER_TESTS=1`, so a missing backend or image fails
+  the step instead of skipping it; without that flag the tests still skip cleanly.
 - The change-exercise measurement, and the per-test (pytest) and per-file (`node --test`) changed-line records that
   `repo-ai coverage ID` lists per requirement, now work in container runs (`do --sandbox podman|docker --image IMG`),
   where they were "not implemented for container backends" before (C11). They use the same tracer and V8 coverage

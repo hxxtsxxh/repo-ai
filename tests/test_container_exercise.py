@@ -4,7 +4,8 @@ which has no network; everything is written under the mounted workspace's `.repo
 
 Skipped unless podman or docker is running with the image already present (nothing is pulled). Node uses repo-ai's
 default node image (`repo-ai sandbox pull`; CI's sandbox job pulls it). pytest needs an image that has pytest, named by
-REPO_AI_TEST_PYTEST_IMAGE (none is built or pulled here)."""
+REPO_AI_TEST_PYTEST_IMAGE: CI builds tests/fixtures/containers/pytest/Containerfile. With
+REPO_AI_REQUIRE_CONTAINER_TESTS=1 (CI) a missing backend or image fails instead of skipping."""
 import difflib
 import hashlib
 import json
@@ -37,23 +38,31 @@ def _backend(toolchain: str, image: str) -> str | None:
 
 NODE_IMAGE = sandbox.DEFAULT_IMAGES['node']
 PYTEST_IMAGE = os.environ.get('REPO_AI_TEST_PYTEST_IMAGE', '')
+# CI's sandbox job sets this: there a missing backend or image is a failure, not a quiet skip
+REQUIRED = os.environ.get('REPO_AI_REQUIRE_CONTAINER_TESTS') == '1'
+
+
+def _unavailable(reason: str):
+    if REQUIRED:
+        pytest.fail(f'REPO_AI_REQUIRE_CONTAINER_TESTS=1 but {reason}')
+    pytest.skip(reason)
 
 
 @pytest.fixture(scope='module')
 def node_backend():
     name = _backend('node', NODE_IMAGE)
     if name is None:
-        pytest.skip(f'no running podman/docker with {NODE_IMAGE} present')
+        _unavailable(f'no running podman/docker with {NODE_IMAGE} present')
     return name
 
 
 @pytest.fixture(scope='module')
 def pytest_backend():
     if not PYTEST_IMAGE:
-        pytest.skip('set REPO_AI_TEST_PYTEST_IMAGE to a local image that has pytest')
+        _unavailable('REPO_AI_TEST_PYTEST_IMAGE is not set (build tests/fixtures/containers/pytest/Containerfile)')
     name = _backend('python', PYTEST_IMAGE)
     if name is None:
-        pytest.skip(f'no running podman/docker with {PYTEST_IMAGE} present')
+        _unavailable(f'no running podman/docker with {PYTEST_IMAGE} present')
     return name
 
 

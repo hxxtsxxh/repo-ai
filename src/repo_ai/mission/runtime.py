@@ -993,6 +993,9 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                     try:
                         # node: the test files of declared tests are measured first in the per-file record
                         frozen = (planned or {}).get('requirements') or {}
+                        # measured where the verified run ran: the same backend (and, in a container, image digest)
+                        raw_on = state['candidate'].get('executor')
+                        verified_on: dict[str, Any] = raw_on if isinstance(raw_on, dict) else {}
                         declared = declared_test_files(frozen.get('requirements') if isinstance(frozen, dict) else None,
                                                        set(state['candidate'].get('outcomes') or {}))
                         # per-test changed lines only for a mission with a frozen requirements declaration (it
@@ -1002,9 +1005,8 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                                                              image=contract.image,
                                                              per_test=bool((planned or {}).get('requirements')),
                                                              declared_files=declared,
-                                                             expected_image_digest=str(
-                                                                 (state['candidate'].get('executor') or {})
-                                                                 .get('image_digest') or ''))
+                                                             expected_image_digest=str(verified_on.get('image_digest') or ''),
+                                                             expected_backend=str(verified_on.get('backend') or ''))
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}
