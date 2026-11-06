@@ -3704,7 +3704,13 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
     plan, remaining = plan_uninstall(root, cfg, layout, remove,
                                      configured if args.agent not in (None, "all") else remove)
     if args.dry_run or args.diff:
-        print(f"  dry run — nothing was removed. removing: {', '.join(remove)}; "
+        if args.agent in (None, "all"):  # name what init configured, not the cleanup list
+            named = [a for a in remove if a in configured]
+            removing = (", ".join(named) or "no agent integration was configured") + \
+                " (and any leftover files of other agents)"
+        else:
+            removing = ", ".join(remove)
+        print(f"  dry run — nothing was removed. removing: {removing}; "
               f"remaining agents: {', '.join(remaining) or 'none (repo-ai data removed too)'}")
         for line in plan.summary_lines():
             print("  " + line)
