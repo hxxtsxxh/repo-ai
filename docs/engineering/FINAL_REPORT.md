@@ -1,6 +1,6 @@
 # Omniprovider mission — report
 
-Status: **0.12.8 publicly shipped and verified (2026-11-06 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.9 publicly shipped and verified (2026-11-06 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
@@ -43,6 +43,24 @@ host with a provider login; further live Claude studies need a reliable login (t
 server-side twice; `claude setup-token` is the alternative). Live spend under the owner's $10 budget so far: $0.00.
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.9 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.9` at `49979ea` (#178), owner-approved, tagger the owner's personal address; release run 42281265889 |
+| Wheel | `repo_ai_cli-0.12.9-py3-none-any.whl` sha256 `167ad0fc39fa7cf51c87b383c6ff1066db5b775bfa22dbea4c8a208f1c7f4150` |
+| sdist | `repo_ai_cli-0.12.9.tar.gz` sha256 `4e081b4b793a8a455704163aaaad44ad1a607cfdc1e5c96c7e6471557b16046e` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | attestations verified for both |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.9`; `init` in a scratch repository |
+| Site | 22 of 22 checked URLs 200, a missing page 404, the changelog shows 0.12.9 |
+
+Contents: #173 `coverage` verifies container missions when the image is the only point a read-only command cannot
+re-check (sha256 digest required), and says why there are no per-requirement lines; #174 traced-run outcomes
+(`DIVERGED`, `TRACED_NONE`, `TRACED_UNSEEN`); #175 one environment walk per `verify --run` (C16, local profile only).
+Evidence merged alongside: #172 C11 attribution study (12/12 CORRECT), #176 C12 independent probes, #177 C10
+replication (primary SUPPORTED; amended validity rules disclosed).
 
 ### Release 0.12.8 (verified after publication)
 
