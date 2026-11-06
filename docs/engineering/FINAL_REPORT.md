@@ -6,6 +6,42 @@ mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
+## Acceptance gates at 0.12.7 (2026-11-05 UTC)
+
+Generated from [ACCEPTANCE.json](ACCEPTANCE.json); a gate is PASS only on recorded evidence. Empirical claims may end
+as NEGATIVE_RESULT or INCONCLUSIVE, which is what the experiments found, not a defect to paint over.
+
+| gate | title | status | next action |
+|---|---|---|---|
+| C01 | Public alignment | PASS | site PR #5 deploys the matching release facts |
+| C02 | Zero-provider onboarding | PASS | re-run on next release wheel |
+| C03 | Claude provider | PASS | the owner creates a `claude setup-token` token so live studies can use token_env (no dependence on the dedicated login's refresh); re-observe dedicate |
+| C04 | Provider breadth (5 live paths) | PASS_WITH_LIMITS | Linux live runs for the other providers that support it; ACP client to reach PLANNED agents |
+| C05 | Extensible provider SDK | EXPERIMENTAL | a manifest-declared ACP execution adapter under the opencode-style sandbox, if a second local-model ACP agent becomes available |
+| C06 | Adaptive routing | PASS_WITH_LIMITS | real host observations over time (an actual quota event, an expired login) once live calls are budgeted; entitlement (ACCOUNT_INELIGIBLE) end to end |
+| C07 | Skill Radar | EXPERIMENTAL | none planned for the deterministic matcher (tuning stopped); online radar validation needs network and a corpus |
+| C08 | Skill/Plugin/MCP security | EXPERIMENTAL | an eligible person writes the corpus per AUTHOR-BRIEF.md and opens a pull request against skill-vet-v2/delivery; then one dispatched run |
+| C09 | Two-host skills integration | PASS_WITH_LIMITS | repeat with a second skill |
+| C10 | Skill value evidence | PASS_WITH_LIMITS | repeat on a second project and model; a third-party skill trial |
+| C11 | Requirement/evidence graph | EXPERIMENTAL | per-requirement lines for container runs; an independent review of fixture-scope (pytest) and per-file (node) attribution on real projects before any  |
+| C12 | Tournament quality | EXPERIMENTAL | independent probe authors and more abstentions before any claim about how often a probe separates candidates (the Node probe runner shipped in 0.12.4, |
+| C13 | Handoff/recovery | PASS_WITH_LIMITS | a live-to-live handoff (e.g. Codex partial to Claude) when a budget is approved; Linux |
+| C14 | Independent study | NOT_YET_DEMONSTRATED | owner recruits three independent authors (S, M, F) for abc-v5 phase 1 |
+| C15 | Claude-context effect | NEGATIVE_RESULT_HISTORICAL | a fresh study needs new held-out tasks and the lab's synced-skills check; not started |
+| C16 | Performance | NEGATIVE_RESULT | the remaining fixed cost (interpreter and pytest start, base comparison) on small suites; consider steadier strategy inputs (a margin relative to the  |
+| C17 | Windows | PASS_WITH_LIMITS | keep the Windows CI jobs (py3.10, py3.13) required; missions stay refused on Windows until a Windows sandbox exists |
+| C18 | Security/privacy | EXPERIMENTAL | live-verify a real provider CLI on Linux with REPO_AI_LINUX_EGRESS_PROXY=1, then make it the default; a live Linux run of each provider under the 0.12 |
+| C19 | Website/docs | PASS_WITH_LIMITS | keep the weekly site-probe green (it fails below performance 90 or any other category below 100) |
+| C20 | Distribution/release | PASS | next release |
+| C21 | Real adopter proof | EXPERIMENTAL | skill discovery inside a real-project journey; an actual repeat by someone outside the project; marshmallow stays INCONCLUSIVE by design |
+| C22 | Product credibility | EXPERIMENTAL | measured usefulness for the persona beyond verify's held-out qualification (a developer-facing study, e.g. time to a correct pre-push answer), once a  |
+| C23 | Community/reliability | PASS | keep; exercise the rollback procedure only if a release ever needs it |
+| C24 | Final launch report | IN_PROGRESS | FINAL_REPORT.md at the end |
+
+**Blocked outside engineering:** C14 and C08 need independent human authors; C18's live Linux check needs a Linux
+host with a provider login; further live Claude studies need a reliable login (the dedicated login was revoked
+server-side twice; `claude setup-token` is the alternative). Live spend under the owner's $10 budget so far: $0.00.
+
 ## Current state (2026-11-03 UTC)
 
 ### Release 0.12.7 (verified after publication)
