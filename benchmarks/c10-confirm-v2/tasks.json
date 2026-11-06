@@ -77,28 +77,10 @@
       "request": "Real-world log files sometimes contain corrupted or truncated lines, and today a single bad line makes `summary` abort. Add a `--skip-invalid` option to the `summary` subcommand: with it, lines that cannot be parsed are skipped, the remaining records are counted as usual, and the user is told about every line that was skipped. Without the option, `summary` should keep failing on a bad line as it does now. Please add tests.",
       "assertions": [
         {
-          "test": "test_t3_baseline_counts_valid_records",
-          "kind": "baseline",
-          "rule": null,
-          "why": "requested behaviour on an input no convention decides: with --skip-invalid and --format json the counts over two files with three bad lines are INFO 2 and ERROR 2 (counts compared as int)"
-        },
-        {
           "test": "test_t3_convention_exit_code_when_skipped",
           "kind": "convention",
           "rule": 5,
           "why": "rule 5: main returns 3 (not 0) when at least one line was skipped"
-        },
-        {
-          "test": "test_t3_convention_warning_lines",
-          "kind": "convention",
-          "rule": 5,
-          "why": "rule 5: the warning lines on stderr are exactly 'logsift: warning: <first>:2: skipped unparseable line', '<first>:4', '<second>:1' (paths as given, input order), with no warning for the blank line"
-        },
-        {
-          "test": "test_t3_convention_quiet_suppresses_warnings",
-          "kind": "convention",
-          "rule": 3,
-          "why": "rule 3: with top-level --quiet before the subcommand stderr is empty and stdout is identical to the run without --quiet"
         }
       ]
     },

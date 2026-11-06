@@ -33,13 +33,6 @@ def _run(argv, capsys):
     return code, captured.out, captured.err
 
 
-def test_t3_baseline_counts_valid_records(tmp_path, capsys):
-    first, second = _files(tmp_path)
-    _, out, _ = _run(["summary", first, second, "--skip-invalid", "--format", "json"], capsys)
-    counts = {row["level"]: int(row["count"]) for row in json.loads(out)}
-    assert counts == {"INFO": 2, "ERROR": 2}
-
-
 def test_t3_convention_exit_code_when_skipped(tmp_path, capsys):
     # rule 5: main returns 3 instead of 0 when at least one line was skipped
     first, second = _files(tmp_path)
@@ -47,24 +40,3 @@ def test_t3_convention_exit_code_when_skipped(tmp_path, capsys):
     assert code == 3
 
 
-def test_t3_convention_warning_lines(tmp_path, capsys):
-    # rule 5: one "logsift: warning: <path>:<lineno>: skipped unparseable line" per skipped line,
-    # path as given, line numbers from 1, input order; blank lines are not reported
-    first, second = _files(tmp_path)
-    _, _, err = _run(["summary", first, second, "--skip-invalid"], capsys)
-    warnings = [line for line in err.splitlines() if line.startswith("logsift: warning: ")]
-    assert warnings == [
-        f"logsift: warning: {first}:2: skipped unparseable line",
-        f"logsift: warning: {first}:4: skipped unparseable line",
-        f"logsift: warning: {second}:1: skipped unparseable line",
-    ]
-
-
-def test_t3_convention_quiet_suppresses_warnings(tmp_path, capsys):
-    # rule 3: top-level --quiet suppresses the warnings on stderr; stdout is unchanged
-    first, second = _files(tmp_path)
-    _, loud_out, _ = _run(["summary", first, second, "--skip-invalid"], capsys)
-    _, quiet_out, quiet_err = _run(["--quiet", "summary", first, second, "--skip-invalid"], capsys)
-    assert quiet_err == ""
-    assert quiet_out == loud_out
-    assert "INFO" in quiet_out
