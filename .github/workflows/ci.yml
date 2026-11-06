@@ -172,7 +172,13 @@ jobs:
       - name: verify working-tree isolation (docker backend)
         run: python -m pytest -q tests/test_verify_isolation.py tests/test_verify_engine.py tests/test_verify_adaptive.py tests/test_verify_watchdog.py
       - name: change exercise and per-requirement lines in a container (docker backend)
-        run: python -m pytest -q tests/test_container_exercise.py
+        env:
+          # a skip here would pass without running anything: fail instead
+          REPO_AI_REQUIRE_CONTAINER_TESTS: "1"
+          REPO_AI_TEST_PYTEST_IMAGE: localhost/repo-ai-test-pytest:1
+        run: |
+          docker build -q -t localhost/repo-ai-test-pytest:1 -f tests/fixtures/containers/pytest/Containerfile tests/fixtures/containers/pytest
+          python -m pytest -q tests/test_container_exercise.py
       - name: Sealed open-source tasks - oracles validated in the sandbox
         # third-party code never runs on the host; localization is not computed here
         run: |

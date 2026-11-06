@@ -639,3 +639,54 @@ def test_a_container_image_other_than_the_verified_runs_is_refused_before_anythi
                          image='localhost/deps:1', expected_image_digest='sha256:' + 'a' * 64)
     assert rec['assurance'] == 'UNMEASURED' and 'not the one the verified run used' in rec['reason'], rec
     assert rec['backend'] == 'podman' and rec['container']['image_digest'] == 'sha256:' + 'b' * 64
+
+
+class _FakeHost:
+    """A host sandbox backend by name only; it must never be asked to run anything."""
+
+    def __new__(cls, name):
+        from repo_ai import sandbox
+
+        class Fake(sandbox.Backend):
+            def run(self, *a, **k):
+                raise AssertionError('nothing may run')
+        backend = Fake()
+        backend.name = name
+        return backend
+
+
+@pytest.mark.parametrize('measuring, verified', [('container', 'seatbelt'), ('container', 'bwrap'),
+                                                 ('seatbelt', 'podman'), ('bwrap', 'docker')])
+def test_a_measurement_in_another_backend_than_the_verified_run_is_refused_before_anything_runs(
+        tmp_path, monkeypatch, measuring, verified):
+    """Review of #166: with `--sandbox auto` the measurement could run in a container while the verified run used the
+    host sandbox (or the reverse); the digest check alone does not see that."""
+    from repo_ai.verify import execute, isolate
+    from repo_ai.verify.execute import Executor
+    root = _repo(tmp_path, PY_AFTER, PY_TEST)
+    backend = _FakeContainer('sha256:' + 'a' * 64) if measuring == 'container' else _FakeHost(measuring)
+    monkeypatch.setattr(execute, 'get_executor', lambda root, *a, **k: Executor(backend, root, python='python',
+                                                                                node='node'))
+    monkeypatch.setattr(isolate, 'materialize', lambda *a, **k: (_ for _ in ()).throw(AssertionError('no copy')))
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), expected_backend=verified,
+                           expected_image_digest='sha256:' + 'a' * 64)
+    assert rec['assurance'] == 'UNMEASURED' and f'but the verified run used {verified}' in rec['reason'], rec
+    assert rec['backend'] == backend.name and 'container' not in rec, 'refused before the image is even pinned'
+
+
+def test_the_mission_measures_on_the_backend_and_image_its_verified_run_recorded(tmp_path, monkeypatch):
+    seen = {}
+    real = exercise.measure
+
+    def spy(*a, **k):
+        seen.update(k)
+        return real(*a, **k)
+    monkeypatch.setattr(exercise, 'measure', spy)
+    root = _bug(tmp_path)
+    planned = runtime.plan(root, 'Fix duplicate charge in charge.py', agent='replay', write_paths=['charge.py'],
+                           execute_local=True)
+    result = runtime.execute(root, planned, _replay(root, tmp_path, 'def charge(amount, retries):\n    return amount\n'))
+    assert result['passport']['verdict'] == 'PASS', result
+    verified = runtime.status(root, result['id'])['candidate']['executor']
+    assert seen['expected_backend'] == verified['backend'] and seen['expected_image_digest'] == ''
+    assert result['exercise']['backend'] == verified['backend'] and result['exercise']['assurance'] == 'FULL'

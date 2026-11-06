@@ -315,11 +315,13 @@ def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, 
 def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.0,
             project_root: Path | None = None, sandbox_preference: str = "auto", image: str = "",
             per_test: bool = False, declared_files: list[str] | None = None,
-            expected_image_digest: str = "") -> dict[str, Any]:
+            expected_image_digest: str = "", expected_backend: str = "") -> dict[str, Any]:
     """Run `command` once more over a pristine copy of `workspace` (the verified candidate) under a
     line tracer and compare with the lines `diff` added. Never raises: failure is ``UNMEASURED``.
     `declared_files`: node test files holding declared tests, run first for the per-file record.
-    `expected_image_digest`: in a container, the image digest the verified run used; any other is refused."""
+    `expected_image_digest`: in a container, the image digest the verified run used; any other is refused.
+    `expected_backend`: the sandbox backend the verified run used (`seatbelt`, `bwrap`, `podman`, `docker`); a
+    measurement that would run in another (`--sandbox auto` choosing differently) is refused."""
     from . import v8lines, verification
     record: dict[str, Any] = {"schema": SCHEMA, "assurance": "UNMEASURED", "reason": "", "changed_lines": 0,
                               "unexercised": [], "files": {}}
@@ -336,6 +338,10 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
         executor = execute.get_executor(workspace, sandbox_preference, runner.language, timeout_s=timeout_s,
                                         interpreter_root=project_root, image=image)
         record["backend"] = executor.backend.name
+        if expected_backend and executor.backend.name != expected_backend:
+            record["reason"] = (f"the measurement would run in {executor.backend.name}, but the verified run used "
+                                f"{expected_backend}; nothing was run")
+            return record
         if executor.is_container:
             # the same image bytes as the verified run, pinned so a moved tag cannot change them between runs
             pinned = verification.pin_container_image(executor, runner.language)
