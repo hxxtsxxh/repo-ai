@@ -1,0 +1,3395 @@
+[
+ {
+  "id": "00639e9e",
+  "arm": "claudemd",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "06c89a86",
+  "arm": "skill",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "0a353310",
+  "arm": "claudemd",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "0bef29b7",
+  "arm": "claudemd",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "0e345336",
+  "arm": "skill",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "0f995f75",
+  "arm": "skill",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Grep",
+   "Edit"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "127201f0",
+  "arm": "claudemd",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "13c03a9c",
+  "arm": "skill",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Read",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "1def97a0",
+  "arm": "claudemd",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Write",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "2313b9ea",
+  "arm": "control",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "24fe5134",
+  "arm": "control",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Edit",
+   "Bash",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "2538af58",
+  "arm": "control",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Read",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "25be3af4",
+  "arm": "control",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "29313750",
+  "arm": "skill",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "2a4c4af9",
+  "arm": "claudemd",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "2eaff49d",
+  "arm": "skill",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "329c3914",
+  "arm": "skill",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "3ac98bb7",
+  "arm": "claudemd",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "3bafff97",
+  "arm": "skill",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Edit"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "42fa6a4c",
+  "arm": "claudemd",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "48d1afc0",
+  "arm": "claudemd",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "4cc800a0",
+  "arm": "claudemd",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Read",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "4ddc3ffa",
+  "arm": "claudemd",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "4de70695",
+  "arm": "control",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "55ba94f9",
+  "arm": "control",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Write",
+   "Bash",
+   "Grep",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "5957bd89",
+  "arm": "control",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "5d9a5b3c",
+  "arm": "claudemd",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "5e36a28a",
+  "arm": "skill",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "5eac7d56",
+  "arm": "control",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "6224902f",
+  "arm": "claudemd",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "6c0bc9ee",
+  "arm": "skill",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Grep",
+   "Read"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "6f4dd097",
+  "arm": "claudemd",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "70bd65db",
+  "arm": "claudemd",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "72e26a84",
+  "arm": "skill",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "74a67f8c",
+  "arm": "claudemd",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Read",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "78bda8c7",
+  "arm": "control",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "7c7019a0",
+  "arm": "claudemd",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Edit",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "89615de0",
+  "arm": "skill",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "8961bb95",
+  "arm": "control",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Bash",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "8b5573f5",
+  "arm": "skill",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Grep",
+   "Read"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "8f43fe66",
+  "arm": "claudemd",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "9061c88c",
+  "arm": "control",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "92ae564a",
+  "arm": "skill",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Read"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "93094c67",
+  "arm": "claudemd",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "96ad4e0f",
+  "arm": "control",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "9d682ded",
+  "arm": "control",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read",
+   "Read",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "9f5df341",
+  "arm": "skill",
+  "task": "t4",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Edit"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "a9e16f1e",
+  "arm": "control",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "adaea2b7",
+  "arm": "skill",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "b16b744a",
+  "arm": "skill",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "b31b6c6f",
+  "arm": "control",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "b6fcd836",
+  "arm": "control",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "b8111e21",
+  "arm": "control",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Grep",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "bff8ebf6",
+  "arm": "skill",
+  "task": "t6",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "c04a9a82",
+  "arm": "skill",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "c0b3db51",
+  "arm": "skill",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Grep"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "cabd8f6c",
+  "arm": "claudemd",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "ccf5c24c",
+  "arm": "skill",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "de8cbf5c",
+  "arm": "claudemd",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Read",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "e755ef8a",
+  "arm": "control",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Grep",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "e9baefa3",
+  "arm": "control",
+  "task": "t8",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Write"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "e9c7956e",
+  "arm": "control",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "ea27af6e",
+  "arm": "claudemd",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "edf55ee4",
+  "arm": "control",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "f020f209",
+  "arm": "claudemd",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Read",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "f2c4bf94",
+  "arm": "skill",
+  "task": "t5",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "f346d896",
+  "arm": "control",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "f6f08eff",
+  "arm": "control",
+  "task": "t2",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Grep",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash",
+   "Read",
+   "Read"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "f776acf1",
+  "arm": "skill",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Grep",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Read",
+   "Edit",
+   "Read",
+   "Edit",
+   "Edit",
+   "Grep",
+   "Bash",
+   "Edit",
+   "Read"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "f8462268",
+  "arm": "claudemd",
+  "task": "t1",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Write",
+   "Edit",
+   "Edit",
+   "Grep"
+  ],
+  "skill_calls": []
+ },
+ {
+  "id": "fd38318a",
+  "arm": "skill",
+  "task": "t3",
+  "init": {
+   "skills_beyond_builtin": [
+    "logsift-conventions",
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Skill",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Bash"
+  ],
+  "skill_calls": [
+   "logsift-conventions"
+  ]
+ },
+ {
+  "id": "fe03e74a",
+  "arm": "control",
+  "task": "t7",
+  "init": {
+   "skills_beyond_builtin": [
+    "schedule"
+   ],
+   "plugins": [
+    "cc-plugin-agents-md@builtin",
+    "cc-plugin-telemetry@builtin",
+    "cc-plugin-privacy@builtin",
+    "cc-plugin-plugin-authoring@builtin"
+   ],
+   "mcp_servers": [],
+   "tools": [
+    "Edit",
+    "Glob",
+    "Grep",
+    "Read",
+    "Skill",
+    "Write"
+   ],
+   "model": "claude-haiku-5-5",
+   "apiKeySource": "none",
+   "claude_code_version": "2.1.319"
+  },
+  "tool_calls": [
+   "Bash",
+   "Glob",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Read",
+   "Edit",
+   "Edit",
+   "Edit",
+   "Edit"
+  ],
+  "skill_calls": []
+ }
+]

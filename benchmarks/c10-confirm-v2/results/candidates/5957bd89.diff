@@ -1,0 +1,195 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..57b612c 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -2,6 +2,7 @@
+ 
+ import argparse
+ import sys
++from collections import Counter
+ from collections.abc import Sequence
+ 
+ from .config import Config, load_config
+@@ -10,7 +11,7 @@ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+ from .render import render_json, render_table, rows_to_objects
+-from .stats import count_by, top_messages
++from .stats import bytes_by_component, count_by, sort_counts, top_messages
+ 
+ PROG = "logsift"
+ 
+@@ -49,6 +50,12 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_traffic(args: argparse.Namespace, config: Config) -> int:
++    records = filter_records(read_records(args.files), ignore=config.ignore)
++    _emit_report(args, ["component", "bytes"], sort_counts(Counter(bytes_by_component(records))))
++    return 0
++
++
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(
+         read_records(args.files),
+@@ -87,6 +94,11 @@ def build_parser() -> argparse.ArgumentParser:
+     summary.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     summary.set_defaults(handler=cmd_summary)
+ 
++    traffic = commands.add_parser("traffic", help="total the bytes=<n> response sizes by component")
++    traffic.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    traffic.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    traffic.set_defaults(handler=cmd_traffic)
++
+     filter_ = commands.add_parser("filter", help="print the lines that match")
+     filter_.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     filter_.add_argument("--level", type=_level, help="lowest level to keep")
+diff --git a/logsift/stats.py b/logsift/stats.py
+index 8962111..37a7bd8 100644
+--- a/logsift/stats.py
++++ b/logsift/stats.py
+@@ -7,6 +7,7 @@ from collections.abc import Iterable
+ from .records import LogRecord
+ 
+ _DIGITS_RE = re.compile(r"\d+")
++_BYTES_RE = re.compile(r"\bbytes=(\d+)\b")
+ 
+ 
+ def sort_counts(counts: Counter[str]) -> list[tuple[str, int]]:
+@@ -19,6 +20,21 @@ def count_by(records: Iterable[LogRecord], field: str) -> list[tuple[str, int]]:
+     return sort_counts(Counter(getattr(record, field) for record in records))
+ 
+ 
++def bytes_by_component(records: Iterable[LogRecord]) -> dict[str, int]:
++    """Sum the ``bytes=<n>`` values in each component's messages.
++
++    Records whose message has no ``bytes=<n>`` are ignored, and components
++    without any such record are left out of the result.
++    """
++    totals: dict[str, int] = {}
++    for record in records:
++        match = _BYTES_RE.search(record.message)
++        if match is None:
++            continue
++        totals[record.component] = totals.get(record.component, 0) + int(match.group(1))
++    return totals
++
++
+ def normalize_message(message: str) -> str:
+     """Replace every run of digits with ``#`` so that similar messages group together."""
+     return _DIGITS_RE.sub("#", message)
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..74ebf22 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,44 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++def test_traffic_text(tmp_path, capsys):
++    log = tmp_path / "edge.log"
++    log.write_text(
++        "2026-03-04T10:00:00Z INFO cdn: GET /assets/app.js 200 bytes=48213\n"
++        "2026-03-04T10:00:01Z INFO api: GET /users 200 bytes=250\n"
++        "2026-03-04T10:00:02Z INFO cdn: GET /assets/logo.png 200 bytes=1000\n"
++        "2026-03-04T10:00:03Z INFO worker: job 7 finished\n",
++        encoding="utf-8",
++    )
++    assert main(["traffic", str(log)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == (
++        "component  bytes\n"
++        "cdn        49213\n"
++        "api          250\n"
++    )
++    assert captured.err == ""
++
++
++def test_traffic_json(tmp_path, capsys):
++    log = tmp_path / "edge.log"
++    log.write_text(
++        "2026-03-04T10:00:00Z INFO cdn: GET /assets/app.js 200 bytes=48213\n"
++        "2026-03-04T10:00:01Z INFO api: GET /users 200 bytes=250\n",
++        encoding="utf-8",
++    )
++    assert main(["traffic", str(log), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"component": "cdn", "bytes": 48213},
++        {"component": "api", "bytes": 250},
++    ]
++
++
++def test_traffic_with_no_bytes_records_prints_only_header(sample_log, capsys):
++    assert main(["traffic", str(sample_log)]) == 0
++    assert capsys.readouterr().out == "component  bytes\n"
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (
+diff --git a/tests/test_filters_stats.py b/tests/test_filters_stats.py
+index fdec742..6122c1e 100644
+--- a/tests/test_filters_stats.py
++++ b/tests/test_filters_stats.py
+@@ -1,6 +1,6 @@
+ from logsift.filters import filter_records
+-from logsift.records import read_records
+-from logsift.stats import count_by, normalize_message, top_messages
++from logsift.records import parse_line, read_records
++from logsift.stats import bytes_by_component, count_by, normalize_message, top_messages
+ 
+ 
+ def test_filter_by_min_level(sample_log):
+@@ -31,6 +31,52 @@ def test_normalize_message_replaces_digit_runs():
+     assert normalize_message("request 991 failed after 3 tries") == "request # failed after # tries"
+ 
+ 
++def _line(component, message):
++    return parse_line(f"2026-03-04T10:00:00Z INFO {component}: {message}")
++
++
++def test_bytes_by_component_sums_bytes_values():
++    records = [
++        _line("cdn", "GET /assets/app.js 200 bytes=48213"),
++        _line("cdn", "GET /assets/logo.png 200 bytes=1000"),
++        _line("api", "GET /users 200 bytes=250"),
++    ]
++    assert bytes_by_component(records) == {"cdn": 49213, "api": 250}
++
++
++def test_bytes_by_component_ignores_records_without_bytes():
++    records = [
++        _line("cdn", "GET /assets/app.js 200 bytes=48213"),
++        _line("cdn", "cache miss for /assets/app.js"),
++        _line("worker", "job 7 finished"),
++    ]
++    assert bytes_by_component(records) == {"cdn": 48213}
++
++
++def test_bytes_by_component_needs_whole_word_bytes_key():
++    records = [
++        _line("api", "payload sent_bytes=999"),
++        _line("api", "payload bytes=12"),
++    ]
++    assert bytes_by_component(records) == {"api": 12}
++
++
++def test_bytes_by_component_empty_input():
++    assert bytes_by_component([]) == {}
++
++
++def test_bytes_by_component_from_file(tmp_path):
++    path = tmp_path / "edge.log"
++    path.write_text(
++        "2026-03-04T10:00:00Z INFO cdn: GET /a.js 200 bytes=100\n"
++        "2026-03-04T10:00:01Z INFO api: GET /v1/x 200 bytes=7\n"
++        "2026-03-04T10:00:02Z INFO cdn: GET /b.js 304 bytes=0\n"
++        "2026-03-04T10:00:03Z WARNING db: slow\n",
++        encoding="utf-8",
++    )
++    assert bytes_by_component(read_records([str(path)])) == {"cdn": 100, "api": 7}
++
++
+ def test_top_messages_limit(sample_log):
+     records = read_records([str(sample_log)])
+     assert top_messages(records, 2) == [("connection # lost", 2), ("ok", 1)]

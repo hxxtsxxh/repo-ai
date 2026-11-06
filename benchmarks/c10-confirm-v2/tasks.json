@@ -1,0 +1,208 @@
+{
+  "tasks": [
+    {
+      "id": "t1",
+      "request": "Add a `span` subcommand: `logsift span FILE...` should report, for each component, how many records it has, the time of its first and of its last record, and the time between those two, as a table with one row per component and the columns `component`, `count`, `first`, `last` and `duration`. It should offer text and JSON output in the same way as `summary` does, and respect the config file's `ignore` list like the other reports. Please add tests for the new subcommand.",
+      "assertions": [
+        {
+          "test": "test_t1_baseline_counts_per_component",
+          "kind": "baseline",
+          "rule": null,
+          "why": "requested behaviour on an input no convention decides: `span --format json` on whole-second UTC records gives count 3 for queue and 1 for auth (counts compared as int)"
+        },
+        {
+          "test": "test_t1_convention_text_timestamps",
+          "kind": "convention",
+          "rule": 10,
+          "why": "rule 10: first/last in text output are UTC 'YYYY-MM-DD HH:MM:SS' without fraction or zone: 2026-08-14T22:37:33.250+01:30 is shown as '2026-08-14 21:07:33' and 2026-08-15T23:10:40.900Z as '2026-08-15 23:10:40'"
+        },
+        {
+          "test": "test_t1_convention_text_duration",
+          "kind": "convention",
+          "rule": 11,
+          "why": "rule 11: the duration in text output is H:MM:SS with unpadded hours above 24 and truncated seconds: 93787.65 s is '26:03:07'"
+        },
+        {
+          "test": "test_t1_convention_json_timestamps",
+          "kind": "convention",
+          "rule": 10,
+          "why": "rule 10: in --format json the timestamps are 'YYYY-MM-DDTHH:MM:SSZ' UTC strings: first '2026-08-14T21:07:33Z', last '2026-08-15T23:10:40Z'"
+        },
+        {
+          "test": "test_t1_convention_json_duration",
+          "kind": "convention",
+          "rule": 11,
+          "why": "rule 11: in --format json the duration is an integer number of seconds, truncated: 93787"
+        }
+      ]
+    },
+    {
+      "id": "t2",
+      "request": "Add an `-o/--output PATH` option to the `filter` subcommand so that the matching lines are written to the file PATH instead of being printed, and print a short note telling the user how many lines were written and to which file. Without `-o`, `filter` should behave exactly as it does today. Please add tests for the new option.",
+      "assertions": [
+        {
+          "test": "test_t2_baseline_writes_matching_lines",
+          "kind": "baseline",
+          "rule": null,
+          "why": "requested behaviour on an input no convention decides: `filter --level ERROR -o PATH` writes the two ERROR lines to a new PATH (compared line by line, ignoring line-ending details)"
+        },
+        {
+          "test": "test_t2_convention_refuses_existing_output",
+          "kind": "convention",
+          "rule": 6,
+          "why": "rule 6: an existing PATH without --force fails with '<path> already exists (use --force to overwrite)', main returns 1 and the file keeps its bytes b'previous run\\n'"
+        },
+        {
+          "test": "test_t2_convention_empty_output_is_zero_bytes",
+          "kind": "convention",
+          "rule": 6,
+          "why": "rule 6: when no line matches, the written file exists and is 0 bytes"
+        },
+        {
+          "test": "test_t2_convention_dry_run",
+          "kind": "convention",
+          "rule": 7,
+          "why": "rule 7: with --dry-run main returns 0, stdout is exactly 'would write <path>\\n' with the path as given, no file is created and no 'wrote' message is printed"
+        },
+        {
+          "test": "test_t2_convention_note_on_stderr",
+          "kind": "convention",
+          "rule": 2,
+          "why": "rule 2: the note is exactly one stderr line 'logsift: <message>' that does not start in upper case and has no trailing period, and it is not on stdout"
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "request": "Real-world log files sometimes contain corrupted or truncated lines, and today a single bad line makes `summary` abort. Add a `--skip-invalid` option to the `summary` subcommand: with it, lines that cannot be parsed are skipped, the remaining records are counted as usual, and the user is told about every line that was skipped. Without the option, `summary` should keep failing on a bad line as it does now. Please add tests.",
+      "assertions": [
+        {
+          "test": "test_t3_convention_exit_code_when_skipped",
+          "kind": "convention",
+          "rule": 5,
+          "why": "rule 5: main returns 3 (not 0) when at least one line was skipped"
+        }
+      ]
+    },
+    {
+      "id": "t4",
+      "request": "We want to be able to set the `ignore` list through an environment variable as well as through the `--config` file, for example in containers where shipping a config file is awkward. Add a function `logsift.config.resolve_config(path: str | None, environ: Mapping[str, str]) -> Config` that returns the effective settings, combining the config file at `path` (when `path` is not None) with the variables in `environ`, and change `main` to use it with `os.environ` instead of calling `load_config` directly. Please add tests for `resolve_config`.",
+      "assertions": [
+        {
+          "test": "test_t4_baseline_reads_config_file",
+          "kind": "baseline",
+          "rule": null,
+          "why": "requested behaviour on an input no convention decides: with an empty environ, resolve_config reads ignore = ['queue', 'auth'] from the config file (compared as a sorted list)"
+        },
+        {
+          "test": "test_t4_convention_env_list_parsing",
+          "kind": "convention",
+          "rule": 13,
+          "why": "rule 13: LOGSIFT_IGNORE=' queue ,, auth , ' is split on commas, items stripped and empty items dropped: ignore is {'queue', 'auth'} (sorted ['auth', 'queue'])"
+        },
+        {
+          "test": "test_t4_convention_env_beats_config",
+          "kind": "convention",
+          "rule": 13,
+          "why": "rule 13: the environment variable wins over the config file: config ['queue'] with LOGSIFT_IGNORE='auth' gives ['auth']"
+        },
+        {
+          "test": "test_t4_convention_empty_env_is_unset",
+          "kind": "convention",
+          "rule": 13,
+          "why": "rule 13: LOGSIFT_IGNORE set to '' counts as unset, so the config file's ['queue'] applies"
+        }
+      ]
+    },
+    {
+      "id": "t5",
+      "request": "Add a top-level `--version` option so that users can check which logsift release they have installed; the version to show is the package version in `logsift.__version__`. Please add a test for it.",
+      "assertions": [
+        {
+          "test": "test_t5_baseline_shows_version",
+          "kind": "baseline",
+          "rule": null,
+          "why": "requested behaviour on an input no convention decides: `main(['--version'])` shows logsift.__version__ somewhere on stdout or stderr"
+        },
+        {
+          "test": "test_t5_convention_version_output",
+          "kind": "convention",
+          "rule": 4,
+          "why": "rule 4: main returns 0, stdout is exactly 'logsift 0.3.0\\n' (from logsift.__version__) and stderr is empty"
+        }
+      ]
+    },
+    {
+      "id": "t6",
+      "request": "Our `cdn`, `api` and similar components log the size of each response as `bytes=<n>` inside the message (for example `GET /assets/app.js 200 bytes=48213`). Add a function `logsift.stats.bytes_by_component(records) -> dict[str, int]` that returns, for each component, the sum of these values over the given records (records whose message contains no `bytes=<n>` are ignored, and components without any such record do not appear). Also add a `traffic` subcommand, `logsift traffic FILE...`, that prints one row per component with the columns `component` and `bytes` (the total), with text and JSON output in the same way as `summary` does. Please add tests for both.",
+      "assertions": [
+        {
+          "test": "test_t6_baseline_totals_per_component",
+          "kind": "baseline",
+          "rule": null,
+          "why": "requested behaviour on an input no convention decides: bytes_by_component gives cdn 5243718, api 873, img 1024, backup 2251799813685248 and nothing for records without bytes="
+        },
+        {
+          "test": "test_t6_convention_text_sizes",
+          "kind": "convention",
+          "rule": 12,
+          "why": "rule 12: byte counts in text output: 873 -> '873 B', 1024 -> '1.0 KiB', 5243718 -> '5.0 MiB', 2251799813685248 -> '2048.0 TiB' (division stops at TiB)"
+        },
+        {
+          "test": "test_t6_convention_json_integers",
+          "kind": "convention",
+          "rule": 12,
+          "why": "rule 12: in --format json each byte count is a JSON integer number of bytes, e.g. cdn 5243718"
+        }
+      ]
+    },
+    {
+      "id": "t7",
+      "request": "Add a `sources` subcommand, `logsift sources FILE...`, that counts the records in each input file and prints a table with the columns `file` (the path as given on the command line) and `count`, one row per file. It should also accept `--no-header`, which leaves out the header line of the table so that the output is easy to process in shell scripts. Please add tests for the new subcommand.",
+      "assertions": [
+        {
+          "test": "test_t7_baseline_counts_per_file",
+          "kind": "baseline",
+          "rule": null,
+          "why": "requested behaviour on an input no convention decides: the text output shows 4 records for north.log and 2 for south.log (parsed per line, order ignored)"
+        },
+        {
+          "test": "test_t7_convention_order_ties_by_code_point",
+          "kind": "convention",
+          "rule": 8,
+          "why": "rule 8: rows by count, highest first, ties by case-sensitive code-point order of the file: inputs m.log (2), a.log (3), Z.log (3) are listed Z.log, a.log, m.log"
+        },
+        {
+          "test": "test_t7_convention_json_format",
+          "kind": "convention",
+          "rule": 9,
+          "why": "rule 9: `sources --format json` prints json.dumps([{'count': 3, 'file': <überblick.log>}, {'count': 1, 'file': <rest.log>}], indent=2, sort_keys=True, ensure_ascii=False) followed by one newline"
+        },
+        {
+          "test": "test_t7_convention_off_switch_has_no_positive_form",
+          "kind": "convention",
+          "rule": 14,
+          "why": "rule 14: --no-header has no positive counterpart: `sources FILE --header` is a usage error (main returns 2) while `--no-header` is accepted"
+        }
+      ]
+    },
+    {
+      "id": "t8",
+      "request": "We plan to add an option that reads the components to ignore from a file. As a first step, add a function `logsift.config.read_name_list(path: str) -> list[str]` that reads a UTF-8 text file with one component name per line and returns the names in file order, with surrounding whitespace removed, skipping blank lines and lines whose first non-space character is `#`. Please add tests for it.",
+      "assertions": [
+        {
+          "test": "test_t8_baseline_reads_names",
+          "kind": "baseline",
+          "rule": null,
+          "why": "requested behaviour on an input no convention decides: a file with comments, a blank line and an indented name gives ['probe', 'kube-proxy', 'sidecar']"
+        },
+        {
+          "test": "test_t8_convention_missing_file_error",
+          "kind": "convention",
+          "rule": 1,
+          "why": "rule 1: a missing file raises LogsiftError (not a bare OSError) with the message 'cannot read <path>: No such file or directory'"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..5c66739 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -1,10 +1,11 @@
+ """Command-line interface: argument parsing and the subcommands."""
+ 
+ import argparse
++import os
+ import sys
+ from collections.abc import Sequence
+ 
+-from .config import Config, load_config
++from .config import Config, resolve_config
+ from .errors import LogsiftError
+ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+@@ -122,7 +123,7 @@ def main(argv: Sequence[str] | None = None) -> int:
+             return 0
+         return exc.code if isinstance(exc.code, int) else 2
+     try:
+-        config = load_config(args.config) if args.config else Config()
++        config = resolve_config(args.config, os.environ)
+         return args.handler(args, config)
+     except LogsiftError as exc:
+         print(f"{PROG}: error: {exc}", file=sys.stderr)
+diff --git a/logsift/config.py b/logsift/config.py
+index 37d1c50..de7aa03 100644
+--- a/logsift/config.py
++++ b/logsift/config.py
+@@ -7,11 +7,13 @@ Example::
+ """
+ 
+ import tomllib
++from collections.abc import Mapping
+ from dataclasses import dataclass
+ 
+ from .errors import ConfigError
+ 
+ _KNOWN_KEYS = {"ignore"}
++_ENV_PREFIX = "LOGSIFT_"
+ 
+ 
+ @dataclass(frozen=True)
+@@ -19,6 +21,20 @@ class Config:
+     ignore: tuple[str, ...] = ()
+ 
+ 
++def resolve_config(path: str | None, environ: Mapping[str, str]) -> Config:
++    """Return the effective settings from the config file and environment variables.
++
++    Environment variables take precedence over the file at ``path`` (when not None).
++    ``LOGSIFT_IGNORE`` is a comma-separated list; an unset or empty variable is ignored.
++    """
++    config = load_config(path) if path is not None else Config()
++    raw = environ.get(_ENV_PREFIX + "IGNORE", "")
++    if raw != "":
++        items = [item.strip() for item in raw.split(",")]
++        config = Config(ignore=tuple(item for item in items if item))
++    return config
++
++
+ def load_config(path: str) -> Config:
+     """Read the ``[logsift]`` table of a TOML file."""
+     try:
+diff --git a/tests/test_resolve_config.py b/tests/test_resolve_config.py
+new file mode 100644
+index 0000000..53aa22a
+--- /dev/null
++++ b/tests/test_resolve_config.py
+@@ -0,0 +1,68 @@
++import pytest
++
++from logsift.cli import main
++from logsift.config import Config, resolve_config
++from logsift.errors import ConfigError
++
++
++def _write(tmp_path, content):
++    path = tmp_path / "logsift.toml"
++    path.write_text(content, encoding="utf-8")
++    return str(path)
++
++
++def test_no_path_and_no_environment_gives_defaults():
++    assert resolve_config(None, {}) == Config()
++
++
++def test_file_only(tmp_path):
++    path = _write(tmp_path, '[logsift]\nignore = ["healthcheck", "metrics"]\n')
++    assert resolve_config(path, {}) == Config(ignore=("healthcheck", "metrics"))
++
++
++def test_environment_only():
++    assert resolve_config(None, {"LOGSIFT_IGNORE": "healthcheck,metrics"}) == Config(
++        ignore=("healthcheck", "metrics")
++    )
++
++
++def test_environment_overrides_file(tmp_path):
++    path = _write(tmp_path, '[logsift]\nignore = ["healthcheck"]\n')
++    assert resolve_config(path, {"LOGSIFT_IGNORE": "metrics"}) == Config(ignore=("metrics",))
++
++
++def test_empty_environment_variable_counts_as_unset(tmp_path):
++    path = _write(tmp_path, '[logsift]\nignore = ["healthcheck"]\n')
++    assert resolve_config(path, {"LOGSIFT_IGNORE": ""}) == Config(ignore=("healthcheck",))
++    assert resolve_config(None, {"LOGSIFT_IGNORE": ""}) == Config()
++
++
++def test_environment_items_are_stripped_and_empty_items_dropped():
++    assert resolve_config(None, {"LOGSIFT_IGNORE": " a , ,b,, c ,"}) == Config(ignore=("a", "b", "c"))
++
++
++def test_environment_of_only_separators_gives_empty_list_overriding_file(tmp_path):
++    path = _write(tmp_path, '[logsift]\nignore = ["healthcheck"]\n')
++    assert resolve_config(path, {"LOGSIFT_IGNORE": " , "}) == Config(ignore=())
++
++
++def test_unrelated_environment_variables_are_ignored():
++    assert resolve_config(None, {"IGNORE": "x", "LOGSIFT_MAX_WIDTH": "80"}) == Config()
++
++
++def test_missing_file_is_an_error(tmp_path):
++    missing = str(tmp_path / "missing.toml")
++    with pytest.raises(ConfigError, match="cannot read"):
++        resolve_config(missing, {})
++
++
++def test_bad_file_is_an_error_even_when_environment_is_set(tmp_path):
++    path = _write(tmp_path, "[logsift]\nignored = []\n")
++    with pytest.raises(ConfigError, match="unknown setting 'ignored'"):
++        resolve_config(path, {"LOGSIFT_IGNORE": "metrics"})
++
++
++def test_main_uses_environment_ignore(sample_log, monkeypatch, capsys):
++    monkeypatch.setenv("LOGSIFT_IGNORE", "healthcheck")
++    assert main(["summary", str(sample_log), "--by", "component"]) == 0
++    assert "healthcheck" not in capsys.readouterr().out

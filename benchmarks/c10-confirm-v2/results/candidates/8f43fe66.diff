@@ -1,0 +1,157 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..76f4bb2 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -3,14 +3,23 @@
+ import argparse
+ import sys
+ from collections.abc import Sequence
++from typing import Any
+ 
+ from .config import Config, load_config
+ from .errors import LogsiftError
+ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+-from .render import render_json, render_table, rows_to_objects
+-from .stats import count_by, top_messages
++from .render import (
++    duration_seconds,
++    format_duration,
++    format_time,
++    format_time_json,
++    render_json,
++    render_table,
++    rows_to_objects,
++)
++from .stats import count_by, span_by_component, top_messages
+ 
+ PROG = "logsift"
+ 
+@@ -36,7 +45,7 @@ def _info(message: str) -> None:
+     print(f"{PROG}: {message}", file=sys.stderr)
+ 
+ 
+-def _emit_report(args: argparse.Namespace, headers: list[str], rows: list[tuple[str, int]]) -> None:
++def _emit_report(args: argparse.Namespace, headers: list[str], rows: Sequence[Sequence[Any]]) -> None:
+     if args.format == "json":
+         sys.stdout.write(render_json(rows_to_objects(headers, rows)))
+     else:
+@@ -49,6 +58,19 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_span(args: argparse.Namespace, config: Config) -> int:
++    records = filter_records(read_records(args.files), ignore=config.ignore)
++    rows: list[tuple[Any, ...]] = []
++    for span in span_by_component(records):
++        if args.format == "json":
++            cells = (format_time_json(span.first), format_time_json(span.last), duration_seconds(span.duration))
++        else:
++            cells = (format_time(span.first), format_time(span.last), format_duration(span.duration))
++        rows.append((span.component, span.count, *cells))
++    _emit_report(args, ["component", "count", "first", "last", "duration"], rows)
++    return 0
++
++
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(
+         read_records(args.files),
+@@ -103,6 +125,11 @@ def build_parser() -> argparse.ArgumentParser:
+     top.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     top.set_defaults(handler=cmd_top)
+ 
++    span = commands.add_parser("span", help="show each component's first and last record times")
++    span.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    span.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    span.set_defaults(handler=cmd_span)
++
+     export = commands.add_parser("export", help="write records to a JSON Lines file")
+     export.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     export.add_argument("-o", "--output", required=True, metavar="PATH", help="file to write")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..b542b0e 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -2,8 +2,33 @@
+ 
+ import json
+ from collections.abc import Sequence
++from datetime import datetime, timedelta
+ from typing import Any
+ 
++_ONE_SECOND = timedelta(seconds=1)
++
++
++def format_time(value: datetime) -> str:
++    """Format a UTC time for text output, such as ``2026-01-31 23:05:09``."""
++    return value.strftime("%Y-%m-%d %H:%M:%S")
++
++
++def format_time_json(value: datetime) -> str:
++    """Format a UTC time for JSON output, such as ``2026-01-31T23:05:09Z``."""
++    return value.strftime("%Y-%m-%dT%H:%M:%SZ")
++
++
++def duration_seconds(value: timedelta) -> int:
++    """Whole seconds in a duration, with any fraction dropped."""
++    return value // _ONE_SECOND
++
++
++def format_duration(value: timedelta) -> str:
++    """Format a duration as ``H:MM:SS``; hours are not padded and may exceed 24."""
++    hours, rest = divmod(duration_seconds(value), 3600)
++    minutes, seconds = divmod(rest, 60)
++    return f"{hours}:{minutes:02d}:{seconds:02d}"
++
+ 
+ def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+     """Render rows as aligned columns under a header line.
+diff --git a/logsift/stats.py b/logsift/stats.py
+index 8962111..d9573e4 100644
+--- a/logsift/stats.py
++++ b/logsift/stats.py
+@@ -3,12 +3,43 @@
+ import re
+ from collections import Counter
+ from collections.abc import Iterable
++from dataclasses import dataclass
++from datetime import datetime, timedelta
+ 
+ from .records import LogRecord
+ 
+ _DIGITS_RE = re.compile(r"\d+")
+ 
+ 
++@dataclass(frozen=True)
++class ComponentSpan:
++    """How many records a component has and the time range they cover."""
++
++    component: str
++    count: int
++    first: datetime
++    last: datetime
++
++    @property
++    def duration(self) -> timedelta:
++        return self.last - self.first
++
++
++def span_by_component(records: Iterable[LogRecord]) -> list[ComponentSpan]:
++    """Return one span per component, highest count first, then by component name."""
++    totals: dict[str, list] = {}
++    for record in records:
++        entry = totals.get(record.component)
++        if entry is None:
++            totals[record.component] = [1, record.time, record.time]
++        else:
++            entry[0] += 1
++            entry[1] = min(entry[1], record.time)
++            entry[2] = max(entry[2], record.time)
++    spans = [ComponentSpan(name, count, first, last) for name, (count, first, last) in totals.items()]
++    return sorted(spans, key=lambda span: (-span.count, span.component))
++
++
+ def sort_counts(counts: Counter[str]) -> list[tuple[str, int]]:
+     """Order counted keys by count, highest first, then by key."""
+     return sorted(counts.items(), key=lambda item: (-item[1], item[0]))

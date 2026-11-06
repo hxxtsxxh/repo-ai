@@ -1,0 +1,42 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..93b6a36 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -4,6 +4,7 @@ import argparse
+ import sys
+ from collections.abc import Sequence
+ 
++from . import __version__
+ from .config import Config, load_config
+ from .errors import LogsiftError
+ from .filters import filter_records
+@@ -79,6 +80,7 @@ def cmd_export(args: argparse.Namespace, config: Config) -> int:
+ def build_parser() -> argparse.ArgumentParser:
+     parser = argparse.ArgumentParser(prog=PROG, description="Summarize, filter and export application log files.")
+     parser.add_argument("--config", metavar="PATH", help="read settings from this TOML file")
++    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+     commands = parser.add_subparsers(dest="command", metavar="COMMAND", required=True)
+ 
+     summary = commands.add_parser("summary", help="count records by level or component")
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..bc3f1c9 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -1,5 +1,6 @@
+ import json
+ 
++import logsift
+ from logsift.cli import main
+ 
+ 
+@@ -148,3 +149,10 @@ def test_unknown_level_is_usage_error(sample_log, capsys):
+ def test_help_returns_zero(capsys):
+     assert main(["--help"]) == 0
+     assert "summary" in capsys.readouterr().out
++
++
++def test_version_prints_package_version(capsys):
++    assert main(["--version"]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == f"logsift {logsift.__version__}\n"
++    assert captured.err == ""

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "logsift"
+version = "0.3.0"
+description = "Summarize, filter and export application log files"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+logsift = "logsift.cli:main"
+
+[tool.setuptools]
+packages = ["logsift"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

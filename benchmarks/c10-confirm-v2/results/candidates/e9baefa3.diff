@@ -1,0 +1,85 @@
+diff --git a/logsift/config.py b/logsift/config.py
+index 37d1c50..3268736 100644
+--- a/logsift/config.py
++++ b/logsift/config.py
+@@ -19,6 +19,21 @@ class Config:
+     ignore: tuple[str, ...] = ()
+ 
+ 
++def read_name_list(path: str) -> list[str]:
++    """Return component names from a UTF-8 file, one per line, in file order.
++
++    Surrounding whitespace is removed. Blank lines and lines whose first
++    non-space character is ``#`` are skipped.
++    """
++    with open(path, encoding="utf-8") as handle:
++        names = []
++        for line in handle:
++            name = line.strip()
++            if name and not name.startswith("#"):
++                names.append(name)
++    return names
++
++
+ def load_config(path: str) -> Config:
+     """Read the ``[logsift]`` table of a TOML file."""
+     try:
+diff --git a/tests/test_name_list.py b/tests/test_name_list.py
+new file mode 100644
+index 0000000..640612e
+--- /dev/null
++++ b/tests/test_name_list.py
+@@ -0,0 +1,53 @@
++import pytest
++
++from logsift.config import read_name_list
++
++
++def test_read_name_list_keeps_file_order(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("web\ndb\nhealthcheck\n", encoding="utf-8")
++    assert read_name_list(str(path)) == ["web", "db", "healthcheck"]
++
++
++def test_read_name_list_strips_whitespace(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("  web  \n\tdb\t\n   metrics", encoding="utf-8")
++    assert read_name_list(str(path)) == ["web", "db", "metrics"]
++
++
++def test_read_name_list_skips_blank_lines(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("\nweb\n\n   \n\t\ndb\n", encoding="utf-8")
++    assert read_name_list(str(path)) == ["web", "db"]
++
++
++def test_read_name_list_skips_comments(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text(
++        "# components to ignore\nweb\n   # indented comment\n  # another\ndb # not a comment\n",
++        encoding="utf-8",
++    )
++    assert read_name_list(str(path)) == ["web", "db # not a comment"]
++
++
++def test_read_name_list_handles_crlf(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_bytes(b"web\r\n# skip\r\ndb\r\n")
++    assert read_name_list(str(path)) == ["web", "db"]
++
++
++def test_read_name_list_reads_utf8(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_bytes("café\n".encode("utf-8"))
++    assert read_name_list(str(path)) == ["café"]
++
++
++def test_read_name_list_empty_file(tmp_path):
++    path = tmp_path / "ignore.txt"
++    path.write_text("", encoding="utf-8")
++    assert read_name_list(str(path)) == []
++
++
++def test_read_name_list_missing_file(tmp_path):
++    with pytest.raises(FileNotFoundError):
++        read_name_list(str(tmp_path / "missing.txt"))
