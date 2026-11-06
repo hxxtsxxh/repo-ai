@@ -173,13 +173,19 @@ def run(work: Path, exe: str) -> int:
     # 3. live continuation: the user widens the scope to units.py on the continuation command
     if live_starts(work) >= MAX_LIVE:
         return 3
-    log(work, "live-start", n=2, role="continuation")
+    spent = float((s.get("provider") or {}).get("cost_usd") or 0)  # the continuation inherits only what is left
+    cap = f"{max(0.01, round(float(CAP) - spent - 0.005, 2)):.2f}"
+    log(work, "live-start", n=2, role="continuation", cap=cap)
     code, child, err = ra(exe, repo, "do", "--from-handoff", str(capsule_path), "--agent", "claude",
-                          "--allow-live-provider", "--max-cost-usd", CAP, "--allow-write", "units.py", "--run",
+                          "--allow-live-provider", "--max-cost-usd", cap, "--allow-write", "units.py", "--run",
                           "--json", timeout=2400)
     log(work, "continuation-result", exit=code, **summary(child), record=child, stderr=err if not child else "")
     if not child or not child.get("diff"):
         return 7
+    return checks(work, exe, repo, child)
+
+
+def checks(work: Path, exe: str, repo: Path, child: dict) -> int:
     # 4. hidden oracle (never in the repository or a workspace), on the candidate applied to a copy, in a container
     with tempfile.TemporaryDirectory(prefix="c13-oracle-", dir=Path.home() / ".cache") as tmp:
         copy = Path(tmp) / "c"
@@ -205,9 +211,41 @@ def run(work: Path, exe: str) -> int:
     return 0
 
 
+def continue_stage(work: Path, exe: str) -> int:
+    """Amendment (2026-11-05): the second session of attempt 2 was refused by repo-ai before any model call because
+    the harness asked for a fresh $0.50 ceiling while the continuation inherits only the source's remaining budget.
+    Run that one continuation from the same verified capsule, capped at the remaining budget; no new source."""
+    path = work / "records.jsonl"
+    rows = [json.loads(x) for x in path.read_text().splitlines()] if path.exists() else []
+    source = next((r for r in rows if r["step"] == "source-result"), None)
+    cont = [r for r in rows if r["step"] == "continuation-result"]
+    if not source or source.get("recovery") != "partial_progress" or not cont:
+        print("refusing: no partial source and refused continuation in this work directory")
+        return 3
+    if any(not (c.get("id") is None and "exceeds remaining prior cost budget" in (c.get("stderr") or "")) for c in cont):
+        print("refusing: a continuation already ran (or failed otherwise); nothing is retried")
+        return 3
+    repo = next(work.glob("repo-*"))
+    capsule_path = work / f"capsule-{source['id']}.json"
+    _, check, _ = ra(exe, repo, "handoff", "--verify", str(capsule_path), "--json")
+    log(work, "handoff-reverify", valid=(check or {}).get("valid"), consumed=(check or {}).get("consumed"))
+    if not (check or {}).get("valid"):
+        return 6
+    spent = float(((source.get("provider") or {}).get("cost_usd")) or 0)
+    cap = f"{max(0.01, round(float(CAP) - spent - 0.005, 2)):.2f}"
+    log(work, "live-start", n=2, role="continuation", cap=cap, note="amendment: capped at the inherited budget")
+    code, child, err = ra(exe, repo, "do", "--from-handoff", str(capsule_path), "--agent", "claude",
+                          "--allow-live-provider", "--max-cost-usd", cap, "--allow-write", "units.py", "--run",
+                          "--json", timeout=2400)
+    log(work, "continuation-result", exit=code, **summary(child), record=child, stderr=err if not child else "")
+    if not child or not child.get("diff"):
+        return 7
+    return checks(work, exe, repo, child)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["run"])
+    ap.add_argument("stage", choices=["run", "continue"])
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--repo-ai", dest="exe", required=True)
     ap.add_argument("--token-file", type=Path, help="a file holding a `claude setup-token` token (owner-only "
@@ -224,7 +262,7 @@ def main() -> int:
     if Path.home().resolve() not in args.work.resolve().parents:
         raise SystemExit("--work must be under HOME")
     args.work.mkdir(parents=True, exist_ok=True)
-    return run(args.work, args.exe)
+    return run(args.work, args.exe) if args.stage == "run" else continue_stage(args.work, args.exe)
 
 
 if __name__ == "__main__":
