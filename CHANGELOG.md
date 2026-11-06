@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.8 — requirement coverage for container runs; uninstall names what it removes
 
 - The change-exercise measurement now refuses to run on another sandbox backend than the verified run used (with
   `--sandbox auto` it could have run in a container while the verified run used the host sandbox, or the reverse):
