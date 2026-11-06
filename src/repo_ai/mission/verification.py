@@ -175,6 +175,19 @@ def container_layout(root: Path, runner: TestRunner, files: list[str], preferenc
         _src_layout(root, runner, files)
 
 
+def pin_container_image(executor: execute.Executor, language: str) -> dict[str, str]:
+    """Pin a container executor's image for `language` to its immutable digest, so every later run in it uses those
+    exact bytes even if the tag moves; {image, image_digest}. Raises ValueError for an image with no digest."""
+    assert isinstance(executor.backend, sandbox.ContainerBackend)
+    digest = executor.backend.image_digest(language)
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        raise ValueError("container image lacks an immutable identity")
+    ref = executor.backend.images[language]
+    pinned = digest if executor.backend.name == "docker" else ref.partition("@")[0] + "@" + digest
+    executor.backend.images = {**executor.backend.images, language: pinned}
+    return {"image": pinned, "image_digest": digest}
+
+
 def environment(contract: dict) -> tuple[str, str]:
     """(sandbox preference, image): the frozen test environment of a stored mission contract (`do --sandbox/--image`);
     older contracts: auto, none."""
@@ -223,14 +236,7 @@ def observe(root: Path, command: str, timeout_s: float = 60,
                     "interpreter": executor.node if runner.kind == "node" else executor.python,
                     "network": False}
         if executor.is_container:
-            assert isinstance(executor.backend, sandbox.ContainerBackend)
-            digest = executor.backend.image_digest(runner.language)
-            if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
-                raise ValueError("container image lacks an immutable identity")
-            ref = executor.backend.images[runner.language]
-            pinned = digest if executor.backend.name == "docker" else ref.partition("@")[0] + "@" + digest
-            executor.backend.images = {**executor.backend.images, runner.language: pinned}
-            identity.update(image=pinned, image_digest=digest)
+            identity.update(pin_container_image(executor, runner.language))
         observation["executor"] = identity
         with isolate.materialize(root, label="mission-observe", listing=listing) as ws:
             workspace_path = ws.path

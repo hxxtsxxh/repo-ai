@@ -163,12 +163,16 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e ".[dev]"
       - run: docker pull docker.io/library/python:3.12-slim
+      # repo-ai's default node image (`repo-ai sandbox pull`), for the container change-exercise tests
+      - run: docker pull docker.io/library/node:24-slim
       - name: Sandbox escape tests and lab experiments (docker backend)
         run: |
           python -m repo_ai sandbox status
           python -m pytest -q tests/test_sandbox.py tests/test_coding_lab.py tests/test_evals.py
       - name: verify working-tree isolation (docker backend)
         run: python -m pytest -q tests/test_verify_isolation.py tests/test_verify_engine.py tests/test_verify_adaptive.py tests/test_verify_watchdog.py
+      - name: change exercise and per-requirement lines in a container (docker backend)
+        run: python -m pytest -q tests/test_container_exercise.py
       - name: Sealed open-source tasks - oracles validated in the sandbox
         # third-party code never runs on the host; localization is not computed here
         run: |

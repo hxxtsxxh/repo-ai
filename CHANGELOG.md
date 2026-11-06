@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- The change-exercise measurement, and the per-test (pytest) and per-file (`node --test`) changed-line records that
+  `repo-ai coverage ID` lists per requirement, now work in container runs (`do --sandbox podman|docker --image IMG`),
+  where they were "not implemented for container backends" before (C11). They use the same tracer and V8 coverage
+  inside the container, in the image the verified run used: the image is pinned to its digest, and a different digest
+  makes the measurement UNMEASURED without running anything. The container's root is read-only and it has no network,
+  so the tracer and V8 write only under the mounted workspace's `.repo-ai/run`, read back on the host without
+  following links and within the same bounds as before. Every path the container reports (`/work/...` in a coverage
+  URL, or a tracer key) counts only when it lies strictly inside the workspace in canonical form; anything else is
+  ignored, never credited. The record names the backend and the image, and for pytest the tracer's Python version and
+  whether it used `sys.monitoring` (3.12+) or `settrace`. As before, the record is informational and never raises a
+  verdict or the assurance level.
 - `repo-ai uninstall --dry-run` names the agent integrations `init` configured (or says none was), instead of
   always "removing: bob, claude" even after `init --agent none`; leftover files of other agents are still removed.
   `docs/GUIDE.md` no longer calls 0.9.0.dev4 the current version.

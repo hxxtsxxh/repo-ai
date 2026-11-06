@@ -196,7 +196,9 @@ def main(argv):
 
     def write():
         data = {"version": 1, "units": {k: sorted(v) for k, v in sorted(seen.items())},
-                "opened": sorted(opened), "spawned": sorted(set(spawned))[:20]}
+                "opened": sorted(opened), "spawned": sorted(set(spawned))[:20],
+                # which interpreter traced, and how (a container image's Python may be older than 3.12)
+                "python": list(sys.version_info[:3]), "line_events": "sys.monitoring" if mon is not None else "settrace"}
         if want_lines:
             data["lines"] = {k: sorted(v) for k, v in sorted(line_hits.items())}
         if per_test_on:
