@@ -129,11 +129,13 @@ def test_node_mission_in_a_container_shows_per_file_lines_in_coverage(tmp_path, 
     """The real path a journey takes: `do --sandbox <container>` with a frozen declaration, then `coverage ID`."""
     from repo_ai.mission import coverage as cov
     from repo_ai.mission.runtime import execute, plan, status
-    root = _node_project(tmp_path / 'proj', source=JS_BEFORE)
+    plain = "const t = require('node:test');\nconst assert = require('node:assert');\nt('sum', () => assert.equal(1 + 1, 2));\n"
+    root = _node_project(tmp_path / 'proj', source=JS_BEFORE, extra={'plain.test.js': plain})
     req = tmp_path / 'req.json'
     req.write_text(json.dumps({'schema': cov.REQ_SCHEMA, 'requirements': [
         {'text': 'negative input is negated', 'kind': 'change', 'tests': ['neg.test.js::negative']},
-        {'text': 'positive input unchanged', 'kind': 'preserve', 'tests': ['pick.test.js::positive']}]}))
+        {'text': 'positive input unchanged', 'kind': 'preserve', 'tests': ['pick.test.js::positive']},
+        {'text': 'arithmetic', 'kind': 'preserve', 'tests': ['plain.test.js::sum']}]}))
     proposal = tmp_path / 'proposal.json'
     proposal.write_text(json.dumps({'schema': 'repo-ai.replay/1', 'label': 'simulated fixture agent', 'edits': [
         {'path': 'pick.js', 'before_sha256': hashlib.sha256(JS_BEFORE.encode()).hexdigest(), 'after': JS_AFTER}]}))
@@ -149,18 +151,25 @@ def test_node_mission_in_a_container_shows_per_file_lines_in_coverage(tmp_path, 
     ex = state['exercise']
     assert ex['backend'] == node_backend and ex['assurance'] == 'FULL', ex
     assert ex['container']['image_digest'] == state['candidate']['executor']['image_digest'], 'the verified image'
-    assert ex['per_test_measured'] == ['neg.test.js', 'pick.test.js'] and ex['per_test_complete'] is True, ex
+    assert ex['per_test_measured'] == ['neg.test.js', 'pick.test.js', 'plain.test.js'], ex
+    assert ex['per_test_complete'] is True and ex['per_test_traced']['plain.test.js'] == {
+        'exit_code': 0, 'outcomes': {'sum': 'pass'}}, ex
     data = json.loads(run_cli(root, 'coverage', result['id'], '--json').stdout)
     rows = {r['text']: r for r in data['requirements']}
     assert rows['negative input is negated']['changed_lines_run'] == ['pick.js:1', 'pick.js:2', 'pick.js:3']
     assert rows['positive input unchanged']['changed_lines_run'] == ['pick.js:1', 'pick.js:2', 'pick.js:5']
     assert data['changed_lines_by_requirement']['granularity'] == 'file'
+    # traced in the container, as verified; the plain file ran no changed line: a positive "nothing"
+    assert rows['negative input is negated']['changed_lines_trace'][0]['trace'] == 'TRACED'
+    assert rows['arithmetic']['changed_lines_trace'][0]['trace'] == 'TRACED_NONE'
+    assert data['changed_lines_by_requirement']['diverged_tests'] == []
     # the image is the only thing this read-only command cannot check: the observed outcomes count, labelled
     assert data['headline'] == 'ACCEPTANCE_MAPPED_ALL' and data['follow_up_test_needed'] == [], data
     assert data['image_check']['checked'] is False
     assert data['image_check']['image_digest'] == state['candidate']['executor']['image_digest']
     shown = run_cli(root, 'coverage', result['id'])
     assert shown.returncode == 0 and 'Image: image not re-checked by this read-only command' in shown.stdout
+    assert 'plain.test.js::sum: traced, ran no changed line' in shown.stdout
 
 
 def test_pytest_exercise_and_per_test_record_run_in_the_container(tmp_path, pytest_backend):
@@ -178,3 +187,5 @@ def test_pytest_exercise_and_per_test_record_run_in_the_container(tmp_path, pyte
     assert rec['tracer']['line_events'] in {'sys.monitoring', 'settrace'} and rec['tracer']['python'], rec
     assert rec['per_test'] == {'test_m.py::test_neg': ['m.py:2', 'm.py:3'], 'test_m.py::test_pick': ['m.py:2']}, rec
     assert rec['per_test_complete'] is True and rec['changed_outside_tests'] == []
+    assert rec['per_test_traced'] == {'test_m.py::test_neg': 'pass', 'test_m.py::test_pick': 'pass'}, rec
+    assert rec['per_test_exit_code'] == 0

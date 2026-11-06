@@ -211,7 +211,58 @@ _PER_FILE_NOTE = ('Node attribution is per test FILE, not per test: each test fi
                   'run when any code on it ran; informational, never part of a status or the headline')
 
 
-def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str, Any] | None) -> dict[str, Any]:
+_OUTCOMES = {'pass', 'fail', 'error', 'skip'}
+
+
+def _outcome_map(raw: Any) -> dict[str, str]:
+    return {k: v for k, v in (raw.items() if isinstance(raw, dict) else ())
+            if isinstance(k, str) and isinstance(v, str) and v in _OUTCOMES}
+
+
+def _trace_of(observed: dict[str, Any], exercise: dict[str, Any], per_file: bool, measured: set[str],
+              per_test: dict[str, Any], candidate: dict[str, str]) -> dict[str, Any] | None:
+    """What the traced run saw of one declared test, compared with the verified run: TRACED (it ran, as verified),
+    TRACED_NONE (it ran, as verified, and ran no changed line), DIVERGED (its traced outcome, or for node any test of
+    its file, differs from the verified run, or it did not run there), NOT_TRACED, UNAVAILABLE (node: the file's
+    coverage could not be used), OUTCOMES_UNKNOWN (node: the file ran but its outcomes could not be read, so its
+    lines cannot be compared). None for a record without traced outcomes (older missions)."""
+    raw = exercise.get('per_test_traced')
+    if not isinstance(raw, dict):
+        return None
+    test, verified = observed['test'], observed['candidate']
+    file, _, name = test.partition('::')
+    entry: dict[str, Any] = {'test': test, 'trace': 'NOT_TRACED', 'traced_outcome': None, 'verified_outcome': verified}
+    if per_file:
+        if file not in measured:
+            entry['trace'] = 'UNAVAILABLE' if file in (exercise.get('per_test_unavailable') or {}) else 'NOT_TRACED'
+            return entry
+        run = raw.get(file)
+        if not isinstance(run, dict):
+            return entry
+        if isinstance(run.get('outcomes_unavailable'), str):
+            entry['trace'], entry['reason'] = 'OUTCOMES_UNKNOWN', run['outcomes_unavailable'][:200]
+            return entry
+        outcomes = _outcome_map(run.get('outcomes'))
+        entry['traced_outcome'] = outcomes.get(name)
+        # the file's lines are credited to every test in it: any test of the file that ran differently counts
+        apart = sorted(f'{file}::{tid}' for tid, o in outcomes.items() if candidate.get(f'{file}::{tid}') != o)
+        if apart:
+            entry['diverged_in_file'] = apart[:10]
+        diverged = entry['traced_outcome'] != verified or bool(apart)
+        has_lines = bool(per_test.get(file))
+    else:
+        outcomes = _outcome_map(raw)
+        if name not in outcomes:
+            return entry
+        entry['traced_outcome'] = outcomes[name]
+        diverged = outcomes[name] != verified
+        has_lines = bool(per_test.get(name))
+    entry['trace'] = 'DIVERGED' if diverged else ('TRACED' if has_lines else 'TRACED_NONE')
+    return entry
+
+
+def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str, Any] | None,
+                                  candidate: dict[str, str] | None = None) -> dict[str, Any]:
     """Requirement by requirement, which changed executable lines ran while its mapped tests ran (the exercise
     measurement's per-test record, kept for missions with a frozen declaration). Informational only, never an
     obligation or a status. pytest (`per_test_granularity` "test", or absent in older records): keyed by test, by time
@@ -235,6 +286,7 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
                    if isinstance(k, str) and isinstance(v, str)}
     measured_files = {f for f in ((exercise or {}).get('per_test_measured') or []) if isinstance(f, str)} | set(per_test)
     claimed: set[str] = set()
+    diverged: list[str] = []
     for r in rows:
         if not r['observed']:
             continue
@@ -255,6 +307,12 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
             if dropped:
                 r['changed_lines_unavailable'] = dropped
         ran = sorted({line for k in keys for line in (per_test.get(k) or []) if isinstance(line, str)}, key=line_key)
+        traces = [t for o in r['observed'] if (t := _trace_of(o, exercise or {}, per_file, measured_files, per_test,
+                                                              candidate or {})) is not None]
+        if traces:
+            r['changed_lines_trace'] = traces
+            r['changed_lines_diverged'] = any(t['trace'] == 'DIVERGED' for t in traces)
+            diverged.extend(t['test'] for t in traces if t['trace'] == 'DIVERGED')
         claimed.update(ran)
         r['changed_lines_run'] = ran[:20]
         r['changed_lines_run_count'] = len(ran)
@@ -264,6 +322,11 @@ def _changed_lines_by_requirement(rows: list[dict[str, Any]], exercise: dict[str
                            'changed_lines': total, 'run_by_tests_of_no_requirement': unclaimed[:20],
                            'run_by_tests_of_no_requirement_count': len(unclaimed),
                            'note': _PER_FILE_NOTE if per_file else _TIME_WINDOW_NOTE}
+    if isinstance((exercise or {}).get('per_test_traced'), dict):
+        out['diverged_tests'] = sorted(set(diverged))[:20]
+        code = (exercise or {}).get('per_test_exit_code')
+        if isinstance(code, int) and not isinstance(code, bool):
+            out['traced_exit_code'] = code
     if per_file:
         out['unavailable_test_files'] = dict(sorted(unavailable.items())[:20])
         out['unavailable_test_files_count'] = len(unavailable)
@@ -312,7 +375,7 @@ def assess(decl: dict[str, Any], baseline: dict[str, str], candidate: dict[str, 
                            f"{changed_code.get('changed_lines', 0)} changed executable lines: {shown})")
     elif level not in {'FULL', 'NO_EXECUTABLE_CHANGE'}:
         obligations.append('whether the frozen tests ran the changed code was not measured for this mission')
-    per_requirement = _changed_lines_by_requirement(rows, exercise)
+    per_requirement = _changed_lines_by_requirement(rows, exercise, candidate)
     if pre_existing:
         obligations.append('failures accepted as pre-existing in this scoped mission: '
                            + ', '.join(display_test_id(t) for t in pre_existing[:8]))
@@ -462,9 +525,27 @@ def render(report: dict[str, Any]) -> str:
                 lines.append(f"      its tests ran {row['changed_lines_run_count']} changed line(s){shown}")
                 for test, why in (row.get('changed_lines_unavailable') or {}).items():
                     lines.append(f'      changed lines unavailable for its test {test}: {why}')
+            for t in row.get('changed_lines_trace') or []:
+                name = display_test_id(t['test'])
+                if t['trace'] == 'TRACED_NONE':
+                    lines.append(f'      {name}: traced, ran no changed line')
+                elif t['trace'] == 'NOT_TRACED':
+                    lines.append(f'      {name}: not traced')
+                elif t['trace'] == 'OUTCOMES_UNKNOWN':
+                    lines.append(f"      {name}: traced, but its file run's test outcomes could not be read "
+                                 f"({t.get('reason', '')}); its lines cannot be compared with the verified run")
+                elif t['trace'] == 'DIVERGED':
+                    lines.append(f"      {name}: DIVERGED (traced run: {t['traced_outcome'] or 'did not run'}, "
+                                 f"verified run: {t['verified_outcome']}); its lines are informational only"
+                                 + (('; diverged in its file run: ' + ', '.join(t['diverged_in_file']))
+                                    if t.get('diverged_in_file') else ''))
     if report['follow_up_test_needed']:
         lines.append('Follow-up acceptance test needed for: ' + '; '.join(json.dumps(t, ensure_ascii=True)
                                                                          for t in report['follow_up_test_needed']))
+    if by_req_early := (report.get('changed_lines_by_requirement') or {}).get('diverged_tests'):
+        lines.append('Changed lines by requirement: the traced run did not behave like the verified run for '
+                     + ', '.join(display_test_id(t) for t in by_req_early[:8]) + '; the lines credited from it are '
+                     'shown, labelled, and verify nothing')
     for item in report.get('other_obligations') or []:
         lines.append('Not covered by any requirement: ' + item)
     by_req = report.get('changed_lines_by_requirement') or {}
