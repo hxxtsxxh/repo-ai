@@ -108,3 +108,23 @@ remaining prior cost budget"). That is repo-ai enforcing C13's budget carried ac
 same verified capsule, capped at the inherited remaining budget ($0.50 minus the source's reported cost, rounded down),
 with the same scope, checks and the 2-session limit (session 2 never reached a model); the `run` stage caps its
 continuation the same way from now on. No new source session.
+
+**Attempt 2, continuation (after the amendment): PASS end to end, $0.040622 in total.** Raw record (paths redacted,
+mission records summarised; the token appears nowhere, only the variable's name):
+[results/l2l-attempt-2-2026-11-05.jsonl](results/l2l-attempt-2-2026-11-05.jsonl).
+
+| step | observed |
+|---|---|
+| Source (live Claude, money.py only) | FAIL, `partial_progress`, $0.024088 (OBSERVED), `token_env` |
+| Handoff | capsule valid; re-verified before the continuation |
+| Continuation (live Claude, capped at the inherited $0.47) | **PASS, `LIVE_CANDIDATE_VERIFIED`**, $0.016534 (OBSERVED); Read, Read, Read, Edit; nothing denied |
+| Partial work | `partial_patch_transferred: true`, `partial_diff_reverified_from_same_frozen_source`; the final diff keeps the source's money.py fix and adds units.py |
+| Budget | the child carries `prior_cost_usd` 0.024088 and a $0.47 ceiling; repo-ai refused a continuation asking for more than the inherited budget |
+| Scope | inherited write path money.py; units.py recorded as `write_paths_added_by_user` |
+| Hidden oracle | 4 additional tests in a podman container without network: **4 passed** |
+| Apply / undo | applied (post-apply PASS); undo byte-identical |
+
+**Reading.** The first live-to-live handoff: one live Claude session's real partial work, verified, handed over with
+its budget and scope, completed by a second live Claude session, then checked by a hidden oracle and applied and undone
+exactly. Same provider on both sides (Codex's cost is UNKNOWN and Bob is a managed account, so neither was used), one
+task: the path works, not how often.
