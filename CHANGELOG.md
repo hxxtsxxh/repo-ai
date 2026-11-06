@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `verify --run` walks each environment directory once per run instead of twice. The environment key (what may be
+  remembered) and the path-only environment identity recorded with the evidence (what the completion gate and
+  `repo-ai evidence` re-check) both identify the interpreter's site-packages and every read-only dependency directory
+  (`node_modules`) by every entry in it, about 6 µs an entry, and were computed back to back from two walks. They now
+  come from one reading taken before the run (`cache.environment_identity`); nothing is kept between runs, and the
+  later re-checks read the environment again, so a package installed or edited in place is still seen. Local profile
+  on macOS only (C16): 10.5 → 4.9 ms on a 2,000-entry virtualenv, 28 → 14 ms on a 4,000-entry one, 358 → 181 ms with
+  a 50,000-entry `node_modules`; speed-v1 not re-run, no speed claim. Mission observations take the same single
+  reading. `scripts/profile_verify.py --venv-extra PKG ...` profiles a larger virtualenv and reports its entry count.
 - Per-requirement changed lines now say whether the traced run behaved like the verified run (C11 review). Each
   traced run records its exit code and the outcome of every test it ran (pytest: the per-test run; node: each test
   file's run, through the same reporter as the verified run), bounded and read as untrusted. `coverage` compares

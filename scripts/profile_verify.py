@@ -7,7 +7,10 @@ Builds a 40-test project with its own virtualenv, then reports:
 - one traced cold run: every subprocess (start, duration, argv) and the in-process profile (top functions by own time);
 - pytest's own start-up natively and under the sandbox prefix verify uses.
 
-    python scripts/profile_verify.py --work DIR --out profile.json [--runs 7]
+    python scripts/profile_verify.py --work DIR --out profile.json [--runs 7] [--venv-extra mypy ...]
+
+`--venv-extra` installs more packages into the project's venv, for a site-packages the size of a real project's
+(the environment identity walks every entry in it); the entry count is reported.
 
 Generated code only (no third-party project); pytest is installed from PyPI into the project's own venv.
 """
@@ -32,7 +35,7 @@ GIT_ENV = {**ENV, "GIT_AUTHOR_NAME": "p", "GIT_AUTHOR_EMAIL": "p@example.invalid
 RAI = [sys.executable, "-c", "import sys; from repo_ai.cli import main; sys.exit(main(sys.argv[1:]))"]
 
 
-def project(work: Path) -> Path:
+def project(work: Path, extra: list[str] | None = None) -> Path:
     root = work / "toy"
     (root / "src" / "toy").mkdir(parents=True)
     (root / "tests").mkdir()
@@ -46,7 +49,8 @@ def project(work: Path) -> Path:
         (root / "tests" / f"test_m{i}.py").write_text(body)
     (root / ".gitignore").write_text(".venv/\n__pycache__/\n")
     subprocess.run([sys.executable, "-m", "venv", ".venv"], cwd=root, check=True)
-    subprocess.run([str(root / ".venv/bin/python"), "-m", "pip", "install", "-q", "pytest"], cwd=root, check=True)
+    subprocess.run([str(root / ".venv/bin/python"), "-m", "pip", "install", "-q", "pytest", *(extra or [])], cwd=root,
+                   check=True)
     for args in (["init", "-q", "-b", "main"], ["add", "-A"], ["commit", "-qm", "base"]):
         subprocess.run(["git", *args], cwd=root, check=True, env=GIT_ENV)
     subprocess.run([*RAI, "init", "--agent", "none", "-q"], cwd=root, check=True, env=ENV)
@@ -135,13 +139,16 @@ def main() -> int:
     ap.add_argument("--work", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--runs", type=int, default=7)
+    ap.add_argument("--venv-extra", nargs="*", default=[], help="more packages for the project's venv")
     a = ap.parse_args()
     work = Path(a.work).resolve()
     work.mkdir(parents=True, exist_ok=True)
-    root = project(work)
+    root = project(work, a.venv_extra)
     m3 = root / "src" / "toy" / "m3.py"
     orig = m3.read_text()
-    res: dict = {"python": sys.version.split()[0], "platform": sys.platform, "cpus": os.cpu_count()}
+    res: dict = {"python": sys.version.split()[0], "platform": sys.platform, "cpus": os.cpu_count(),
+                 "venv_extra": a.venv_extra,
+                 "venv_entries": sum(len(d) + len(f) for _, d, f in os.walk(root / ".venv"))}
     res["version"] = median_wall(root, ["--version"], a.runs)
     m3.write_text(orig.replace("x + 3", "x + 3  # c"))
     res["verify_comment_only"] = median_wall(root, ["verify", "--run", "--rerun", "--json"], a.runs)
