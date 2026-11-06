@@ -1,12 +1,29 @@
 # Omniprovider mission — report
 
-Status: **0.12.6 publicly shipped and verified (2026-11-05 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.7 publicly shipped and verified (2026-11-05 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
 [SKILLS_NETWORK.md](SKILLS_NETWORK.md), [LIVE-SPEND-2026-11.md](LIVE-SPEND-2026-11.md), [evidence/](evidence/).
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.7 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.7` at `0706700` (#160), pushed with the owner's approval on 2026-11-05 (tagger: the owner's personal address); release run 42134637117 |
+| Wheel | `repo_ai_cli-0.12.7-py3-none-any.whl` sha256 `cf89e5a4c2f590a4bace241ea0899256d96369ceea77ad847ecc9344d618710a` |
+| sdist | `repo_ai_cli-0.12.7.tar.gz` sha256 `8ff2d603130a88178d7ab97bdc37246fe2e35cf9d6ced8028712e118fa85dfd8` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | attestations verified for both |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.7`; `init` in a scratch repository |
+| Site | 22 of 22 checked URLs 200, a missing page 404, the changelog shows 0.12.7 |
+
+Contents: #155 and #159 (an edit to a test-named file pytest's own collection never runs is never reported as
+verified, also under `--full`; next to tested changes it is named as untested; found by the adversarial reviews of the
+C16 work); #155 untrusted full runs not chosen for speed; #156 the export guard by digest and the identity-rewrite
+record; #158 the blocked C13 live-to-live attempt.
 
 ### History rewrite (2026-11-05)
 
