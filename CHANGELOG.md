@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `repo-ai uninstall --dry-run` names the agent integrations `init` configured (or says none was), instead of
+  always "removing: bob, claude" even after `init --agent none`; leftover files of other agents are still removed.
+  `docs/GUIDE.md` no longer calls 0.9.0.dev4 the current version.
 ## 0.12.7 — an edit no test runs is never reported as verified
 
 - Fixed (found reviewing #152, older than it): after `verify --record`, an edit to a file named like a test that
