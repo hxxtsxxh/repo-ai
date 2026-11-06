@@ -225,3 +225,25 @@ keeps only what validity needs, as in v1.
 `check` and `check --selftest` were run: the materials are reported PENDING, and the self-test prepared all three
 arms from v1's frozen materials (stand-in), found 0 of their oracle assertions passing on untouched projects, and
 re-graded two v1 full-score candidate diffs at 4/4 each.
+
+## Amendment 1 (2026-11-06, after the run, before any score was read)
+
+The 72 sessions ran (cost $0.7798, OBSERVED) and grading marked **all 72 invalid**, so no comparison had any data and
+the computed "NEGATIVE / NO_DIFFERENCE_SHOWN" verdicts are artifacts of empty comparisons, not results. Both causes are
+defects of the validity rules, identical across the three arms and independent of any outcome:
+
+1. **`skills outside the allowed set: ['schedule']` (72 of 72).** Claude Code 2.1.319 lists its built-in `schedule`
+   skill only for authenticated sessions; the predeclared probe ran without a token (to stay at $0), so its built-in
+   list lacked it. `schedule` is added to the allowed built-ins (`AUTH_ONLY_BUILTIN_SKILLS`). The arm's own skill
+   check (only the skill arm may have `logsift-conventions`) is unchanged.
+2. **Project-memory checks (48 of 72: skill and control arms).** The probe recorded the init fields that differed
+   between a project with and without CLAUDE.md: `memory_paths`, `messaging_socket_path`, `original_cwd`. They are
+   path-dependent (each run's project directory differs), not a CLAUDE.md signal: both probe runs list only the
+   per-path auto-memory folder. The init event therefore cannot show whether a project CLAUDE.md was loaded; the check
+   is dropped and this becomes a limit (the claudemd arm's CLAUDE.md is placed by `prepare` and is in the project, but
+   its loading is not observed in the init event).
+
+The grading is re-run once under these rules on the kept streams ($0). Every other rule, the decision rule and the
+oracles are unchanged; the original all-invalid grade is kept in the results. A reader should weigh that these rules
+were changed after the run (before any score was read, and symmetrically across arms).
+

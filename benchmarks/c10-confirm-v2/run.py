@@ -37,6 +37,7 @@ from math import comb
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+AUTH_ONLY_BUILTIN_SKILLS = ("schedule",)  # amendment 1
 V1 = HERE.parent / "c10-confirm-v1"
 MODEL = "claude-haiku-5-5"  # full name, not the alias: the init event must report exactly this model
 ARMS = ("skill", "claudemd", "control")
@@ -617,7 +618,9 @@ def audit(work: Path, rid: str, skill: str, arm: str, builtin: dict) -> dict:
     if init is None:
         invalid.append("no init event")
     else:
-        allowed = set(builtin["skills"]) | ({skill} if arm == "skill" else set())
+        # amendment 1 (after the run, before any score was read): `schedule` is Claude Code's own built-in skill,
+        # listed only for authenticated sessions, so the token-less probe could not see it
+        allowed = set(builtin["skills"]) | set(AUTH_ONLY_BUILTIN_SKILLS) | ({skill} if arm == "skill" else set())
         extra = sorted(set(init.get("skills") or []) - allowed)
         if extra:
             invalid.append(f"skills outside the allowed set: {extra}")
@@ -629,12 +632,9 @@ def audit(work: Path, rid: str, skill: str, arm: str, builtin: dict) -> dict:
             invalid.append("a tool outside the list")
         if init.get("model") != MODEL:
             invalid.append(f"model {init.get('model')!r}")
-        # if the probe found an init field that reflects a project CLAUDE.md, it must match the arm
-        for key, plain in (builtin.get("claudemd_project_plain_values") or {}).items():
-            if arm == "claudemd" and init.get(key) == plain:
-                invalid.append(f"init field {key!r} does not show the project CLAUDE.md")
-            if arm != "claudemd" and init.get(key) != plain:
-                invalid.append(f"init field {key!r} shows project memory in the {arm} arm")
+        # amendment 1: the probe's "differing" init fields (memory_paths, messaging_socket_path, original_cwd) were
+        # path-dependent, not a CLAUDE.md signal (both probe runs list only the per-path auto-memory folder), so the
+        # init event cannot show whether a project CLAUDE.md was loaded; that check is dropped (a stated limit)
         trace_init = {"skills_beyond_builtin": sorted(set(init.get("skills") or []) - set(builtin["skills"])),
                       "plugins": [p.get("source") for p in init.get("plugins") or []],
                       "mcp_servers": init.get("mcp_servers"), "tools": init.get("tools"), "model": init.get("model"),
