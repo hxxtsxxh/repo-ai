@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Per-requirement changed lines now say whether the traced run behaved like the verified run (C11 review). Each
+  traced run records its exit code and the outcome of every test it ran (pytest: the per-test run; node: each test
+  file's run, through the same reporter as the verified run), bounded and read as untrusted. `coverage` compares
+  them with the verified run: a declared test whose traced outcome differs (or that did not run there, or, for node,
+  whose file had any test run differently) is shown as `DIVERGED (traced run: X, verified run: Y)`, and its credited
+  lines stay listed but are labelled informational only. Before, exit code 0 or 1 both counted as a complete run, so
+  a traced run that diverged (a pre-existing failure, as in pyjwt) went unseen. The status always comes from the
+  verified run.
+- A declared test that the traced run saw but that ran no changed line now reads "traced, ran no changed line",
+  distinct from "not traced" (or, for node, unavailable): before, both looked like an empty list. For pytest this is
+  said only when the per-test record is complete: the tracer does not follow child processes or xdist workers, so a
+  test that runs the change in a subprocess reads "traced; no changed line seen (child processes and early stops are
+  not traced)". A declared pytest test missing from a traced run whose outcomes were all kept did not run there and
+  reads DIVERGED. A traced pytest outcome is committed only at the test's teardown (a test stopped mid-call is not a
+  pass), and node's traced outcomes have a total budget of 50,000 across files. JSON: `changed_lines_trace` per
+  requirement (`TRACED`, `TRACED_NONE`, `TRACED_UNSEEN`, `DIVERGED`, `NOT_TRACED`, `UNAVAILABLE`, `OUTCOMES_UNKNOWN`),
+  and `diverged_tests` and `traced_exit_code` under `changed_lines_by_requirement`.
 - `repo-ai coverage` on a container mission can now verify requirements. A read-only command cannot re-check a
   container image, so such a mission's freshness is always "not checked": `coverage` reported every requirement as
   `UNVERIFIED_INCONCLUSIVE`, listed it under `follow_up_test_needed` and exited 2, even when its tests observed

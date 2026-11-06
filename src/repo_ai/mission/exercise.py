@@ -109,6 +109,29 @@ def _finalize(acc: dict[str, set[str]]) -> tuple[dict[str, list[str]], dict[str,
     return out, truncated, not truncated
 
 
+MAX_TRACED = 5000  # traced test outcomes kept (pytest: per run; node: per test file)
+MAX_TRACED_TOTAL = 50_000  # node: traced test outcomes kept over all test files of one record
+_OUTCOMES = {"pass", "fail", "error", "skip"}
+
+
+def _clean_outcomes(raw: Any) -> tuple[dict[str, str], bool]:
+    """({test id: outcome} from a traced run's own record (untrusted), whether it was kept whole): string ids up to
+    1000 characters, the verified run's outcome vocabulary, at most MAX_TRACED."""
+    if not isinstance(raw, dict):
+        return {}, False
+    out: dict[str, str] = {}
+    whole = True
+    for key, value in raw.items():
+        if not isinstance(key, str) or len(key) > 1000 or value not in _OUTCOMES:
+            whole = False
+            continue
+        if len(out) >= MAX_TRACED:
+            whole = False
+            break
+        out[key] = value
+    return out, whole
+
+
 def _clean_files(files: Any) -> dict[str, list[int]]:
     """{repo-relative path: line numbers} from a tracer record (untrusted): only canonical relative paths and
     integer line numbers are kept (the sandbox reports paths relative to its own view of the workspace)."""
@@ -185,6 +208,10 @@ def _per_test_run(record: dict[str, Any], bound: Any, ws: Any, runner: Any, env:
         record["per_test_truncated"] = truncated
     # a child process runs code this run cannot see, and an early stop leaves tests unrun
     record["per_test_complete"] = complete and not per_trace.get("spawned") and per_res.exit_code in (0, 1)
+    # what the traced run itself saw: every test it ran and its outcome, to compare with the verified run
+    record["per_test_traced"], whole_traced = _clean_outcomes(per_trace.get("traced"))
+    record["per_test_traced_complete"] = whole_traced and per_trace.get("traced_complete") is True
+    record["per_test_exit_code"] = per_res.exit_code
     record["changed_outside_tests"] = sorted(
         f"{rel}:{n}" for rel, lines in _clean_files(per_trace.get("outside_tests")).items()
         for n in lines if n in eligible_by_file.get(rel, set()))[:MAX_LISTED]
@@ -198,16 +225,21 @@ JS_SUFFIXES = (".js", ".mjs", ".cjs")
 
 
 def _node_file_lines(ex: Executor, runner: Any, test: str, texts: dict[str, bytes],
-                     eligible_by_file: dict[str, set[int]], timeout_s: float, deadline: float) -> set[str]:
-    """The changed executable lines ("path:line") one node test file ran alone, in its own pristine sandboxed
-    workspace. Raises `v8lines.Unavailable` when its coverage cannot be trusted to say what ran."""
-    from . import v8lines
+                     eligible_by_file: dict[str, set[int]], timeout_s: float,
+                     deadline: float) -> tuple[set[str], dict[str, Any]]:
+    """(the changed executable lines ("path:line") one node test file ran alone, in its own pristine sandboxed
+    workspace; what that run saw: its exit code and each test's outcome by name). Raises `v8lines.Unavailable` when
+    its coverage cannot be trusted to say what ran."""
+    from . import v8lines, verification
+    from ..verify import results
     assert ex.workspace is not None
     ws = ex.workspace.path
     ident = v8lines.prepare(ws, NODE_COV_DIR)
     env = dict(runner.env)
     env["NODE_V8_COVERAGE"] = f"{ex.inside_root}/{NODE_COV_DIR}"
-    res = ex.run(runner.file_argv(test), cwd=runner.cwd, env=env, timeout_s=timeout_s, toolchain="node")
+    # the same per-test reporter as the verified run, so its outcomes can be compared test by test
+    argv, report = results.instrument(runner, runner.file_argv(test), ws, ex.inside_root, "per-file")
+    res = ex.run(argv, cwd=runner.cwd, env=env, timeout_s=timeout_s, toolchain="node")
     if res.timed_out:
         raise v8lines.Unavailable(f"its run timed out after {timeout_s:.0f}s (a killed process writes no coverage)")
     if res.exit_code not in (0, 1):  # 1: a test failed, and node still wrote its coverage on exit
@@ -229,7 +261,20 @@ def _node_file_lines(ex: Executor, runner: Any, test: str, texts: dict[str, byte
             continue  # valid coverage that never loaded this file: it ran none of its lines
         executable, ran = acc.line_status()
         hits.update(f"{rel}:{n}" for n in ran & executable & eligible_by_file.get(rel, set()))
-    return hits
+    traced: dict[str, Any] = {"exit_code": res.exit_code}
+    try:  # untrusted, read with the bounded, link-free reader the verified run uses
+        att = results.parse(report, runner, [test], ex.inside_root, exit_code=res.exit_code, timed_out=False)
+        outcomes, problems = verification._outcomes(report, runner, [test], ex.inside_root, att)
+    except (OSError, ValueError) as exc:
+        outcomes, problems = {}, [type(exc).__name__]
+    named, whole = _clean_outcomes({k.partition("::")[2]: v for k, v in outcomes.items() if k.startswith(test + "::")})
+    if named:
+        traced["outcomes"] = named
+        if not whole:
+            traced["outcomes_cut"] = True
+    else:
+        traced["outcomes_unavailable"] = (problems[0] if problems else "no test outcome was reported")[:200]
+    return hits, traced
 
 
 def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, files: list[str],
@@ -272,6 +317,7 @@ def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, 
     todo = ordered[:MAX_NODE_TEST_FILES]
     deadline = time.monotonic() + left
     acc: dict[str, set[str]] = {}
+    traced_runs: dict[str, dict[str, Any]] = {}
     measured: list[str] = []
     unavailable: dict[str, str] = {}
     for n, test in enumerate(todo):
@@ -283,7 +329,7 @@ def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, 
         ex: Executor | None = None
         try:
             ex = template.fresh()
-            lines = _node_file_lines(ex, runner, test, texts, eligible_by_file, timeout, deadline)
+            lines, traced_runs[test] = _node_file_lines(ex, runner, test, texts, eligible_by_file, timeout, deadline)
         except v8lines.Unavailable as exc:
             unavailable[test] = str(exc)
             continue
@@ -306,6 +352,25 @@ def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, 
                                 f"{MAX_RECORD_LINES} in all)"
     record["per_test_measured"] = measured
     record["per_test_unavailable"] = unavailable
+    # every measured file's run, even one that ran no changed line: its exit code and test outcomes, within a total
+    # budget (past it a file's outcomes are left out and said so)
+    kept_runs: dict[str, dict[str, Any]] = {}
+    budget, whole_traced = MAX_TRACED_TOTAL, True
+    for test in measured:
+        run = traced_runs.get(test)
+        if run is None:
+            continue
+        named = run.get("outcomes") or {}
+        if len(named) > budget:
+            run = {"exit_code": run["exit_code"],
+                   "outcomes_unavailable": f"the record's budget of {MAX_TRACED_TOTAL} traced outcomes was used up"}
+            whole_traced = False
+        else:
+            budget -= len(named)
+        whole_traced = whole_traced and not run.get("outcomes_cut")
+        kept_runs[test] = run
+    record["per_test_traced"] = kept_runs
+    record["per_test_traced_complete"] = whole_traced
     if len(files) > MAX_NODE_TEST_FILES:
         record["per_test_reason"] = (f"only {MAX_NODE_TEST_FILES} of {len(files)} test files were run (those with "
                                      "declared tests first); the others are not measured")
@@ -449,7 +514,8 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
                                            changed, eligible_by_file, left, declared_files)
                 except Exception as exc:  # noqa: BLE001 - the per-test record is optional
                     for key in ("per_test", "per_test_complete", "per_test_measured", "per_test_unavailable",
-                                "per_test_truncated"):
+                                "per_test_truncated", "per_test_traced", "per_test_traced_complete",
+                                "per_test_exit_code"):
                         record.pop(key, None)
                     record["per_test_reason"] = "the per-test run failed: " + type(exc).__name__
             return record
