@@ -158,3 +158,6 @@ files the full suite never reached run on their own after it (#153), and one env
 
 Run 6 is reported whatever it shows. Many other changes landed between run 5 and run 6, so a difference cannot be
 attributed to any one of them. Spend: $0 (GitHub-hosted runner).
+
+Erratum (2026-11-06, after run 6 was dispatched; text only): the steadier strategy and "selected files the full suite
+never reached run on their own" both landed in #152 (#153 is the 0.12.6 release). Nothing else in Amendment 6 changes.
