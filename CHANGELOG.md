@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.9 — coverage on container missions; traced-run outcomes; one environment walk
 
 - `verify --run` walks each environment directory once per run instead of twice. The environment key (what may be
   remembered) and the path-only environment identity recorded with the evidence (what the completion gate and
