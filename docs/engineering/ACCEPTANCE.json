@@ -264,12 +264,13 @@
     "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (benchmarks/c13-live-handoff) (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet",
     "2026-11-03 live attempt 1 (benchmarks/c13-live-handoff/RESULTS.md): the owner chose the existing dedicated login claude-eval; repo-ai 0.12.1 from PyPI, preflight eligible, partial source and valid capsule, isolation probe passed, then Claude Code failed to authenticate (OAuth token revoked); $0.00 observed, no model turn, mission BLOCKED with the provider's reason. Not a C13 result; needs a fresh dedicated login",
     "2026-11-03 live attempt 2 (benchmarks/c13-live-handoff/RESULTS.md, after a recorded runner amendment): new dedicated login claude-provider; replay partial candidate (partial_progress) handed to Claude Code via a verified capsule; partial patch transferred and re-verified from the same frozen source; Claude (file tools only: Read, Read, Edit) completed it: PASS, LIVE_CANDIDATE_VERIFIED, $0.038988 observed; hidden oracle 4/4 in a podman container without network; post-apply PASS, undo byte-identical; capsule consumed",
-    "2026-11-05 live-to-live attempt 1 (Claude source limited to money.py, then Claude continuation): blocked before any model turn by the revoked dedicated login ($0.00); not retried (benchmarks/c13-live-handoff/RESULTS.md)"
+    "2026-11-05 live-to-live attempt 1 (Claude source limited to money.py, then Claude continuation): blocked before any model turn by the revoked dedicated login ($0.00); not retried (benchmarks/c13-live-handoff/RESULTS.md)",
+    "2026-11-05 live-to-live handoff PASS (benchmarks/c13-live-handoff/RESULTS.md, token_env): a live Claude source limited to money.py gave FAIL/partial_progress ($0.024088); the verified capsule was continued by a second live Claude session capped at the inherited $0.47 (repo-ai refused a larger ceiling): PASS, LIVE_CANDIDATE_VERIFIED, partial patch transferred and re-verified, hidden oracle 4/4 in podman, apply/undo byte-identical; $0.040622 total. Same provider on both sides"
    ],
    "limits": [
     "one task, one session (a demonstration that the path works, not a success rate); macOS seatbelt only; the source was a replay provider, not a live one"
    ],
-   "next_action": "a live-to-live handoff (e.g. Codex partial to Claude) when a budget is approved; Linux"
+   "next_action": "a cross-provider live handoff when a second provider with an observable cost and an unmanaged account is available; Linux"
   },
   {
    "id": "C14",
