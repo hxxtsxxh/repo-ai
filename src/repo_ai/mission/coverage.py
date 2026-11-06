@@ -31,6 +31,7 @@ is not part of the frozen contract and never changes a mission verdict.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -368,13 +369,15 @@ def for_mission(root: Path, mission: str, decl: dict[str, Any] | None = None) ->
         exercise = {**exercise, 'per_test_reason': why}
     # a container mission's image cannot be re-checked by this read-only command; when that is the only open point
     # and the mission passed, the observed outcomes count (the rule `apply` and recovery use), labelled as such
-    image_only = image_only_pass(state)
+    ran_in = state.get('candidate', {}).get('executor') if isinstance(state.get('candidate'), dict) else None
+    ran_in = ran_in if isinstance(ran_in, dict) else {}
+    # the observation must name the image by content for "pinned" to hold
+    image_only = image_only_pass(state) and bool(re.fullmatch(r'sha256:[0-9a-f]{64}', str(ran_in.get('image_digest'))))
     verdict, freshness = ('PASS', 'fresh') if image_only else (state['effective_verdict'], state['freshness'])
     report = assess(decl, base, cand, verdict=verdict, freshness=freshness,
                     exercise=exercise, pre_existing=[str(t) for t in (scoped.get('pre_existing_failures') or [])])
     if image_only:
-        ran_in = state['candidate'].get('executor') if isinstance(state['candidate'].get('executor'), dict) else {}
-        digest = str(ran_in.get('image_digest') or 'unknown')
+        digest = str(ran_in['image_digest'])
         report['freshness'] = state['freshness']
         report['image_check'] = {'checked': False, 'image': str(ran_in.get('image') or ''), 'image_digest': digest,
                                  'note': ('image not re-checked by this read-only command; the observation ran in '
@@ -406,6 +409,9 @@ def _why_no_per_test(state: dict[str, Any], exercise: dict[str, Any], frozen: bo
     says it itself, or there is one)."""
     if isinstance(exercise.get('per_test'), dict) or exercise.get('per_test_reason'):
         return ''
+    if not frozen:  # first: nothing else would yield per-test lines without a frozen declaration
+        return ('no requirements declaration was frozen with the mission; per-test lines are recorded only for '
+                '`repo-ai do ... --requirements FILE`')
     if 'exercise' not in state or exercise.get('assurance') == 'NOT_RECORDED':
         verdict = (state.get('passport') or {}).get('verdict') or state.get('effective_verdict') or 'not recorded'
         if verdict != 'PASS':
@@ -416,9 +422,6 @@ def _why_no_per_test(state: dict[str, Any], exercise: dict[str, Any], frozen: bo
         return f'the change-exercise measurement itself was UNMEASURED ({reason})'
     if exercise.get('assurance') == 'NO_EXECUTABLE_CHANGE':
         return 'no executable line changed'
-    if not frozen:
-        return ('no requirements declaration was frozen with the mission; per-test lines are recorded only for '
-                '`repo-ai do ... --requirements FILE`')
     return ''
 
 

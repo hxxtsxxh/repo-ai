@@ -457,3 +457,19 @@ def test_not_measured_names_the_real_reason(monkeypatch, tmp_path):
     own = _state(exercise={'assurance': 'FULL', 'changed_lines': 2, 'per_test_reason': 'no changed python file'})
     assert _for(monkeypatch, tmp_path, own)['changed_lines_by_requirement']['reason'] == \
         'not measured: no changed python file', "the exercise record's own reason wins"
+
+
+def test_the_image_only_rule_needs_a_content_digest(monkeypatch, tmp_path):
+    """Review of the image-only rule: "pinned" must hold, so a record without a sha256 digest gets no observed status."""
+    for digest in ('unknown', '', 'sha256:short', None):
+        state = _state()
+        state['candidate']['executor']['image_digest'] = digest
+        out = _for(monkeypatch, tmp_path, state)
+        assert out['headline'] != 'ACCEPTANCE_MAPPED_ALL' and 'image_check' not in out, (digest, out['headline'])
+
+
+def test_no_frozen_declaration_is_named_first_among_not_measured_reasons():
+    for exercise, state in (({'assurance': 'UNMEASURED', 'reason': 'x'}, {'exercise': {}}),
+                            ({}, {'passport': {'verdict': 'FAIL'}})):
+        why = cov._why_no_per_test(state, exercise, frozen=False)
+        assert why.startswith('no requirements declaration was frozen'), why
