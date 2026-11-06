@@ -435,7 +435,8 @@ def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor,
     and never a new failure by itself)."""
     listing = isolate.worktree_files(root)
     links = {rel: str((root / rel).resolve()) for rel in isolate.dependency_dirs(root, listing[0])}
-    env_key = cache.environment_key(executor, p.runner, links=links)
+    # both identities from one walk of each environment directory, before the run: a change during it is stale
+    env_key, static = cache.environment_identity(executor, p.runner, links=links)
     key = _reuse_key(p, change, env_key, full, timeout_s if timeout_explicit else None, deadline_s)
     if reuse and not show_fixed:  # an older record may not name fixed tests
         old = evidence.find_reusable(layout.state_dir, key)
@@ -444,7 +445,6 @@ def run_plan(root: Path, layout, p: Plan, change: ch.Change, executor: Executor,
             log(f"  reusing the evidence from {old.get('created')}: same change, environment, test command and "
                 "selection (`--rerun` runs it again)")
             return old
-    static = cache.static_environment(executor, p.runner, links=links)  # before the run: a change during it is stale
     before, ws, semantic = _prepare(root, change, "run", log, listing, layout=layout)
     try:
         rec = _run_isolated(root, layout, p, change, executor.in_workspace(ws), full=full, workers=workers,

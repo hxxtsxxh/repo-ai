@@ -33,6 +33,7 @@ full suite (see `strategy`), so a stale one also costs time only.
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import json
 import os
@@ -126,6 +127,34 @@ def runner_identity(runner) -> dict[str, Any]:
     return {k: data[k] for k in sorted(data) if k not in {"source", "notes"}}
 
 
+# while `environment_identity` runs: the trees read so far (one reading shared by both identities); otherwise None
+_TREES: contextvars.ContextVar[dict[str, str] | None] = contextvars.ContextVar("repo_ai_env_trees", default=None)
+
+
+def _tree(path: str) -> str:
+    """`_tree_id(path)`, read once within one `environment_identity` call and afresh everywhere else."""
+    trees = _TREES.get()
+    if trees is None:
+        return _tree_id(path)
+    if path not in trees:
+        trees[path] = _tree_id(path)
+    return trees[path]
+
+
+def environment_identity(executor, runner, links: dict[str, str] | None = None) -> tuple[str, dict[str, Any]]:
+    """(`environment_key`, `static_environment`) from one reading of the
+    environment: each site-packages and dependency directory is walked once,
+    not once for each (C16: about 6 us an entry, 34 ms for a 6,500-entry
+    virtualenv, much more for a large `node_modules`). Both are what the
+    environment is before the run; nothing is kept after this call, so the
+    next call (and the completion gate's re-check) reads it again."""
+    token = _TREES.set({})
+    try:
+        return environment_key(executor, runner, links), static_environment(executor, runner, links)
+    finally:
+        _TREES.reset(token)
+
+
 def environment_key(executor, runner, links: dict[str, str] | None = None) -> str:
     """Everything besides the source that a test outcome can depend on.
     `links`: the read-only dependency directories (workspace-relative ->
@@ -144,9 +173,9 @@ def environment_key(executor, runner, links: dict[str, str] | None = None) -> st
         binary = executor.node if toolchain == "node" else executor.python
         parts.append(_stat_id(binary))
         for d in executor.site_dirs:
-            parts.append(_tree_id(d))
+            parts.append(_tree(d))
     for rel, src in sorted((links if links is not None else executor.links).items()):
-        parts.append(f"{rel}->{_tree_id(src)}")
+        parts.append(f"{rel}->{_tree(src)}")
         for marker in _LOCK_MARKERS:
             p = os.path.join(src, marker)
             if os.path.exists(p):
@@ -186,8 +215,8 @@ def _file_id(path: str) -> str:
 def _static_digest(files: list[str], dirs: list[str]) -> tuple[str, str]:
     """(interpreter id, digest) of the recorded paths, by metadata only."""
     interpreter_id = hashlib.sha256("\0".join(_file_id(f) for f in files).encode()).hexdigest()[:24]
-    trees = "\0".join(_tree_id(d) for d in dirs)
-    return interpreter_id, hashlib.sha256(f"{interpreter_id}\0{trees}".encode()).hexdigest()[:32]
+    listed = "\0".join(_tree(d) for d in dirs)
+    return interpreter_id, hashlib.sha256(f"{interpreter_id}\0{listed}".encode()).hexdigest()[:32]
 
 
 def static_environment(executor, runner, links: dict[str, str] | None = None) -> dict[str, Any]:
