@@ -55,7 +55,22 @@ def walks(monkeypatch) -> collections.Counter:
     return seen
 
 
-def test_one_reading_gives_both_identities_exactly_as_separately(tmp_path: Path, walks):
+@pytest.fixture
+def frozen(monkeypatch) -> collections.Counter:
+    """A directory's identity fixed per path: what the shared reading composes must equal the separate readings
+    exactly, whatever the filesystem reports from one walk to the next (Windows CI: a tree created moments before
+    reported different metadata on a later walk with nothing writing to it, so two honest real readings differed)."""
+    seen: collections.Counter = collections.Counter()
+
+    def fixed(path: str) -> str:
+        seen[path] += 1
+        return f"{path}:tree"
+    monkeypatch.setattr(cache, "_tree_id", fixed)
+    return seen
+
+
+def test_one_reading_gives_both_identities_exactly_as_separately(tmp_path: Path, frozen):
+    walks = frozen
     ex, runner = _executor(tmp_path), parse_command("python -m pytest")
     key, static = cache.environment_key(ex, runner), cache.static_environment(ex, runner)
     assert set(walks.values()) == {2}                  # before: every directory walked twice
