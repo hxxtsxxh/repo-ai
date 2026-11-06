@@ -64,3 +64,4 @@ with its session count and caps before it runs.
 | batch | sessions | upper bound | running total of the $10 |
 |---|---|---|---|
 | C13 live-to-live handoff (`benchmarks/c13-live-handoff/run_l2l.py`) | at most 2 Claude Code | $1.00 ($0.50 each) | attempt 1: $0.00 (authentication_failed, no model turn); attempt 2 (token_env): source $0.024088 + continuation $0.016534 = $0.040622 OBSERVED; running total $0.040622 of $10 |
+| C10 c10-confirm-v2 (`benchmarks/c10-confirm-v2/run.py`, Haiku, 3 arms) | at most 72 Claude Code | $3.65 (72 x $0.05 cap, plus one last-turn overshoot) | (pending; running total before it $0.065) |
