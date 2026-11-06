@@ -119,6 +119,7 @@ def main(argv):
     uses = {}  # pytest node id -> tokens of the shared fixture runs active while its call ran
     runs = {}  # id(fixturedef) -> its current run number (a parametrized or class/module fixture runs repeatedly)
     traced = {}  # pytest node id -> its outcome in this run (the worst phase, as the verified run's shim reports it)
+    pending = {}  # pytest node id -> its worst phase so far, committed to `traced` only at its teardown
     rank = {"pass": 0, "skip": 1, "fail": 2, "error": 3}
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
@@ -330,11 +331,15 @@ def main(argv):
                     outcome = "skip"
                 else:
                     outcome = "pass"
+                if rank[outcome] >= rank[pending.get(nid, "pass")]:
+                    pending[nid] = outcome
+                if report.when != "teardown":
+                    return  # a test stopped mid-call (pytest.exit) never reaches teardown: it did not finish
+                worst = pending.pop(nid, outcome)
                 if nid not in traced and len(traced) >= MAX_PER_TEST:
                     counts["traced_cut"] = 1
                     return
-                if rank[outcome] >= rank[traced.get(nid, "pass")]:
-                    traced[nid] = outcome
+                traced[nid] = worst
 
             @pytest.hookimpl(hookwrapper=True)
             def pytest_runtest_protocol(self, item, nextitem):

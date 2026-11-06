@@ -225,7 +225,10 @@ def _trace_of(observed: dict[str, Any], exercise: dict[str, Any], per_file: bool
     TRACED_NONE (it ran, as verified, and ran no changed line), DIVERGED (its traced outcome, or for node any test of
     its file, differs from the verified run, or it did not run there), NOT_TRACED, UNAVAILABLE (node: the file's
     coverage could not be used), OUTCOMES_UNKNOWN (node: the file ran but its outcomes could not be read, so its
-    lines cannot be compared). None for a record without traced outcomes (older missions)."""
+    lines cannot be compared), TRACED_UNSEEN (pytest: it ran, as verified, and credited no changed line, but the
+    per-test record is incomplete: the tracer does not follow child processes or xdist workers and an early stop
+    leaves lines unrecorded, so "ran none" cannot be claimed). A pytest test absent from a traced run whose outcomes
+    were kept whole did not run there: DIVERGED. None for a record without traced outcomes (older missions)."""
     raw = exercise.get('per_test_traced')
     if not isinstance(raw, dict):
         return None
@@ -253,10 +256,15 @@ def _trace_of(observed: dict[str, Any], exercise: dict[str, Any], per_file: bool
     else:
         outcomes = _outcome_map(raw)
         if name not in outcomes:
+            if exercise.get('per_test_traced_complete') is True and len(outcomes) == len(raw):
+                entry['trace'] = 'DIVERGED'  # every test the traced run saw was kept: this one did not run there
             return entry
         entry['traced_outcome'] = outcomes[name]
         diverged = outcomes[name] != verified
         has_lines = bool(per_test.get(name))
+        if not diverged and not has_lines and exercise.get('per_test_complete') is not True:
+            entry['trace'] = 'TRACED_UNSEEN'
+            return entry
     entry['trace'] = 'DIVERGED' if diverged else ('TRACED' if has_lines else 'TRACED_NONE')
     return entry
 
@@ -531,6 +539,9 @@ def render(report: dict[str, Any]) -> str:
                     lines.append(f'      {name}: traced, ran no changed line')
                 elif t['trace'] == 'NOT_TRACED':
                     lines.append(f'      {name}: not traced')
+                elif t['trace'] == 'TRACED_UNSEEN':
+                    lines.append(f'      {name}: traced; no changed line seen (child processes and early stops are '
+                                 'not traced)')
                 elif t['trace'] == 'OUTCOMES_UNKNOWN':
                     lines.append(f"      {name}: traced, but its file run's test outcomes could not be read "
                                  f"({t.get('reason', '')}); its lines cannot be compared with the verified run")

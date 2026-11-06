@@ -110,6 +110,7 @@ def _finalize(acc: dict[str, set[str]]) -> tuple[dict[str, list[str]], dict[str,
 
 
 MAX_TRACED = 5000  # traced test outcomes kept (pytest: per run; node: per test file)
+MAX_TRACED_TOTAL = 50_000  # node: traced test outcomes kept over all test files of one record
 _OUTCOMES = {"pass", "fail", "error", "skip"}
 
 
@@ -351,8 +352,25 @@ def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, 
                                 f"{MAX_RECORD_LINES} in all)"
     record["per_test_measured"] = measured
     record["per_test_unavailable"] = unavailable
-    # every measured file's run, even one that ran no changed line: its exit code and test outcomes
-    record["per_test_traced"] = {t: traced_runs[t] for t in measured if t in traced_runs}
+    # every measured file's run, even one that ran no changed line: its exit code and test outcomes, within a total
+    # budget (past it a file's outcomes are left out and said so)
+    kept_runs: dict[str, dict[str, Any]] = {}
+    budget, whole_traced = MAX_TRACED_TOTAL, True
+    for test in measured:
+        run = traced_runs.get(test)
+        if run is None:
+            continue
+        named = run.get("outcomes") or {}
+        if len(named) > budget:
+            run = {"exit_code": run["exit_code"],
+                   "outcomes_unavailable": f"the record's budget of {MAX_TRACED_TOTAL} traced outcomes was used up"}
+            whole_traced = False
+        else:
+            budget -= len(named)
+        whole_traced = whole_traced and not run.get("outcomes_cut")
+        kept_runs[test] = run
+    record["per_test_traced"] = kept_runs
+    record["per_test_traced_complete"] = whole_traced
     if len(files) > MAX_NODE_TEST_FILES:
         record["per_test_reason"] = (f"only {MAX_NODE_TEST_FILES} of {len(files)} test files were run (those with "
                                      "declared tests first); the others are not measured")

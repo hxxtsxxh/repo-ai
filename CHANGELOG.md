@@ -11,9 +11,14 @@
   a traced run that diverged (a pre-existing failure, as in pyjwt) went unseen. The status always comes from the
   verified run.
 - A declared test that the traced run saw but that ran no changed line now reads "traced, ran no changed line",
-  distinct from "not traced" (or, for node, unavailable): before, both looked like an empty list. JSON:
-  `changed_lines_trace` per requirement (`TRACED`, `TRACED_NONE`, `DIVERGED`, `NOT_TRACED`, `UNAVAILABLE`,
-  `OUTCOMES_UNKNOWN`), and `diverged_tests` and `traced_exit_code` under `changed_lines_by_requirement`.
+  distinct from "not traced" (or, for node, unavailable): before, both looked like an empty list. For pytest this is
+  said only when the per-test record is complete: the tracer does not follow child processes or xdist workers, so a
+  test that runs the change in a subprocess reads "traced; no changed line seen (child processes and early stops are
+  not traced)". A declared pytest test missing from a traced run whose outcomes were all kept did not run there and
+  reads DIVERGED. A traced pytest outcome is committed only at the test's teardown (a test stopped mid-call is not a
+  pass), and node's traced outcomes have a total budget of 50,000 across files. JSON: `changed_lines_trace` per
+  requirement (`TRACED`, `TRACED_NONE`, `TRACED_UNSEEN`, `DIVERGED`, `NOT_TRACED`, `UNAVAILABLE`, `OUTCOMES_UNKNOWN`),
+  and `diverged_tests` and `traced_exit_code` under `changed_lines_by_requirement`.
 - `repo-ai coverage` on a container mission can now verify requirements. A read-only command cannot re-check a
   container image, so such a mission's freshness is always "not checked": `coverage` reported every requirement as
   `UNVERIFIED_INCONCLUSIVE`, listed it under `follow_up_test_needed` and exited 2, even when its tests observed

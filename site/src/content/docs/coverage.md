@@ -99,7 +99,8 @@ declaration was frozen with the mission, the verdict was not PASS (the change ex
 measurement itself was UNMEASURED (with its reason), or no executable line changed.
 
 Each declared test is also compared with what the traced run itself saw (after 0.12.8): `traced, ran no changed line`
-when it ran there and credited nothing, `not traced` when it did not, and `DIVERGED (traced run: X, verified run: Y)`
+when it ran there and credited nothing (for pytest only when the per-test record is complete; otherwise `no changed
+line seen`, since child processes are not traced), `not traced` when it did not, and `DIVERGED (traced run: X, verified run: Y)`
 when its outcome there differs from the verified run (for node, when any test of its file did). The lines of a
 diverged test stay listed, labelled as informational only; the requirement's status always comes from the verified
 run. The per-test record comes from a second, slower run in the time left after the usual measurement,

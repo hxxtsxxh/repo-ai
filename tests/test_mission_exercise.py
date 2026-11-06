@@ -781,3 +781,45 @@ def test_a_node_file_that_behaves_differently_in_its_traced_run_is_diverged_end_
     assert diverged['trace'] == 'DIVERGED' and diverged['traced_outcome'] == 'fail', diverged
     assert rows['coverage off']['status'] == 'VERIFIED_PRESERVED'
     assert rows['unrelated']['changed_lines_trace'][0]['trace'] == 'TRACED_NONE'
+
+
+def test_a_test_that_runs_the_change_in_a_child_process_is_not_traced_none(tmp_path):
+    """Review of #174 (probe9): the subprocess runs the changed line where the tracer cannot see it."""
+    from repo_ai.mission import coverage as cov
+    test = ("import os, subprocess, sys\n\n\ndef test_neg():\n    out = subprocess.run([sys.executable, '-c', "
+            "'import m; print(m.pick(-2))'], capture_output=True, text=True, cwd=os.path.dirname(__file__))\n"
+            "    assert out.stdout.strip() == '2', out\n")
+    root = _repo(tmp_path, PY_AFTER, test)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['per_test'] == {} and rec['per_test_complete'] is False and rec['per_test_traced'] == {
+        'test_m.py::test_neg': 'pass'}, rec
+    t_neg = 'test_m.py::test_m.py::test_neg'
+    d = cov._validated({'schema': cov.REQ_SCHEMA, 'requirements': [{'text': 'neg', 'tests': [t_neg]}]})
+    out = cov.assess(d, {t_neg: 'fail'}, {t_neg: 'pass'}, verdict='PASS', freshness='fresh', exercise=rec)
+    assert out['requirements'][0]['changed_lines_trace'][0]['trace'] == 'TRACED_UNSEEN'
+    assert 'traced, ran no changed line' not in cov.render(out)
+
+
+def test_a_test_stopped_mid_call_is_not_recorded_as_passed_by_the_tracer(tmp_path):
+    """Review of #174: the setup report said "pass" before the call ended; `pytest.exit()` mid-call left it so."""
+    test = ("import pytest\nfrom m import pick\n\n\ndef test_pick():\n    assert pick(2) == 2\n\n\n"
+            "def test_stop():\n    pick(-1)\n    pytest.exit('stop here')\n")
+    root = _repo(tmp_path, PY_AFTER, test)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['per_test_traced'].get('test_m.py::test_pick') == 'pass', rec
+    assert 'test_m.py::test_stop' not in rec['per_test_traced'], rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_traced_outcomes_have_a_total_budget_across_files(tmp_path, monkeypatch):
+    root = _node_repo(tmp_path)
+    monkeypatch.setattr(exercise, 'MAX_TRACED_TOTAL', 2)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    runs = rec['per_test_traced']
+    kept = [f for f, r in runs.items() if 'outcomes' in r]
+    over = [f for f, r in runs.items() if 'outcomes_unavailable' in r]
+    assert len(kept) == 2 and len(over) == 1 and 'budget' in runs[over[0]]['outcomes_unavailable'], runs
+    assert rec['per_test_traced_complete'] is False
+    monkeypatch.setattr(exercise, 'MAX_TRACED_TOTAL', 50_000)
+    assert exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER),
+                            per_test=True)['per_test_traced_complete'] is True

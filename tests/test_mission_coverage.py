@@ -492,7 +492,7 @@ def test_a_declared_test_traced_that_ran_no_changed_line_is_a_positive_nothing()
     d = decl(req('zero stays zero', ['m_test.py::test_zero'], kind='preserve'),
              req('other', ['m_test.py::test_other'], kind='preserve'))
     out = cov.assess(d, {T_ZERO: 'pass', T_OTHER: 'pass'}, {T_ZERO: 'pass', T_OTHER: 'pass'}, verdict='PASS',
-                     freshness='fresh', exercise=_traced())
+                     freshness='fresh', exercise=_traced(per_test_traced_complete=False))
     rows = {r['text']: r for r in out['requirements']}
     assert rows['zero stays zero']['changed_lines_trace'] == [
         {'test': T_ZERO, 'trace': 'TRACED_NONE', 'traced_outcome': 'pass', 'verified_outcome': 'pass'}]
@@ -561,3 +561,28 @@ def test_node_outcomes_that_could_not_be_read_are_unknown_not_diverged_or_fine()
                      verdict='PASS', freshness='fresh', exercise=ex)
     assert out['requirements'][0]['changed_lines_trace'][0]['trace'] == 'OUTCOMES_UNKNOWN'
     assert "test outcomes could not be read (no report)" in cov.render(out)
+
+
+def test_an_incomplete_pytest_record_never_claims_a_traced_test_ran_no_changed_line():
+    """Review of #174: a test that runs the change in a child process (or under xdist) relays its outcome but its
+    lines are invisible to the tracer; the record is incomplete, so "ran no changed line" would be false."""
+    d = decl(req('zero stays zero', ['m_test.py::test_zero'], kind='preserve'))
+    out = cov.assess(d, {T_ZERO: 'pass'}, {T_ZERO: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise=_traced(per_test_complete=False))
+    trace = out['requirements'][0]['changed_lines_trace'][0]
+    assert trace['trace'] == 'TRACED_UNSEEN', trace
+    text = cov.render(out)
+    assert 'm_test.py::test_zero: traced; no changed line seen (child processes and early stops are not traced)' in text
+    assert 'traced, ran no changed line' not in text
+
+
+def test_a_pytest_test_absent_from_a_complete_traced_run_is_diverged():
+    """Review of #174: the traced run kept every test it saw; a declared test missing from it did not run there."""
+    d = decl(req('other', ['m_test.py::test_other'], kind='preserve'))
+    out = cov.assess(d, {T_OTHER: 'pass'}, {T_OTHER: 'pass'}, verdict='PASS', freshness='fresh', exercise=_traced())
+    trace = out['requirements'][0]['changed_lines_trace'][0]
+    assert trace['trace'] == 'DIVERGED' and trace['traced_outcome'] is None, trace
+    assert 'DIVERGED (traced run: did not run, verified run: pass)' in cov.render(out)
+    cut = cov.assess(d, {T_OTHER: 'pass'}, {T_OTHER: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise=_traced(per_test_traced_complete=False))
+    assert cut['requirements'][0]['changed_lines_trace'][0]['trace'] == 'NOT_TRACED', 'a cut record may just miss it'
