@@ -88,3 +88,10 @@ valid. The cause is not known from here (a server-side limit on concurrent login
 Per the mission's rule for repeated unexplained external auth blockers, no further attempt is made in this way; the
 documented alternative is `token_env` (`CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`), which does not depend on
 the dedicated login's refresh, and which needs the owner to create the token (QUEUE row 10).
+
+**Amendment (2026-11-05, before attempt 2): token_env.** The owner created a `claude setup-token` token and saved it in
+a file only they can read. `run_l2l.py --token-file PATH` passes it to repo-ai's processes as
+`CLAUDE_CODE_OAUTH_TOKEN` (repo-ai's `token_env` mode: scratch HOME, no keychain, no dependence on the dedicated login's
+refresh); it is never printed or recorded (records keep only the variable's name). Everything else is as predeclared
+above: the same fixture, roles, checks, at most 2 sessions at $0.50 each in a fresh work directory, and no retry after a
+model call. Attempt 1 ($0.00, no model turn) does not count against the 2 sessions.
