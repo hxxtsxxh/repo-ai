@@ -1,0 +1,180 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..89f5124 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -8,11 +8,12 @@ from .config import Config, load_config
+ from .errors import LogsiftError
+ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+-from .records import LEVELS, read_records
++from .records import LEVELS, read_records, scan_records
+ from .render import render_json, render_table, rows_to_objects
+ from .stats import count_by, top_messages
+ 
+ PROG = "logsift"
++EXIT_SKIPPED = 3
+ 
+ 
+ def _level(value: str) -> str:
+@@ -36,6 +37,10 @@ def _info(message: str) -> None:
+     print(f"{PROG}: {message}", file=sys.stderr)
+ 
+ 
++def _warn(message: str) -> None:
++    print(f"{PROG}: warning: {message}", file=sys.stderr)
++
++
+ def _emit_report(args: argparse.Namespace, headers: list[str], rows: list[tuple[str, int]]) -> None:
+     if args.format == "json":
+         sys.stdout.write(render_json(rows_to_objects(headers, rows)))
+@@ -44,9 +49,12 @@ def _emit_report(args: argparse.Namespace, headers: list[str], rows: list[tuple[
+ 
+ 
+ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+-    records = filter_records(read_records(args.files), ignore=config.ignore)
++    records, skipped = scan_records(args.files, skip_invalid=args.skip_invalid)
++    for error in skipped:
++        _warn(f"{error.path}:{error.lineno}: skipped unparseable line")
++    records = filter_records(records, ignore=config.ignore)
+     _emit_report(args, [args.by, "count"], count_by(records, args.by))
+-    return 0
++    return EXIT_SKIPPED if skipped else 0
+ 
+ 
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+@@ -85,6 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
+     summary.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     summary.add_argument("--by", choices=["level", "component"], default="level", help="field to count by")
+     summary.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    summary.add_argument(
++        "--skip-invalid",
++        action="store_true",
++        help="skip unparseable lines (warn about each one) instead of failing; exit status 3 if any were skipped",
++    )
+     summary.set_defaults(handler=cmd_summary)
+ 
+     filter_ = commands.add_parser("filter", help="print the lines that match")
+diff --git a/logsift/records.py b/logsift/records.py
+index 538185b..c674d11 100644
+--- a/logsift/records.py
++++ b/logsift/records.py
+@@ -59,9 +59,20 @@ def parse_line(line: str, source: str = "<string>", lineno: int = 1) -> LogRecor
+ def read_records(paths: list[str]) -> list[LogRecord]:
+     """Read and parse every line of the given files, in the order given.
+ 
+-    Blank lines are ignored.
++    Blank lines are ignored. An unparseable line raises ParseError.
++    """
++    records, _ = scan_records(paths, skip_invalid=False)
++    return records
++
++
++def scan_records(paths: list[str], skip_invalid: bool) -> tuple[list[LogRecord], list[ParseError]]:
++    """Read the given files like read_records, returning the skipped lines as well.
++
++    With skip_invalid, an unparseable line is left out and returned as a ParseError
++    (in input order) instead of raising. Blank lines are ignored and never skipped.
+     """
+     records: list[LogRecord] = []
++    skipped: list[ParseError] = []
+     for path in paths:
+         try:
+             with open(path, encoding="utf-8") as handle:
+@@ -71,6 +82,12 @@ def read_records(paths: list[str]) -> list[LogRecord]:
+         except OSError as exc:
+             raise LogsiftError(f"cannot read {path}: {exc.strerror}") from exc
+         for lineno, line in enumerate(lines, start=1):
+-            if line.strip():
++            if not line.strip():
++                continue
++            try:
+                 records.append(parse_line(line, path, lineno))
+-    return records
++            except ParseError as exc:
++                if not skip_invalid:
++                    raise
++                skipped.append(exc)
++    return records, skipped
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..d82128c 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -114,6 +114,78 @@ def test_malformed_line_is_an_error(tmp_path, capsys):
+     assert captured.err == f"logsift: error: cannot parse {path} line 2: 'broken'\n"
+ 
+ 
++MIXED = (
++    "2026-03-04T10:00:00Z INFO web: ok\n"
++    "broken\n"
++    "\n"
++    "2026-03-04T10:01:00Z ERROR db: connection lost\n"
++    "2026-03-04T10:02:00 INFO web: no zone in timestamp\n"
++)
++
++
++def test_summary_fails_on_bad_line_without_skip_invalid(tmp_path, capsys):
++    path = tmp_path / "mixed.log"
++    path.write_text(MIXED, encoding="utf-8")
++    assert main(["summary", str(path), "--format", "json"]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: cannot parse {path} line 2: 'broken'\n"
++
++
++def test_summary_skip_invalid_counts_valid_records_and_warns(tmp_path, capsys):
++    path = tmp_path / "mixed.log"
++    path.write_text(MIXED, encoding="utf-8")
++    assert main(["summary", str(path), "--skip-invalid", "--format", "json"]) == 3
++    captured = capsys.readouterr()
++    assert json.loads(captured.out) == [
++        {"count": 1, "level": "ERROR"},
++        {"count": 1, "level": "INFO"},
++    ]
++    assert captured.err == (
++        f"logsift: warning: {path}:2: skipped unparseable line\n"
++        f"logsift: warning: {path}:5: skipped unparseable line\n"
++    )
++
++
++def test_summary_skip_invalid_text_report(tmp_path, capsys):
++    path = tmp_path / "mixed.log"
++    path.write_text(MIXED, encoding="utf-8")
++    assert main(["summary", str(path), "--skip-invalid"]) == 3
++    captured = capsys.readouterr()
++    assert captured.out.splitlines()[0].split() == ["level", "count"]
++    assert captured.out.count("\n") == 3
++    assert captured.err.count("logsift: warning: ") == 2
++
++
++def test_summary_skip_invalid_reports_each_file_in_order(tmp_path, capsys):
++    first = tmp_path / "first.log"
++    second = tmp_path / "second.log"
++    first.write_text("junk\n2026-03-04T10:00:00Z INFO web: ok\n", encoding="utf-8")
++    second.write_text("2026-03-04T10:01:00Z ERROR db: lost\nnope\n", encoding="utf-8")
++    assert main(["summary", str(first), str(second), "--skip-invalid", "--format", "json"]) == 3
++    captured = capsys.readouterr()
++    assert json.loads(captured.out) == [
++        {"count": 1, "level": "ERROR"},
++        {"count": 1, "level": "INFO"},
++    ]
++    assert captured.err == (
++        f"logsift: warning: {first}:1: skipped unparseable line\n"
++        f"logsift: warning: {second}:2: skipped unparseable line\n"
++    )
++
++
++def test_summary_skip_invalid_without_bad_lines_is_quiet(sample_log, capsys):
++    assert main(["summary", str(sample_log), "--skip-invalid", "--format", "json"]) == 0
++    captured = capsys.readouterr()
++    assert json.loads(captured.out)[0] == {"count": 3, "level": "ERROR"}
++    assert captured.err == ""
++
++
++def test_skip_invalid_is_only_for_summary(sample_log, capsys):
++    assert main(["filter", str(sample_log), "--skip-invalid"]) == 2
++    assert "unrecognized arguments: --skip-invalid" in capsys.readouterr().err
++
++
+ def test_config_ignore_applies_to_reports(sample_log, tmp_path, capsys):
+     config = tmp_path / "logsift.toml"
+     config.write_text('[logsift]\nignore = ["healthcheck"]\n', encoding="utf-8")

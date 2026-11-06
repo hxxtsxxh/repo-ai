@@ -1,0 +1,250 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..a49add3 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -9,8 +9,8 @@ from .errors import LogsiftError
+ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+-from .render import render_json, render_table, rows_to_objects
+-from .stats import count_by, top_messages
++from .render import format_bytes, render_json, render_table, rows_to_objects
++from .stats import bytes_by_component, count_by, sort_counts, top_messages
+ 
+ PROG = "logsift"
+ 
+@@ -49,6 +49,17 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_traffic(args: argparse.Namespace, config: Config) -> int:
++    records = filter_records(read_records(args.files), ignore=config.ignore)
++    rows = sort_counts(bytes_by_component(records))
++    headers = ["component", "bytes"]
++    if args.format == "json":
++        sys.stdout.write(render_json(rows_to_objects(headers, rows)))
++    else:
++        sys.stdout.write(render_table(headers, [(component, format_bytes(total)) for component, total in rows]))
++    return 0
++
++
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(
+         read_records(args.files),
+@@ -87,6 +98,11 @@ def build_parser() -> argparse.ArgumentParser:
+     summary.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     summary.set_defaults(handler=cmd_summary)
+ 
++    traffic = commands.add_parser("traffic", help="total the bytes=N response sizes by component")
++    traffic.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    traffic.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    traffic.set_defaults(handler=cmd_traffic)
++
+     filter_ = commands.add_parser("filter", help="print the lines that match")
+     filter_.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     filter_.add_argument("--level", type=_level, help="lowest level to keep")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..933246a 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -24,6 +24,21 @@ def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+     return "\n".join(lines) + "\n"
+ 
+ 
++_BYTE_UNITS = ("KiB", "MiB", "GiB", "TiB")
++
++
++def format_bytes(count: int) -> str:
++    """Show a byte count as ``<n> B`` below 1024, otherwise in binary units such as ``1.5 KiB``."""
++    if count < 1024:
++        return f"{count} B"
++    value = count / 1024
++    unit_index = 0
++    while value >= 1024 and unit_index < len(_BYTE_UNITS) - 1:
++        value /= 1024
++        unit_index += 1
++    return f"{value:.1f} {_BYTE_UNITS[unit_index]}"
++
++
+ def rows_to_objects(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> list[dict[str, Any]]:
+     """Turn rows into a list of objects keyed by the column headers."""
+     return [dict(zip(headers, row)) for row in rows]
+diff --git a/logsift/stats.py b/logsift/stats.py
+index 8962111..84cd73d 100644
+--- a/logsift/stats.py
++++ b/logsift/stats.py
+@@ -2,18 +2,33 @@
+ 
+ import re
+ from collections import Counter
+-from collections.abc import Iterable
++from collections.abc import Iterable, Mapping
+ 
+ from .records import LogRecord
+ 
+ _DIGITS_RE = re.compile(r"\d+")
++_BYTES_RE = re.compile(r"\bbytes=(\d+)\b")
+ 
+ 
+-def sort_counts(counts: Counter[str]) -> list[tuple[str, int]]:
++def sort_counts(counts: Mapping[str, int]) -> list[tuple[str, int]]:
+     """Order counted keys by count, highest first, then by key."""
+     return sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+ 
+ 
++def bytes_by_component(records: Iterable[LogRecord]) -> dict[str, int]:
++    """Sum the ``bytes=<n>`` values in each record's message, per component.
++
++    Records without a ``bytes=<n>`` value are ignored, so components with no such
++    record do not appear in the result.
++    """
++    totals: dict[str, int] = {}
++    for record in records:
++        match = _BYTES_RE.search(record.message)
++        if match is not None:
++            totals[record.component] = totals.get(record.component, 0) + int(match[1])
++    return totals
++
++
+ def count_by(records: Iterable[LogRecord], field: str) -> list[tuple[str, int]]:
+     """Count records by the value of one field, such as ``level`` or ``component``."""
+     return sort_counts(Counter(getattr(record, field) for record in records))
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..811d01f 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,57 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++TRAFFIC_LOG = """\
++2026-03-04T10:00:00Z INFO cdn: GET /assets/app.js 200 bytes=48213
++2026-03-04T10:00:01Z INFO api: GET /users 200 bytes=900
++2026-03-04T10:00:02Z INFO cdn: GET /assets/logo.png 200 bytes=1536
++2026-03-04T10:00:03Z INFO api: POST /login 204
++2026-03-04T10:00:04Z INFO healthcheck: ok bytes=10
++"""
++
++
++def test_traffic_text(tmp_path, capsys):
++    path = tmp_path / "traffic.log"
++    path.write_text(TRAFFIC_LOG, encoding="utf-8")
++    assert main(["traffic", str(path)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == (
++        "component    bytes\n"
++        "cdn          48.6 KiB\n"
++        "api          900 B\n"
++        "healthcheck  10 B\n"
++    )
++    assert captured.err == ""
++
++
++def test_traffic_json(tmp_path, capsys):
++    path = tmp_path / "traffic.log"
++    path.write_text(TRAFFIC_LOG, encoding="utf-8")
++    assert main(["traffic", str(path), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"component": "cdn", "bytes": 49749},
++        {"component": "api", "bytes": 900},
++        {"component": "healthcheck", "bytes": 10},
++    ]
++
++
++def test_traffic_applies_config_ignore(tmp_path, capsys):
++    path = tmp_path / "traffic.log"
++    path.write_text(TRAFFIC_LOG, encoding="utf-8")
++    config = tmp_path / "logsift.toml"
++    config.write_text('[logsift]\nignore = ["cdn"]\n', encoding="utf-8")
++    assert main(["--config", str(config), "traffic", str(path), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"component": "api", "bytes": 900},
++        {"component": "healthcheck", "bytes": 10},
++    ]
++
++
++def test_traffic_without_sizes_prints_only_header(sample_log, capsys):
++    assert main(["traffic", str(sample_log)]) == 0
++    assert capsys.readouterr().out == "component  bytes\n"
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (
+diff --git a/tests/test_filters_stats.py b/tests/test_filters_stats.py
+index fdec742..f8c8ecb 100644
+--- a/tests/test_filters_stats.py
++++ b/tests/test_filters_stats.py
+@@ -1,6 +1,6 @@
+ from logsift.filters import filter_records
+-from logsift.records import read_records
+-from logsift.stats import count_by, normalize_message, top_messages
++from logsift.records import parse_line, read_records
++from logsift.stats import bytes_by_component, count_by, normalize_message, top_messages
+ 
+ 
+ def test_filter_by_min_level(sample_log):
+@@ -34,3 +34,26 @@ def test_normalize_message_replaces_digit_runs():
+ def test_top_messages_limit(sample_log):
+     records = read_records([str(sample_log)])
+     assert top_messages(records, 2) == [("connection # lost", 2), ("ok", 1)]
++
++
++def test_bytes_by_component_sums_bytes_values():
++    records = [
++        parse_line("2026-03-04T10:00:00Z INFO cdn: GET /assets/app.js 200 bytes=48213", "a.log", 1),
++        parse_line("2026-03-04T10:00:01Z INFO cdn: GET /assets/logo.png 200 bytes=1536", "a.log", 2),
++        parse_line("2026-03-04T10:00:02Z INFO api: GET /users 200 bytes=900", "a.log", 3),
++        parse_line("2026-03-04T10:00:03Z INFO api: POST /login 204", "a.log", 4),
++        parse_line("2026-03-04T10:00:04Z INFO db: slow query took 1200 ms", "a.log", 5),
++    ]
++    assert bytes_by_component(records) == {"cdn": 49749, "api": 900}
++
++
++def test_bytes_by_component_ignores_partial_matches():
++    records = [
++        parse_line("2026-03-04T10:00:00Z INFO web: sent xbytes=5 and bytes_total=7", "a.log", 1),
++        parse_line("2026-03-04T10:00:01Z INFO web: bytes=abc", "a.log", 2),
++    ]
++    assert bytes_by_component(records) == {}
++
++
++def test_bytes_by_component_of_nothing():
++    assert bytes_by_component([]) == {}
+diff --git a/tests/test_render_output_config.py b/tests/test_render_output_config.py
+index d7aec1a..e6fedde 100644
+--- a/tests/test_render_output_config.py
++++ b/tests/test_render_output_config.py
+@@ -3,7 +3,7 @@ import pytest
+ from logsift.config import Config, load_config
+ from logsift.errors import ConfigError, OutputExistsError
+ from logsift.output import write_text
+-from logsift.render import render_json, render_table, rows_to_objects
++from logsift.render import format_bytes, render_json, render_table, rows_to_objects
+ 
+ 
+ def test_render_table_aligns_columns():
+@@ -15,6 +15,23 @@ def test_render_table_without_rows():
+     assert render_table(["level", "count"], []) == "level  count\n"
+ 
+ 
++@pytest.mark.parametrize(
++    ("count", "text"),
++    [
++        (0, "0 B"),
++        (1023, "1023 B"),
++        (1024, "1.0 KiB"),
++        (1536, "1.5 KiB"),
++        (1024**2, "1.0 MiB"),
++        (5 * 1024**3, "5.0 GiB"),
++        (1024**4, "1.0 TiB"),
++        (1024**5, "1024.0 TiB"),
++    ],
++)
++def test_format_bytes(count, text):
++    assert format_bytes(count) == text
++
++
+ def test_render_json_is_sorted_and_indented():
+     value = rows_to_objects(["level", "count"], [("ERROR", 2)])
+     assert render_json(value) == '[\n  {\n    "count": 2,\n    "level": "ERROR"\n  }\n]\n'

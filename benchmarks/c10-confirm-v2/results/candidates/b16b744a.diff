@@ -1,0 +1,273 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..d993d58 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -9,8 +9,8 @@ from .errors import LogsiftError
+ from .filters import filter_records
+ from .output import records_to_jsonl, write_text
+ from .records import LEVELS, read_records
+-from .render import render_json, render_table, rows_to_objects
+-from .stats import count_by, top_messages
++from .render import json_timestamp, render_json, render_table, rows_to_objects, text_duration, text_timestamp
++from .stats import component_spans, count_by, top_messages
+ 
+ PROG = "logsift"
+ 
+@@ -49,6 +49,35 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_span(args: argparse.Namespace, config: Config) -> int:
++    spans = component_spans(filter_records(read_records(args.files), ignore=config.ignore))
++    if args.format == "json":
++        objects = [
++            {
++                "component": span.component,
++                "count": span.count,
++                "first": json_timestamp(span.first),
++                "last": json_timestamp(span.last),
++                "duration": span.seconds,
++            }
++            for span in spans
++        ]
++        sys.stdout.write(render_json(objects))
++    else:
++        rows = [
++            (
++                span.component,
++                span.count,
++                text_timestamp(span.first),
++                text_timestamp(span.last),
++                text_duration(span.seconds),
++            )
++            for span in spans
++        ]
++        sys.stdout.write(render_table(["component", "count", "first", "last", "duration"], rows))
++    return 0
++
++
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(
+         read_records(args.files),
+@@ -87,6 +116,11 @@ def build_parser() -> argparse.ArgumentParser:
+     summary.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     summary.set_defaults(handler=cmd_summary)
+ 
++    span = commands.add_parser("span", help="show each component's record count and time range")
++    span.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    span.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    span.set_defaults(handler=cmd_span)
++
+     filter_ = commands.add_parser("filter", help="print the lines that match")
+     filter_.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     filter_.add_argument("--level", type=_level, help="lowest level to keep")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..5bd55ce 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -2,6 +2,7 @@
+ 
+ import json
+ from collections.abc import Sequence
++from datetime import datetime
+ from typing import Any
+ 
+ 
+@@ -32,3 +33,20 @@ def rows_to_objects(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> li
+ def render_json(value: Any) -> str:
+     """Render a value as indented JSON with sorted keys."""
+     return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
++
++
++def text_timestamp(moment: datetime) -> str:
++    """Format a UTC time for text output, such as ``2026-01-31 23:05:09``."""
++    return moment.strftime("%Y-%m-%d %H:%M:%S")
++
++
++def json_timestamp(moment: datetime) -> str:
++    """Format a UTC time for JSON output, such as ``2026-01-31T23:05:09Z``."""
++    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
++
++
++def text_duration(seconds: int) -> str:
++    """Format a number of seconds as ``H:MM:SS``; hours are not capped at 24."""
++    hours, rest = divmod(seconds, 3600)
++    minutes, secs = divmod(rest, 60)
++    return f"{hours}:{minutes:02d}:{secs:02d}"
+diff --git a/logsift/stats.py b/logsift/stats.py
+index 8962111..40ae8e2 100644
+--- a/logsift/stats.py
++++ b/logsift/stats.py
+@@ -1,14 +1,40 @@
+ """Counting records."""
+ 
+ import re
+-from collections import Counter
++from collections import Counter, defaultdict
+ from collections.abc import Iterable
++from dataclasses import dataclass
++from datetime import datetime, timedelta
+ 
+ from .records import LogRecord
+ 
+ _DIGITS_RE = re.compile(r"\d+")
+ 
+ 
++@dataclass(frozen=True)
++class ComponentSpan:
++    """The records of one component and the time between its earliest and latest."""
++
++    component: str
++    count: int
++    first: datetime
++    last: datetime
++
++    @property
++    def seconds(self) -> int:
++        """The time from first to last, in whole seconds (fractions dropped)."""
++        return (self.last - self.first) // timedelta(seconds=1)
++
++
++def component_spans(records: Iterable[LogRecord]) -> list[ComponentSpan]:
++    """Summarize each component's record count and time range; highest count first, then by name."""
++    times: dict[str, list[datetime]] = defaultdict(list)
++    for record in records:
++        times[record.component].append(record.time)
++    spans = [ComponentSpan(name, len(moments), min(moments), max(moments)) for name, moments in times.items()]
++    return sorted(spans, key=lambda span: (-span.count, span.component))
++
++
+ def sort_counts(counts: Counter[str]) -> list[tuple[str, int]]:
+     """Order counted keys by count, highest first, then by key."""
+     return sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..0d3ddfc 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -36,6 +36,92 @@ def test_summary_of_several_files(sample_log, tmp_path, capsys):
+     ]
+ 
+ 
++def test_span_text(sample_log, capsys):
++    assert main(["span", str(sample_log)]) == 0
++    captured = capsys.readouterr()
++    assert captured.out == (
++        "component    count  first" + " " * 16 + "last" + " " * 17 + "duration\n"
++        + "db" + " " * 15 + "4  2026-03-04 10:00:05  2026-03-04 10:02:30  0:02:25\n"
++        + "web" + " " * 14 + "3  2026-03-04 10:00:00  2026-03-04 10:05:00  0:05:00\n"
++        + "healthcheck" + " " * 6 + "1  2026-03-04 10:03:00  2026-03-04 10:03:00  0:00:00\n"
++    )
++    assert captured.err == ""
++
++
++def test_span_json(sample_log, capsys):
++    assert main(["span", str(sample_log), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {
++            "component": "db",
++            "count": 4,
++            "first": "2026-03-04T10:00:05Z",
++            "last": "2026-03-04T10:02:30Z",
++            "duration": 145,
++        },
++        {
++            "component": "web",
++            "count": 3,
++            "first": "2026-03-04T10:00:00Z",
++            "last": "2026-03-04T10:05:00Z",
++            "duration": 300,
++        },
++        {
++            "component": "healthcheck",
++            "count": 1,
++            "first": "2026-03-04T10:03:00Z",
++            "last": "2026-03-04T10:03:00Z",
++            "duration": 0,
++        },
++    ]
++
++
++def test_span_across_several_files(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["span", str(sample_log), str(other), "--format", "json"]) == 0
++    db = json.loads(capsys.readouterr().out)[0]
++    assert db == {
++        "component": "db",
++        "count": 5,
++        "first": "2026-03-04T10:00:05Z",
++        "last": "2026-03-05T08:00:00Z",
++        "duration": 79195,
++    }
++
++
++def test_span_duration_can_exceed_a_day(tmp_path, capsys):
++    path = tmp_path / "long.log"
++    path.write_text(
++        "2026-03-04T00:00:00Z INFO api: start\n2026-03-05T01:00:00Z INFO api: stop\n",
++        encoding="utf-8",
++    )
++    assert main(["span", str(path)]) == 0
++    assert capsys.readouterr().out.splitlines()[1].endswith("2026-03-05 01:00:00  25:00:00")
++
++
++def test_span_without_records_prints_only_header(tmp_path, capsys):
++    path = tmp_path / "empty.log"
++    path.write_text("\n", encoding="utf-8")
++    assert main(["span", str(path)]) == 0
++    assert capsys.readouterr().out == "component  count  first  last  duration\n"
++
++
++def test_span_respects_config_ignore(sample_log, tmp_path, capsys):
++    config = tmp_path / "logsift.toml"
++    config.write_text('[logsift]\nignore = ["healthcheck"]\n', encoding="utf-8")
++    assert main(["--config", str(config), "span", str(sample_log), "--format", "json"]) == 0
++    components = [row["component"] for row in json.loads(capsys.readouterr().out)]
++    assert components == ["db", "web"]
++
++
++def test_span_missing_input_is_an_error(tmp_path, capsys):
++    missing = tmp_path / "nope.log"
++    assert main(["span", str(missing)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: cannot read {missing}: No such file or directory\n"
++
++
+ def test_filter_prints_matching_lines_in_order(sample_log, capsys):
+     assert main(["filter", str(sample_log), "--level", "error", "--component", "web"]) == 0
+     assert capsys.readouterr().out == (
+diff --git a/tests/test_render_output_config.py b/tests/test_render_output_config.py
+index d7aec1a..e1a7d9a 100644
+--- a/tests/test_render_output_config.py
++++ b/tests/test_render_output_config.py
+@@ -3,7 +3,28 @@ import pytest
+ from logsift.config import Config, load_config
+ from logsift.errors import ConfigError, OutputExistsError
+ from logsift.output import write_text
+-from logsift.render import render_json, render_table, rows_to_objects
++from datetime import datetime, timezone
++
++from logsift.render import (
++    json_timestamp,
++    render_json,
++    render_table,
++    rows_to_objects,
++    text_duration,
++    text_timestamp,
++)
++
++
++def test_text_duration_is_h_mm_ss_and_uncapped():
++    assert text_duration(3725) == "1:02:05"
++    assert text_duration(0) == "0:00:00"
++    assert text_duration(90000) == "25:00:00"
++
++
++def test_timestamps_drop_fraction_and_zone_style():
++    moment = datetime(2026, 1, 31, 23, 5, 9, 123456, tzinfo=timezone.utc)
++    assert text_timestamp(moment) == "2026-01-31 23:05:09"
++    assert json_timestamp(moment) == "2026-01-31T23:05:09Z"
+ 
+ 
+ def test_render_table_aligns_columns():

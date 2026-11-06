@@ -1,0 +1,186 @@
+diff --git a/logsift/cli.py b/logsift/cli.py
+index 6b10833..b103bf9 100644
+--- a/logsift/cli.py
++++ b/logsift/cli.py
+@@ -2,6 +2,7 @@
+ 
+ import argparse
+ import sys
++from collections import Counter
+ from collections.abc import Sequence
+ 
+ from .config import Config, load_config
+@@ -36,11 +37,13 @@ def _info(message: str) -> None:
+     print(f"{PROG}: {message}", file=sys.stderr)
+ 
+ 
+-def _emit_report(args: argparse.Namespace, headers: list[str], rows: list[tuple[str, int]]) -> None:
++def _emit_report(
++    args: argparse.Namespace, headers: list[str], rows: list[tuple[str, int]], *, header: bool = True
++) -> None:
+     if args.format == "json":
+         sys.stdout.write(render_json(rows_to_objects(headers, rows)))
+     else:
+-        sys.stdout.write(render_table(headers, rows))
++        sys.stdout.write(render_table(headers, rows, header=header))
+ 
+ 
+ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+@@ -49,6 +52,17 @@ def cmd_summary(args: argparse.Namespace, config: Config) -> int:
+     return 0
+ 
+ 
++def cmd_sources(args: argparse.Namespace, config: Config) -> int:
++    # Every file named on the command line gets a row, including files with no records.
++    # Filters and the config ignore list do not apply: this counts what each file contains.
++    records = read_records(args.files)
++    counts = Counter(record.source for record in records)
++    rows = [(path, counts.get(path, 0)) for path in dict.fromkeys(args.files)]
++    rows.sort(key=lambda row: (-row[1], row[0]))
++    _emit_report(args, ["file", "count"], rows, header=not args.no_header)
++    return 0
++
++
+ def cmd_filter(args: argparse.Namespace, config: Config) -> int:
+     records = filter_records(
+         read_records(args.files),
+@@ -87,6 +101,12 @@ def build_parser() -> argparse.ArgumentParser:
+     summary.add_argument("--format", choices=["text", "json"], default="text", help="output format")
+     summary.set_defaults(handler=cmd_summary)
+ 
++    sources = commands.add_parser("sources", help="count the records in each file")
++    sources.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
++    sources.add_argument("--no-header", action="store_true", help="leave out the header line of the table")
++    sources.add_argument("--format", choices=["text", "json"], default="text", help="output format")
++    sources.set_defaults(handler=cmd_sources)
++
+     filter_ = commands.add_parser("filter", help="print the lines that match")
+     filter_.add_argument("files", nargs="+", metavar="FILE", help="log files to read")
+     filter_.add_argument("--level", type=_level, help="lowest level to keep")
+diff --git a/logsift/render.py b/logsift/render.py
+index 68a77f3..469fe82 100644
+--- a/logsift/render.py
++++ b/logsift/render.py
+@@ -5,13 +5,15 @@ from collections.abc import Sequence
+ from typing import Any
+ 
+ 
+-def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+-    """Render rows as aligned columns under a header line.
++def render_table(headers: Sequence[str], rows: Sequence[Sequence[Any]], *, header: bool = True) -> str:
++    """Render rows as aligned columns, under a header line unless ``header`` is false.
+ 
+     Integer columns are right-aligned, all others left-aligned; columns are
+     separated by two spaces.
+     """
+-    cells = [list(headers)] + [[str(value) for value in row] for row in rows]
++    cells = ([list(headers)] if header else []) + [[str(value) for value in row] for row in rows]
++    if not cells:
++        return ""
+     widths = [max(len(line[i]) for line in cells) for i in range(len(headers))]
+     numeric = [bool(rows) and all(isinstance(row[i], int) for row in rows) for i in range(len(headers))]
+     lines = []
+diff --git a/tests/test_cli.py b/tests/test_cli.py
+index 0b4b1b5..e33a35d 100644
+--- a/tests/test_cli.py
++++ b/tests/test_cli.py
+@@ -97,6 +97,79 @@ def test_export_force_replaces_output(sample_log, tmp_path, capsys):
+     assert capsys.readouterr().err == f"logsift: wrote 8 records to {out}\n"
+ 
+ 
++def test_sources_counts_each_file(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["sources", str(other), str(sample_log)]) == 0
++    captured = capsys.readouterr()
++    assert captured.err == ""
++    lines = captured.out.splitlines()
++    assert lines[0].split() == ["file", "count"]
++    # Highest count first, so the 8-record file comes before the 1-record file.
++    assert [line.split() for line in lines[1:]] == [[str(sample_log), "8"], [str(other), "1"]]
++
++
++def test_sources_no_header_leaves_out_header_line(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["sources", "--no-header", str(sample_log), str(other)]) == 0
++    captured = capsys.readouterr()
++    assert captured.err == ""
++    assert [line.split() for line in captured.out.splitlines()] == [
++        [str(sample_log), "8"],
++        [str(other), "1"],
++    ]
++
++
++def test_sources_counts_empty_file_as_zero_and_ignores_blank_lines(tmp_path, capsys):
++    blank = tmp_path / "blank.log"
++    blank.write_text("\n   \n\n", encoding="utf-8")
++    empty = tmp_path / "empty.log"
++    empty.write_text("", encoding="utf-8")
++    assert main(["sources", "--no-header", str(empty), str(blank)]) == 0
++    assert [line.split() for line in capsys.readouterr().out.splitlines()] == [
++        [str(blank), "0"],
++        [str(empty), "0"],
++    ]
++
++
++def test_sources_ties_are_ordered_by_path(sample_log, tmp_path, capsys):
++    first = tmp_path / "a.log"
++    second = tmp_path / "b.log"
++    line = "2026-03-05T08:00:00Z CRITICAL db: disk full\n"
++    first.write_text(line, encoding="utf-8")
++    second.write_text(line, encoding="utf-8")
++    assert main(["sources", "--no-header", str(second), str(first)]) == 0
++    assert [row.split()[0] for row in capsys.readouterr().out.splitlines()] == [str(first), str(second)]
++
++
++def test_sources_json(sample_log, tmp_path, capsys):
++    other = tmp_path / "other.log"
++    other.write_text("2026-03-05T08:00:00Z CRITICAL db: disk full\n", encoding="utf-8")
++    assert main(["sources", str(other), str(sample_log), "--format", "json"]) == 0
++    assert json.loads(capsys.readouterr().out) == [
++        {"file": str(sample_log), "count": 8},
++        {"file": str(other), "count": 1},
++    ]
++
++
++def test_sources_malformed_line_is_an_error(tmp_path, capsys):
++    path = tmp_path / "bad.log"
++    path.write_text("broken\n", encoding="utf-8")
++    assert main(["sources", str(path)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: cannot parse {path} line 1: 'broken'\n"
++
++
++def test_sources_missing_input_is_an_error(tmp_path, capsys):
++    missing = tmp_path / "nope.log"
++    assert main(["sources", str(missing)]) == 1
++    captured = capsys.readouterr()
++    assert captured.out == ""
++    assert captured.err == f"logsift: error: cannot read {missing}: No such file or directory\n"
++
++
+ def test_missing_input_is_an_error(tmp_path, capsys):
+     missing = tmp_path / "nope.log"
+     assert main(["summary", str(missing)]) == 1
+diff --git a/tests/test_render_output_config.py b/tests/test_render_output_config.py
+index d7aec1a..ec86101 100644
+--- a/tests/test_render_output_config.py
++++ b/tests/test_render_output_config.py
+@@ -15,6 +15,15 @@ def test_render_table_without_rows():
+     assert render_table(["level", "count"], []) == "level  count\n"
+ 
+ 
++def test_render_table_without_header():
++    text = render_table(["level", "count"], [("ERROR", 12), ("INFO", 3)], header=False)
++    assert text == "ERROR  12\nINFO    3\n"
++
++
++def test_render_table_without_header_or_rows():
++    assert render_table(["level", "count"], [], header=False) == ""
++
++
+ def test_render_json_is_sorted_and_indented():
+     value = rows_to_objects(["level", "count"], [("ERROR", 2)])
+     assert render_json(value) == '[\n  {\n    "count": 2,\n    "level": "ERROR"\n  }\n]\n'
