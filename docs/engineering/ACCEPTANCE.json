@@ -395,7 +395,7 @@
    "title": "Distribution/release",
    "status": "PASS",
    "owner": "principal",
-   "code_sha": "0706700",
+   "code_sha": "390fcf6",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
@@ -417,7 +417,8 @@
     "0.12.4 published 2026-11-04 (UTC) (tag at 3c1b999 pushed by the agent with the owner's approval; release run 41918248372): wheel 6d3ca8444f983aeab612aa2206aa353197e020d5a4896ff030105622f8eb709e, sdist 8774504c516eb317943d417344c8fc5df1a8cb0e8d84e993e5053078058bc6ca; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)",
     "0.12.5 published 2026-11-05 (UTC) (tag at 676c09e pushed by the agent with the owner's approval; release run 41986612102): wheel 52c02e08fb30faa8163ea51363a752656fff3d3ca6f6f7636f4351a711b35c70, sdist 17756f30e51626ed51bd563e1221a787661a48d72fe14b10576e4b9d8e23e82d; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)",
     "0.12.6 published 2026-11-05 (UTC) (tag at 905358e pushed by the agent with the owner's approval; release run 42091064941): wheel 67b7fd95ccd3c215f037a1b75f58f20dd4a2eb4e0028382143118abb9eb0e561, sdist e3e2481e17eb8845ec2984cc29e38efadc9574c4128326540531370feb09afdb; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site",
-    "0.12.7 published 2026-11-05 (UTC) (tag at 0706700, owner-approved, tagger the owner's personal address; release run 42134637117): wheel cf89e5a4c2f590a4bace241ea0899256d96369ceea77ad847ecc9344d618710a, sdist 8ff2d603130a88178d7ab97bdc37246fe2e35cf9d6ced8028712e118fa85dfd8; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site"
+    "0.12.7 published 2026-11-05 (UTC) (tag at 0706700, owner-approved, tagger the owner's personal address; release run 42134637117): wheel cf89e5a4c2f590a4bace241ea0899256d96369ceea77ad847ecc9344d618710a, sdist 8ff2d603130a88178d7ab97bdc37246fe2e35cf9d6ced8028712e118fa85dfd8; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site",
+    "0.12.8 published 2026-11-06 (UTC) (tag at 390fcf6, owner-approved, personal tagger; release run 42175893801): wheel b94e94238482e5c9746749943ab084d60df1a054397cfaea5b762b09c78d3288, sdist 7d93380b846ff55f574d6039c156155403d07ee02132537a4c434cc896b43589; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site"
    ],
    "limits": [],
    "next_action": "next release"

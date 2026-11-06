@@ -1,6 +1,6 @@
 # Omniprovider mission — report
 
-Status: **0.12.7 publicly shipped and verified (2026-11-05 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
+Status: **0.12.8 publicly shipped and verified (2026-11-06 UTC)**; the mission continues (see [QUEUE.md](QUEUE.md)).
 Release facts below were re-read from the public hosts after publication. Controlling order: the owner's omniprovider
 mission (kept outside the repository). Ledger: [ACCEPTANCE.json](ACCEPTANCE.json), [QUEUE.md](QUEUE.md),
 [DECISIONS.md](DECISIONS.md), [EXPERIMENTS.md](EXPERIMENTS.md), [INTEGRATIONS.md](INTEGRATIONS.md),
@@ -43,6 +43,23 @@ host with a provider login; further live Claude studies need a reliable login (t
 server-side twice; `claude setup-token` is the alternative). Live spend under the owner's $10 budget so far: $0.00.
 
 ## Current state (2026-11-03 UTC)
+
+### Release 0.12.8 (verified after publication)
+
+| | |
+|---|---|
+| Tag | `v0.12.8` at `390fcf6` (#170), owner-approved, tagger the owner's personal address; release run 42175893801 |
+| Wheel | `repo_ai_cli-0.12.8-py3-none-any.whl` sha256 `b94e94238482e5c9746749943ab084d60df1a054397cfaea5b762b09c78d3288` |
+| sdist | `repo_ai_cli-0.12.8.tar.gz` sha256 `7d93380b846ff55f574d6039c156155403d07ee02132537a4c434cc896b43589` |
+| Reproduced | PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK |
+| Provenance | attestations verified for both |
+| Smoke | fresh venv from PyPI: `repo-ai 0.12.8`; `init` in a scratch repository |
+| Site | 22 of 22 checked URLs 200, a missing page 404, the changelog shows 0.12.8 |
+
+Contents: #166/#168 C11 change exercise and per-requirement lines for container runs (image digest and backend
+pinned to the verified run; CI builds a pytest image and runs the container tests, skips are failures there); #164
+`uninstall --dry-run` names the configured agents; #163 site transcripts re-captured on 0.12.7 by
+`scripts/record_transcripts.py`; #169 C13 live-to-live handoff PASS ($0.040622, token_env).
 
 ### Release 0.12.7 (verified after publication)
 
