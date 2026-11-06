@@ -118,6 +118,9 @@ def main(argv):
     fixture_lines = {}  # shared fixture run token -> {watched path -> lines run during its setup}
     uses = {}  # pytest node id -> tokens of the shared fixture runs active while its call ran
     runs = {}  # id(fixturedef) -> its current run number (a parametrized or class/module fixture runs repeatedly)
+    traced = {}  # pytest node id -> its outcome in this run (the worst phase, as the verified run's shim reports it)
+    pending = {}  # pytest node id -> its worst phase so far, committed to `traced` only at its teardown
+    rank = {"pass": 0, "skip": 1, "fail": 2, "error": 3}
     root = os.path.realpath(opts[opts.index("--root") + 1])
     prefix = root.rstrip(os.sep) + os.sep
     seen = {}
@@ -211,6 +214,9 @@ def main(argv):
             # every collected test ran (an early stop, -x or --maxfail, leaves some unrun)
             data["per_test_complete"] = (len(per_test) <= MAX_PER_TEST and counts["ran"] >= counts["collected"]
                                          and counts["collection_finished"] == 1)
+            # every test this run saw, with its outcome, even those that ran no watched line (bounded)
+            data["traced"] = dict(sorted(traced.items()))
+            data["traced_complete"] = counts.get("traced_cut", 0) == 0
             # a shared fixture run no test's call claimed (it skipped or failed, or every user failed setup) still
             # ran its lines: they count as outside any test rather than nowhere
             claimed = {k for keys in uses.values() for k in keys}
@@ -314,6 +320,26 @@ def main(argv):
                     yield
                 finally:
                     uses[item.nodeid].update(_active_runs(item, runs))
+
+            def pytest_runtest_logreport(self, report):
+                # the same vocabulary as the verified run: a failed call is "fail", a failed setup or teardown
+                # "error", a skip (or an expected failure) "skip"; a test's outcome is its worst phase
+                nid = report.nodeid
+                if report.failed:
+                    outcome = "fail" if report.when == "call" else "error"
+                elif report.skipped:
+                    outcome = "skip"
+                else:
+                    outcome = "pass"
+                if rank[outcome] >= rank[pending.get(nid, "pass")]:
+                    pending[nid] = outcome
+                if report.when != "teardown":
+                    return  # a test stopped mid-call (pytest.exit) never reaches teardown: it did not finish
+                worst = pending.pop(nid, outcome)
+                if nid not in traced and len(traced) >= MAX_PER_TEST:
+                    counts["traced_cut"] = 1
+                    return
+                traced[nid] = worst
 
             @pytest.hookimpl(hookwrapper=True)
             def pytest_runtest_protocol(self, item, nextitem):

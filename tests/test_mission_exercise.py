@@ -177,6 +177,10 @@ def test_a_test_that_runs_no_changed_line_is_absent_from_the_per_test_record(tmp
     root = _repo(tmp_path, PY_AFTER, other)
     rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
     assert 'test_m.py::test_unrelated' not in rec['per_test'] and 'test_m.py::test_neg' in rec['per_test']
+    # C11 review: but the traced run saw it run (a positive "nothing"), with the outcome the verified run would give
+    assert rec['per_test_traced'] == {'test_m.py::test_neg': 'pass', 'test_m.py::test_pick': 'pass',
+                                      'test_m.py::test_unrelated': 'pass'}, rec
+    assert rec['per_test_traced_complete'] is True and rec['per_test_exit_code'] == 0
 
 
 def test_per_test_is_off_by_default_and_import_time_lines_are_outside_any_test(tmp_path):
@@ -384,6 +388,10 @@ def test_node_per_file_record_names_the_changed_lines_each_test_file_ran(tmp_pat
     assert sorted(rec['per_test_measured']) == ['neg.test.js', 'other.test.js', 'pick.test.js']
     assert rec['per_test_unavailable'] == {} and rec['per_test_complete'] is True
     assert 'changed_outside_tests' not in rec, 'module load belongs to the test file that ran it'
+    # C11 review: each file's own run, even one that ran no changed line, with its tests' outcomes
+    assert rec['per_test_traced'] == {'neg.test.js': {'exit_code': 0, 'outcomes': {'negative': 'pass'}},
+                                      'other.test.js': {'exit_code': 0, 'outcomes': {'unrelated': 'pass'}},
+                                      'pick.test.js': {'exit_code': 0, 'outcomes': {'positive': 'pass'}}}, rec
 
 
 @pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
@@ -690,3 +698,128 @@ def test_the_mission_measures_on_the_backend_and_image_its_verified_run_recorded
     verified = runtime.status(root, result['id'])['candidate']['executor']
     assert seen['expected_backend'] == verified['backend'] and seen['expected_image_digest'] == ''
     assert result['exercise']['backend'] == verified['backend'] and result['exercise']['assurance'] == 'FULL'
+
+
+# -- traced outcomes (C11 review): what the traced run itself saw, bounded and untrusted ---------------------------
+
+def test_traced_outcomes_are_cleaned_and_bounded(monkeypatch):
+    raw = {'t::a': 'pass', 't::b': 'fail', 't::c': 'weird', 7: 'pass', 'x' * 2000: 'pass', 't::d': 'skip'}
+    assert exercise._clean_outcomes(raw) == ({'t::a': 'pass', 't::b': 'fail', 't::d': 'skip'}, False)
+    assert exercise._clean_outcomes({'t::a': 'error'}) == ({'t::a': 'error'}, True)
+    assert exercise._clean_outcomes(None) == ({}, False)
+    monkeypatch.setattr(exercise, 'MAX_TRACED', 2)
+    out, whole = exercise._clean_outcomes({f't::{i}': 'pass' for i in range(5)})
+    assert len(out) == 2 and whole is False
+
+
+def _frozen_mission(root, tmp_path, after, reqs, command='python -m pytest', write='charge.py', task='Fix charge'):
+    from repo_ai.mission import coverage as cov
+    f = tmp_path / 'req.json'
+    f.write_text(__import__('json').dumps({'schema': cov.REQ_SCHEMA, 'requirements': reqs}))
+    planned = runtime.plan(root, task, agent='replay', write_paths=[write], execute_local=True, command=command)
+    planned['requirements'] = cov.freeze(f)
+    result = runtime.execute(root, planned, _replay(root, tmp_path, after) if write == 'charge.py' else after)
+    assert result['passport']['verdict'] == 'PASS', result
+    return cov.for_mission(root, result['id'])
+
+
+def test_a_test_that_behaves_differently_under_the_tracer_is_diverged_end_to_end(tmp_path):
+    """C11 review: a traced run that diverged from the verified run (pyjwt: a pre-existing failure) went unseen,
+    because exit 0 or 1 both counted as a complete run. Forced here: a test that fails only under the tracer."""
+    from repo_ai.mission import coverage as cov
+    root = _bug(tmp_path)
+    (root / 'test_charge.py').write_text(
+        'import __main__\nfrom charge import charge\n\ndef test_retry():\n    assert charge(10, 2) == 10\n\n'
+        'def test_untraced_only():\n    assert not getattr(__main__, "__file__", "").endswith("rai_trace.py")\n'
+        '    assert charge(1, 0) == 1\n\ndef test_constant():\n    assert 1 + 1 == 2\n')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'tests')
+    report = _frozen_mission(root, tmp_path, 'def charge(amount, retries):\n    return amount\n', [
+        {'text': 'retries do not charge twice', 'tests': ['test_charge.py::test_retry']},
+        {'text': 'a single charge works', 'kind': 'preserve', 'tests': ['test_charge.py::test_untraced_only']},
+        {'text': 'arithmetic', 'kind': 'preserve', 'tests': ['test_charge.py::test_constant']}])
+    rows = {r['text']: r for r in report['requirements']}
+    assert rows['a single charge works']['status'] == 'VERIFIED_PRESERVED', 'the verified run decides'
+    trace = rows['a single charge works']['changed_lines_trace'][0]
+    assert trace['trace'] == 'DIVERGED' and trace['traced_outcome'] == 'fail' and trace['verified_outcome'] == 'pass'
+    assert rows['retries do not charge twice']['changed_lines_trace'][0]['trace'] == 'TRACED'
+    assert rows['arithmetic']['changed_lines_trace'][0]['trace'] == 'TRACED_NONE'
+    by = report['changed_lines_by_requirement']
+    assert by['diverged_tests'] == ['test_charge.py::test_charge.py::test_untraced_only'] and by['traced_exit_code'] == 1
+    text = cov.render(report)
+    assert 'test_charge.py::test_untraced_only: DIVERGED (traced run: fail, verified run: pass)' in text
+    assert 'test_charge.py::test_constant: traced, ran no changed line' in text
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_a_node_file_that_behaves_differently_in_its_traced_run_is_diverged_end_to_end(tmp_path):
+    import hashlib
+    import json
+    root = tmp_path / 'njs'
+    root.mkdir()
+    (root / 'pick.js').write_text(JS_BEFORE)
+    (root / 'package.json').write_text('{"name": "njs", "version": "1.0.0"}\n')
+    for name, text in JS_TESTS.items():
+        (root / name).write_text(text)
+    # passes in the verified run, fails in a traced one (V8 coverage is on only there)
+    (root / 'cov.test.js').write_text(JS_HEAD + "t('uncovered only', () => assert.equal(process.env.NODE_V8_COVERAGE, "
+                                                "undefined));\n")
+    _git(root, 'init', '-q')
+    _git(root, 'add', '.')
+    _git(root, '-c', 'user.name=f', '-c', 'user.email=f@example.invalid', 'commit', '-qm', 'base')
+    proposal = tmp_path / 'p.json'
+    proposal.write_text(json.dumps({'schema': 'repo-ai.replay/1', 'label': 'f', 'edits': [
+        {'path': 'pick.js', 'before_sha256': hashlib.sha256(JS_BEFORE.encode()).hexdigest(), 'after': JS_AFTER}]}))
+    report = _frozen_mission(root, tmp_path, proposal, [
+        {'text': 'negative input is negated', 'tests': ['neg.test.js::negative']},
+        {'text': 'coverage off', 'kind': 'preserve', 'tests': ['cov.test.js::uncovered only']},
+        {'text': 'unrelated', 'kind': 'preserve', 'tests': ['other.test.js::unrelated']}],
+        command='node --test', write='pick.js', task='Make pick return magnitude')
+    rows = {r['text']: r for r in report['requirements']}
+    assert rows['negative input is negated']['changed_lines_trace'][0]['trace'] == 'TRACED'
+    diverged = rows['coverage off']['changed_lines_trace'][0]
+    assert diverged['trace'] == 'DIVERGED' and diverged['traced_outcome'] == 'fail', diverged
+    assert rows['coverage off']['status'] == 'VERIFIED_PRESERVED'
+    assert rows['unrelated']['changed_lines_trace'][0]['trace'] == 'TRACED_NONE'
+
+
+def test_a_test_that_runs_the_change_in_a_child_process_is_not_traced_none(tmp_path):
+    """Review of #174 (probe9): the subprocess runs the changed line where the tracer cannot see it."""
+    from repo_ai.mission import coverage as cov
+    test = ("import os, subprocess, sys\n\n\ndef test_neg():\n    out = subprocess.run([sys.executable, '-c', "
+            "'import m; print(m.pick(-2))'], capture_output=True, text=True, cwd=os.path.dirname(__file__))\n"
+            "    assert out.stdout.strip() == '2', out\n")
+    root = _repo(tmp_path, PY_AFTER, test)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['per_test'] == {} and rec['per_test_complete'] is False and rec['per_test_traced'] == {
+        'test_m.py::test_neg': 'pass'}, rec
+    t_neg = 'test_m.py::test_m.py::test_neg'
+    d = cov._validated({'schema': cov.REQ_SCHEMA, 'requirements': [{'text': 'neg', 'tests': [t_neg]}]})
+    out = cov.assess(d, {t_neg: 'fail'}, {t_neg: 'pass'}, verdict='PASS', freshness='fresh', exercise=rec)
+    assert out['requirements'][0]['changed_lines_trace'][0]['trace'] == 'TRACED_UNSEEN'
+    assert 'traced, ran no changed line' not in cov.render(out)
+
+
+def test_a_test_stopped_mid_call_is_not_recorded_as_passed_by_the_tracer(tmp_path):
+    """Review of #174: the setup report said "pass" before the call ended; `pytest.exit()` mid-call left it so."""
+    test = ("import pytest\nfrom m import pick\n\n\ndef test_pick():\n    assert pick(2) == 2\n\n\n"
+            "def test_stop():\n    pick(-1)\n    pytest.exit('stop here')\n")
+    root = _repo(tmp_path, PY_AFTER, test)
+    rec = exercise.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), per_test=True)
+    assert rec['per_test_traced'].get('test_m.py::test_pick') == 'pass', rec
+    assert 'test_m.py::test_stop' not in rec['per_test_traced'], rec
+
+
+@pytest.mark.skipif(shutil.which('node') is None, reason='node not installed')
+def test_node_traced_outcomes_have_a_total_budget_across_files(tmp_path, monkeypatch):
+    root = _node_repo(tmp_path)
+    monkeypatch.setattr(exercise, 'MAX_TRACED_TOTAL', 2)
+    rec = exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER), per_test=True)
+    runs = rec['per_test_traced']
+    kept = [f for f, r in runs.items() if 'outcomes' in r]
+    over = [f for f, r in runs.items() if 'outcomes_unavailable' in r]
+    assert len(kept) == 2 and len(over) == 1 and 'budget' in runs[over[0]]['outcomes_unavailable'], runs
+    assert rec['per_test_traced_complete'] is False
+    monkeypatch.setattr(exercise, 'MAX_TRACED_TOTAL', 50_000)
+    assert exercise.measure(root, 'node --test', _diff('pick.js', JS_BEFORE, JS_AFTER),
+                            per_test=True)['per_test_traced_complete'] is True

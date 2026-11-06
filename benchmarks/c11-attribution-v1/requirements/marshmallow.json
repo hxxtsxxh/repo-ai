@@ -1,0 +1,8 @@
+{
+ "schema": "repo-ai.requirements/1",
+ "requirements": [
+  {"text": "A Schema subclass that declares a field as a class (name = fields.String) raises TypeError('Field for \"name\" must be declared as a Field instance ...') when the class is defined, not when it is used (upstream #2772)", "kind": "change", "tests": ["tests/test_schema.py::test_fields_must_be_declared_as_instances"]},
+  {"text": "control (test right after the changed one, a regression test): a TypeError raised in on_bind_field propagates out of Schema() unchanged", "kind": "preserve", "tests": ["tests/test_schema.py::test_bind_field_does_not_swallow_typeerror"]},
+  {"text": "control (test right before the changed one; its schema is built in the function-scoped serialized_user fixture): a Function field dumps what its function returns", "kind": "preserve", "tests": ["tests/test_schema.py::test_function_field"]}
+ ]
+}

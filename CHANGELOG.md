@@ -11,6 +11,37 @@
   on macOS only (C16): 10.5 → 4.9 ms on a 2,000-entry virtualenv, 28 → 14 ms on a 4,000-entry one, 358 → 181 ms with
   a 50,000-entry `node_modules`; speed-v1 not re-run, no speed claim. Mission observations take the same single
   reading. `scripts/profile_verify.py --venv-extra PKG ...` profiles a larger virtualenv and reports its entry count.
+- Per-requirement changed lines now say whether the traced run behaved like the verified run (C11 review). Each
+  traced run records its exit code and the outcome of every test it ran (pytest: the per-test run; node: each test
+  file's run, through the same reporter as the verified run), bounded and read as untrusted. `coverage` compares
+  them with the verified run: a declared test whose traced outcome differs (or that did not run there, or, for node,
+  whose file had any test run differently) is shown as `DIVERGED (traced run: X, verified run: Y)`, and its credited
+  lines stay listed but are labelled informational only. Before, exit code 0 or 1 both counted as a complete run, so
+  a traced run that diverged (a pre-existing failure, as in pyjwt) went unseen. The status always comes from the
+  verified run.
+- A declared test that the traced run saw but that ran no changed line now reads "traced, ran no changed line",
+  distinct from "not traced" (or, for node, unavailable): before, both looked like an empty list. For pytest this is
+  said only when the per-test record is complete: the tracer does not follow child processes or xdist workers, so a
+  test that runs the change in a subprocess reads "traced; no changed line seen (child processes and early stops are
+  not traced)". A declared pytest test missing from a traced run whose outcomes were all kept did not run there and
+  reads DIVERGED. A traced pytest outcome is committed only at the test's teardown (a test stopped mid-call is not a
+  pass), and node's traced outcomes have a total budget of 50,000 across files. JSON: `changed_lines_trace` per
+  requirement (`TRACED`, `TRACED_NONE`, `TRACED_UNSEEN`, `DIVERGED`, `NOT_TRACED`, `UNAVAILABLE`, `OUTCOMES_UNKNOWN`),
+  and `diverged_tests` and `traced_exit_code` under `changed_lines_by_requirement`.
+- `repo-ai coverage` on a container mission can now verify requirements. A read-only command cannot re-check a
+  container image, so such a mission's freshness is always "not checked": `coverage` reported every requirement as
+  `UNVERIFIED_INCONCLUSIVE`, listed it under `follow_up_test_needed` and exited 2, even when its tests observed
+  fail-to-pass. When the image is the only open point and the mission passed (the rule `apply` and recovery already
+  use), the observed outcomes now count, and the report says so: an `Image:` line ("image not re-checked by this
+  read-only command; the observation ran in image <digest>"), `image_check` in the JSON (`checked: false` with the
+  image and digest), and a limit. Anything else that is not fresh still makes the headline `STALE` or `INCONCLUSIVE`.
+  (Found by the C11 attribution study on real projects.)
+- When there are no per-requirement changed lines, `coverage` now says why from what the mission recorded: the verdict
+  was not PASS (the change exercise runs only after a PASS), the measurement itself was UNMEASURED (with its reason),
+  no executable line changed, or no declaration was frozen with the mission. It used to always say "recorded for
+  pytest and node --test missions run with a frozen --requirements declaration", even for such a mission.
+- The `coverage` documentation no longer says Node missions and container runs are `not measured` (wrong since 0.12.5
+  and 0.12.8).
 
 ## 0.12.8 — requirement coverage for container runs; uninstall names what it removes
 
