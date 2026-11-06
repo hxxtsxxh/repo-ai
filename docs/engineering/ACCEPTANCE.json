@@ -470,14 +470,15 @@
   {
    "id": "C23",
    "title": "Community/reliability",
-   "status": "PASS_AT_0.9.0",
+   "status": "PASS",
    "owner": "principal",
-   "code_sha": null,
+   "code_sha": "0706700",
    "test_run": null,
    "environment": "macOS Darwin 25.5 arm64",
    "observations": [
     "community files, branch protection",
-    "2026-11-05 re-checked at 0.12.x: SECURITY.md (private advisories; supported-versions table was stale at 0.9.x, now 'the latest release'), CONTRIBUTING, CODE_OF_CONDUCT, SUPPORT, LICENSE, bug/feature issue forms and a PR template present; main protected (12 required checks, strict, admins included, no force-push); release and rollback procedure added as docs/RELEASING.md (immutable tags and files, PyPI yank, fix forward)"
+    "2026-11-05 re-checked at 0.12.x: SECURITY.md (private advisories; supported-versions table was stale at 0.9.x, now 'the latest release'), CONTRIBUTING, CODE_OF_CONDUCT, SUPPORT, LICENSE, bug/feature issue forms and a PR template present; main protected (12 required checks, strict, admins included, no force-push); release and rollback procedure added as docs/RELEASING.md (immutable tags and files, PyPI yank, fix forward)",
+    "2026-11-05 status moved from PASS_AT_0.9.0 to PASS on the 0.12.x re-check recorded above (community files, protected main, RELEASING.md with rollback)"
    ],
    "limits": [],
    "next_action": "keep; exercise the rollback procedure only if a release ever needs it"
