@@ -3,9 +3,9 @@ title: Quickstart (no agent)
 description: Index a repository, get task context, verify a change in a sandbox and read the evidence, without any coding agent.
 ---
 
-Everything on this page is offline and needs no agent or account. The output shown is real, captured from a small
-demo repository (a Python web app with three test files), trimmed where marked with `…`. Absolute paths are
-shortened to `.../demo`.
+Everything on this page is offline and needs no agent or account. The output shown is real, captured with repo-ai
+0.12.7 from a small demo repository (a Python web app with three test files) by `scripts/record_transcripts.py`,
+trimmed where marked with `…`. Absolute paths are shortened to `.../demo`.
 
 ## 1. Index the repository
 
@@ -15,6 +15,7 @@ repo-ai init --agent none
 ```
 
 ```text
+…
   repo-ai … — demo: 25 files, 212 LOC, 2 component(s) [Python, TypeScript]
   agents: none (docs only)   learning: suggest   skills: curated   layout: .repo-ai/context/
   changed 13 file(s)
@@ -22,6 +23,7 @@ repo-ai init --agent none
     create  .repo-ai/config.toml
     (+ 11 generated docs under .repo-ai/context/)
   rules: 0 active, 3 proposed (`repo-ai learn` to review)
+  ! tree-sitter not installed: non-Python symbol extraction uses the regex fallback. Install with `pip install 'repo-ai-cli[ast]'` (with pipx: `pipx inject repo-ai-cli 'tree-sitter>=0.23' 'tree-sitter-language-pack>=0.7,<1.0'`) for higher fidelity.
 ```
 
 `--agent none` builds the index and its generated docs under `.repo-ai/` (plus a `.gitignore` block). It writes no
@@ -42,7 +44,7 @@ Verify with: `make test`
 
 | # | File | Why | Look at |
 |---|------|-----|---------|
-| 1 | `app/auth/login.py` — Login flow: credential validation and token issuance. | keyword match, named like the task, auth path, imported by test_login.py | L1-24 (class LoginError, function validate_credentials) |
+| 1 | `app/auth/login.py` — Login flow: credential validation and token issuance. | keyword match, named like the task, auth path, imported by users.py | L1-24 (class LoginError, function validate_credentials) |
 | 2 | `tests/test_login.py` | keyword match, named like the task, auth path, imports login.py | whole file (8 lines) |
 | 3 | `web/src/components/LoginForm.tsx` | keyword match, named like the task, auth path, imported by LoginForm.test.tsx | L1-10 (function LoginForm) |
 …
@@ -66,28 +68,40 @@ direct importers (2):
   tests/test_login.py
 transitive importers (1):
   app/main.py  (depth 2)
+
 tests (1):
   tests/test_login.py  [import]
+
 routes in affected files:
   POST /login  app/api/users.py:10
   GET /users/{user_id}  app/api/users.py:15
-…
+
+CI / build files referencing this area:
+  Dockerfile
+  Makefile
+
+suggested commands (focused first; read before running):
+  pytest tests/test_login.py
+
 uncertainty:
   - static import graph only: dynamic imports, reflection, dependency injection, plugin registries and string-based routing are not visible
 ```
 
 ## 4. Make a change, then plan verification
 
-After editing `validate_credentials` in `app/auth/login.py`:
+After editing `validate_credentials` in `app/auth/login.py` (here: adding `email = (email or "").strip()` as its
+first line):
 
 ```sh
 repo-ai verify
 ```
 
 ```text
-repo-ai verify: 1 changed file against HEAD
+repo-ai verify: 2 changed files against HEAD
 
 changed
+  .gitignore  [data, added]
+      only repo-ai's own managed block in .gitignore changed
   app/auth/login.py  [source, modified, units: validate_credentials]
       evidence: 1 linked test file(s); runtime evidence none
 
@@ -97,9 +111,12 @@ selected 1 of 3 test files
 confidence: MEDIUM: some of the change rests on static evidence only (imports or file names), not on runtime evidence
 …
 test command: make test   (declared in the project's manifests, CI or docs)
+  - `make test` runs `pytest -q tests` (Makefile)
+…
 ```
 
-The plan is read-only: nothing runs.
+The plan is read-only: nothing runs. The demo had no `.gitignore`, so the one `init` created counts as a changed
+file; `verify` recognises that only repo-ai's own block is in it.
 
 ## 5. Run the tests, sandboxed
 
@@ -111,10 +128,11 @@ repo-ai verify --run
 verifying 1 selected test file(s) in the seatbelt sandbox, in a disposable copy of the working tree…
   command: make test  [declared in the project's manifests, CI or docs]
   isolated copy: 31 files (clone, 0.0s)
+  …
   pass    tests/test_login.py (0.4s)
 …
 PASSED: every selected test passed (the full suite was not run)
-  1 passed
+  1 selected test file(s) passed
   source tree unchanged
   ! no runtime evidence: selection rests on static imports only (`repo-ai verify --record` records which code each test executes)
   …
@@ -133,7 +151,7 @@ repo-ai evidence
 ```
 
 ```text
-verification evidence 2026-10-29T15:30:04-07:00  (seatbelt sandbox)
+verification evidence 2026-11-05T16:46:12-08:00  (seatbelt sandbox)
 applies to the current working tree
 
 PASSED: every selected test passed (the full suite was not run)
@@ -149,8 +167,9 @@ repo-ai review --changed     # change passport: what the diff touches, tests, ri
 repo-ai privacy audit        # every store repo-ai keeps, where, and whether it is committed
 ```
 
-`review` does not read `verify` evidence yet, so it may report "no recorded test run" right after a passing
-`verify --run`. It under-claims rather than over-claims.
+`review` does not read `verify` evidence yet: right after the passing `verify --run` above, it still lists
+"seen passing after the last edit (recorded sessions): none recorded" and, under blind spots, "no recorded test run
+after the last edit to these files". It under-claims rather than over-claims.
 
 ## 8. Remove it
 
@@ -165,6 +184,7 @@ repo-ai uninstall --dry-run
     delete  .repo-ai/context/ARCHITECTURE.md
 …
     delete  .repo-ai/state/evidence/  (repo-ai state)
+…
 ```
 
 Next: [Verify a change](/repo-ai/docs/verify/) explains every flag, and [Status matrix](/repo-ai/docs/status/) says
