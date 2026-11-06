@@ -37,9 +37,13 @@ HIDDEN = ("from money import add\nfrom units import scale\n\n\ndef test_add_more
           "def test_scale_more():\n    assert [scale(3, 0), scale(-2, 3), scale(0.5, 4), scale(7, 1)] == [0, -6, 2.0, 7]\n")
 
 
+TOKEN_ENV: dict[str, str] = {}  # amendment 2026-11-05: token_env from the owner's file, for repo-ai processes only
+
+
 def sh(argv: list[str], cwd: Path, **kw) -> subprocess.CompletedProcess:
     env = {k: v for k, v in os.environ.items() if k not in ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY",
                                                             "AI_AGENT", "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT")}
+    env.update(TOKEN_ENV)
     return subprocess.run(argv, cwd=cwd, capture_output=True, text=True, env=env, **kw)
 
 
@@ -206,7 +210,17 @@ def main() -> int:
     ap.add_argument("stage", choices=["run"])
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--repo-ai", dest="exe", required=True)
+    ap.add_argument("--token-file", type=Path, help="a file holding a `claude setup-token` token (owner-only "
+                    "permissions); passed to repo-ai as CLAUDE_CODE_OAUTH_TOKEN, never printed or recorded")
     args = ap.parse_args()
+    if args.token_file:
+        st = args.token_file.stat()
+        if st.st_mode & 0o077:
+            raise SystemExit("--token-file must not be readable by group or others (chmod 600)")
+        token = args.token_file.read_text().strip()
+        if not token or "\n" in token:
+            raise SystemExit("--token-file must hold one token on one line")
+        TOKEN_ENV["CLAUDE_CODE_OAUTH_TOKEN"] = token
     if Path.home().resolve() not in args.work.resolve().parents:
         raise SystemExit("--work must be under HOME")
     args.work.mkdir(parents=True, exist_ok=True)
