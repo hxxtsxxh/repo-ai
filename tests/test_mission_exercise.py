@@ -588,3 +588,54 @@ def test_node_assurance_holds_when_tests_start_node_child_processes(tmp_path):
     rec = exercise.measure(root, 'node --test', _diff('lib.js', before, after), timeout_s=300)
     assert rec['assurance'] == 'PARTIAL' and rec['unexercised'] == ['lib.js:2', 'lib.js:3'], rec
 
+
+
+# -- container backends --------------------------------------------------------------------------------------------
+
+def test_tracer_records_keep_only_canonical_relative_paths_and_integer_lines():
+    raw = {'m.py': [1, 2, True, '3'], '/work/m.py': [1], '../m.py': [1], 'a/../m.py': [1], 'n.py': 'nope'}
+    assert exercise._clean_files(raw) == {'m.py': [1, 2]}
+    assert exercise._clean_files(None) == {}
+    trace = {'per_test_complete': True, 'per_test': {'t::a': {'/work/m.py': [2], 'm.py': [3]}}}
+    assert exercise._per_test(trace, {'m.py': {2, 3}})[0] == {'t::a': ['m.py:3']}
+
+
+class _FakeContainer:
+    """A podman backend that reports an image digest and refuses to run anything."""
+
+    def __new__(cls, digest):
+        from repo_ai import sandbox
+
+        class Fake(sandbox.PodmanBackend):
+            def image_digest(self, toolchain):
+                return digest
+
+            def run(self, *a, **k):
+                raise AssertionError('nothing may run')
+        return Fake({'python': 'localhost/deps:1'})
+
+
+def test_a_container_image_is_pinned_to_its_digest_and_one_without_a_digest_is_refused(tmp_path):
+    from repo_ai.mission import verification
+    from repo_ai.verify.execute import Executor
+    ex = Executor(_FakeContainer('sha256:' + 'a' * 64), tmp_path, python='python', node='node')
+    pinned = verification.pin_container_image(ex, 'python')
+    assert pinned == {'image': 'localhost/deps:1@sha256:' + 'a' * 64, 'image_digest': 'sha256:' + 'a' * 64}
+    assert ex.backend.images['python'] == pinned['image']
+    with pytest.raises(ValueError, match='immutable identity'):
+        verification.pin_container_image(Executor(_FakeContainer('latest'), tmp_path, python='python', node='node'),
+                                         'python')
+
+
+def test_a_container_image_other_than_the_verified_runs_is_refused_before_anything_runs(tmp_path, monkeypatch):
+    from repo_ai.mission import exercise as ex_mod
+    from repo_ai.verify import execute, isolate
+    from repo_ai.verify.execute import Executor
+    root = _repo(tmp_path, PY_AFTER, PY_TEST)
+    monkeypatch.setattr(execute, 'get_executor', lambda root, *a, **k: Executor(
+        _FakeContainer('sha256:' + 'b' * 64), root, python='python', node='node'))
+    monkeypatch.setattr(isolate, 'materialize', lambda *a, **k: (_ for _ in ()).throw(AssertionError('no copy')))
+    rec = ex_mod.measure(root, 'python -m pytest -q', _diff('m.py', PY_BEFORE, PY_AFTER), sandbox_preference='podman',
+                         image='localhost/deps:1', expected_image_digest='sha256:' + 'a' * 64)
+    assert rec['assurance'] == 'UNMEASURED' and 'not the one the verified run used' in rec['reason'], rec
+    assert rec['backend'] == 'podman' and rec['container']['image_digest'] == 'sha256:' + 'b' * 64

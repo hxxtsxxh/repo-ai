@@ -1001,7 +1001,10 @@ def execute(root: Path, planned: dict[str, Any], replay_path: Path | None = None
                                                              project_root=root, sandbox_preference=contract.sandbox,
                                                              image=contract.image,
                                                              per_test=bool((planned or {}).get('requirements')),
-                                                             declared_files=declared)
+                                                             declared_files=declared,
+                                                             expected_image_digest=str(
+                                                                 (state['candidate'].get('executor') or {})
+                                                                 .get('image_digest') or ''))
                     except Exception as exc:  # noqa: BLE001 - measurement must never change a verdict
                         state['exercise'] = {'schema': 'repo-ai.change-exercise/1', 'assurance': 'UNMEASURED',
                                              'reason': type(exc).__name__, 'unexercised': [], 'changed_lines': 0}

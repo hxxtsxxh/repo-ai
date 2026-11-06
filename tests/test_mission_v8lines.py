@@ -283,7 +283,7 @@ def test_hostile_ranges_and_duplicate_entries_are_bounded_and_fast(tmp_path):
     import time
     text = 'x = 1;\n' * 2000
     n = u16(text)
-    started = time.monotonic()
+    started = time.process_time()  # CPU time: a loaded host must not fail the bound
     with pytest.raises(v8.Unavailable, match='more ranges than its text can hold'):
         v8.line_status(text, [tuple([(0, n, 1)] + [(i % n, n, i % 2) for i in range(v8.RANGES_PER_UNIT * n + 100)])])
     # identical ranges and identical entries count once (400k ranges: about what the byte cap lets through)
@@ -298,7 +298,7 @@ def test_hostile_ranges_and_duplicate_entries_are_bounded_and_fast(tmp_path):
         a = rnd.randrange(n)
         ranges.append((a, rnd.randrange(a, n + 1), rnd.randrange(2)))
     v8.line_status(text, [tuple(ranges)])
-    assert time.monotonic() - started < 1.0
+    assert time.process_time() - started < 1.0
 
 
 def test_many_entries_fold_into_one_map_and_total_ranges_are_bounded(tmp_path, monkeypatch):
@@ -375,3 +375,53 @@ def test_a_regex_right_after_a_condition_is_not_a_division_but_after_other_paren
             'const e = 5; // */\n')            # 6
     assert v8.executable_lines(text) == {1, 2, 3, 4, 5, 6}
     assert sum(v8.code_mask(text)[text.index('/* c */'):text.index('/* c */') + 7]) == 0
+
+
+# -- containers: paths the sandbox reports are mapped back to repo-relative paths exactly ---------------------------
+
+@pytest.mark.parametrize('path, expected', [
+    ('/work/pick.js', 'pick.js'),
+    ('/work/src/a b/m.js', 'src/a b/m.js'),
+    ('/work', None),                       # the root itself is no file
+    ('/work/', None),
+    ('/work2/pick.js', None),              # a sibling that shares the prefix text
+    ('/workpick.js', None),
+    ('/work/../etc/passwd', None),         # resolves outside
+    ('/work/a/../pick.js', None),          # would resolve inside, but is not canonical: refused, never normalised
+    ('/work/./pick.js', None),
+    ('/work//pick.js', None),
+    ('/work/pick.js/', None),
+    ('/work/a\\b.js', None),
+    ('/work/a\x00.js', None),
+    ('work/pick.js', None),
+    ('/elsewhere/pick.js', None),
+])
+def test_an_in_container_path_maps_only_when_strictly_inside_the_workspace(path, expected):
+    assert v8.inside_rel(path, '/work') == expected
+    assert v8.inside_rel(path, '/work/') == expected
+
+
+def test_a_host_sandbox_path_maps_the_same_way_and_a_relative_root_maps_nothing():
+    assert v8.inside_rel('/private/tmp/ws-1/pick.js', '/private/tmp/ws-1') == 'pick.js'
+    assert v8.inside_rel('/private/tmp/ws-10/pick.js', '/private/tmp/ws-1') is None
+    assert v8.inside_rel('/work/pick.js', 'work') is None
+
+
+@pytest.mark.parametrize('key, expected', [
+    ('m.py', 'm.py'), ('src/pkg/m.py', 'src/pkg/m.py'),
+    ('/work/m.py', None), ('../m.py', None), ('a/../m.py', None), ('./m.py', None), ('a//m.py', None),
+    ('', None), ('a\\m.py', None), (None, None), (3, None),
+])
+def test_a_tracer_key_is_used_only_as_a_canonical_relative_path(key, expected):
+    assert v8.safe_rel(key) == expected
+
+
+def test_container_coverage_urls_map_to_the_workspace_and_others_are_ignored():
+    def entry(url):
+        return {'url': url, 'functions': [{'ranges': [{'startOffset': 0, 'endOffset': 3, 'count': 1}]}]}
+    urls = ['file:///work/pick.js', 'file:///work/%2e%2e/work/pick.js', 'file:///work/./pick.js',
+            'file://host/work/pick.js', 'file:///work/node_modules/x/pick.js', 'file:///work2/pick.js',
+            'file:///work/pick.js?v=2']
+    found = v8.scripts_for([[entry(u) for u in urls]], '/work', {'pick.js'})
+    assert found == {'pick.js': [((0, 3, 1),)]}, 'only the exact paths (the query is the same file) count'
+    assert v8.scripts_for([[entry('file:///work/%2e%2e/work/pick.js')]], '/work', {'pick.js'}) == {}
