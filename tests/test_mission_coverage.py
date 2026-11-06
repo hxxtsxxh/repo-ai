@@ -381,3 +381,208 @@ def test_a_pytest_test_left_out_of_a_full_record_is_unavailable_not_zero_lines()
     [row] = out['requirements']
     assert row['changed_lines_unavailable'] == {'m_test.py::test_pick': 'its changed lines were cut from the record'}
     assert 'changed lines unavailable for its test m_test.py::test_pick' in cov.render(out)
+
+
+# -- container missions: the image is the only thing a read-only command cannot check -------------------------------
+
+DIGEST = 'sha256:' + 'c' * 64
+
+
+def _state(**over):
+    from repo_ai.mission.runtime import IMAGE_UNCHECKED
+    decl_ = cov._validated({'schema': cov.REQ_SCHEMA, 'requirements': [
+        {'text': 'negative input is negated', 'kind': 'change', 'tests': ['m_test.py::test_neg']}]})
+    state = {'id': 'm1', 'state': 'COMPLETE', 'passport': {'verdict': 'PASS'}, 'freshness': 'not checked',
+             'freshness_reasons': [IMAGE_UNCHECKED], 'effective_verdict': 'INCONCLUSIVE',
+             'baseline': {'outcomes': {T_NEG: 'fail'}},
+             'candidate': {'outcomes': {T_NEG: 'pass'}, 'executor': {
+                 'backend': 'podman', 'image': 'localhost/deps:1@' + DIGEST, 'image_digest': DIGEST}},
+             'exercise': dict(C11_EXERCISE),
+             'plan': {'requirements': {'requirements': decl_['requirements'], 'sha256': decl_['sha256']}}}
+    state.update(over)
+    return state
+
+
+def _for(monkeypatch, tmp_path, state, decl_=None):
+    from repo_ai.mission import runtime
+    monkeypatch.setattr(runtime, 'status', lambda root, mission: state)
+    return cov.for_mission(tmp_path, 'm1', decl_)
+
+
+def test_a_container_mission_whose_only_open_point_is_the_image_reaches_its_observed_status(monkeypatch, tmp_path):
+    """C11 study: the image of a container mission is never re-checked by a read-only command, so every requirement
+    was UNVERIFIED_INCONCLUSIVE and the headline INCONCLUSIVE even when its tests observed fail-to-pass."""
+    out = _for(monkeypatch, tmp_path, _state())
+    [row] = out['requirements']
+    assert row['status'] == 'VERIFIED_FAIL_TO_PASS' and out['headline'] == 'ACCEPTANCE_MAPPED_ALL', out
+    assert out['follow_up_test_needed'] == [] and out['freshness'] == 'not checked'
+    assert out['image_check'] == {'checked': False, 'image': 'localhost/deps:1@' + DIGEST, 'image_digest': DIGEST,
+                                  'note': f'image not re-checked by this read-only command; the observation ran in '
+                                          f'image {DIGEST}'}
+    text = cov.render(out)
+    assert f'Image: image not re-checked by this read-only command; the observation ran in image {DIGEST}' in text
+    assert any('was not re-checked' in x and DIGEST in x for x in out['limits'])
+
+
+@pytest.mark.parametrize('over, headline', [
+    ({'freshness_reasons': ['container image freshness was not checked by this read-only command',
+                            'source changed']}, 'INCONCLUSIVE'),                     # something else is open too
+    ({'passport': {'verdict': 'FAIL'}, 'effective_verdict': 'INCONCLUSIVE'}, 'INCONCLUSIVE'),  # it did not pass
+    ({'state': 'RUNNING'}, 'INCONCLUSIVE'),
+    ({'freshness': 'stale', 'freshness_reasons': ['source changed'], 'effective_verdict': 'STALE'}, 'STALE'),
+])
+def test_anything_beyond_an_unchecked_image_keeps_the_mission_unverified(monkeypatch, tmp_path, over, headline):
+    out = _for(monkeypatch, tmp_path, _state(**over))
+    assert out['headline'] == headline and out['requirements'][0]['status'].startswith('UNVERIFIED_'), out
+    assert 'image_check' not in out and 'Image:' not in cov.render(out)
+
+
+def test_not_measured_names_the_real_reason(monkeypatch, tmp_path):
+    """C11 study (marshmallow): a frozen declaration but a verdict that was not PASS read as "recorded for pytest and
+    node --test missions run with a frozen declaration"."""
+    no_pass = _state(passport={'verdict': 'FAIL'}, freshness='fresh', freshness_reasons=[], effective_verdict='FAIL')
+    del no_pass['exercise']
+    reason = _for(monkeypatch, tmp_path, no_pass)['changed_lines_by_requirement']['reason']
+    assert reason == "not measured: the change exercise runs only after a PASS verdict, and this mission's verdict was FAIL"
+    unmeasured = _state(exercise={'assurance': 'UNMEASURED', 'reason': 'measurement run timed out', 'changed_lines': 0})
+    assert _for(monkeypatch, tmp_path, unmeasured)['changed_lines_by_requirement']['reason'] == (
+        'not measured: the change-exercise measurement itself was UNMEASURED (measurement run timed out)')
+    no_code = _state(exercise={'assurance': 'NO_EXECUTABLE_CHANGE', 'changed_lines': 0})
+    assert _for(monkeypatch, tmp_path, no_code)['changed_lines_by_requirement']['reason'] == \
+        'not measured: no executable line changed'
+    unfrozen = _state(plan={}, exercise={'assurance': 'FULL', 'changed_lines': 2})
+    supplied = decl(req('negative input is negated', ['m_test.py::test_neg']))
+    assert 'no requirements declaration was frozen' in _for(monkeypatch, tmp_path, unfrozen, supplied)[
+        'changed_lines_by_requirement']['reason']
+    own = _state(exercise={'assurance': 'FULL', 'changed_lines': 2, 'per_test_reason': 'no changed python file'})
+    assert _for(monkeypatch, tmp_path, own)['changed_lines_by_requirement']['reason'] == \
+        'not measured: no changed python file', "the exercise record's own reason wins"
+
+
+def test_the_image_only_rule_needs_a_content_digest(monkeypatch, tmp_path):
+    """Review of the image-only rule: "pinned" must hold, so a record without a sha256 digest gets no observed status."""
+    for digest in ('unknown', '', 'sha256:short', None):
+        state = _state()
+        state['candidate']['executor']['image_digest'] = digest
+        out = _for(monkeypatch, tmp_path, state)
+        assert out['headline'] != 'ACCEPTANCE_MAPPED_ALL' and 'image_check' not in out, (digest, out['headline'])
+
+
+def test_no_frozen_declaration_is_named_first_among_not_measured_reasons():
+    for exercise, state in (({'assurance': 'UNMEASURED', 'reason': 'x'}, {'exercise': {}}),
+                            ({}, {'passport': {'verdict': 'FAIL'}})):
+        why = cov._why_no_per_test(state, exercise, frozen=False)
+        assert why.startswith('no requirements declaration was frozen'), why
+
+
+# -- traced outcomes: did the traced run behave like the verified run, and which declared tests did it see? --------
+
+T_ZERO = 'm_test.py::m_test.py::test_zero'
+
+
+def _traced(**over):
+    ex = {**C11_EXERCISE, 'per_test_granularity': 'test', 'per_test_exit_code': 0, 'per_test_traced_complete': True,
+          'per_test_traced': {'m_test.py::test_neg': 'pass', 'm_test.py::test_pick': 'pass',
+                              'm_test.py::test_zero': 'pass'}}
+    ex.update(over)
+    return ex
+
+
+def test_a_declared_test_traced_that_ran_no_changed_line_is_a_positive_nothing():
+    d = decl(req('zero stays zero', ['m_test.py::test_zero'], kind='preserve'),
+             req('other', ['m_test.py::test_other'], kind='preserve'))
+    out = cov.assess(d, {T_ZERO: 'pass', T_OTHER: 'pass'}, {T_ZERO: 'pass', T_OTHER: 'pass'}, verdict='PASS',
+                     freshness='fresh', exercise=_traced(per_test_traced_complete=False))
+    rows = {r['text']: r for r in out['requirements']}
+    assert rows['zero stays zero']['changed_lines_trace'] == [
+        {'test': T_ZERO, 'trace': 'TRACED_NONE', 'traced_outcome': 'pass', 'verified_outcome': 'pass'}]
+    assert rows['other']['changed_lines_trace'] == [
+        {'test': T_OTHER, 'trace': 'NOT_TRACED', 'traced_outcome': None, 'verified_outcome': 'pass'}]
+    text = cov.render(out)
+    assert 'm_test.py::test_zero: traced, ran no changed line' in text
+    assert 'm_test.py::test_other: not traced' in text
+
+
+def test_a_declared_test_whose_traced_outcome_differs_is_diverged_and_its_lines_labelled():
+    d = decl(req('negative input is negated', ['m_test.py::test_neg']))
+    ex = _traced(per_test_exit_code=1, per_test_traced={'m_test.py::test_neg': 'fail', 'm_test.py::test_pick': 'pass'})
+    out = cov.assess(d, {T_NEG: 'fail'}, {T_NEG: 'pass'}, verdict='PASS', freshness='fresh', exercise=ex)
+    [row] = out['requirements']
+    assert row['status'] == 'VERIFIED_FAIL_TO_PASS', 'the verified run decides the status, never the traced one'
+    assert row['changed_lines_run'] == ['m.py:2', 'm.py:3'], 'kept, not dropped'
+    assert row['changed_lines_trace'] == [
+        {'test': T_NEG, 'trace': 'DIVERGED', 'traced_outcome': 'fail', 'verified_outcome': 'pass'}]
+    assert row['changed_lines_diverged'] is True
+    by = out['changed_lines_by_requirement']
+    assert by['diverged_tests'] == [T_NEG] and by['traced_exit_code'] == 1
+    text = cov.render(out)
+    assert ('m_test.py::test_neg: DIVERGED (traced run: fail, verified run: pass); its lines are informational '
+            'only') in text
+
+
+def test_node_trace_is_per_file_and_a_file_whose_other_test_diverged_is_diverged_too():
+    ex = {**NODE_EXERCISE, 'per_test_traced': {
+        'neg.test.js': {'exit_code': 0, 'outcomes': {'negative': 'pass'}},
+        'pick.test.js': {'exit_code': 1, 'outcomes': {'positive': 'pass', 'positive again': 'fail'}},
+        'deep/other.test.js': {'exit_code': 0, 'outcomes': {'suite > unrelated': 'pass'}}}}
+    d = decl(req('negative input is negated', ['neg.test.js::negative']),
+             req('positive input unchanged', ['pick.test.js::positive'], kind='preserve'),
+             req('unrelated still works', [N_OTHER], kind='preserve'))
+    out = cov.assess(d, N_BASE, N_CAND, verdict='PASS', freshness='fresh', exercise=ex)
+    rows = {r['text']: r for r in out['requirements']}
+    assert rows['negative input is negated']['changed_lines_trace'][0]['trace'] == 'TRACED'
+    pos = rows['positive input unchanged']['changed_lines_trace'][0]
+    assert pos['trace'] == 'DIVERGED' and pos['traced_outcome'] == 'pass' and pos['diverged_in_file'] == [
+        'pick.test.js::positive again'], pos
+    assert rows['unrelated still works']['changed_lines_trace'][0]['trace'] == 'TRACED_NONE'
+    assert 'diverged in its file run: pick.test.js::positive again' in cov.render(out)
+
+
+def test_a_test_missing_from_its_traced_file_run_is_diverged_not_none():
+    ex = {**NODE_EXERCISE, 'per_test_traced': {'neg.test.js': {'exit_code': 0, 'outcomes': {}}}}
+    out = cov.assess(decl(req('negative input is negated', ['neg.test.js::negative'])), N_BASE, N_CAND,
+                     verdict='PASS', freshness='fresh', exercise=ex)
+    trace = out['requirements'][0]['changed_lines_trace'][0]
+    assert trace['trace'] == 'DIVERGED' and trace['traced_outcome'] is None, trace
+
+
+def test_records_without_traced_outcomes_show_no_trace_and_malformed_ones_are_ignored():
+    d = decl(req('negative input is negated', ['m_test.py::test_neg']))
+    old = cov.assess(d, {T_NEG: 'fail'}, {T_NEG: 'pass'}, verdict='PASS', freshness='fresh', exercise=C11_EXERCISE)
+    assert 'changed_lines_trace' not in old['requirements'][0]
+    bad = cov.assess(d, {T_NEG: 'fail'}, {T_NEG: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise=_traced(per_test_traced={'m_test.py::test_neg': 'weird', 7: 'pass'}))
+    assert bad['requirements'][0]['changed_lines_trace'][0]['trace'] == 'NOT_TRACED'
+
+
+def test_node_outcomes_that_could_not_be_read_are_unknown_not_diverged_or_fine():
+    ex = {**NODE_EXERCISE, 'per_test_traced': {'neg.test.js': {'exit_code': 0, 'outcomes_unavailable': 'no report'}}}
+    out = cov.assess(decl(req('negative input is negated', ['neg.test.js::negative'])), N_BASE, N_CAND,
+                     verdict='PASS', freshness='fresh', exercise=ex)
+    assert out['requirements'][0]['changed_lines_trace'][0]['trace'] == 'OUTCOMES_UNKNOWN'
+    assert "test outcomes could not be read (no report)" in cov.render(out)
+
+
+def test_an_incomplete_pytest_record_never_claims_a_traced_test_ran_no_changed_line():
+    """Review of #174: a test that runs the change in a child process (or under xdist) relays its outcome but its
+    lines are invisible to the tracer; the record is incomplete, so "ran no changed line" would be false."""
+    d = decl(req('zero stays zero', ['m_test.py::test_zero'], kind='preserve'))
+    out = cov.assess(d, {T_ZERO: 'pass'}, {T_ZERO: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise=_traced(per_test_complete=False))
+    trace = out['requirements'][0]['changed_lines_trace'][0]
+    assert trace['trace'] == 'TRACED_UNSEEN', trace
+    text = cov.render(out)
+    assert 'm_test.py::test_zero: traced; no changed line seen (child processes and early stops are not traced)' in text
+    assert 'traced, ran no changed line' not in text
+
+
+def test_a_pytest_test_absent_from_a_complete_traced_run_is_diverged():
+    """Review of #174: the traced run kept every test it saw; a declared test missing from it did not run there."""
+    d = decl(req('other', ['m_test.py::test_other'], kind='preserve'))
+    out = cov.assess(d, {T_OTHER: 'pass'}, {T_OTHER: 'pass'}, verdict='PASS', freshness='fresh', exercise=_traced())
+    trace = out['requirements'][0]['changed_lines_trace'][0]
+    assert trace['trace'] == 'DIVERGED' and trace['traced_outcome'] is None, trace
+    assert 'DIVERGED (traced run: did not run, verified run: pass)' in cov.render(out)
+    cut = cov.assess(d, {T_OTHER: 'pass'}, {T_OTHER: 'pass'}, verdict='PASS', freshness='fresh',
+                     exercise=_traced(per_test_traced_complete=False))
+    assert cut['requirements'][0]['changed_lines_trace'][0]['trace'] == 'NOT_TRACED', 'a cut record may just miss it'
