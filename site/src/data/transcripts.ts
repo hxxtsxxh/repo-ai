@@ -1,12 +1,19 @@
 /**
  * Terminal walkthrough for the landing page.
  *
- * Every line below was captured on 2026-10-29 by running repo-ai 0.9.0.dev4 (the
- * 0.9.0 release candidate) on macOS, in a throwaway git repository copied from
- * tests/fixtures/pyweb. The only edits: lines removed (marked with a `trim`
- * line), absolute paths shortened to `…/`, and a home directory shown as `~`.
- * The change verified in steps 4–5 adds `email = (email or "").strip()` to
- * app/auth/login.py.
+ * Every line below was captured on 2026-11-05 by running repo-ai 0.12.7 (PyPI) on
+ * macOS, in a throwaway git repository copied from tests/fixtures/pyweb, with
+ * `scripts/record_transcripts.py` (temporary HOME and REPO_AI_HOME; the demo's
+ * tests ran under Python 3.12 with pytest and PyJWT). The raw record, with exit
+ * codes and durations, is benchmarks/site-transcripts/transcripts-0.12.7.jsonl.
+ * The only edits: lines removed (marked with a `trim` line), absolute paths
+ * shortened to `…/`, and a home directory shown as `~`.
+ * `do --dry-run` and `agents list` ran on the clean checkout, before the change;
+ * `agents list` reflects the agent CLIs on the recording machine's PATH.
+ * The change verified in the verify steps adds `email = (email or "").strip()`
+ * at the top of validate_credentials in app/auth/login.py.
+ * To refresh, re-run the script against the release and copy its lines; never
+ * type or alter output by hand.
  */
 export type LineKind = 'cmd' | 'out' | 'dim' | 'head' | 'pass' | 'warn' | 'fail' | 'trim';
 export interface Line {
@@ -32,22 +39,22 @@ export const transcripts: Transcript[] = [
     summary: 'Index the repository offline. No agent wiring with --agent none.',
     lines: [
       { k: 'cmd', t: 'repo-ai init --agent none' },
-      d('[  0.01s] repo-ai 0.9.0.dev4 — initialising …/demo'),
-      d('[  0.02s] scanning …/demo'),
-      d('[  0.03s] scan complete: 25 indexable files (30 seen, 6 skipped, 0 unchanged)'),
-      d('[  0.03s] parsing 25 files (stdlib ast + regex fallback)'),
-      d('[  0.03s] found 5 manifests, 10 declared dependencies'),
-      d('[  0.44s] git: main@72990b0, 1 commits, 1 contributors'),
-      d('[  0.45s] analysis complete in 0.4s'),
+      d('[  0.00s] repo-ai 0.12.7 — initialising …/demo'),
+      d('[  0.01s] scanning …/demo'),
+      d('[  0.02s] scan complete: 25 indexable files (30 seen, 6 skipped, 0 unchanged)'),
+      d('[  0.02s] parsing 25 files (stdlib ast + regex fallback)'),
+      d('[  0.02s] found 5 manifests, 10 declared dependencies'),
+      d('[  0.31s] git: main@3685d52, 1 commits, 1 contributors'),
+      d('[  0.32s] analysis complete in 0.3s'),
       o(''),
-      h('  repo-ai 0.9.0.dev4 — demo: 25 files, 212 LOC, 2 component(s) [Python, TypeScript]'),
+      h('  repo-ai 0.12.7 — demo: 25 files, 212 LOC, 2 component(s) [Python, TypeScript]'),
       o('  agents: none (docs only)   learning: suggest   skills: curated   layout: .repo-ai/context/'),
       o('  changed 13 file(s)'),
       o('    create  .gitignore'),
       o('    create  .repo-ai/config.toml'),
       o('    (+ 11 generated docs under .repo-ai/context/)'),
-      o("  rules: 0 active, 3 proposed (`repo-ai learn` to review)"),
-      { k: 'warn', t: "  ! tree-sitter not installed: non-Python symbol extraction uses the regex fallback. Install with `pip install 'repo-ai-cli[ast]'` for higher fidelity." },
+      o('  rules: 0 active, 3 proposed (`repo-ai learn` to review)'),
+      { k: 'warn', t: "  ! tree-sitter not installed: non-Python symbol extraction uses the regex fallback. Install with `pip install 'repo-ai-cli[ast]'` (with pipx: `pipx inject repo-ai-cli 'tree-sitter>=0.23' 'tree-sitter-language-pack>=0.7,<1.0'`) for higher fidelity." },
     ],
   },
   {
@@ -63,7 +70,7 @@ export const transcripts: Transcript[] = [
       o(''),
       o('| # | File | Why | Look at |'),
       o('|---|------|-----|---------|'),
-      o('| 1 | `app/auth/login.py` — Login flow: credential validation and token issuance. | keyword match, named like the task, auth path, imported by test_login.py | L1-24 (class LoginError, function validate_credentials) |'),
+      o('| 1 | `app/auth/login.py` — Login flow: credential validation and token issuance. | keyword match, named like the task, auth path, imported by users.py | L1-24 (class LoginError, function validate_credentials) |'),
       o('| 2 | `tests/test_login.py` | keyword match, named like the task, auth path, imports login.py | whole file (8 lines) |'),
       o('| 3 | `web/src/components/LoginForm.tsx` | keyword match, named like the task, auth path, imported by LoginForm.test.tsx | L1-10 (function LoginForm) |'),
       trim('rows 4–9 and the @-mentions line trimmed'),
@@ -76,9 +83,11 @@ export const transcripts: Transcript[] = [
     summary: 'Read-only plan: what the change touched and which tests can show a break.',
     lines: [
       { k: 'cmd', t: 'repo-ai verify' },
-      h('repo-ai verify: 1 changed file against HEAD'),
+      h('repo-ai verify: 2 changed files against HEAD'),
       o(''),
       o('changed'),
+      o('  .gitignore  [data, added]'),
+      o("      only repo-ai's own managed block in .gitignore changed"),
       o('  app/auth/login.py  [source, modified, units: validate_credentials]'),
       o('      evidence: 1 linked test file(s); runtime evidence none'),
       o(''),
@@ -86,12 +95,15 @@ export const transcripts: Transcript[] = [
       o('  tests/test_login.py  [static] imports app/auth/login.py'),
       o(''),
       { k: 'warn', t: 'confidence: MEDIUM: some of the change rests on static evidence only (imports or file names), not on runtime evidence' },
-      trim('uncertainty notes trimmed'),
+      trim('uncertainty notes and test command trimmed'),
       o('run'),
       o('  targeted:   python -m pytest -q -p no:cacheprovider tests/test_login.py'),
       o('  full suite: python -m pytest -q tests   (before merging)'),
       o('  sandboxed:  repo-ai verify --run   (--full runs the full suite instead)'),
+      o('              tests run in a disposable copy of the working tree, never in it; failures are re-checked against the base'),
       o('  sharper:    repo-ai verify --record   (once: records which code each test runs)'),
+      o(''),
+      o('evidence: none yet for this repository'),
     ],
   },
   {
@@ -108,7 +120,7 @@ export const transcripts: Transcript[] = [
       trim('3 summary lines trimmed'),
       o(''),
       { k: 'pass', t: 'PASSED: every selected test passed (the full suite was not run)' },
-      o('  1 passed'),
+      o('  1 selected test file(s) passed'),
       o('  source tree unchanged'),
       { k: 'warn', t: '  ! no runtime evidence: selection rests on static imports only (`repo-ai verify --record` records which code each test executes)' },
       trim('one more caveat trimmed'),
@@ -125,8 +137,8 @@ export const transcripts: Transcript[] = [
       { k: 'warn', t: 'ASK_APPROVAL: External execution requires verified provider policy, explicit disclosure and budget authorization; planning only; trivial change classification refused unnecessary specialist fan-out' },
       h('Planning only; no provider or tests invoked.'),
       o('  app/auth/login.py: keyword match; named like the task; auth path'),
-      o('  web/src/components/LoginForm.tsx: keyword match; named like the task; auth path'),
       o('  app/api/users.py: keyword match; auth path; imports login.py'),
+      o('  web/src/components/LoginForm.tsx: keyword match; named like the task; auth path'),
       trim('3 more files trimmed'),
       o('Unknowns: static import graph only: dynamic imports, reflection, dependency injection, plugin registries and string-based routing are not visible'),
       o('Orchestration (trivial): merge_owner=controller'),
@@ -142,6 +154,8 @@ export const transcripts: Transcript[] = [
       o('claude: PLANNING_ONLY | version not probed | auth UNKNOWN'),
       o('bob: PLANNING_ONLY | version not probed | auth UNKNOWN'),
       o('agy: PLANNING_ONLY | version not probed | auth UNKNOWN'),
+      o('opencode: PLANNING_ONLY | version not probed | auth UNKNOWN'),
+      o('opencode-acp: PLANNING_ONLY | version not probed | auth UNKNOWN'),
       h('No model was invoked. Installed executable does not establish authenticated runnable availability.'),
     ],
   },

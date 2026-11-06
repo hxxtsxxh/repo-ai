@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Site: the landing page's terminal walkthrough and the quickstart's output are re-captured from repo-ai 0.12.7
+  (PyPI); they were 0.9.0.dev4 output. The new `scripts/record_transcripts.py` records them in a temporary copy of
+  `tests/fixtures/pyweb` with a temporary HOME and REPO_AI_HOME; the raw record (argv, exit code, duration, output)
+  is `benchmarks/site-transcripts/transcripts-0.12.7.jsonl`.
+
 ## 0.12.7 — an edit no test runs is never reported as verified
 
 - Fixed (found reviewing #152, older than it): after `verify --record`, an edit to a file named like a test that
