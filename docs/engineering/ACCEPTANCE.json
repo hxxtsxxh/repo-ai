@@ -1,514 +1,514 @@
 {
-  "schema": "repo-ai.omniprovider-acceptance/1",
-  "updated": "2026-11-06",
-  "statuses": [
-    "PASS",
-    "PASS_AT_0.9.0",
-    "EXPERIMENTAL",
-    "NOT_YET_DEMONSTRATED",
-    "NEGATIVE_RESULT",
-    "INCONCLUSIVE",
-    "BLOCKED_EXTERNAL",
-    "NOT_TESTED",
-    "NOT_STARTED",
-    "PASS_WITH_LIMITS",
-    "NEGATIVE_RESULT_HISTORICAL",
-    "IN_PROGRESS"
-  ],
-  "gates": [
-    {
-      "id": "C01",
-      "title": "Public alignment",
-      "status": "PASS",
-      "owner": "principal",
-      "code_sha": "f53d027",
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "public main = v0.10.0; PyPI repo-ai-cli 0.10.0; GitHub release assets identical to PyPI; SHA256SUMS OK; attestation verified",
-        "2026-11-05 history rewrite at the owner's request (docs/engineering/HISTORY-REWRITE-2026-11-05.md): a corporate e-mail address on 86 commits and 3 tags replaced with the owner's personal address; trees, messages, names and dates unchanged; 513 SHAs changed (map in that file), v0.11.5-v0.12.6 tags moved to identical trees, PyPI and release files unchanged; 160 merged branches deleted; read-only PR refs await GitHub Support"
-      ],
-      "limits": [],
-      "next_action": "site PR #5 deploys the matching release facts"
-    },
-    {
-      "id": "C02",
-      "title": "Zero-provider onboarding",
-      "status": "PASS",
-      "owner": "principal",
-      "code_sha": "f53d027",
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "release_smoke.sh from PyPI on macOS: SMOKE PASS; release workflow smoke on fresh ubuntu/windows/macos runners"
-      ],
-      "limits": [],
-      "next_action": "re-run on next release wheel"
-    },
-    {
-      "id": "C03",
-      "title": "Claude provider",
-      "status": "PASS",
-      "owner": "principal",
-      "code_sha": "f53d027",
-      "test_run": "tests/test_provider_claude_isolation.py",
-      "environment": "macOS Darwin 25.5 arm64, seatbelt; Claude Code 2.1.314 dedicated_config (0.10.0 journeys), 2.1.316 token_env (2026-11-01); Linux: ubuntu:24.04 container on podman (arm64), bwrap, Claude Code 2.1.316 token_env (2026-11-01)",
-      "observations": [
-        "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code",
-        "2026-11-01 token_env live check on the published 0.11.6 (Claude Code 2.1.316, token_env with only CLAUDE_CODE_OAUTH_TOKEN set in the running shell, ANTHROPIC_API_KEY unset; scratch HOME and no keychain by design): repo-ai do on a toy repository with a seeded bug: PASS, assurance FULL, full suite passed, correct one-line diff, tools Read/Edit only, no denied action, $0.0145 notional (docs/engineering/LIVE-SPEND-2026-11.md). The record does not name the mode in 0.11.6 (plan() picks token_env when a token variable is set; the variable was checked by presence); the mission record names the mode and variable names from the next release",
-        "2026-11-01 Linux live (ubuntu:24.04 container on the owner's podman machine, repo-ai 0.11.6 from PyPI, bubblewrap, Claude Code 2.1.316; token_env by setup, the 0.11.6 record names neither the mode nor the invocation flags): the toy journey PASS, exercise assurance FULL, LIVE_CANDIDATE_VERIFIED, $0.0129; a read-boundary probe (Read only): a Read outside the workspace refused (1 recorded denial, tool name only), and the model reported that its Read tool refused /proc/self/environ (not recorded); no token-shaped string in any output (docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md)",
-        "2026-11-05 the dedicated_config login was revoked server-side for the second time in about a day: a fresh login served a session successfully, then its first token refresh ~20 h later (no repo-ai use in between) was refused as revoked, as on 2026-11-04; `claude auth status` stays loggedIn and Claude Code writes a plaintext .credentials.json with a zeroed access expiry. Cause unknown from here; dedicated_config is not reliable for unattended studies; token_env (setup-token) needs the owner"
-      ],
-      "limits": [
-        "n=1 synthetic tasks, single author",
-        "in-sandbox token refresh not re-observed",
-        "Linux and token_env each live-verified once (n=1, toy task); the /proc boundary rests on the model's report (Read only; Glob/Grep and the dedicated-config credentials file not probed)"
-      ],
-      "next_action": "the owner creates a `claude setup-token` token so live studies can use token_env (no dependence on the dedicated login's refresh); re-observe dedicated_config after a fresh login with a refresh inside a run",
-      "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md; docs/engineering/LIVE-SPEND-2026-11.md; docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md"
-    },
-    {
-      "id": "C04",
-      "title": "Provider breadth (5 live paths)",
-      "status": "PASS_WITH_LIMITS",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64; Linux (Claude only): ubuntu:24.04 container on podman, bwrap (2026-11-01)",
-      "observations": [
-        "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED",
-        "2026-11-01: the gemini provider and gemini-cli host were removed at the owner's direction (Gemini CLI superseded by Antigravity, supported as agy); the provider set is codex, claude, bob, agy, opencode, opencode-acp",
-        "2026-11-01: Claude live-verified on Linux (bubblewrap, token_env; see C03); Codex, Bob, agy and OpenCode not run on Linux"
-      ],
-      "limits": [
-        "Bob not re-run on 0.10.0 (entitlement not re-checked)",
-        "n=1 per provider, synthetic tasks; Linux only for Claude"
-      ],
-      "next_action": "Linux live runs for the other providers that support it; ACP client to reach PLANNED agents"
-    },
-    {
-      "id": "C05",
-      "title": "Extensible provider SDK",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "schema-versioned provider catalog + validation tying EXECUTION to adapters; per-provider setup checks; conformance via isolation probe (Claude)",
-        "2026-10-31 ACP conformance kit (`agents conformance`): handshake-only check of any ACP agent by absolute path, network denied, LaunchServices denied, descendants swept, repository-owned executables refused, agent text sanitised; tested with a fake agent; Gemini CLI 0.65.0 HANDSHAKE_CONFORMANT, OpenCode 2.2.1 NO_HANDSHAKE (needs network for its local server); no model call"
-      ],
-      "limits": [
-        "no execution path for agents without an adapter (stays PLANNED); no out-of-process adapter SDK for execution yet"
-      ],
-      "next_action": "a manifest-declared ACP execution adapter under the opencode-style sandbox, if a second local-model ACP agent becomes available"
-    },
-    {
-      "id": "C06",
-      "title": "Adaptive routing",
-      "status": "PASS_WITH_LIMITS",
-      "owner": "principal",
-      "code_sha": "7f769bc",
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "route reports SETUP_REQUIRED (offline, no credential read) for Claude, OpenCode, Gemini",
-        "2026-11-01 routing decisions measured over the per-provider state space (tests/test_provider_routing_matrix.py): 624 states (installed, sandboxed, setup, cooldown none/active/expired, each storable observation fresh/expired/other-binary, consent) x 4 (USD ceiling, per-run flag) = 2,496 decisions per provider, for one provider with an enforceable USD ceiling and one without; plus default selection order and the allowlist rule. Every decision matched the specification; no process started. Readiness labels checked per state against an oracle that restates the documented priority (it mirrors the code, so a priority wrong in both would pass); stage BLOCKED and preferred-list ordering (argument and policy) covered. Not covered: RUNTIME_UNSUPPORTED/UNKNOWN labels, providers other than claude/codex, argument-vs-policy precedence",
-        "2026-11-01 #56 closes the gaps named above: all seven providers, each alone, under macOS and Linux platform names (34,944 decisions; containability is an input, only the label depends on the platform name); UNKNOWN for a missing profile and a FAILED stage; RUNTIME_UNSUPPORTED checked against the adapter with bwrap present (positive control for the other four); argument > policy > default order",
-        "2026-11-02 routing-journey-v1 (preregistered, benchmarks/routing-journey-v1): routing end to end through the real CLI with stand-in provider executables and controlled injections, no model call, no real credential: zero, one and two providers, a missing and an unverified login, exhausted quota with and without a USD ceiling, fallback, an explicit provider during cooldown, cooldown and readiness expiry, a changed binary, a provider crash, an unsupported platform. Run 1 27/27 under the preregistered checks (24/27 under the stricter amended checks: three refusals gave a misleading reason); run 2 on the fixed build 27/27, but its Q1 mission started the Claude stand-in with no ceiling, undetected (the path #105 closed); amendment 2 added ceilings and gate G4; run 3 on main (7f769bc) 27/27, no silent fallback inside a run, unknown cost never observed, no uncapped start (G4 0). Fixed: an explicit provider in cooldown was called again; a continuation refused for a cooldown used up its capsule; a crash was classified budget_limit; the NO_AGENT refusal's reason; malformed policy times. Separately (#105) a ceiling-enforcing provider was started uncapped at the default $0 ceiling and refused afterwards: now never started without a usable ceiling (run_provider guard)",
-        "2026-11-03 #111 (queue row 28): at a ceiling under $0.0001 (the default 0) routing never selects a provider whose CLI enforces a USD ceiling; it says why and names --max-cost-usd (and authorization when that is missing too); mixed --allow-unknown-cost tournaments judge each arm at its own ceiling. routing-journey-v1 amendment 3 (before run 4, corrected after review): runs 4 and 5 29/29, G2-G4 0; with one ceiling-enforcing and one non-enforcing stand-in, the default order, --prefer and fallback no longer discriminate end to end (unit tests cover them)"
-      ],
-      "limits": [
-        "stand-in executables, not the real CLIs; expiries and the platform name injected; macOS only",
-        "'many' end to end means two providers; seven providers appear only in the 2026-11-01 matrix, each alone",
-        "entitlement covered by the 2026-11-01 routing matrix, not end to end",
-        "a configured but logged-out login is discovered only by a run (repo-ai reads no credential)",
-        "since amendment 3 the journey's two stand-ins cannot show default order, --prefer or fallback between two providers eligible at the same ceiling end to end (unit-tested only)"
-      ],
-      "next_action": "real host observations over time (an actual quota event, an expired login) once live calls are budgeted; entitlement (ACCOUNT_INELIGIBLE) end to end"
-    },
-    {
-      "id": "C07",
-      "title": "Skill Radar",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "local vetting + honest NO_RECOMMENDATION-style output observed (fixture skill: 'do not install, matches no gap')",
-        "2026-11-01 capability-fresh-v1 (preregistered, 60 tasks by an independent author, matcher unchanged): top-3 recall 0.69 (gate 0.80) and 2 constraint-forbidden recommendations (gate 0): FAILED; correct abstention 19/20, precision 0.68. Both forbidden items came from constraints stated in prose the matcher did not detect",
-        "2026-11-01 component verdict: the deterministic capability recommender (`capabilities.recommend`, curated registry) is a NEGATIVE_RESULT. It failed its recall gate on two independent fresh corpora (0.385 on 120 tasks, 0.69 on 60) and its constraint gate on both; tuning stopped. The gate stays EXPERIMENTAL because its other parts (online search via `skills discover --online`, metadata caching, provenance pinning, and the radar's own gap ranking and abstention in `recommend.py`) have not been validated against a corpus or live (offline unit tests only); not shown false"
-      ],
-      "limits": [
-        "top-3 recall below the 0.80 gate on two fresh corpora (0.385 on 120 tasks, 0.69 on 60)",
-        "prose constraints detected only partly; --deny is the enforced path"
-      ],
-      "next_action": "none planned for the deterministic matcher (tuning stopped); online radar validation needs network and a corpus"
-    },
-    {
-      "id": "C08",
-      "title": "Skill/Plugin/MCP security",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "autonomy policy, five kinds, strict inert check; independent review: 10 findings fixed with regression tests",
-        "2026-10-31 skill-vet-fresh-v1 (unseen, preregistered, 80 cases): G1 FAILED, SAFE_AUTO would auto-install 8 of 30 harmful (prose-only) skills; G2-G4 passed; 6 of 10 harmful script skills rated eligible. Fixed (prose instruction classes, script behaviour); diagnostic re-run 0 of 30, not a confirmation",
-        "2026-11-01: the owner asked the agent to build the v2 corpus; the agent's briefing of the author was stopped by a safety classifier (the second stop); per the earlier rule it was not retried or reworded, and the partly launched author wrote nothing",
-        "2026-11-02: AUTHOR-BRIEF.md for an independent human author (eligibility, allowlist, strata and defanging from v1, delivery layout the harness loads, provenance and manifest) and validate_corpus.py (CI-only; no vetter rule); system under test frozen at 8f6ae0a (SUT.json: src/repo_ai tree, pyproject, harness, validator, pinned dependency); one-shot `skill-vet-v2` workflow; the preregistration kept verbatim with deviations appended. No case written by the agent"
-      ],
-      "limits": [
-        "fix not confirmed: the v2 corpus author was stopped by a safety classifier (not worked around); needs a person-written corpus",
-        "plugin vet fresh-validation failure (12 of 42 benign blocked) not re-measured on that corpus's design; this corpus blocked 0 of 10 benign plugins"
-      ],
-      "next_action": "an eligible person writes the corpus per AUTHOR-BRIEF.md and opens a pull request against skill-vet-v2/delivery; then one dispatched run"
-    },
-    {
-      "id": "C09",
-      "title": "Two-host skills integration",
-      "status": "PASS_WITH_LIMITS",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "repo-ai-installed skill loaded and invoked on Claude Code (model-chosen, paired 2/2 vs 0/2) and loaded by OpenCode from .agents/skills (explicit invocation); uninstall byte-exact"
-      ],
-      "limits": [
-        "n=1; OpenCode model never chose the skill unprompted"
-      ],
-      "next_action": "repeat with a second skill"
-    },
-    {
-      "id": "C10",
-      "title": "Skill value evidence",
-      "status": "PASS_WITH_LIMITS",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "paired run shows the instruction is followed, not that outcomes improve",
-        "pilot 2026-10-30 (6 haiku calls, predeclared rule): INCONCLUSIVE - skill higher on t2 (per-line tax, 7/7 vs 4/7), control higher on t1 (6/8 vs 8/8; oracle rounding ambiguity found post hoc), tie on t3; skill invoked unprompted 3/3; evidence/SKILL-VALUE-PILOT-2026-10-30.md",
-        "2026-11-01 c10-confirm-v1, on one fixture project and 8 tasks (preregistered; fixture+skill, tasks+oracles and ambiguity review by three separate model sessions; 8 tasks x 2 arms x 3 repeats, sonnet, token_env with an empty config dir per run): SUPPORTED, skill arm higher on 8 of 8 tasks (sign test p = 0.0039); convention score 1.000 vs 0.319, baseline score 1.000 vs 0.875 (three control runs ended without editing after reading a mangled path; without them 8 of 8 holds and the control baseline is 1.000); skill invoked unprompted in 24 of 24; $3.25 notional (benchmarks/c10-confirm-v1/RESULTS.md)",
-        "2026-11-06 c10-confirm-v2 ran (preregistered; second fixture, a Python CLI by Author A with its own conventions skill, tasks and oracles by Author B, review by Reviewer C; claude-haiku-5-5; 8 tasks x 3 arms x 3 repeats = 72 sessions; $0.7798 notional). First grade: all 72 INVALID from two validity-rule defects (auth-only `schedule` built-in skill; path-dependent init fields), symmetric across arms; amendment 1 committed before any score was read, re-graded at $0. Primary skill vs control SUPPORTED (7 higher, 0 lower, 1 tie, p = 0.0078; convention 1.000 vs 0.462, baseline 1.000 both); secondary skill vs CLAUDE.md NO_DIFFERENCE_SHOWN (8 ties, both 1.000: a ceiling); tertiary CLAUDE.md vs control TEXT_HIGHER (p = 0.0078); skill invoked unprompted 24/24 (benchmarks/c10-confirm-v2/RESULTS.md)"
-      ],
-      "limits": [
-        "two fixture projects (a Python library, a Python CLI) and two models (Sonnet 5.5, Haiku 5.5); Python only; one project-conventions skill per project (its value is by construction the rules the code does not show)",
-        "authors and reviewer were separate model sessions, not people; host mode only",
-        "says nothing about third-party skills in general or about repo-ai's discovery choosing helpful skills",
-        "on project 2 with Haiku, the installed skill did no better than the same text in CLAUDE.md (both at the ceiling): the claim is about conventions text being present, not the skill format",
-        "c10-confirm-v2's validity rules were amended after the run (before any score was read); CLAUDE.md loading is not observed in the init event"
-      ],
-      "next_action": "a third-party skill trial; a harder task set if the skill format vs CLAUDE.md question matters"
-    },
-    {
-      "id": "C11",
-      "title": "Requirement/evidence graph",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "coverage names unpinned requirements (0.9.0)",
-        "2026-11-02 independent adversarial review of `repo-ai coverage` against C11 (calls into assess/for_mission with constructed records): green needs exact fail->pass or pass->pass on a fresh, comparable PASS (identical test ids, pinned test inputs and skip sets), outcome vocabulary allow-listed; found 3 high (VERIFIED rows and an empty follow-up list under a STALE or INCONCLUSIVE headline; no link from requirements to changed code although the mission measures which changed lines the tests ran; scoped pre-existing failures dropped), 3 medium (silent suffix binding to another file's test; one test for several requirements unflagged; the declaration is not frozen) and 4 low. Fixed in the coverage PR: rows downgraded to UNVERIFIED_*, changed code no test ran and pre-existing failures listed as other_obligations (headline at most ACCEPTANCE_PARTIAL), suffix and shared-test flags, failure-before-skip ordering",
-        "2026-11-02 `do --requirements FILE` freezes the declaration with the mission record before it runs; `coverage ID` assesses it and reports declaration FROZEN_WITH_MISSION (written before this mission ran), FROZEN_AFTER_PRIOR_RUN (an earlier mission on the same source and proposal had recorded outcomes) or SUPPLIED_AT_ASSESSMENT; refused without --run, with --resume/--from-handoff/--tournament and for an already-recorded mission; reviewed independently (a re-run loophole, silent drops, malformed entries found and fixed); end-to-end CLI tests on a real replay mission",
-        "2026-11-03 per requirement (pytest, frozen declaration only): the exercise run's tracer records which changed executable lines ran while each pytest test ran (sys.monitoring line events re-armed at each test; watched = changed files) and those run outside any test; coverage lists each requirement's changed_lines_run, the changed lines only undeclared tests ran and those run at import/collection. An independent review of the first version found its obligation (a verified change requirement whose tests ran no changed line) false in common fixes: import-time lines (constants, default arguments, decorator arguments), shared fixtures credited to the first test, subprocess tests, xdist; it was removed, and the mapping is informational only (no row, obligation or headline effect); a spawned process or an early stop marks the record incomplete; re-review: the per-test record comes from a second run in the time left (so a slow per-test run can no longer turn the measurement UNMEASURED and add an obligation), and multiprocessing, os.fork and early stops (-x/--maxfail: fewer tests ran than were collected) mark it incomplete",
-        "2026-11-03 queue row 32: each run of a shared fixture's setup is credited to the tests whose call ran with it active (per-run tokens; override chains, dependencies and getfixturevalue; line events re-armed at fixture boundaries so 3.12+ and older interpreters agree; directly run lines fill the cap first). A review of the first version found it merged parametrized/per-class runs, credited skipped tests and could push direct lines out of the cap; all fixed with regression tests (params, class scope, skip, override, getfixturevalue, two fixtures, cap); a second review round found an override that ignores its parent credited with the parent's cached run (fixed: only definitions actually used, the active one and those it extends) and runs no test claimed appearing nowhere (now outside any test)",
-        "2026-11-06 c11-attribution-v1 (predeclared, $0: replay of the upstream fix, no model call; repo-ai 0.12.8 from PyPI; benchmarks/c11-attribution-v1): attribution records produced on 3 real projects in podman containers (humanize, more-itertools, pyjwt: 14 changed executable lines, 12 requirements; per-test record complete, sys.monitoring, Python 3.12.16, image pinned to the verified run's digest); marshmallow (optional) produced none: its mission was INCONCLUSIVE (clock-valued test IDs differ between baseline and candidate) and the measurement runs only after a PASS. coverage headline INCONCLUSIVE for all (container freshness `not checked`), observations kept in observed_status. None of the suites has a shared-scope fixture running project code and no changed line runs at import, so fixture-scope and import-time attribution are not exercised; no node project and no host run. Independent review pending (REVIEW-PACKAGE.md, queue row 37)",
-        "2026-11-06 c11-attribution-v1 independent review (benchmarks/c11-attribution-v1/REVIEW.md): 12 measured requirements on humanize, more-itertools and pyjwt (containers, 0.12.8) all CORRECT, 0 missing lines, 0 false credit; marshmallow CANNOT-JUDGE (not measured). Limits added by the review: pytest's collection only (more-itertools' unittest load_tests doctests would also reach the changed lines), test-level credit can include sibling cases' lines, a 'nothing' credit is not positively evidenced, tracer-run outcomes not recorded, only added executable lines attributed; still unreviewed: shared/fixture-setup and import-time crediting, Node, host runs"
-      ],
-      "limits": [
-        "per-requirement changed-line mapping: only for missions run with a frozen declaration; pytest per test, `node --test` per test FILE. pytest attribution is by time window (each run of a shared fixture's setup is credited to the tests whose call ran with it active, its teardown to the test it runs after, a thread's work to whichever test is running, child processes are not seen, import-time lines belong to no test unless the module is first imported inside a test), so it is informational; under Python <3.12 (settrace) a function's def line counts as run when it is called, unlike 3.12+",
-        "traced outcomes: each traced run records what it saw (pytest: the whole per-test run's exit code and every test's outcome, from the tracer's own logreport hook; node: each file run's exit code and its tests' outcomes, from the verified run's reporter), bounded (5000 per run or file, 50,000 over a node record's files) and read as untrusted; a pytest outcome is committed at the test's teardown. `coverage` compares them with the verified candidate run: a declared test whose traced outcome differs, or that did not run in the traced run, or (node) whose file had any test run differently, is DIVERGED, and its credited lines stay listed but labelled informational; a declared test the traced run saw that ran no changed line is \"traced, ran no changed line\", distinct from \"not traced\" or unavailable, but for pytest only when the per-test record is complete (child processes and xdist workers are not traced: otherwise \"no changed line seen\"); a declared pytest test absent from a traced run whose outcomes were all kept is DIVERGED. The comparison is by outcome only: a traced run that passes the same way but takes another path (timing, randomness) is not detected, and the outcomes are written by the test process, so a test can forge them",
-        "node per test file: each test file runs alone (`node --test FILE`, same sandbox and environment, a fresh workspace copy each) under NODE_V8_COVERAGE, one after another in the time the mission has left, files holding declared tests first, each run capped at the larger of 30 s and twice an equal share of the time left (at most 200 files); every changed line a file ran, module load included, is credited to every test in it, so a requirement gets lines its file's other tests ran; a line counts as run when any code on it ran (a `} else {` whose block never ran counts), and an executable line is one with a word character outside comments, the same definition the change-exercise level uses (a small scanner; a `/` after `)` is a division unless the `)` closes an if/while/for/with condition, so a misread regular-expression literal can still hide or expose a line, though an unclosed `/*` hides nothing); at most 2000 lines are kept per test or file (200,000 in all), past which the record is marked incomplete and a file left out whole is unavailable; a file that times out, ends with an exit other than 0 or 1, raises, or whose coverage is missing, malformed, oversized (32 MiB a coverage file, 2 GiB a run, 4 ranges per UTF-16 unit in one entry, 2,000,000 ranges for the watched files in a run, more than 20,000 coverage files in the whole-suite run (child processes write their own) or 256 in one test file's run; each coverage file is folded into one bit map per watched file and dropped, so a whole suite's one-file-per-test-file output stays measurable), linked or does not match the file's UTF-16 length is listed as unavailable with the reason, never as not run; a child process inherits NODE_V8_COVERAGE and is counted, but one started with a cleared environment writes none, so its lines look not run; the coverage is written by the test process, so a test can forge it: informational only",
-        "container runs (podman/docker, `do --sandbox podman --image IMG`): the change exercise and the per-test/per-file records run on the backend and in the image the verified run used (pinned to its digest; another backend or digest is UNMEASURED, nothing run), with the same tracer and V8 coverage; the root is read-only and there is no network, so they write only under the mounted workspace's `.repo-ai/run`; every path the container reports (`/work/...`, or a tracer key) maps to a repo-relative path only when strictly inside the workspace in canonical form (no `.`/`..`/empty segment, no backslash or NUL), never normalised. The tracer needs Python 3.8+ in the image (3.12+ uses sys.monitoring, older settrace; the record names which), V8 coverage needs a node with NODE_V8_COVERAGE, else the record is UNMEASURED or unavailable. Tested in podman with node:24-slim and a Python 3.12 image with pytest, and in CI's docker sandbox job, which builds that image (tests/fixtures/containers/pytest) and fails rather than skips when a backend or image is missing; the settrace path was not exercised in a container, and a container mission's read-only `status`/`coverage` headline reads INCONCLUSIVE because the image is not re-checked there (the lines are still listed)",
-        "a frozen declaration shows only that it preceded this mission's run: outcomes known from tests run outside repo-ai are invisible to it, and its digest is unkeyed (accidental edits only, not a rewritten local store); a declaration supplied at assessment time is labelled SUPPLIED_AT_ASSESSMENT; prior-run detection sees only missions still in the store on the same source with the same proposal or candidate diff",
-        "test-id resolution: a bare name matched by suffix is flagged, not refused; node and parametrized ids with '::' can match partially; a leaf name never matches a `describe > leaf` id",
-        "one test mapped to several requirements is flagged (shared_tests), not refused: all of them can still reach ACCEPTANCE_MAPPED_ALL"
-      ],
-      "next_action": "a follow-up study on a project with shared-scope fixtures and on a Node project; record tracer-run outcomes and list traced declared tests that ran no changed line"
-    },
-    {
-      "id": "C12",
-      "title": "Tournament quality",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "live abstain + byte-identical tie at 0.9.0",
-        "2026-11-02: live comparisons classify how distinct passing candidates differ (IDENTICAL, COSMETIC = same Python syntax tree, SUBSTANTIVE with definitions named, UNKNOWN), rebuilt with shortlist's hardened reconstruction, and carry a next step taken from the decision; the abstention rule is unchanged. Tournaments can cap only the arms that enforce a ceiling (--allow-unknown-cost). tournament-live-v1 preregistered (owner approved 8 sessions); not run yet",
-        "2026-11-03 #113 (queue row 29): candidate differences are compared file by file (shortlist.code_identity, shared with shortlist): an identical non-Python change no longer hides a formatting-only Python difference; a SUBSTANTIVE pair always names a place (duplicate definition names kept, file fallback); a stale comparison never repeats its recorded next step (repo-ai compare, mission status --json)",
-        "2026-11-03 tournament-live-v1 (benchmarks/tournament-live-v1/RESULTS.md): 4 live Codex-vs-Claude tournaments on the abc-v5 calibration tasks, main at a2099be; all 8 arms PASS and graded CORRECT by the sealed hidden oracle in a podman container; every tournament abstained with a SUBSTANTIVE difference named and a pinning-test or shortlist next step; T1/T2/T3 0, no winners; R1: 0 of 4 SUBSTANTIVE pairs differed on the oracle (different code, same observed behaviour); Claude $0.2028 observed, Codex UNKNOWN",
-        "0.12.3 (#133): `shortlist --probe SCRIPT`, the mission-5B evidence expansion: a developer-written probe runs against the base (twice, determinism check) and each distinct passing candidate in the mission's sandbox; SAME / DIFFER (first differing line) / INCONCLUSIVE. Tested offline (fake providers and replay); smoke from PyPI on a replay tournament reported DIFFER. Not yet evaluated on real abstaining live candidates",
-        "2026-11-04 shortlist --probe on tournament-live-v1's two Python abstentions (benchmarks/tournament-live-v1/PROBE-PROTOCOL.md, predeclared probes and amendment 1 committed before running; results/probe-2026-11-04.jsonl; no model call, $0): the recorded comparisons were refused as stale after the 0.12.1 -> 0.12.3 upgrade (freshness rule; documented limit). The recorded Codex and Claude diffs re-submitted as replay proposals under 0.12.3 reproduced both abstentions (PASS/PASS); the probes then reported DIFFER on exactly one line each: cal-py-backoff delays(2, base=3, cap=3) [3.0, 3] (Codex) vs [3, 3] (Claude), equal values; cal-py-sizes parse_size('١٠') 10 (Codex) vs ValueError (Claude), non-ASCII digits. Both outside the prompt, consistent with the oracle's CORRECT for all four; the probe names the difference, it does not choose. Small sample (2 tasks, 1 provider pair, probes by the feature's author)",
-        "2026-11-04 amendment 2 (JavaScript probes, #137 branch; results/probe-node-2026-11-04.jsonl; $0): the two Node abstentions re-submitted as replay reproduced PASS/PASS; predeclared probes reported SAME for both (cal-node-roman 60 lines incl. a 3999-numeral round trip; cal-node-chunk 30 lines), both candidates differing from the buggy base on 37 and 18 lines. Code SUBSTANTIVE, behaviour identical on the probed inputs. Over the four abstentions: 2 separated on one out-of-prompt input each, 2 SAME; all consistent with the oracle",
-        "2026-11-06 amendment 3, independent probe authors (benchmarks/tournament-live-v1/PROBE-PROTOCOL.md, probes-independent/ by a separate agent instance that saw only task.json and repo/, sha256 predeclared before any run; results/probe-independent-2026-11-06.jsonl; repo-ai 0.12.8 from PyPI, no model call, $0): the recorded Codex and Claude diffs re-submitted as replay reproduced all four abstentions (PASS/PASS, same diff sha256); no refusal, no INCONCLUSIVE; the original probes reproduced their 2026-11-04 outputs byte for byte. Both probe sets gave the same verdicts: DIFFER, DIFFER, SAME, SAME. cal-py-sizes: the independent probe found the same difference (Codex accepts non-ASCII Unicode digits: '١٠KB', '１０KB', '١.٥KiB'; outside the prompt). cal-py-backoff: the same int-vs-float-at-the-cap difference (delays(3, 0.5, 2, 1); outside), plus a different one the original probe missed: Codex's candidate raises OverflowError on delays(1100) and delays(400, 1.0, 10.0, 1e9), where Claude's returns the list; classified inside the prompt (R1 defines the values, R2/R3/R5 name the only errors), so it is the first probe result that disagrees with the oracle's CORRECT for one candidate, with a stated caveat (Codex's code is R1's expression verbatim; in Python floats that expression itself overflows). Node: both SAME again (roman 60 + 99 lines, chunk 30 + 49). No verdict or grade changed. Small sample (4 synthetic tasks, 1 provider pair, independent author not human)",
-        "2026-11-06 owner-side reading of amendment 3's new backoff difference: R1 defines each delay as the value min(base*factor**i, cap), the prompt says the result is a list of numbers, and only ValueError/TypeError are named, so Codex's OverflowError on delays(1100) (Claude returns the capped list) most likely violates the spec, a defect the frozen tests and the hidden oracle (graded CORRECT) did not catch; contested only by a literal-Python reading of R1. The probe, written blind from the prompt, found it; the feature author's probe did not"
-      ],
-      "limits": [
-        "4 synthetic calibration tasks (no rate); every abstention here was between two correct candidates, so the tie rule cost a human choice each time"
-      ],
-      "next_action": "more abstentions (the live tournament set has four) and probe authors who are people outside the project, before any claim about how often a probe separates candidates; record the oracle-vs-probe disagreement in the tournament results"
-    },
-    {
-      "id": "C13",
-      "title": "Handoff/recovery",
-      "status": "PASS_WITH_LIMITS",
-      "owner": "principal",
-      "code_sha": "ecfdc8e",
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "codex→agy live handoff PASS, hidden oracle 714/714 (0.9.0)",
-        "2026-11-01 Claude as handoff target, BLOCKED (auth): replay source mission FAIL/partial_progress (simulated, fixes 1 of 2) -> `handoff --to claude` capsule, accepted by `do --from-handoff --agent claude` (which refuses a stale one; a later re-verify reports stale because the continuation is recorded on the source) -> the continuation carried the partial diff (seed: test_add fixed, test_scale still failing) and stopped at the provider preflight with auth_mode none, recovery provider_unavailable, $0, no model call (docs/engineering/evidence/C13-CLAUDE-HANDOFF-2026-11-01.md)",
-        "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (benchmarks/c13-live-handoff) (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet",
-        "2026-11-03 live attempt 1 (benchmarks/c13-live-handoff/RESULTS.md): the owner chose the existing dedicated login claude-eval; repo-ai 0.12.1 from PyPI, preflight eligible, partial source and valid capsule, isolation probe passed, then Claude Code failed to authenticate (OAuth token revoked); $0.00 observed, no model turn, mission BLOCKED with the provider's reason. Not a C13 result; needs a fresh dedicated login",
-        "2026-11-03 live attempt 2 (benchmarks/c13-live-handoff/RESULTS.md, after a recorded runner amendment): new dedicated login claude-provider; replay partial candidate (partial_progress) handed to Claude Code via a verified capsule; partial patch transferred and re-verified from the same frozen source; Claude (file tools only: Read, Read, Edit) completed it: PASS, LIVE_CANDIDATE_VERIFIED, $0.038988 observed; hidden oracle 4/4 in a podman container without network; post-apply PASS, undo byte-identical; capsule consumed",
-        "2026-11-05 live-to-live attempt 1 (Claude source limited to money.py, then Claude continuation): blocked before any model turn by the revoked dedicated login ($0.00); not retried (benchmarks/c13-live-handoff/RESULTS.md)",
-        "2026-11-05 live-to-live handoff PASS (benchmarks/c13-live-handoff/RESULTS.md, token_env): a live Claude source limited to money.py gave FAIL/partial_progress ($0.024088); the verified capsule was continued by a second live Claude session capped at the inherited $0.47 (repo-ai refused a larger ceiling): PASS, LIVE_CANDIDATE_VERIFIED, partial patch transferred and re-verified, hidden oracle 4/4 in podman, apply/undo byte-identical; $0.040622 total. Same provider on both sides"
-      ],
-      "limits": [
-        "one task, one session (a demonstration that the path works, not a success rate); macOS seatbelt only; the source was a replay provider, not a live one"
-      ],
-      "next_action": "a cross-provider live handoff when a second provider with an observable cost and an unmanaged account is available; Linux"
-    },
-    {
-      "id": "C14",
-      "title": "Independent study",
-      "status": "NOT_YET_DEMONSTRATED",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "abc-v1..v4 at ceiling; abc-v5 calibration only",
-        "2026-11-02: abc-v5 selfcheck re-run on main, 0 failing checks; phase 1 needs independent human authors (S, M, F); phase 2 (144 calls, $150 proposed cap) not requested until phase 1 is reported (benchmarks/abc-v5/STATUS-2026-11-02.md)"
-      ],
-      "limits": [],
-      "next_action": "owner recruits three independent authors (S, M, F) for abc-v5 phase 1"
-    },
-    {
-      "id": "C15",
-      "title": "Claude-context effect",
-      "status": "NEGATIVE_RESULT_HISTORICAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "150 preregistered runs: plain 92%, Core 90%, Full 88%",
-        "2026-11-01 decision (owner delegated it to the agent): no re-run on the $20 budget. The only public task split (final) was analysed in Option A and 0.7.6 was tuned on it, so a re-run would favour repo-ai and still not be fresh confirmatory evidence; the eval config also carries the account's synced-skills cache, which the lab must first prove never loads (per-run init-event check, as the provider path does)"
-      ],
-      "limits": [],
-      "next_action": "a fresh study needs new held-out tasks and the lab's synced-skills check; not started"
-    },
-    {
-      "id": "C16",
-      "title": "Performance",
-      "status": "NEGATIVE_RESULT",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": "https://github.com/hxxtsxxh/repo-ai/actions/runs/41240668799",
-      "environment": "GitHub ubuntu-latest (4 vCPU), bwrap; earlier: macOS",
-      "observations": [
-        "verify 1.44–2.31x slower than native in 3/5 held-out cases (historical)",
-        "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance, with little power (only 5 of 30 native suites failed, 2 of them contaminated by a harness defect); verify failed natively passing tests in 14 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)",
-        "2026-11-01 profile of the fixed overhead (macOS, Apple Silicon; a 40-test pytest project; not a re-run of speed-v1): a comment-only verify --run spent ~0.68 s of 0.92 s in 18 sequential git subprocesses (35 ms each through Apple's /usr/bin/git launcher stub, 17 ms direct) and ~80 ms importing the mission runtime and provider adapters to build the argument parser. Fixed: the stub is resolved once per process (gitbin.git(): DEVELOPER_DIR, the xcode-select link, else xcode-select -p) and those imports are lazy. verify --run 965 -> 636 ms (comment-only), 1,370 -> 992 ms (behaviour change, full suite), reuse 544 -> 330 ms; Claude hooks ~150 -> 67-81 ms (session-start 324 -> 205 ms). Remaining duplicate git reads are the before/after source-tree checks and are kept. Linux overhead (speed-v1) is not re-measured by this",
-        "2026-11-01 speed-v1 run 3 (Amendment 3, a replication stated before the run; GitHub run 41306386452, commit 8cd3afd, different runner CPU): cold 2.23x the native suite (geometric mean), slower on 30 of 30 (run 2: 1.84x, 24 of 30); without more-itertools (measured differently: targeted in run 3, full in run 2) 2.61x vs 2.64x; absolute overhead confounded by the CPU change, not compared. Exit codes agree with the native suite on 23 of 30 (run 2: 16): more-itertools 6/6 and humanize f772e59b now agree, consistent with the 0.11.4/0.11.5 fixes but not isolated by the runs (more-itertools full suite seen passing once); pyjwt 6 (pre-existing, consistent with the denied network) and marshmallow 2fc8207d still disagree, and 2fc8207d still gives two verdicts for one state (cold exit 1, --rerun exit 0); no false assurance, little power (0 of 4 failing native suites, all configuration or collection crashes)",
-        "2026-11-01 #65: when verify matches pytest tests by name, the plan names test files under the project's norecursedirs (read from the file pytest would use), so a targeted/full disagreement like marshmallow 2fc8207d is explained in the product; a note only, nothing removed",
-        "2026-11-01 Linux profile (scripts/profile_verify.py on GitHub runners, 40-test generated project with its own .venv; profile runs 41340493434 before, 41340833864 after): git was negligible on Linux (18 calls, 0.03 s); the two source-tree snapshots took ~0.62 of 0.70 s (profiled) of a comment-only verify, mostly pathlib relative_to over ~2,000 venv entries (cProfile inflates such code; unprofiled comment-only 0.34 -> 0.23 s on a slower runner). Fixed by carrying relative prefixes (oracle-tested): ratio to the native suite on ubuntu 2.16x -> 1.12x (comment-only), 3.54x -> 2.38x (behaviour change; the sandboxed pytest, ~0.2 of 0.49 s, is now the largest single part; most of that ratio drop is the slower runner's larger native time, absolute 0.55 -> 0.49 s); macOS 2.86x -> 1.71x, 4.17x -> 3.04x. One run per platform, runners differed (native suite +25-32% in the after run), so ratios are reported, not absolute times; speed-v1 not re-run",
-        "2026-11-01 speed-v1 run 4 (Amendment 4, a replication stated before the run, on 0.11.7 after the snapshot fix; GitHub run 41360280119, same CPU model as run 2): cold 2.00x the native suite, slower on 30 of 30 (still not faster by the reading rule); without more-itertools 2.26x (run 2 2.64x, run 3 2.61x; strategies differ within that subset too). Decided after the run (the amendment compares ratios only): with native times close to run 2's on the same CPU model, median overhead +0.38 s vs run 2's +0.63 s (per project pyjwt 0.42->0.18 s, itsdangerous 0.58->0.30 s, humanize 1.10->0.83 s, marshmallow 1.79->1.43 s); confounded by other repo-ai changes, the harness (pre- vs post-Amendment 2) and the host (run 4's native suites up to 12% faster, pyjwt unchanged). Agreement 24 of 30: the one change from run 3 is marshmallow 2fc8207d choosing the full strategy this time (a strategy effect, not a fix); only pyjwt's network-dependent changes disagree; no false assurance, little power (0 of 4 failing native suites, all configuration or collection crashes)",
-        "2026-11-01 speed-v1 run 5 (Amendment 5: strategy reasons, full-suite command, verify's commands and sandbox_network_suspected recorded): 1.96x geometric mean cold ratio, slower than native on 28 of 30 (reading rule: not faster), overhead median +0.32 s, exit agreement 24 of 30 (the 6 pyjwt disagreements all sandbox_network_suspected). Recorded reasons show the strategy turns on close estimates measured in the same run (tenths of a second, some within the tie margin) and on missing per-file measurements (9 cold calls, 4 of them a project's first change); within run 5 the cold and --rerun calls on one state chose different strategies on 4 of 30 changes (recorded); that earlier cross-run flips happened this way is inferred. marshmallow 2fc8207d: cold and --rerun ran full with the same command (the reuse call reported the cold record)",
-        "2026-11-04 steadier strategy inputs (the next action's suggestion; nothing re-measured, no speed claim), only ever toward the full suite, since the shapes are not equally informative (the full suite also reports failing files outside the selection and can conclude selected-and-full-suite-passed): when nothing forces a shape, verify --run keeps a full suite it chose before for the same test files (selection, every test file by content, worker count) in the same environment unless the selection is faster by more than 0.25 s + max(0.25 s, 20% of the full suite's estimate); a remembered selection never holds back the full suite (the existing rule, full when est_full <= est_targeted + 0.25 s, decides) and a no-estimates selection is not remembered; a full suite is remembered only after a run whose own report reached every selected file (recorded after the run), so the steadiness never trades away the full suite's evidence (cost: a kept full suite can be up to that margin slower). Required full suite, --full, an unattributable full suite, an empty selection and an unsplittable or unrunnable command still decide first. Unit- and engine-tested (close estimates stop flipping once full is chosen; a clearly faster selection still replaces it; forcing conditions override and store nothing; a changed test file, selection or worker count is a new suite; a malformed timings file is ignored); the evidence records strategy.basis/previous/margin_s. Not checked on speed-v1: the harness records strategy.reason (which names a kept choice) but not basis",
-        "2026-11-05 reviewing the steadier strategy (#152) found a false pass older than it: with the full suite (--full, the tie rule, or a remembered full suite), a selected NEW failing test file the project's own command does not collect (pytest norecursedirs; a unittest package whose load_tests hides it) was reported selected-and-full-suite-passed (its pre-filled empty outcome read as 'defines no test'); the selection alone said regression, so the verdict depended on the strategy, the mechanism the marshmallow 2fc8207d addendum describes. Fixed: such files (no outcome, never collected or finished in the full suite's report) run on their own after it; when they cannot (no single-file runs, time budget spent) the verdict is not verified. Engine-tested on pytest and unittest layouts (red before the fix); not re-measured on speed-v1, where 2fc8207d's full runs should now also run its three tests/mypy_test_cases files",
-        "2026-11-05 fixed-cost profile (profile only; speed-v1 not re-run; macOS, this machine only, scripts/profile_verify.py on its generated 40-test project): verify --run 0.62 s comment-only, 1.10 s for a behaviour change that fails (incl. base comparison), 0.45 s reuse, native suite 0.18 s, --version 0.06 s. Comment-only spends ~0.6 s in 18 git processes (~33 ms each here, double the 2026-11-01 Mac, likely per-exec scanning on this host; running them concurrently saved only 0.13 -> 0.115 s for four), most of them deliberate fresh re-reads (the post-copy fingerprint, the integrity check), so they were kept; one sandboxed pytest process costs ~0.05 s over native (sandbox-exec start), instrumentation nothing measurable; imports ~0.09 s. The one safe cut found: the environment key and the recorded static environment walked every site-packages and node_modules entry twice per run; now one reading before the run (each later re-check still reads afresh): 10.5 -> 4.9 ms (2k-entry venv), 28 -> 14 ms (4k), 358 -> 181 ms (50k-entry node_modules), measured on the component because CLI medians on this shared host varied more than that (--version 0.06 -> 0.14 s between two runs). Not measured here: Linux bwrap (BwrapBackend.run re-runs its availability probe, one extra bwrap process per sandboxed run; a candidate for a Linux profile). speed-v1's large overheads are processes: humanize 11-13 and marshmallow 3-4 per cold change (base comparisons, skip checks), not fixed cost"
-      ],
-      "limits": [
-        "small, fast pure-Python suites on one runner type; not a general claim",
-        "verify still exits 1 on natively passing suites whose failing tests are consistent with the denied network (pyjwt) or are matched by name without verify --record (marshmallow 2fc8207d, whose verdict also flips between a cold run and --rerun: the targeted run names files pytest's norecursedirs skips, the full run does not (RESULTS.md addendum; why the strategy differed was not recorded in runs 2-3); a limit until verify --record)",
-        "a selected pytest file the full suite collects only for its doctests (--doctest-modules with a python_files that does not match it) counts as reached, so its test functions run only in a targeted run; telling doctest items apart needs a reporter change (QUEUE row 36)"
-      ],
-      "next_action": "the remaining fixed cost (interpreter and pytest start, base comparison) on small suites; consider steadier strategy inputs (a margin relative to the estimates, or the recorded choice reused for an unchanged suite) so close timings do not flip the strategy between runs"
-    },
-    {
-      "id": "C17",
-      "title": "Windows",
-      "status": "PASS_WITH_LIMITS",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "Windows CI unit suites green (py3.10/3.13) on every PR; release smoke on a fresh windows-latest runner (install, quickstart, init)",
-        "2026-11-01: the Windows jobs run on every PR and dispatched run (e.g. #58-#61 all green on windows-latest py3.10 and py3.13); 0.11.5 release smoke passed on windows-latest (release run 41297242379)"
-      ],
-      "limits": [
-        "missions unsupported on Windows (no host sandbox); refused, never degraded"
-      ],
-      "next_action": "keep the Windows CI jobs (py3.10, py3.13) required; missions stay refused on Windows until a Windows sandbox exists"
-    },
-    {
-      "id": "C18",
-      "title": "Security/privacy",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "two independent adversarial reviews of provider isolation: 1 high + 3 medium + others, then 3 + 4 more; all fixed or disclosed (Codex token exposure, reads outside HOME)",
-        "credential copying removed (Claude files, whole ~/.gemini)",
-        "2026-10-31 independent review of the ACP conformance kit found: the probe sandbox (agents doctor) lacked (deny lsopen)(deny appleevent-send) on macOS (escape with network via `open`), fixed; seatbelt's 'localhost' network filter also matches local interface addresses, so the OpenCode live adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (open item)",
-        "2026-10-31 measured with a deny-all control on a CI macOS runner (benchmarks/seatbelt-loopback, run 41256165553): OpenCode's loopback rule denies other LAN hosts and the internet, but admits the host's own LAN address and a wildcard listen; an outbound-only rule denies all listening; seatbelt cannot name 127.0.0.1; disclosed",
-        "2026-10-31 local check: OpenCode 2.2.1 `opencode run --standalone` in repo-ai's OpenCode sandbox with the inbound/bind rules removed (outbound-only), model at the closed port 127.0.0.1:9 (no model call), failed with 'Standalone server exited before reporting readiness', consistent with its server being unable to listen; no log kept. The inbound rule stays and the disclosed residual risk stands",
-        "2026-11-01 independent security review of v0.11.3...v0.11.7 (the next action 'review of the final release diff'): 2 medium (M1: the Linux probe sandbox left host unix sockets reachable, since --unshare-net does not cover path-based sockets; M2: the macOS probe allowed preference writes through cfprefsd, and pasteboard access via mach-lookup; launchd job creation was also denied, as defence in depth, since launchd already refused `launchctl submit` from a sandboxed caller) and 5 low (isolate crash on non-table TOML values, an unbounded pytestcfg pattern, licence-named files read as documentation in any directory, a quadratic dup2 check, checkout tokens persisted in 3 workflows), plus coding-lab host git reading an agent-writable .git. Fixed (reviews by independent reviewer agents, not recorded on GitHub; rounds with fixes are named by their fix commits): the lows in #79 (three rounds, fix commits 404cc02, 3269abd, 3f6eedf, the last only a test-assertion nit; they found a clean-filter host-exec route with only -c overrides, so host git now uses a pre-run copy of .git); the mediums in #78 (four rounds: fix commits 80395e0, 5b01f66, e52812a for rounds 1-3; round 4 found nothing unresolved, and its report was not kept; they found that hiding /tmp hid agents installed there, bind-backs re-exposing nested socket dirs, and a crash in the socket check). Still open and disclosed: probe reads unrestricted; Linux sockets outside the hidden directories; other macOS Mach services",
-        "2026-11-02 release-level review of v0.11.7...release/0.11.8 (the gate's next action): nothing blocking; medium M1 (the coding lab's integrity `git show` used the agent-writable .git) and low L1 (probe socket check not recursive) fixed before the tag (#86); after 0.11.8, L3 (#90: hidden directories by real path, without un-hiding /tmp for a home under it), L5 (#91), L7 and part of L6 (#87: no host-global git config for workspace git calls, on any git version; persist-credentials off in every workflow) fixed; each PR reviewed by independent reviewer agents (not recorded on GitHub; rounds with fixes: #86 none, #87 8671723 plus two test-only commits found by CI, #90 ba931a7 and 0f4150a, #91 2005fb0; the final round of each found nothing unresolved, reports not kept); open: L2, L4, the rest of L6 (QUEUE row 19). The macOS probe's default-deny Mach lookups (#81) shipped in 0.11.8 (only opendirectoryd user and group lookups allowed), so 'other macOS Mach services' is no longer open; still allowed and disclosed: signals to the user's other processes and IOKit access",
-        "2026-11-02 queue row 19 closed (#99): descriptor-pinned probe binds with bubblewrap 0.10+ (--ro-bind-fd; path binds before), nested licence prose check, untracked count against the base commit's ignore files; two independent review rounds and a nits round; CI job builds bubblewrap v0.11.0 (pinned commit) to exercise the descriptor path",
-        "2026-11-03 #112 (queue rows 27, 30): Linux live runs (Claude, Codex and now Bob, which had no HOME hiding) hide HOME and the account's home, repo-ai login stores and the host socket directories (/tmp, /run, /var/run, /var/tmp, ...), with their own IPC/UTS namespaces; read-only bind-backs pinned by descriptor with bubblewrap 0.10+. Real-bubblewrap CI test: a listening socket under /tmp and under HOME and the runner's docker.sock unreachable, DNS works, no leaked descriptor. Two adversarial review rounds (missing passwd home, re-exposed stores, overclaimed wording fixed). Not live-verified on Linux",
-        "2026-11-03 opt-in Linux egress isolation (REPO_AI_LINUX_EGRESS_PROXY=1, queue row 31): own network namespace; egress only through a CONNECT-only proxy in the repo-ai process (port 443, host names, every resolved address public, judged on embedded IPv4 for mapped/compatible/6to4/Teredo/NAT64 forms, never this host's own address, connects to a checked address with fallback), via an in-sandbox forwarder (system python3) that the Claude isolation probe also uses. An adversarial review found the probe running without network (it could pass without checking synced connectors), NAT64/IPv4-compatible/site-local private forms allowed, self-connects, single-address connects and overclaimed wording; all fixed. CI test with curl: proxied HTTPS works, a direct connection fails, localhost refused by the resolved-address policy and literals by the parser, host abstract socket and loopback service unreachable. Residual: any TCP to 443 of a public host, filesystem sockets outside the hidden directories, port 443 of other public addresses. Not live-verified with Claude Code, Codex or Bob, so off by default"
-      ],
-      "limits": [
-        "Linux live runs share the host network namespace: abstract unix sockets (X11/Xwayland input injection where local same-user access is granted) and host-network services stay reachable (queue row 31)"
-      ],
-      "next_action": "live-verify a real provider CLI on Linux with REPO_AI_LINUX_EGRESS_PROXY=1, then make it the default; a live Linux run of each provider under the 0.12.1 sandbox; Claude file-tool reach of /proc under bwrap (row 11)"
-    },
-    {
-      "id": "C19",
-      "title": "Website/docs",
-      "status": "PASS_WITH_LIMITS",
-      "owner": "principal",
-      "code_sha": "8eeb8ef",
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "Pages run 41036040819 deployed 2026-10-30T09:48Z; all 20 sitemap URLs 200 over HTTPS, real 404; served HTML shows repo-ai-cli 0.10.0 from a verified PyPI read; provider matrix and Evidence Lab rendered from data files",
-        "an independent site review's findings (overstated statuses, stale provider text, a false capture date, unscoped method text) were corrected in a82f54d before merge",
-        "local QA re-run on the corrected content before a82f54d was committed: 0 broken links, 0 axe violations (21 pages x 2 themes x 2 widths), 0 third-party requests",
-        "2026-11-01 probes from a GitHub runner, not the development host (site-probe workflow; scripts/site_probe.py). Run 41302859155: all 20 sitemap URLs HTTPS and 200, an unknown path 404, the home page in the sitemap and showing 0.11.5 (= release-facts.json), 0 third-party URLs referenced in the HTML of the 20 pages or in the site's 5 stylesheets (JS-time requests not covered by the probe); Lighthouse 12.2.1 on 6 main pages (home, docs, quickstart, verify, evidence, changelog), mobile and desktop: performance, accessibility, best practices and SEO 100 in all 12 reports, CLS <= 0.001, and the Lighthouse network logs show requests only to hxxtsxxh.github.io (and data: URIs). An earlier run (41301931754, narrower probe) scored the home page 95 for performance on mobile (TBT 232 ms), so scores vary between runs"
-      ],
-      "limits": [
-        "one Lighthouse run per page and form factor per probe, on one runner type (scores vary between runs); Lighthouse covers 6 of the 20 pages; the probe does not see requests made by JavaScript"
-      ],
-      "next_action": "keep the weekly site-probe green (it fails below performance 90 or any other category below 100)"
-    },
-    {
-      "id": "C20",
-      "title": "Distribution/release",
-      "status": "PASS",
-      "owner": "principal",
-      "code_sha": "390fcf6",
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke",
-        "0.11.0: Trusted Publishing, assets identical across PyPI/GitHub, SHA256SUMS and attestation verified, clean install smoke PASS",
-        "0.11.1 published 2026-10-30 (tag v0.11.1 at a0bbe36): PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS",
-        "0.11.2 published 2026-10-30 (tag v0.11.2 at c22c9fe, tree = qualified 2ec12f0): macOS full suite 2,616 passed / 0 failed; PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS",
-        "0.11.3 published 2026-10-31 (tag v0.11.3 at 7750279): PyPI = GitHub release = local clean build (wheel b11ff58f…), attestation verified, smoke PASS (recorded in QUEUE.md row 1d)",
-        "0.11.4 was qualified (CI, macOS included, at 991d9c6) but never tagged; folded into 0.11.5",
-        "0.11.5 published 2026-11-01 (tag v0.11.5 pushed by the agent with the owner's authorization, at merge abc81dc after #58's green CI incl. the dispatched macOS full suite at d83f492): the first publish attempt failed before upload on a transient sigstore Rekor HTTP 502 and was re-run; PyPI = GitHub release = local clean build (wheel 1203e843…, sdist 8e3e3845…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.5 at abc81dc), smoke install from PyPI on macOS PASS (repo-ai 0.11.5, eval --offline runs)",
-        "0.11.6 published 2026-11-01 (tag v0.11.6 pushed by the agent with the owner's authorization for this release, at merge 9edf537 after #67's green CI incl. the dispatched macOS full suite at 8b86af4 and a clean independent review): PyPI = GitHub release = local clean build (wheel c56e61e5…, sdist fdb48764…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.6 at 9edf537), smoke install from PyPI on macOS PASS (repo-ai 0.11.6, gitbin resolves the developer-tools git, session-start hook output)",
-        "0.11.7 published 2026-11-01 (tag v0.11.7 pushed by the agent with the owner's authorization for this release, at merge 34cb2e9 after #75's green CI incl. the dispatched macOS full suite at 138a273 and a clean independent review): PyPI = GitHub release = local clean build (wheel 6a70b4b7…, sdist 89cf078a…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.7 at 34cb2e9), smoke install from PyPI on macOS PASS (repo-ai 0.11.7; no gemini provider)",
-        "0.11.8 published 2026-11-02 (tag v0.11.8 pushed by the agent with the owner's authorization for this release, at merge 5662506 after #85's green CI incl. the dispatched macOS full suite at 30afeac and an independent release-level review whose medium finding was fixed in #86 before the tag): PyPI = GitHub release = local clean build (wheel 967e6590…, sdist d46d99aa…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.8 at 5662506), smoke install from PyPI on macOS PASS (repo-ai 0.11.8; init; a comment-only change gave NOTHING TO RUN). The smoke run also found that verify headlines a missing test runner (pytest not installed in the interpreter) as 'NO NEW FAILURES … already failing at the base' (not a passing verdict; fixed in #89, released in 0.11.9)",
-        "0.11.9 published 2026-11-02 (tag v0.11.9 pushed by the agent with the owner's authorization for this release, at merge 26f3988 after #97's green CI incl. the dispatched macOS full suite at d4c94ac and an independent release-level review whose findings were fixed before the merge, in two rounds): PyPI = GitHub release = local clean build (wheel ca3bc35f…, sdist 2dddc525…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.9 at 26f3988), smoke install from PyPI on macOS PASS (repo-ai 0.11.9 from the default index, no direct_url.json, index wheel hash matching; init; with pytest absent from the interpreter, verify --run reported NOT VERIFIED: the test runner could not start, the 0.11.8 smoke finding fixed)",
-        "2026-11-03 (UTC) 0.12.0 published: tag v0.12.0 at 1822c34, release run 41575685786 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release); wheel 3ad4f498c31b1aacf9f5ddea0e137a5e9d0c8b59972e0288bd7e034a24f38ec0, sdist 154096236e7c58c8833bbd734950da6e836db77b32e7255084b145aba5aa8ccf; PyPI = GitHub = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA provenance verified for both; fresh install from PyPI: 0.12.0, uncapped Claude refused before start, verify --run caught a regression",
-        "0.12.1 published 2026-11-03 (UTC) (tag at ecfdc8e pushed by the agent with the owner's approval; release run 41680549675): wheel c752612facefe82630a24036f422384a23945655df1c3559279cc8e7c53a9dcf, sdist 4fc70dc1fd63b44885698694bac9001ec0a9146041be7a76c1519f151c22c20b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.1); fresh install from PyPI reports 0.12.1, verify --run catches a regression",
-        "0.12.2 published 2026-11-03 (UTC) (tag at f661ebb pushed by the agent with the owner's approval; release run 41757207196): wheel 52e6f4b96e2faca6bed64c061c06193c68ede37696dbe89a6a3e411c348529e4, sdist cc2051b6845ee48976d4d1a3b0030ddc3aeaa46e062228ba642197534ecd412b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.2); fresh install from PyPI reports 0.12.2, verify --run catches a regression, an uncapped live Claude run is refused before start; site deployed from f661ebb (21/21 sitemap URLs 200, real 404)",
-        "0.12.3 published 2026-11-04 (UTC) (tag at 27fa6a3 pushed by the agent with the owner's approval; release run 41806360967): wheel 9531fe530b212b78c38a79121ff57d88fe9c041b0bb919957da832170ea2e4a2, sdist 47517f4650db85625960dd8a9459450bcdd0194ac9a9fe63f3fb0ef2ccd4cb56; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.3); fresh install from PyPI reports 0.12.3, a replay tournament + shortlist --probe reports DIFFER, an uncapped live Claude run is refused before start; site deployed from 27fa6a3 (21/21 sitemap URLs 200, real 404)",
-        "0.12.4 published 2026-11-04 (UTC) (tag at 3c1b999 pushed by the agent with the owner's approval; release run 41918248372): wheel 6d3ca8444f983aeab612aa2206aa353197e020d5a4896ff030105622f8eb709e, sdist 8774504c516eb317943d417344c8fc5df1a8cb0e8d84e993e5053078058bc6ca; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)",
-        "0.12.5 published 2026-11-05 (UTC) (tag at 676c09e pushed by the agent with the owner's approval; release run 41986612102): wheel 52c02e08fb30faa8163ea51363a752656fff3d3ca6f6f7636f4351a711b35c70, sdist 17756f30e51626ed51bd563e1221a787661a48d72fe14b10576e4b9d8e23e82d; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)",
-        "0.12.6 published 2026-11-05 (UTC) (tag at 905358e pushed by the agent with the owner's approval; release run 42091064941): wheel 67b7fd95ccd3c215f037a1b75f58f20dd4a2eb4e0028382143118abb9eb0e561, sdist e3e2481e17eb8845ec2984cc29e38efadc9574c4128326540531370feb09afdb; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site",
-        "0.12.7 published 2026-11-05 (UTC) (tag at 0706700, owner-approved, tagger the owner's personal address; release run 42134637117): wheel cf89e5a4c2f590a4bace241ea0899256d96369ceea77ad847ecc9344d618710a, sdist 8ff2d603130a88178d7ab97bdc37246fe2e35cf9d6ced8028712e118fa85dfd8; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site",
-        "0.12.8 published 2026-11-06 (UTC) (tag at 390fcf6, owner-approved, personal tagger; release run 42175893801): wheel b94e94238482e5c9746749943ab084d60df1a054397cfaea5b762b09c78d3288, sdist 7d93380b846ff55f574d6039c156155403d07ee02132537a4c434cc896b43589; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site"
-      ],
-      "limits": [],
-      "next_action": "next release"
-    },
-    {
-      "id": "C21",
-      "title": "Real adopter proof",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
-        "first-run bug (init then do) found on the published 0.11.0; fixed in 0.11.1 (PR #11, #13)",
-        "python-humanize (second real repository, real upstream defect ca892b3): live Claude and Codex scoped missions PASS [LIVE_CANDIDATE_VERIFIED] on a development build; Claude equal to upstream on the sampled domain, Codex differs just below a googol; found 4 repo-ai bugs, fixed in #16 (init .gitignore), #17 (interpreter, tracked-but-ignored files) and #18 (verify counts); the slugify 20-vs-0 discrepancy was a hard-coded post-apply count in `apply` (fixed in #21), not the interpreter bug as first claimed; evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md",
-        "published 0.11.2 (2026-10-30T23:46Z): fresh first run on python-humanize, live Claude PASS [LIVE_CANDIDATE_VERIFIED], project venv, apply 739/0, undo exact",
-        "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)",
-        "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 (5 detected as regression, 2 refused; small sample, ~35% 95% bound); J2 fix 3/6 as selected-passed (pyjwt jwks tests pre-existing, likely network; more-itertools no trusted test command, likely an 'unknown' framework); J3 uninstall left no tracked or untracked difference 7/7; deviation: one clone per project, not fresh",
-        "2026-11-01 #51: `from unittest import TestCase` marks a unittest suite (more-itertools gap from journey-offline-v2 closed; confirmed on real commits by CI diagnose)",
-        "2026-11-02: owner approved journey-live-v1 (4 MIT upstream defects, project code only in podman, at most 4 Claude sessions, $4.00); `do --sandbox podman --image` added so missions keep project code off the host; preregistration, harness and no-model preparation committed (all 4 defects qualify in their containers); a no-model check showed verify in podman sees pytest-9 subtest failures",
-        "2026-11-03 journey-live-v1 (benchmarks/journey-live-v1/RESULTS.md; amendment 3 before any session): repo-ai 0.12.1 from PyPI, Claude Code 2.1.317 on the dedicated login, project code only in podman. Controls: 3 of 4 (marshmallow INCONCLUSIVE, unstable observation; no session). Zero-provider onboarding found the frozen regressions on all three. Live: pyjwt PASS (native frozen ok, hidden upstream oracle no behavioural difference, apply/undo exact); humanize BLOCKED by a repo-ai defect (copied version file blamed on the provider); more-itertools BLOCKED by a repo-ai defect (64 KB capture killed the run, cost UNKNOWN); both fixed in #125. Gates L1, L3, L4, L5: 0; L6: 3 sessions, $0.0875 + one UNKNOWN (capped $1.00)",
-        "2026-11-04 (UTC) marshmallow control follow-up (no model call, $0; results/followup-marshmallow-control-2026-11-04.jsonl): the INCONCLUSIVE control had two causes. A repo-ai defect: mission observations ignored the project's norecursedirs (tests/mypy_test_cases), so every marshmallow mission was incomplete; fixed in #131 (confirmed readings only; both observations then complete, 1104 tests, 1 failure then 0). A project property: test_invalid_datetime_deserialization is parametrized with the current time, so baseline and candidate never share test IDs; correctly INCONCLUSIVE, and the refusal now names the IDs. Projects with clock- or random-parametrized test IDs cannot be compared by a mission (limit)",
-        "2026-11-04 journey-live-v1 re-run (amendment 4, owner-approved 2 sessions <= $2.00; repo-ai 0.12.4 from PyPI, Claude Code 2.1.318): prep and positive controls PASS again; both sessions BLOCKED before any model turn by a server-side revocation of the dedicated login (`authentication_failed`, OAuth token revoked) while `claude auth status` still reported logged in; $0.00 OBSERVED each; correctly not a pass; the harness first refused both on leftover workspaces from a stopped local test run (guard worked). Recovery advice made exact in #143",
-        "2026-11-05 journey-live-v1 retry (amendment 5, after the owner's re-login; repo-ai 0.12.4, Claude Code 2.1.318): more-itertools and humanize both PASS end to end: native frozen tests 0 still failing / 0 new failures, hidden oracle 0 behavioural differences (humanize's oracle equals its frozen tests), apply with post-apply PASS in the container and byte-identical undo; $0.084002 + $0.039266 = $0.1233 OBSERVED of the approved $2.00. With pyjwt (2026-11-03), three real-project live Claude journeys pass every gate on released builds; marshmallow INCONCLUSIVE by design",
-        "2026-11-05 site page docs/reproduce ('Repeat our journeys'): exact commands for a stranger to repeat journey-offline-v2 (fork, push a journey/ branch, disposable runner, $0) and journey-live-v1 (own Claude login, podman only, per-session cap, sessions counted from records), with what to compare against our results and the stated limits (recall, localisation given)"
-      ],
-      "limits": [
-        "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
-        "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
-        "two repositories; on the published build, one live run (Claude, python-humanize)"
-      ],
-      "next_action": "skill discovery inside a real-project journey; an actual repeat by someone outside the project; marshmallow stays INCONCLUSIVE by design"
-    },
-    {
-      "id": "C22",
-      "title": "Product credibility",
-      "status": "EXPERIMENTAL",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "positioning: local verifier that names what tests do not pin; live evidence includes a local-model false assurance that a hidden oracle caught and that repo-ai labelled ASSURANCE_PARTIAL; requirement-erasure detection (PR #7) built from it",
-        "2026-11-02 public comparison page (site docs/compare): what repo-ai adds next to pytest-testmon, jest --onlyChanged / vitest related, pytest --lf, containers and agent CLIs; where it is worse, each backed by a measurement on a linked page (speed-v1 1.84-2.23x slower; Jest/Vitest/Mocha full-suite only; agent benefit NOT_YET_DEMONSTRATED in the 150-run blinded study; no Windows host sandbox); and the idea selection with rejected alternatives (docs/ARCHITECTURE-DECISION-0.8.md: ten candidate problems scored on impact, frequency, offline feasibility, open space and measurability; prior art in docs/RESEARCH-2026-10.md). Persona and non-claims: site docs/index",
-        "2026-11-05 a verify false pass found by code review, not by a journey or speed-v1: a selected new failing test file that the project's own test command does not collect (pytest norecursedirs; a unittest load_tests hook) was reported selected-and-full-suite-passed whenever the full suite ran, in 0.12.5 and earlier. Fixed on #152 (those files run on their own after the full suite; otherwise not verified); see C16 and the CHANGELOG. Runners that cannot run single files (npm test, make test) give no per-file evidence and are unchanged",
-        "2026-11-05 honesty follow-up to the #152 review (QUEUE row 36, #155): after verify --record, an edit to a file named like a test that pytest's recorded collection leaves out (marshmallow's tests/mypy_test_cases) required the full suite, which passed without running the file: an edit that only made that file fail alone gave selected-and-full-suite-passed, PASSED, exit 0 (a false assurance found by review of #155, older than it). Now, unless another test imports, opens or names it, the edit requires no full suite (it cannot run it), so alone it is not verified: no test is linked to the behavioural change (exit 1), the same rule as any unlinked behavioural edit; next to other changes their tests decide. Either way the run's first note names it ('pytest's recorded collection never runs it; no test exercised this edit') and untested_edits lists it. End-to-end tested on a marshmallow-like layout, verdict and exit code for both cases (red before)"
-      ],
-      "limits": [],
-      "next_action": "measured usefulness for the persona beyond verify's held-out qualification (a developer-facing study, e.g. time to a correct pre-push answer), once a protocol and budget exist"
-    },
-    {
-      "id": "C23",
-      "title": "Community/reliability",
-      "status": "PASS",
-      "owner": "principal",
-      "code_sha": "0706700",
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "community files, branch protection",
-        "2026-11-05 re-checked at 0.12.x: SECURITY.md (private advisories; supported-versions table was stale at 0.9.x, now 'the latest release'), CONTRIBUTING, CODE_OF_CONDUCT, SUPPORT, LICENSE, bug/feature issue forms and a PR template present; main protected (12 required checks, strict, admins included, no force-push); release and rollback procedure added as docs/RELEASING.md (immutable tags and files, PyPI yank, fix forward)",
-        "2026-11-05 status moved from PASS_AT_0.9.0 to PASS on the 0.12.x re-check recorded above (community files, protected main, RELEASING.md with rollback)"
-      ],
-      "limits": [],
-      "next_action": "keep; exercise the rollback procedure only if a release ever needs it"
-    },
-    {
-      "id": "C24",
-      "title": "Final launch report",
-      "status": "IN_PROGRESS",
-      "owner": "principal",
-      "code_sha": null,
-      "test_run": null,
-      "environment": "macOS Darwin 25.5 arm64",
-      "observations": [
-        "docs/engineering/FINAL_REPORT.md filled with verified 0.10.0 release facts",
-        "2026-11-02 FINAL_REPORT.md brought up to 0.11.8: release facts re-read from PyPI and GitHub, the live site checked (20/20 sitemap URLs 200, real 404, 0.11.8 served), releases since 0.11.2, providers, security, evaluation, spend, gate statuses and what would prove each open item",
-        "2026-11-02: final report updated for the 0.12.0 work"
-      ],
-      "limits": [],
-      "next_action": "FINAL_REPORT.md at the end"
-    }
-  ]
+ "schema": "repo-ai.omniprovider-acceptance/1",
+ "updated": "2026-11-06",
+ "statuses": [
+  "PASS",
+  "PASS_AT_0.9.0",
+  "EXPERIMENTAL",
+  "NOT_YET_DEMONSTRATED",
+  "NEGATIVE_RESULT",
+  "INCONCLUSIVE",
+  "BLOCKED_EXTERNAL",
+  "NOT_TESTED",
+  "NOT_STARTED",
+  "PASS_WITH_LIMITS",
+  "NEGATIVE_RESULT_HISTORICAL",
+  "IN_PROGRESS"
+ ],
+ "gates": [
+  {
+   "id": "C01",
+   "title": "Public alignment",
+   "status": "PASS",
+   "owner": "principal",
+   "code_sha": "f53d027",
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "public main = v0.10.0; PyPI repo-ai-cli 0.10.0; GitHub release assets identical to PyPI; SHA256SUMS OK; attestation verified",
+    "2026-11-05 history rewrite at the owner's request (docs/engineering/HISTORY-REWRITE-2026-11-05.md): a corporate e-mail address on 86 commits and 3 tags replaced with the owner's personal address; trees, messages, names and dates unchanged; 513 SHAs changed (map in that file), v0.11.5-v0.12.6 tags moved to identical trees, PyPI and release files unchanged; 160 merged branches deleted; read-only PR refs await GitHub Support"
+   ],
+   "limits": [],
+   "next_action": "site PR #5 deploys the matching release facts"
+  },
+  {
+   "id": "C02",
+   "title": "Zero-provider onboarding",
+   "status": "PASS",
+   "owner": "principal",
+   "code_sha": "f53d027",
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "release_smoke.sh from PyPI on macOS: SMOKE PASS; release workflow smoke on fresh ubuntu/windows/macos runners"
+   ],
+   "limits": [],
+   "next_action": "re-run on next release wheel"
+  },
+  {
+   "id": "C03",
+   "title": "Claude provider",
+   "status": "PASS",
+   "owner": "principal",
+   "code_sha": "f53d027",
+   "test_run": "tests/test_provider_claude_isolation.py",
+   "environment": "macOS Darwin 25.5 arm64, seatbelt; Claude Code 2.1.314 dedicated_config (0.10.0 journeys), 2.1.316 token_env (2026-11-01); Linux: ubuntu:24.04 container on podman (arm64), bwrap, Claude Code 2.1.316 token_env (2026-11-01)",
+   "observations": [
+    "journeys on the published 0.10.0 wheel: PASS, hidden oracle 17/17, apply/undo byte-exact; hostile-repository PASS with nothing exfiltrated; per-run isolation probe in the shipped code",
+    "2026-11-01 token_env live check on the published 0.11.6 (Claude Code 2.1.316, token_env with only CLAUDE_CODE_OAUTH_TOKEN set in the running shell, ANTHROPIC_API_KEY unset; scratch HOME and no keychain by design): repo-ai do on a toy repository with a seeded bug: PASS, assurance FULL, full suite passed, correct one-line diff, tools Read/Edit only, no denied action, $0.0145 notional (docs/engineering/LIVE-SPEND-2026-11.md). The record does not name the mode in 0.11.6 (plan() picks token_env when a token variable is set; the variable was checked by presence); the mission record names the mode and variable names from the next release",
+    "2026-11-01 Linux live (ubuntu:24.04 container on the owner's podman machine, repo-ai 0.11.6 from PyPI, bubblewrap, Claude Code 2.1.316; token_env by setup, the 0.11.6 record names neither the mode nor the invocation flags): the toy journey PASS, exercise assurance FULL, LIVE_CANDIDATE_VERIFIED, $0.0129; a read-boundary probe (Read only): a Read outside the workspace refused (1 recorded denial, tool name only), and the model reported that its Read tool refused /proc/self/environ (not recorded); no token-shaped string in any output (docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md)",
+    "2026-11-05 the dedicated_config login was revoked server-side for the second time in about a day: a fresh login served a session successfully, then its first token refresh ~20 h later (no repo-ai use in between) was refused as revoked, as on 2026-11-04; `claude auth status` stays loggedIn and Claude Code writes a plaintext .credentials.json with a zeroed access expiry. Cause unknown from here; dedicated_config is not reliable for unattended studies; token_env (setup-token) needs the owner"
+   ],
+   "limits": [
+    "n=1 synthetic tasks, single author",
+    "in-sandbox token refresh not re-observed",
+    "Linux and token_env each live-verified once (n=1, toy task); the /proc boundary rests on the model's report (Read only; Glob/Grep and the dedicated-config credentials file not probed)"
+   ],
+   "next_action": "the owner creates a `claude setup-token` token so live studies can use token_env (no dependence on the dedicated login's refresh); re-observe dedicated_config after a fresh login with a refresh inside a run",
+   "evidence": "docs/engineering/evidence/JOURNEYS-0.10.0-PYPI.md; docs/engineering/LIVE-SPEND-2026-11.md; docs/engineering/evidence/LINUX-CLAUDE-2026-11-01.md"
+  },
+  {
+   "id": "C04",
+   "title": "Provider breadth (5 live paths)",
+   "status": "PASS_WITH_LIMITS",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64; Linux (Claude only): ubuntu:24.04 container on podman, bwrap (2026-11-01)",
+   "observations": [
+    "on the published 0.10.0 wheel: Claude, Codex, agy PASS with hidden oracle 17/17; OpenCode (new, account-free) path works but a local model's PASS failed a hidden case; Bob live on an earlier pre-release; Gemini BLOCKED; 16 more agents catalogued as PLANNED",
+    "2026-11-01: the gemini provider and gemini-cli host were removed at the owner's direction (Gemini CLI superseded by Antigravity, supported as agy); the provider set is codex, claude, bob, agy, opencode, opencode-acp",
+    "2026-11-01: Claude live-verified on Linux (bubblewrap, token_env; see C03); Codex, Bob, agy and OpenCode not run on Linux"
+   ],
+   "limits": [
+    "Bob not re-run on 0.10.0 (entitlement not re-checked)",
+    "n=1 per provider, synthetic tasks; Linux only for Claude"
+   ],
+   "next_action": "Linux live runs for the other providers that support it; ACP client to reach PLANNED agents"
+  },
+  {
+   "id": "C05",
+   "title": "Extensible provider SDK",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "schema-versioned provider catalog + validation tying EXECUTION to adapters; per-provider setup checks; conformance via isolation probe (Claude)",
+    "2026-10-31 ACP conformance kit (`agents conformance`): handshake-only check of any ACP agent by absolute path, network denied, LaunchServices denied, descendants swept, repository-owned executables refused, agent text sanitised; tested with a fake agent; Gemini CLI 0.65.0 HANDSHAKE_CONFORMANT, OpenCode 2.2.1 NO_HANDSHAKE (needs network for its local server); no model call"
+   ],
+   "limits": [
+    "no execution path for agents without an adapter (stays PLANNED); no out-of-process adapter SDK for execution yet"
+   ],
+   "next_action": "a manifest-declared ACP execution adapter under the opencode-style sandbox, if a second local-model ACP agent becomes available"
+  },
+  {
+   "id": "C06",
+   "title": "Adaptive routing",
+   "status": "PASS_WITH_LIMITS",
+   "owner": "principal",
+   "code_sha": "7f769bc",
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "route reports SETUP_REQUIRED (offline, no credential read) for Claude, OpenCode, Gemini",
+    "2026-11-01 routing decisions measured over the per-provider state space (tests/test_provider_routing_matrix.py): 624 states (installed, sandboxed, setup, cooldown none/active/expired, each storable observation fresh/expired/other-binary, consent) x 4 (USD ceiling, per-run flag) = 2,496 decisions per provider, for one provider with an enforceable USD ceiling and one without; plus default selection order and the allowlist rule. Every decision matched the specification; no process started. Readiness labels checked per state against an oracle that restates the documented priority (it mirrors the code, so a priority wrong in both would pass); stage BLOCKED and preferred-list ordering (argument and policy) covered. Not covered: RUNTIME_UNSUPPORTED/UNKNOWN labels, providers other than claude/codex, argument-vs-policy precedence",
+    "2026-11-01 #56 closes the gaps named above: all seven providers, each alone, under macOS and Linux platform names (34,944 decisions; containability is an input, only the label depends on the platform name); UNKNOWN for a missing profile and a FAILED stage; RUNTIME_UNSUPPORTED checked against the adapter with bwrap present (positive control for the other four); argument > policy > default order",
+    "2026-11-02 routing-journey-v1 (preregistered, benchmarks/routing-journey-v1): routing end to end through the real CLI with stand-in provider executables and controlled injections, no model call, no real credential: zero, one and two providers, a missing and an unverified login, exhausted quota with and without a USD ceiling, fallback, an explicit provider during cooldown, cooldown and readiness expiry, a changed binary, a provider crash, an unsupported platform. Run 1 27/27 under the preregistered checks (24/27 under the stricter amended checks: three refusals gave a misleading reason); run 2 on the fixed build 27/27, but its Q1 mission started the Claude stand-in with no ceiling, undetected (the path #105 closed); amendment 2 added ceilings and gate G4; run 3 on main (7f769bc) 27/27, no silent fallback inside a run, unknown cost never observed, no uncapped start (G4 0). Fixed: an explicit provider in cooldown was called again; a continuation refused for a cooldown used up its capsule; a crash was classified budget_limit; the NO_AGENT refusal's reason; malformed policy times. Separately (#105) a ceiling-enforcing provider was started uncapped at the default $0 ceiling and refused afterwards: now never started without a usable ceiling (run_provider guard)",
+    "2026-11-03 #111 (queue row 28): at a ceiling under $0.0001 (the default 0) routing never selects a provider whose CLI enforces a USD ceiling; it says why and names --max-cost-usd (and authorization when that is missing too); mixed --allow-unknown-cost tournaments judge each arm at its own ceiling. routing-journey-v1 amendment 3 (before run 4, corrected after review): runs 4 and 5 29/29, G2-G4 0; with one ceiling-enforcing and one non-enforcing stand-in, the default order, --prefer and fallback no longer discriminate end to end (unit tests cover them)"
+   ],
+   "limits": [
+    "stand-in executables, not the real CLIs; expiries and the platform name injected; macOS only",
+    "'many' end to end means two providers; seven providers appear only in the 2026-11-01 matrix, each alone",
+    "entitlement covered by the 2026-11-01 routing matrix, not end to end",
+    "a configured but logged-out login is discovered only by a run (repo-ai reads no credential)",
+    "since amendment 3 the journey's two stand-ins cannot show default order, --prefer or fallback between two providers eligible at the same ceiling end to end (unit-tested only)"
+   ],
+   "next_action": "real host observations over time (an actual quota event, an expired login) once live calls are budgeted; entitlement (ACCOUNT_INELIGIBLE) end to end"
+  },
+  {
+   "id": "C07",
+   "title": "Skill Radar",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "local vetting + honest NO_RECOMMENDATION-style output observed (fixture skill: 'do not install, matches no gap')",
+    "2026-11-01 capability-fresh-v1 (preregistered, 60 tasks by an independent author, matcher unchanged): top-3 recall 0.69 (gate 0.80) and 2 constraint-forbidden recommendations (gate 0): FAILED; correct abstention 19/20, precision 0.68. Both forbidden items came from constraints stated in prose the matcher did not detect",
+    "2026-11-01 component verdict: the deterministic capability recommender (`capabilities.recommend`, curated registry) is a NEGATIVE_RESULT. It failed its recall gate on two independent fresh corpora (0.385 on 120 tasks, 0.69 on 60) and its constraint gate on both; tuning stopped. The gate stays EXPERIMENTAL because its other parts (online search via `skills discover --online`, metadata caching, provenance pinning, and the radar's own gap ranking and abstention in `recommend.py`) have not been validated against a corpus or live (offline unit tests only); not shown false"
+   ],
+   "limits": [
+    "top-3 recall below the 0.80 gate on two fresh corpora (0.385 on 120 tasks, 0.69 on 60)",
+    "prose constraints detected only partly; --deny is the enforced path"
+   ],
+   "next_action": "none planned for the deterministic matcher (tuning stopped); online radar validation needs network and a corpus"
+  },
+  {
+   "id": "C08",
+   "title": "Skill/Plugin/MCP security",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "autonomy policy, five kinds, strict inert check; independent review: 10 findings fixed with regression tests",
+    "2026-10-31 skill-vet-fresh-v1 (unseen, preregistered, 80 cases): G1 FAILED, SAFE_AUTO would auto-install 8 of 30 harmful (prose-only) skills; G2-G4 passed; 6 of 10 harmful script skills rated eligible. Fixed (prose instruction classes, script behaviour); diagnostic re-run 0 of 30, not a confirmation",
+    "2026-11-01: the owner asked the agent to build the v2 corpus; the agent's briefing of the author was stopped by a safety classifier (the second stop); per the earlier rule it was not retried or reworded, and the partly launched author wrote nothing",
+    "2026-11-02: AUTHOR-BRIEF.md for an independent human author (eligibility, allowlist, strata and defanging from v1, delivery layout the harness loads, provenance and manifest) and validate_corpus.py (CI-only; no vetter rule); system under test frozen at 8f6ae0a (SUT.json: src/repo_ai tree, pyproject, harness, validator, pinned dependency); one-shot `skill-vet-v2` workflow; the preregistration kept verbatim with deviations appended. No case written by the agent"
+   ],
+   "limits": [
+    "fix not confirmed: the v2 corpus author was stopped by a safety classifier (not worked around); needs a person-written corpus",
+    "plugin vet fresh-validation failure (12 of 42 benign blocked) not re-measured on that corpus's design; this corpus blocked 0 of 10 benign plugins"
+   ],
+   "next_action": "an eligible person writes the corpus per AUTHOR-BRIEF.md and opens a pull request against skill-vet-v2/delivery; then one dispatched run"
+  },
+  {
+   "id": "C09",
+   "title": "Two-host skills integration",
+   "status": "PASS_WITH_LIMITS",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "repo-ai-installed skill loaded and invoked on Claude Code (model-chosen, paired 2/2 vs 0/2) and loaded by OpenCode from .agents/skills (explicit invocation); uninstall byte-exact"
+   ],
+   "limits": [
+    "n=1; OpenCode model never chose the skill unprompted"
+   ],
+   "next_action": "repeat with a second skill"
+  },
+  {
+   "id": "C10",
+   "title": "Skill value evidence",
+   "status": "PASS_WITH_LIMITS",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "paired run shows the instruction is followed, not that outcomes improve",
+    "pilot 2026-10-30 (6 haiku calls, predeclared rule): INCONCLUSIVE - skill higher on t2 (per-line tax, 7/7 vs 4/7), control higher on t1 (6/8 vs 8/8; oracle rounding ambiguity found post hoc), tie on t3; skill invoked unprompted 3/3; evidence/SKILL-VALUE-PILOT-2026-10-30.md",
+    "2026-11-01 c10-confirm-v1, on one fixture project and 8 tasks (preregistered; fixture+skill, tasks+oracles and ambiguity review by three separate model sessions; 8 tasks x 2 arms x 3 repeats, sonnet, token_env with an empty config dir per run): SUPPORTED, skill arm higher on 8 of 8 tasks (sign test p = 0.0039); convention score 1.000 vs 0.319, baseline score 1.000 vs 0.875 (three control runs ended without editing after reading a mangled path; without them 8 of 8 holds and the control baseline is 1.000); skill invoked unprompted in 24 of 24; $3.25 notional (benchmarks/c10-confirm-v1/RESULTS.md)",
+    "2026-11-06 c10-confirm-v2 ran (preregistered; second fixture, a Python CLI by Author A with its own conventions skill, tasks and oracles by Author B, review by Reviewer C; claude-haiku-5-5; 8 tasks x 3 arms x 3 repeats = 72 sessions; $0.7798 notional). First grade: all 72 INVALID from two validity-rule defects (auth-only `schedule` built-in skill; path-dependent init fields), symmetric across arms; amendment 1 committed before any score was read, re-graded at $0. Primary skill vs control SUPPORTED (7 higher, 0 lower, 1 tie, p = 0.0078; convention 1.000 vs 0.462, baseline 1.000 both); secondary skill vs CLAUDE.md NO_DIFFERENCE_SHOWN (8 ties, both 1.000: a ceiling); tertiary CLAUDE.md vs control TEXT_HIGHER (p = 0.0078); skill invoked unprompted 24/24 (benchmarks/c10-confirm-v2/RESULTS.md)"
+   ],
+   "limits": [
+    "two fixture projects (a Python library, a Python CLI) and two models (Sonnet 5.5, Haiku 5.5); Python only; one project-conventions skill per project (its value is by construction the rules the code does not show)",
+    "authors and reviewer were separate model sessions, not people; host mode only",
+    "says nothing about third-party skills in general or about repo-ai's discovery choosing helpful skills",
+    "on project 2 with Haiku, the installed skill did no better than the same text in CLAUDE.md (both at the ceiling): the claim is about conventions text being present, not the skill format",
+    "c10-confirm-v2's validity rules were amended after the run (before any score was read); CLAUDE.md loading is not observed in the init event"
+   ],
+   "next_action": "a third-party skill trial; a harder task set if the skill format vs CLAUDE.md question matters"
+  },
+  {
+   "id": "C11",
+   "title": "Requirement/evidence graph",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "coverage names unpinned requirements (0.9.0)",
+    "2026-11-02 independent adversarial review of `repo-ai coverage` against C11 (calls into assess/for_mission with constructed records): green needs exact fail->pass or pass->pass on a fresh, comparable PASS (identical test ids, pinned test inputs and skip sets), outcome vocabulary allow-listed; found 3 high (VERIFIED rows and an empty follow-up list under a STALE or INCONCLUSIVE headline; no link from requirements to changed code although the mission measures which changed lines the tests ran; scoped pre-existing failures dropped), 3 medium (silent suffix binding to another file's test; one test for several requirements unflagged; the declaration is not frozen) and 4 low. Fixed in the coverage PR: rows downgraded to UNVERIFIED_*, changed code no test ran and pre-existing failures listed as other_obligations (headline at most ACCEPTANCE_PARTIAL), suffix and shared-test flags, failure-before-skip ordering",
+    "2026-11-02 `do --requirements FILE` freezes the declaration with the mission record before it runs; `coverage ID` assesses it and reports declaration FROZEN_WITH_MISSION (written before this mission ran), FROZEN_AFTER_PRIOR_RUN (an earlier mission on the same source and proposal had recorded outcomes) or SUPPLIED_AT_ASSESSMENT; refused without --run, with --resume/--from-handoff/--tournament and for an already-recorded mission; reviewed independently (a re-run loophole, silent drops, malformed entries found and fixed); end-to-end CLI tests on a real replay mission",
+    "2026-11-03 per requirement (pytest, frozen declaration only): the exercise run's tracer records which changed executable lines ran while each pytest test ran (sys.monitoring line events re-armed at each test; watched = changed files) and those run outside any test; coverage lists each requirement's changed_lines_run, the changed lines only undeclared tests ran and those run at import/collection. An independent review of the first version found its obligation (a verified change requirement whose tests ran no changed line) false in common fixes: import-time lines (constants, default arguments, decorator arguments), shared fixtures credited to the first test, subprocess tests, xdist; it was removed, and the mapping is informational only (no row, obligation or headline effect); a spawned process or an early stop marks the record incomplete; re-review: the per-test record comes from a second run in the time left (so a slow per-test run can no longer turn the measurement UNMEASURED and add an obligation), and multiprocessing, os.fork and early stops (-x/--maxfail: fewer tests ran than were collected) mark it incomplete",
+    "2026-11-03 queue row 32: each run of a shared fixture's setup is credited to the tests whose call ran with it active (per-run tokens; override chains, dependencies and getfixturevalue; line events re-armed at fixture boundaries so 3.12+ and older interpreters agree; directly run lines fill the cap first). A review of the first version found it merged parametrized/per-class runs, credited skipped tests and could push direct lines out of the cap; all fixed with regression tests (params, class scope, skip, override, getfixturevalue, two fixtures, cap); a second review round found an override that ignores its parent credited with the parent's cached run (fixed: only definitions actually used, the active one and those it extends) and runs no test claimed appearing nowhere (now outside any test)",
+    "2026-11-06 c11-attribution-v1 (predeclared, $0: replay of the upstream fix, no model call; repo-ai 0.12.8 from PyPI; benchmarks/c11-attribution-v1): attribution records produced on 3 real projects in podman containers (humanize, more-itertools, pyjwt: 14 changed executable lines, 12 requirements; per-test record complete, sys.monitoring, Python 3.12.16, image pinned to the verified run's digest); marshmallow (optional) produced none: its mission was INCONCLUSIVE (clock-valued test IDs differ between baseline and candidate) and the measurement runs only after a PASS. coverage headline INCONCLUSIVE for all (container freshness `not checked`), observations kept in observed_status. None of the suites has a shared-scope fixture running project code and no changed line runs at import, so fixture-scope and import-time attribution are not exercised; no node project and no host run. Independent review pending (REVIEW-PACKAGE.md, queue row 37)",
+    "2026-11-06 c11-attribution-v1 independent review (benchmarks/c11-attribution-v1/REVIEW.md): 12 measured requirements on humanize, more-itertools and pyjwt (containers, 0.12.8) all CORRECT, 0 missing lines, 0 false credit; marshmallow CANNOT-JUDGE (not measured). Limits added by the review: pytest's collection only (more-itertools' unittest load_tests doctests would also reach the changed lines), test-level credit can include sibling cases' lines, a 'nothing' credit is not positively evidenced, tracer-run outcomes not recorded, only added executable lines attributed; still unreviewed: shared/fixture-setup and import-time crediting, Node, host runs"
+   ],
+   "limits": [
+    "per-requirement changed-line mapping: only for missions run with a frozen declaration; pytest per test, `node --test` per test FILE. pytest attribution is by time window (each run of a shared fixture's setup is credited to the tests whose call ran with it active, its teardown to the test it runs after, a thread's work to whichever test is running, child processes are not seen, import-time lines belong to no test unless the module is first imported inside a test), so it is informational; under Python <3.12 (settrace) a function's def line counts as run when it is called, unlike 3.12+",
+    "traced outcomes: each traced run records what it saw (pytest: the whole per-test run's exit code and every test's outcome, from the tracer's own logreport hook; node: each file run's exit code and its tests' outcomes, from the verified run's reporter), bounded (5000 per run or file, 50,000 over a node record's files) and read as untrusted; a pytest outcome is committed at the test's teardown. `coverage` compares them with the verified candidate run: a declared test whose traced outcome differs, or that did not run in the traced run, or (node) whose file had any test run differently, is DIVERGED, and its credited lines stay listed but labelled informational; a declared test the traced run saw that ran no changed line is \"traced, ran no changed line\", distinct from \"not traced\" or unavailable, but for pytest only when the per-test record is complete (child processes and xdist workers are not traced: otherwise \"no changed line seen\"); a declared pytest test absent from a traced run whose outcomes were all kept is DIVERGED. The comparison is by outcome only: a traced run that passes the same way but takes another path (timing, randomness) is not detected, and the outcomes are written by the test process, so a test can forge them",
+    "node per test file: each test file runs alone (`node --test FILE`, same sandbox and environment, a fresh workspace copy each) under NODE_V8_COVERAGE, one after another in the time the mission has left, files holding declared tests first, each run capped at the larger of 30 s and twice an equal share of the time left (at most 200 files); every changed line a file ran, module load included, is credited to every test in it, so a requirement gets lines its file's other tests ran; a line counts as run when any code on it ran (a `} else {` whose block never ran counts), and an executable line is one with a word character outside comments, the same definition the change-exercise level uses (a small scanner; a `/` after `)` is a division unless the `)` closes an if/while/for/with condition, so a misread regular-expression literal can still hide or expose a line, though an unclosed `/*` hides nothing); at most 2000 lines are kept per test or file (200,000 in all), past which the record is marked incomplete and a file left out whole is unavailable; a file that times out, ends with an exit other than 0 or 1, raises, or whose coverage is missing, malformed, oversized (32 MiB a coverage file, 2 GiB a run, 4 ranges per UTF-16 unit in one entry, 2,000,000 ranges for the watched files in a run, more than 20,000 coverage files in the whole-suite run (child processes write their own) or 256 in one test file's run; each coverage file is folded into one bit map per watched file and dropped, so a whole suite's one-file-per-test-file output stays measurable), linked or does not match the file's UTF-16 length is listed as unavailable with the reason, never as not run; a child process inherits NODE_V8_COVERAGE and is counted, but one started with a cleared environment writes none, so its lines look not run; the coverage is written by the test process, so a test can forge it: informational only",
+    "container runs (podman/docker, `do --sandbox podman --image IMG`): the change exercise and the per-test/per-file records run on the backend and in the image the verified run used (pinned to its digest; another backend or digest is UNMEASURED, nothing run), with the same tracer and V8 coverage; the root is read-only and there is no network, so they write only under the mounted workspace's `.repo-ai/run`; every path the container reports (`/work/...`, or a tracer key) maps to a repo-relative path only when strictly inside the workspace in canonical form (no `.`/`..`/empty segment, no backslash or NUL), never normalised. The tracer needs Python 3.8+ in the image (3.12+ uses sys.monitoring, older settrace; the record names which), V8 coverage needs a node with NODE_V8_COVERAGE, else the record is UNMEASURED or unavailable. Tested in podman with node:24-slim and a Python 3.12 image with pytest, and in CI's docker sandbox job, which builds that image (tests/fixtures/containers/pytest) and fails rather than skips when a backend or image is missing; the settrace path was not exercised in a container, and a container mission's read-only `status`/`coverage` headline reads INCONCLUSIVE because the image is not re-checked there (the lines are still listed)",
+    "a frozen declaration shows only that it preceded this mission's run: outcomes known from tests run outside repo-ai are invisible to it, and its digest is unkeyed (accidental edits only, not a rewritten local store); a declaration supplied at assessment time is labelled SUPPLIED_AT_ASSESSMENT; prior-run detection sees only missions still in the store on the same source with the same proposal or candidate diff",
+    "test-id resolution: a bare name matched by suffix is flagged, not refused; node and parametrized ids with '::' can match partially; a leaf name never matches a `describe > leaf` id",
+    "one test mapped to several requirements is flagged (shared_tests), not refused: all of them can still reach ACCEPTANCE_MAPPED_ALL"
+   ],
+   "next_action": "a follow-up study on a project with shared-scope fixtures and on a Node project; record tracer-run outcomes and list traced declared tests that ran no changed line"
+  },
+  {
+   "id": "C12",
+   "title": "Tournament quality",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "live abstain + byte-identical tie at 0.9.0",
+    "2026-11-02: live comparisons classify how distinct passing candidates differ (IDENTICAL, COSMETIC = same Python syntax tree, SUBSTANTIVE with definitions named, UNKNOWN), rebuilt with shortlist's hardened reconstruction, and carry a next step taken from the decision; the abstention rule is unchanged. Tournaments can cap only the arms that enforce a ceiling (--allow-unknown-cost). tournament-live-v1 preregistered (owner approved 8 sessions); not run yet",
+    "2026-11-03 #113 (queue row 29): candidate differences are compared file by file (shortlist.code_identity, shared with shortlist): an identical non-Python change no longer hides a formatting-only Python difference; a SUBSTANTIVE pair always names a place (duplicate definition names kept, file fallback); a stale comparison never repeats its recorded next step (repo-ai compare, mission status --json)",
+    "2026-11-03 tournament-live-v1 (benchmarks/tournament-live-v1/RESULTS.md): 4 live Codex-vs-Claude tournaments on the abc-v5 calibration tasks, main at a2099be; all 8 arms PASS and graded CORRECT by the sealed hidden oracle in a podman container; every tournament abstained with a SUBSTANTIVE difference named and a pinning-test or shortlist next step; T1/T2/T3 0, no winners; R1: 0 of 4 SUBSTANTIVE pairs differed on the oracle (different code, same observed behaviour); Claude $0.2028 observed, Codex UNKNOWN",
+    "0.12.3 (#133): `shortlist --probe SCRIPT`, the mission-5B evidence expansion: a developer-written probe runs against the base (twice, determinism check) and each distinct passing candidate in the mission's sandbox; SAME / DIFFER (first differing line) / INCONCLUSIVE. Tested offline (fake providers and replay); smoke from PyPI on a replay tournament reported DIFFER. Not yet evaluated on real abstaining live candidates",
+    "2026-11-04 shortlist --probe on tournament-live-v1's two Python abstentions (benchmarks/tournament-live-v1/PROBE-PROTOCOL.md, predeclared probes and amendment 1 committed before running; results/probe-2026-11-04.jsonl; no model call, $0): the recorded comparisons were refused as stale after the 0.12.1 -> 0.12.3 upgrade (freshness rule; documented limit). The recorded Codex and Claude diffs re-submitted as replay proposals under 0.12.3 reproduced both abstentions (PASS/PASS); the probes then reported DIFFER on exactly one line each: cal-py-backoff delays(2, base=3, cap=3) [3.0, 3] (Codex) vs [3, 3] (Claude), equal values; cal-py-sizes parse_size('١٠') 10 (Codex) vs ValueError (Claude), non-ASCII digits. Both outside the prompt, consistent with the oracle's CORRECT for all four; the probe names the difference, it does not choose. Small sample (2 tasks, 1 provider pair, probes by the feature's author)",
+    "2026-11-04 amendment 2 (JavaScript probes, #137 branch; results/probe-node-2026-11-04.jsonl; $0): the two Node abstentions re-submitted as replay reproduced PASS/PASS; predeclared probes reported SAME for both (cal-node-roman 60 lines incl. a 3999-numeral round trip; cal-node-chunk 30 lines), both candidates differing from the buggy base on 37 and 18 lines. Code SUBSTANTIVE, behaviour identical on the probed inputs. Over the four abstentions: 2 separated on one out-of-prompt input each, 2 SAME; all consistent with the oracle",
+    "2026-11-06 amendment 3, independent probe authors (benchmarks/tournament-live-v1/PROBE-PROTOCOL.md, probes-independent/ by a separate agent instance that saw only task.json and repo/, sha256 predeclared before any run; results/probe-independent-2026-11-06.jsonl; repo-ai 0.12.8 from PyPI, no model call, $0): the recorded Codex and Claude diffs re-submitted as replay reproduced all four abstentions (PASS/PASS, same diff sha256); no refusal, no INCONCLUSIVE; the original probes reproduced their 2026-11-04 outputs byte for byte. Both probe sets gave the same verdicts: DIFFER, DIFFER, SAME, SAME. cal-py-sizes: the independent probe found the same difference (Codex accepts non-ASCII Unicode digits: '١٠KB', '１０KB', '١.٥KiB'; outside the prompt). cal-py-backoff: the same int-vs-float-at-the-cap difference (delays(3, 0.5, 2, 1); outside), plus a different one the original probe missed: Codex's candidate raises OverflowError on delays(1100) and delays(400, 1.0, 10.0, 1e9), where Claude's returns the list; classified inside the prompt (R1 defines the values, R2/R3/R5 name the only errors), so it is the first probe result that disagrees with the oracle's CORRECT for one candidate, with a stated caveat (Codex's code is R1's expression verbatim; in Python floats that expression itself overflows). Node: both SAME again (roman 60 + 99 lines, chunk 30 + 49). No verdict or grade changed. Small sample (4 synthetic tasks, 1 provider pair, independent author not human)",
+    "2026-11-06 owner-side reading of amendment 3's new backoff difference: R1 defines each delay as the value min(base*factor**i, cap), the prompt says the result is a list of numbers, and only ValueError/TypeError are named, so Codex's OverflowError on delays(1100) (Claude returns the capped list) most likely violates the spec, a defect the frozen tests and the hidden oracle (graded CORRECT) did not catch; contested only by a literal-Python reading of R1. The probe, written blind from the prompt, found it; the feature author's probe did not"
+   ],
+   "limits": [
+    "4 synthetic calibration tasks (no rate); every abstention here was between two correct candidates, so the tie rule cost a human choice each time"
+   ],
+   "next_action": "more abstentions (the live tournament set has four) and probe authors who are people outside the project, before any claim about how often a probe separates candidates; record the oracle-vs-probe disagreement in the tournament results"
+  },
+  {
+   "id": "C13",
+   "title": "Handoff/recovery",
+   "status": "PASS_WITH_LIMITS",
+   "owner": "principal",
+   "code_sha": "ecfdc8e",
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "codex→agy live handoff PASS, hidden oracle 714/714 (0.9.0)",
+    "2026-11-01 Claude as handoff target, BLOCKED (auth): replay source mission FAIL/partial_progress (simulated, fixes 1 of 2) -> `handoff --to claude` capsule, accepted by `do --from-handoff --agent claude` (which refuses a stale one; a later re-verify reports stale because the continuation is recorded on the source) -> the continuation carried the partial diff (seed: test_add fixed, test_scale still failing) and stopped at the provider preflight with auth_mode none, recovery provider_unavailable, $0, no model call (docs/engineering/evidence/C13-CLAUDE-HANDOFF-2026-11-01.md)",
+    "2026-11-02: owner approved one live Claude continuation session capped at $0.50; runbook and script ready (benchmarks/c13-live-handoff) (evidence/C13-LIVE-RUNBOOK-2026-11-02.md); preflight correctly stops: no dedicated login yet",
+    "2026-11-03 live attempt 1 (benchmarks/c13-live-handoff/RESULTS.md): the owner chose the existing dedicated login claude-eval; repo-ai 0.12.1 from PyPI, preflight eligible, partial source and valid capsule, isolation probe passed, then Claude Code failed to authenticate (OAuth token revoked); $0.00 observed, no model turn, mission BLOCKED with the provider's reason. Not a C13 result; needs a fresh dedicated login",
+    "2026-11-03 live attempt 2 (benchmarks/c13-live-handoff/RESULTS.md, after a recorded runner amendment): new dedicated login claude-provider; replay partial candidate (partial_progress) handed to Claude Code via a verified capsule; partial patch transferred and re-verified from the same frozen source; Claude (file tools only: Read, Read, Edit) completed it: PASS, LIVE_CANDIDATE_VERIFIED, $0.038988 observed; hidden oracle 4/4 in a podman container without network; post-apply PASS, undo byte-identical; capsule consumed",
+    "2026-11-05 live-to-live attempt 1 (Claude source limited to money.py, then Claude continuation): blocked before any model turn by the revoked dedicated login ($0.00); not retried (benchmarks/c13-live-handoff/RESULTS.md)",
+    "2026-11-05 live-to-live handoff PASS (benchmarks/c13-live-handoff/RESULTS.md, token_env): a live Claude source limited to money.py gave FAIL/partial_progress ($0.024088); the verified capsule was continued by a second live Claude session capped at the inherited $0.47 (repo-ai refused a larger ceiling): PASS, LIVE_CANDIDATE_VERIFIED, partial patch transferred and re-verified, hidden oracle 4/4 in podman, apply/undo byte-identical; $0.040622 total. Same provider on both sides"
+   ],
+   "limits": [
+    "one task, one session (a demonstration that the path works, not a success rate); macOS seatbelt only; the source was a replay provider, not a live one"
+   ],
+   "next_action": "a cross-provider live handoff when a second provider with an observable cost and an unmanaged account is available; Linux"
+  },
+  {
+   "id": "C14",
+   "title": "Independent study",
+   "status": "NOT_YET_DEMONSTRATED",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "abc-v1..v4 at ceiling; abc-v5 calibration only",
+    "2026-11-02: abc-v5 selfcheck re-run on main, 0 failing checks; phase 1 needs independent human authors (S, M, F); phase 2 (144 calls, $150 proposed cap) not requested until phase 1 is reported (benchmarks/abc-v5/STATUS-2026-11-02.md)"
+   ],
+   "limits": [],
+   "next_action": "owner recruits three independent authors (S, M, F) for abc-v5 phase 1"
+  },
+  {
+   "id": "C15",
+   "title": "Claude-context effect",
+   "status": "NEGATIVE_RESULT_HISTORICAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "150 preregistered runs: plain 92%, Core 90%, Full 88%",
+    "2026-11-01 decision (owner delegated it to the agent): no re-run on the $20 budget. The only public task split (final) was analysed in Option A and 0.7.6 was tuned on it, so a re-run would favour repo-ai and still not be fresh confirmatory evidence; the eval config also carries the account's synced-skills cache, which the lab must first prove never loads (per-run init-event check, as the provider path does)"
+   ],
+   "limits": [],
+   "next_action": "a fresh study needs new held-out tasks and the lab's synced-skills check; not started"
+  },
+  {
+   "id": "C16",
+   "title": "Performance",
+   "status": "NEGATIVE_RESULT",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": "https://github.com/hxxtsxxh/repo-ai/actions/runs/41240668799",
+   "environment": "GitHub ubuntu-latest (4 vCPU), bwrap; earlier: macOS",
+   "observations": [
+    "verify 1.44–2.31x slower than native in 3/5 held-out cases (historical)",
+    "2026-10-31 speed-v1 (preregistered; 5 pinned pure-Python projects x 6 real upstream commits; GitHub ubuntu runner, bwrap): verify --run cold 1.84x the native suite (geometric mean), slower on 24 of 30; the 6 'faster' were verify runs that failed (more-itertools full-suite-failed). Overhead median +0.63 s; reuse 0.20 s. No false assurance, with little power (only 5 of 30 native suites failed, 2 of them contaminated by a harness defect); verify failed natively passing tests in 14 (pyjwt network-denied, more-itertools and humanize unexplained, marshmallow name-matched files)",
+    "2026-11-01 profile of the fixed overhead (macOS, Apple Silicon; a 40-test pytest project; not a re-run of speed-v1): a comment-only verify --run spent ~0.68 s of 0.92 s in 18 sequential git subprocesses (35 ms each through Apple's /usr/bin/git launcher stub, 17 ms direct) and ~80 ms importing the mission runtime and provider adapters to build the argument parser. Fixed: the stub is resolved once per process (gitbin.git(): DEVELOPER_DIR, the xcode-select link, else xcode-select -p) and those imports are lazy. verify --run 965 -> 636 ms (comment-only), 1,370 -> 992 ms (behaviour change, full suite), reuse 544 -> 330 ms; Claude hooks ~150 -> 67-81 ms (session-start 324 -> 205 ms). Remaining duplicate git reads are the before/after source-tree checks and are kept. Linux overhead (speed-v1) is not re-measured by this",
+    "2026-11-01 speed-v1 run 3 (Amendment 3, a replication stated before the run; GitHub run 41306386452, commit 8cd3afd, different runner CPU): cold 2.23x the native suite (geometric mean), slower on 30 of 30 (run 2: 1.84x, 24 of 30); without more-itertools (measured differently: targeted in run 3, full in run 2) 2.61x vs 2.64x; absolute overhead confounded by the CPU change, not compared. Exit codes agree with the native suite on 23 of 30 (run 2: 16): more-itertools 6/6 and humanize f772e59b now agree, consistent with the 0.11.4/0.11.5 fixes but not isolated by the runs (more-itertools full suite seen passing once); pyjwt 6 (pre-existing, consistent with the denied network) and marshmallow 2fc8207d still disagree, and 2fc8207d still gives two verdicts for one state (cold exit 1, --rerun exit 0); no false assurance, little power (0 of 4 failing native suites, all configuration or collection crashes)",
+    "2026-11-01 #65: when verify matches pytest tests by name, the plan names test files under the project's norecursedirs (read from the file pytest would use), so a targeted/full disagreement like marshmallow 2fc8207d is explained in the product; a note only, nothing removed",
+    "2026-11-01 Linux profile (scripts/profile_verify.py on GitHub runners, 40-test generated project with its own .venv; profile runs 41340493434 before, 41340833864 after): git was negligible on Linux (18 calls, 0.03 s); the two source-tree snapshots took ~0.62 of 0.70 s (profiled) of a comment-only verify, mostly pathlib relative_to over ~2,000 venv entries (cProfile inflates such code; unprofiled comment-only 0.34 -> 0.23 s on a slower runner). Fixed by carrying relative prefixes (oracle-tested): ratio to the native suite on ubuntu 2.16x -> 1.12x (comment-only), 3.54x -> 2.38x (behaviour change; the sandboxed pytest, ~0.2 of 0.49 s, is now the largest single part; most of that ratio drop is the slower runner's larger native time, absolute 0.55 -> 0.49 s); macOS 2.86x -> 1.71x, 4.17x -> 3.04x. One run per platform, runners differed (native suite +25-32% in the after run), so ratios are reported, not absolute times; speed-v1 not re-run",
+    "2026-11-01 speed-v1 run 4 (Amendment 4, a replication stated before the run, on 0.11.7 after the snapshot fix; GitHub run 41360280119, same CPU model as run 2): cold 2.00x the native suite, slower on 30 of 30 (still not faster by the reading rule); without more-itertools 2.26x (run 2 2.64x, run 3 2.61x; strategies differ within that subset too). Decided after the run (the amendment compares ratios only): with native times close to run 2's on the same CPU model, median overhead +0.38 s vs run 2's +0.63 s (per project pyjwt 0.42->0.18 s, itsdangerous 0.58->0.30 s, humanize 1.10->0.83 s, marshmallow 1.79->1.43 s); confounded by other repo-ai changes, the harness (pre- vs post-Amendment 2) and the host (run 4's native suites up to 12% faster, pyjwt unchanged). Agreement 24 of 30: the one change from run 3 is marshmallow 2fc8207d choosing the full strategy this time (a strategy effect, not a fix); only pyjwt's network-dependent changes disagree; no false assurance, little power (0 of 4 failing native suites, all configuration or collection crashes)",
+    "2026-11-01 speed-v1 run 5 (Amendment 5: strategy reasons, full-suite command, verify's commands and sandbox_network_suspected recorded): 1.96x geometric mean cold ratio, slower than native on 28 of 30 (reading rule: not faster), overhead median +0.32 s, exit agreement 24 of 30 (the 6 pyjwt disagreements all sandbox_network_suspected). Recorded reasons show the strategy turns on close estimates measured in the same run (tenths of a second, some within the tie margin) and on missing per-file measurements (9 cold calls, 4 of them a project's first change); within run 5 the cold and --rerun calls on one state chose different strategies on 4 of 30 changes (recorded); that earlier cross-run flips happened this way is inferred. marshmallow 2fc8207d: cold and --rerun ran full with the same command (the reuse call reported the cold record)",
+    "2026-11-04 steadier strategy inputs (the next action's suggestion; nothing re-measured, no speed claim), only ever toward the full suite, since the shapes are not equally informative (the full suite also reports failing files outside the selection and can conclude selected-and-full-suite-passed): when nothing forces a shape, verify --run keeps a full suite it chose before for the same test files (selection, every test file by content, worker count) in the same environment unless the selection is faster by more than 0.25 s + max(0.25 s, 20% of the full suite's estimate); a remembered selection never holds back the full suite (the existing rule, full when est_full <= est_targeted + 0.25 s, decides) and a no-estimates selection is not remembered; a full suite is remembered only after a run whose own report reached every selected file (recorded after the run), so the steadiness never trades away the full suite's evidence (cost: a kept full suite can be up to that margin slower). Required full suite, --full, an unattributable full suite, an empty selection and an unsplittable or unrunnable command still decide first. Unit- and engine-tested (close estimates stop flipping once full is chosen; a clearly faster selection still replaces it; forcing conditions override and store nothing; a changed test file, selection or worker count is a new suite; a malformed timings file is ignored); the evidence records strategy.basis/previous/margin_s. Not checked on speed-v1: the harness records strategy.reason (which names a kept choice) but not basis",
+    "2026-11-05 reviewing the steadier strategy (#152) found a false pass older than it: with the full suite (--full, the tie rule, or a remembered full suite), a selected NEW failing test file the project's own command does not collect (pytest norecursedirs; a unittest package whose load_tests hides it) was reported selected-and-full-suite-passed (its pre-filled empty outcome read as 'defines no test'); the selection alone said regression, so the verdict depended on the strategy, the mechanism the marshmallow 2fc8207d addendum describes. Fixed: such files (no outcome, never collected or finished in the full suite's report) run on their own after it; when they cannot (no single-file runs, time budget spent) the verdict is not verified. Engine-tested on pytest and unittest layouts (red before the fix); not re-measured on speed-v1, where 2fc8207d's full runs should now also run its three tests/mypy_test_cases files",
+    "2026-11-05 fixed-cost profile (profile only; speed-v1 not re-run; macOS, this machine only, scripts/profile_verify.py on its generated 40-test project): verify --run 0.62 s comment-only, 1.10 s for a behaviour change that fails (incl. base comparison), 0.45 s reuse, native suite 0.18 s, --version 0.06 s. Comment-only spends ~0.6 s in 18 git processes (~33 ms each here, double the 2026-11-01 Mac, likely per-exec scanning on this host; running them concurrently saved only 0.13 -> 0.115 s for four), most of them deliberate fresh re-reads (the post-copy fingerprint, the integrity check), so they were kept; one sandboxed pytest process costs ~0.05 s over native (sandbox-exec start), instrumentation nothing measurable; imports ~0.09 s. The one safe cut found: the environment key and the recorded static environment walked every site-packages and node_modules entry twice per run; now one reading before the run (each later re-check still reads afresh): 10.5 -> 4.9 ms (2k-entry venv), 28 -> 14 ms (4k), 358 -> 181 ms (50k-entry node_modules), measured on the component because CLI medians on this shared host varied more than that (--version 0.06 -> 0.14 s between two runs). Not measured here: Linux bwrap (BwrapBackend.run re-runs its availability probe, one extra bwrap process per sandboxed run; a candidate for a Linux profile). speed-v1's large overheads are processes: humanize 11-13 and marshmallow 3-4 per cold change (base comparisons, skip checks), not fixed cost"
+   ],
+   "limits": [
+    "small, fast pure-Python suites on one runner type; not a general claim",
+    "verify still exits 1 on natively passing suites whose failing tests are consistent with the denied network (pyjwt) or are matched by name without verify --record (marshmallow 2fc8207d, whose verdict also flips between a cold run and --rerun: the targeted run names files pytest's norecursedirs skips, the full run does not (RESULTS.md addendum; why the strategy differed was not recorded in runs 2-3); a limit until verify --record)",
+    "a selected pytest file the full suite collects only for its doctests (--doctest-modules with a python_files that does not match it) counts as reached, so its test functions run only in a targeted run; telling doctest items apart needs a reporter change (QUEUE row 36)"
+   ],
+   "next_action": "the remaining fixed cost (interpreter and pytest start, base comparison) on small suites; consider steadier strategy inputs (a margin relative to the estimates, or the recorded choice reused for an unchanged suite) so close timings do not flip the strategy between runs"
+  },
+  {
+   "id": "C17",
+   "title": "Windows",
+   "status": "PASS_WITH_LIMITS",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "Windows CI unit suites green (py3.10/3.13) on every PR; release smoke on a fresh windows-latest runner (install, quickstart, init)",
+    "2026-11-01: the Windows jobs run on every PR and dispatched run (e.g. #58-#61 all green on windows-latest py3.10 and py3.13); 0.11.5 release smoke passed on windows-latest (release run 41297242379)"
+   ],
+   "limits": [
+    "missions unsupported on Windows (no host sandbox); refused, never degraded"
+   ],
+   "next_action": "keep the Windows CI jobs (py3.10, py3.13) required; missions stay refused on Windows until a Windows sandbox exists"
+  },
+  {
+   "id": "C18",
+   "title": "Security/privacy",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "two independent adversarial reviews of provider isolation: 1 high + 3 medium + others, then 3 + 4 more; all fixed or disclosed (Codex token exposure, reads outside HOME)",
+    "credential copying removed (Claude files, whole ~/.gemini)",
+    "2026-10-31 independent review of the ACP conformance kit found: the probe sandbox (agents doctor) lacked (deny lsopen)(deny appleevent-send) on macOS (escape with network via `open`), fixed; seatbelt's 'localhost' network filter also matches local interface addresses, so the OpenCode live adapter's loopback-only rule admits a wildcard listen and connections to the host's own LAN address (open item)",
+    "2026-10-31 measured with a deny-all control on a CI macOS runner (benchmarks/seatbelt-loopback, run 41256165553): OpenCode's loopback rule denies other LAN hosts and the internet, but admits the host's own LAN address and a wildcard listen; an outbound-only rule denies all listening; seatbelt cannot name 127.0.0.1; disclosed",
+    "2026-10-31 local check: OpenCode 2.2.1 `opencode run --standalone` in repo-ai's OpenCode sandbox with the inbound/bind rules removed (outbound-only), model at the closed port 127.0.0.1:9 (no model call), failed with 'Standalone server exited before reporting readiness', consistent with its server being unable to listen; no log kept. The inbound rule stays and the disclosed residual risk stands",
+    "2026-11-01 independent security review of v0.11.3...v0.11.7 (the next action 'review of the final release diff'): 2 medium (M1: the Linux probe sandbox left host unix sockets reachable, since --unshare-net does not cover path-based sockets; M2: the macOS probe allowed preference writes through cfprefsd, and pasteboard access via mach-lookup; launchd job creation was also denied, as defence in depth, since launchd already refused `launchctl submit` from a sandboxed caller) and 5 low (isolate crash on non-table TOML values, an unbounded pytestcfg pattern, licence-named files read as documentation in any directory, a quadratic dup2 check, checkout tokens persisted in 3 workflows), plus coding-lab host git reading an agent-writable .git. Fixed (reviews by independent reviewer agents, not recorded on GitHub; rounds with fixes are named by their fix commits): the lows in #79 (three rounds, fix commits 404cc02, 3269abd, 3f6eedf, the last only a test-assertion nit; they found a clean-filter host-exec route with only -c overrides, so host git now uses a pre-run copy of .git); the mediums in #78 (four rounds: fix commits 80395e0, 5b01f66, e52812a for rounds 1-3; round 4 found nothing unresolved, and its report was not kept; they found that hiding /tmp hid agents installed there, bind-backs re-exposing nested socket dirs, and a crash in the socket check). Still open and disclosed: probe reads unrestricted; Linux sockets outside the hidden directories; other macOS Mach services",
+    "2026-11-02 release-level review of v0.11.7...release/0.11.8 (the gate's next action): nothing blocking; medium M1 (the coding lab's integrity `git show` used the agent-writable .git) and low L1 (probe socket check not recursive) fixed before the tag (#86); after 0.11.8, L3 (#90: hidden directories by real path, without un-hiding /tmp for a home under it), L5 (#91), L7 and part of L6 (#87: no host-global git config for workspace git calls, on any git version; persist-credentials off in every workflow) fixed; each PR reviewed by independent reviewer agents (not recorded on GitHub; rounds with fixes: #86 none, #87 8671723 plus two test-only commits found by CI, #90 ba931a7 and 0f4150a, #91 2005fb0; the final round of each found nothing unresolved, reports not kept); open: L2, L4, the rest of L6 (QUEUE row 19). The macOS probe's default-deny Mach lookups (#81) shipped in 0.11.8 (only opendirectoryd user and group lookups allowed), so 'other macOS Mach services' is no longer open; still allowed and disclosed: signals to the user's other processes and IOKit access",
+    "2026-11-02 queue row 19 closed (#99): descriptor-pinned probe binds with bubblewrap 0.10+ (--ro-bind-fd; path binds before), nested licence prose check, untracked count against the base commit's ignore files; two independent review rounds and a nits round; CI job builds bubblewrap v0.11.0 (pinned commit) to exercise the descriptor path",
+    "2026-11-03 #112 (queue rows 27, 30): Linux live runs (Claude, Codex and now Bob, which had no HOME hiding) hide HOME and the account's home, repo-ai login stores and the host socket directories (/tmp, /run, /var/run, /var/tmp, ...), with their own IPC/UTS namespaces; read-only bind-backs pinned by descriptor with bubblewrap 0.10+. Real-bubblewrap CI test: a listening socket under /tmp and under HOME and the runner's docker.sock unreachable, DNS works, no leaked descriptor. Two adversarial review rounds (missing passwd home, re-exposed stores, overclaimed wording fixed). Not live-verified on Linux",
+    "2026-11-03 opt-in Linux egress isolation (REPO_AI_LINUX_EGRESS_PROXY=1, queue row 31): own network namespace; egress only through a CONNECT-only proxy in the repo-ai process (port 443, host names, every resolved address public, judged on embedded IPv4 for mapped/compatible/6to4/Teredo/NAT64 forms, never this host's own address, connects to a checked address with fallback), via an in-sandbox forwarder (system python3) that the Claude isolation probe also uses. An adversarial review found the probe running without network (it could pass without checking synced connectors), NAT64/IPv4-compatible/site-local private forms allowed, self-connects, single-address connects and overclaimed wording; all fixed. CI test with curl: proxied HTTPS works, a direct connection fails, localhost refused by the resolved-address policy and literals by the parser, host abstract socket and loopback service unreachable. Residual: any TCP to 443 of a public host, filesystem sockets outside the hidden directories, port 443 of other public addresses. Not live-verified with Claude Code, Codex or Bob, so off by default"
+   ],
+   "limits": [
+    "Linux live runs share the host network namespace: abstract unix sockets (X11/Xwayland input injection where local same-user access is granted) and host-network services stay reachable (queue row 31)"
+   ],
+   "next_action": "live-verify a real provider CLI on Linux with REPO_AI_LINUX_EGRESS_PROXY=1, then make it the default; a live Linux run of each provider under the 0.12.1 sandbox; Claude file-tool reach of /proc under bwrap (row 11)"
+  },
+  {
+   "id": "C19",
+   "title": "Website/docs",
+   "status": "PASS_WITH_LIMITS",
+   "owner": "principal",
+   "code_sha": "8eeb8ef",
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "Pages run 41036040819 deployed 2026-10-30T09:48Z; all 20 sitemap URLs 200 over HTTPS, real 404; served HTML shows repo-ai-cli 0.10.0 from a verified PyPI read; provider matrix and Evidence Lab rendered from data files",
+    "an independent site review's findings (overstated statuses, stale provider text, a false capture date, unscoped method text) were corrected in a82f54d before merge",
+    "local QA re-run on the corrected content before a82f54d was committed: 0 broken links, 0 axe violations (21 pages x 2 themes x 2 widths), 0 third-party requests",
+    "2026-11-01 probes from a GitHub runner, not the development host (site-probe workflow; scripts/site_probe.py). Run 41302859155: all 20 sitemap URLs HTTPS and 200, an unknown path 404, the home page in the sitemap and showing 0.11.5 (= release-facts.json), 0 third-party URLs referenced in the HTML of the 20 pages or in the site's 5 stylesheets (JS-time requests not covered by the probe); Lighthouse 12.2.1 on 6 main pages (home, docs, quickstart, verify, evidence, changelog), mobile and desktop: performance, accessibility, best practices and SEO 100 in all 12 reports, CLS <= 0.001, and the Lighthouse network logs show requests only to hxxtsxxh.github.io (and data: URIs). An earlier run (41301931754, narrower probe) scored the home page 95 for performance on mobile (TBT 232 ms), so scores vary between runs"
+   ],
+   "limits": [
+    "one Lighthouse run per page and form factor per probe, on one runner type (scores vary between runs); Lighthouse covers 6 of the 20 pages; the probe does not see requests made by JavaScript"
+   ],
+   "next_action": "keep the weekly site-probe green (it fails below performance 90 or any other category below 100)"
+  },
+  {
+   "id": "C20",
+   "title": "Distribution/release",
+   "status": "PASS",
+   "owner": "principal",
+   "code_sha": "390fcf6",
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "Trusted Publishing, SBOM, SHA256SUMS, provenance attestation; re-download verified; clean install smoke",
+    "0.11.0: Trusted Publishing, assets identical across PyPI/GitHub, SHA256SUMS and attestation verified, clean install smoke PASS",
+    "0.11.1 published 2026-10-30 (tag v0.11.1 at a0bbe36): PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS",
+    "0.11.2 published 2026-10-30 (tag v0.11.2 at c22c9fe, tree = qualified 2ec12f0): macOS full suite 2,616 passed / 0 failed; PyPI = GitHub assets, SHA256SUMS OK, attestation verified, smoke PASS",
+    "0.11.3 published 2026-10-31 (tag v0.11.3 at 7750279): PyPI = GitHub release = local clean build (wheel b11ff58f…), attestation verified, smoke PASS (recorded in QUEUE.md row 1d)",
+    "0.11.4 was qualified (CI, macOS included, at 991d9c6) but never tagged; folded into 0.11.5",
+    "0.11.5 published 2026-11-01 (tag v0.11.5 pushed by the agent with the owner's authorization, at merge abc81dc after #58's green CI incl. the dispatched macOS full suite at d83f492): the first publish attempt failed before upload on a transient sigstore Rekor HTTP 502 and was re-run; PyPI = GitHub release = local clean build (wheel 1203e843…, sdist 8e3e3845…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.5 at abc81dc), smoke install from PyPI on macOS PASS (repo-ai 0.11.5, eval --offline runs)",
+    "0.11.6 published 2026-11-01 (tag v0.11.6 pushed by the agent with the owner's authorization for this release, at merge 9edf537 after #67's green CI incl. the dispatched macOS full suite at 8b86af4 and a clean independent review): PyPI = GitHub release = local clean build (wheel c56e61e5…, sdist fdb48764…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.6 at 9edf537), smoke install from PyPI on macOS PASS (repo-ai 0.11.6, gitbin resolves the developer-tools git, session-start hook output)",
+    "0.11.7 published 2026-11-01 (tag v0.11.7 pushed by the agent with the owner's authorization for this release, at merge 34cb2e9 after #75's green CI incl. the dispatched macOS full suite at 138a273 and a clean independent review): PyPI = GitHub release = local clean build (wheel 6a70b4b7…, sdist 89cf078a…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.7 at 34cb2e9), smoke install from PyPI on macOS PASS (repo-ai 0.11.7; no gemini provider)",
+    "0.11.8 published 2026-11-02 (tag v0.11.8 pushed by the agent with the owner's authorization for this release, at merge 5662506 after #85's green CI incl. the dispatched macOS full suite at 30afeac and an independent release-level review whose medium finding was fixed in #86 before the tag): PyPI = GitHub release = local clean build (wheel 967e6590…, sdist d46d99aa…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.8 at 5662506), smoke install from PyPI on macOS PASS (repo-ai 0.11.8; init; a comment-only change gave NOTHING TO RUN). The smoke run also found that verify headlines a missing test runner (pytest not installed in the interpreter) as 'NO NEW FAILURES … already failing at the base' (not a passing verdict; fixed in #89, released in 0.11.9)",
+    "0.11.9 published 2026-11-02 (tag v0.11.9 pushed by the agent with the owner's authorization for this release, at merge 26f3988 after #97's green CI incl. the dispatched macOS full suite at d4c94ac and an independent release-level review whose findings were fixed before the merge, in two rounds): PyPI = GitHub release = local clean build (wheel ca3bc35f…, sdist 2dddc525…; the wheel rebuilt from the sdist is identical), SHA256SUMS OK, SLSA provenance verified for both files (refs/tags/v0.11.9 at 26f3988), smoke install from PyPI on macOS PASS (repo-ai 0.11.9 from the default index, no direct_url.json, index wheel hash matching; init; with pytest absent from the interpreter, verify --run reported NOT VERIFIED: the test runner could not start, the 0.11.8 smoke finding fixed)",
+    "2026-11-03 (UTC) 0.12.0 published: tag v0.12.0 at 1822c34, release run 41575685786 (build, smoke on macOS/Ubuntu/Windows, PyPI, GitHub release); wheel 3ad4f498c31b1aacf9f5ddea0e137a5e9d0c8b59972e0288bd7e034a24f38ec0, sdist 154096236e7c58c8833bbd734950da6e836db77b32e7255084b145aba5aa8ccf; PyPI = GitHub = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA provenance verified for both; fresh install from PyPI: 0.12.0, uncapped Claude refused before start, verify --run caught a regression",
+    "0.12.1 published 2026-11-03 (UTC) (tag at ecfdc8e pushed by the agent with the owner's approval; release run 41680549675): wheel c752612facefe82630a24036f422384a23945655df1c3559279cc8e7c53a9dcf, sdist 4fc70dc1fd63b44885698694bac9001ec0a9146041be7a76c1519f151c22c20b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.1); fresh install from PyPI reports 0.12.1, verify --run catches a regression",
+    "0.12.2 published 2026-11-03 (UTC) (tag at f661ebb pushed by the agent with the owner's approval; release run 41757207196): wheel 52e6f4b96e2faca6bed64c061c06193c68ede37696dbe89a6a3e411c348529e4, sdist cc2051b6845ee48976d4d1a3b0030ddc3aeaa46e062228ba642197534ecd412b; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.2); fresh install from PyPI reports 0.12.2, verify --run catches a regression, an uncapped live Claude run is refused before start; site deployed from f661ebb (21/21 sitemap URLs 200, real 404)",
+    "0.12.3 published 2026-11-04 (UTC) (tag at 27fa6a3 pushed by the agent with the owner's approval; release run 41806360967): wheel 9531fe530b212b78c38a79121ff57d88fe9c041b0bb919957da832170ea2e4a2, sdist 47517f4650db85625960dd8a9459450bcdd0194ac9a9fe63f3fb0ef2ccd4cb56; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; SLSA v1 provenance verified for both (refs/tags/v0.12.3); fresh install from PyPI reports 0.12.3, a replay tournament + shortlist --probe reports DIFFER, an uncapped live Claude run is refused before start; site deployed from 27fa6a3 (21/21 sitemap URLs 200, real 404)",
+    "0.12.4 published 2026-11-04 (UTC) (tag at 3c1b999 pushed by the agent with the owner's approval; release run 41918248372): wheel 6d3ca8444f983aeab612aa2206aa353197e020d5a4896ff030105622f8eb709e, sdist 8774504c516eb317943d417344c8fc5df1a8cb0e8d84e993e5053078058bc6ca; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)",
+    "0.12.5 published 2026-11-05 (UTC) (tag at 676c09e pushed by the agent with the owner's approval; release run 41986612102): wheel 52c02e08fb30faa8163ea51363a752656fff3d3ca6f6f7636f4351a711b35c70, sdist 17756f30e51626ed51bd563e1221a787661a48d72fe14b10576e4b9d8e23e82d; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site (21/21 URLs 200, real 404)",
+    "0.12.6 published 2026-11-05 (UTC) (tag at 905358e pushed by the agent with the owner's approval; release run 42091064941): wheel 67b7fd95ccd3c215f037a1b75f58f20dd4a2eb4e0028382143118abb9eb0e561, sdist e3e2481e17eb8845ec2984cc29e38efadc9574c4128326540531370feb09afdb; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site",
+    "0.12.7 published 2026-11-05 (UTC) (tag at 0706700, owner-approved, tagger the owner's personal address; release run 42134637117): wheel cf89e5a4c2f590a4bace241ea0899256d96369ceea77ad847ecc9344d618710a, sdist 8ff2d603130a88178d7ab97bdc37246fe2e35cf9d6ced8028712e118fa85dfd8; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site",
+    "0.12.8 published 2026-11-06 (UTC) (tag at 390fcf6, owner-approved, personal tagger; release run 42175893801): wheel b94e94238482e5c9746749943ab084d60df1a054397cfaea5b762b09c78d3288, sdist 7d93380b846ff55f574d6039c156155403d07ee02132537a4c434cc896b43589; PyPI = GitHub release = local build from the tag = wheel rebuilt from the sdist; SHA256SUMS OK; attestations verified; smoke from PyPI; live site"
+   ],
+   "limits": [],
+   "next_action": "next release"
+  },
+  {
+   "id": "C21",
+   "title": "Real adopter proof",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "python-slugify (real OSS repo): verify --run caught a regression; a live Codex fix verified through a scoped mission (PASS_WITH_PRE_EXISTING_FAILURES), byte-identical to upstream; apply/undo exact",
+    "first-run bug (init then do) found on the published 0.11.0; fixed in 0.11.1 (PR #11, #13)",
+    "python-humanize (second real repository, real upstream defect ca892b3): live Claude and Codex scoped missions PASS [LIVE_CANDIDATE_VERIFIED] on a development build; Claude equal to upstream on the sampled domain, Codex differs just below a googol; found 4 repo-ai bugs, fixed in #16 (init .gitignore), #17 (interpreter, tracked-but-ignored files) and #18 (verify counts); the slugify 20-vs-0 discrepancy was a hard-coded post-apply count in `apply` (fixed in #21), not the interpreter bug as first claimed; evidence/REAL-PROJECT-HUMANIZE-2026-10-30.md",
+    "published 0.11.2 (2026-10-30T23:46Z): fresh first run on python-humanize, live Claude PASS [LIVE_CANDIDATE_VERIFIED], project venv, apply 739/0, undo exact",
+    "2026-11-01 (UTC) journey-offline-v1 (preregistered, CI runner, 3 pinned projects): INCONCLUSIVE; no false assurance but no power (no test-without-fix state failed natively); selection used --no-merges --first-parent and so skipped fixes merged via pull requests (humanize's tip fix), falling back to a 2013 commit, a typing-only fix and nothing; uninstall check unknown (compared with the init commit, output truncated)",
+    "2026-11-01 (UTC) journey-offline-v2 (preregistered, CI runner, 7 real upstream fixes in 4 projects whose tests fail without the fix): J1 no false assurance 0/7 (5 detected as regression, 2 refused; small sample, ~35% 95% bound); J2 fix 3/6 as selected-passed (pyjwt jwks tests pre-existing, likely network; more-itertools no trusted test command, likely an 'unknown' framework); J3 uninstall left no tracked or untracked difference 7/7; deviation: one clone per project, not fresh",
+    "2026-11-01 #51: `from unittest import TestCase` marks a unittest suite (more-itertools gap from journey-offline-v2 closed; confirmed on real commits by CI diagnose)",
+    "2026-11-02: owner approved journey-live-v1 (4 MIT upstream defects, project code only in podman, at most 4 Claude sessions, $4.00); `do --sandbox podman --image` added so missions keep project code off the host; preregistration, harness and no-model preparation committed (all 4 defects qualify in their containers); a no-model check showed verify in podman sees pytest-9 subtest failures",
+    "2026-11-03 journey-live-v1 (benchmarks/journey-live-v1/RESULTS.md; amendment 3 before any session): repo-ai 0.12.1 from PyPI, Claude Code 2.1.317 on the dedicated login, project code only in podman. Controls: 3 of 4 (marshmallow INCONCLUSIVE, unstable observation; no session). Zero-provider onboarding found the frozen regressions on all three. Live: pyjwt PASS (native frozen ok, hidden upstream oracle no behavioural difference, apply/undo exact); humanize BLOCKED by a repo-ai defect (copied version file blamed on the provider); more-itertools BLOCKED by a repo-ai defect (64 KB capture killed the run, cost UNKNOWN); both fixed in #125. Gates L1, L3, L4, L5: 0; L6: 3 sessions, $0.0875 + one UNKNOWN (capped $1.00)",
+    "2026-11-04 (UTC) marshmallow control follow-up (no model call, $0; results/followup-marshmallow-control-2026-11-04.jsonl): the INCONCLUSIVE control had two causes. A repo-ai defect: mission observations ignored the project's norecursedirs (tests/mypy_test_cases), so every marshmallow mission was incomplete; fixed in #131 (confirmed readings only; both observations then complete, 1104 tests, 1 failure then 0). A project property: test_invalid_datetime_deserialization is parametrized with the current time, so baseline and candidate never share test IDs; correctly INCONCLUSIVE, and the refusal now names the IDs. Projects with clock- or random-parametrized test IDs cannot be compared by a mission (limit)",
+    "2026-11-04 journey-live-v1 re-run (amendment 4, owner-approved 2 sessions <= $2.00; repo-ai 0.12.4 from PyPI, Claude Code 2.1.318): prep and positive controls PASS again; both sessions BLOCKED before any model turn by a server-side revocation of the dedicated login (`authentication_failed`, OAuth token revoked) while `claude auth status` still reported logged in; $0.00 OBSERVED each; correctly not a pass; the harness first refused both on leftover workspaces from a stopped local test run (guard worked). Recovery advice made exact in #143",
+    "2026-11-05 journey-live-v1 retry (amendment 5, after the owner's re-login; repo-ai 0.12.4, Claude Code 2.1.318): more-itertools and humanize both PASS end to end: native frozen tests 0 still failing / 0 new failures, hidden oracle 0 behavioural differences (humanize's oracle equals its frozen tests), apply with post-apply PASS in the container and byte-identical undo; $0.084002 + $0.039266 = $0.1233 OBSERVED of the approved $2.00. With pyjwt (2026-11-03), three real-project live Claude journeys pass every gate on released builds; marshmallow INCONCLUSIVE by design",
+    "2026-11-05 site page docs/reproduce ('Repeat our journeys'): exact commands for a stranger to repeat journey-offline-v2 (fork, push a journey/ branch, disposable runner, $0) and journey-live-v1 (own Claude login, podman only, per-session cap, sessions counted from records), with what to compare against our results and the stated limits (recall, localisation given)"
+   ],
+   "limits": [
+    "python-slugify: regression injected by the author (python-humanize: a real upstream defect)",
+    "the passing run used a development build of the 0.11.1 fix; 0.11.0 refused it",
+    "two repositories; on the published build, one live run (Claude, python-humanize)"
+   ],
+   "next_action": "skill discovery inside a real-project journey; an actual repeat by someone outside the project; marshmallow stays INCONCLUSIVE by design"
+  },
+  {
+   "id": "C22",
+   "title": "Product credibility",
+   "status": "EXPERIMENTAL",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "positioning: local verifier that names what tests do not pin; live evidence includes a local-model false assurance that a hidden oracle caught and that repo-ai labelled ASSURANCE_PARTIAL; requirement-erasure detection (PR #7) built from it",
+    "2026-11-02 public comparison page (site docs/compare): what repo-ai adds next to pytest-testmon, jest --onlyChanged / vitest related, pytest --lf, containers and agent CLIs; where it is worse, each backed by a measurement on a linked page (speed-v1 1.84-2.23x slower; Jest/Vitest/Mocha full-suite only; agent benefit NOT_YET_DEMONSTRATED in the 150-run blinded study; no Windows host sandbox); and the idea selection with rejected alternatives (docs/ARCHITECTURE-DECISION-0.8.md: ten candidate problems scored on impact, frequency, offline feasibility, open space and measurability; prior art in docs/RESEARCH-2026-10.md). Persona and non-claims: site docs/index",
+    "2026-11-05 a verify false pass found by code review, not by a journey or speed-v1: a selected new failing test file that the project's own test command does not collect (pytest norecursedirs; a unittest load_tests hook) was reported selected-and-full-suite-passed whenever the full suite ran, in 0.12.5 and earlier. Fixed on #152 (those files run on their own after the full suite; otherwise not verified); see C16 and the CHANGELOG. Runners that cannot run single files (npm test, make test) give no per-file evidence and are unchanged",
+    "2026-11-05 honesty follow-up to the #152 review (QUEUE row 36, #155): after verify --record, an edit to a file named like a test that pytest's recorded collection leaves out (marshmallow's tests/mypy_test_cases) required the full suite, which passed without running the file: an edit that only made that file fail alone gave selected-and-full-suite-passed, PASSED, exit 0 (a false assurance found by review of #155, older than it). Now, unless another test imports, opens or names it, the edit requires no full suite (it cannot run it), so alone it is not verified: no test is linked to the behavioural change (exit 1), the same rule as any unlinked behavioural edit; next to other changes their tests decide. Either way the run's first note names it ('pytest's recorded collection never runs it; no test exercised this edit') and untested_edits lists it. End-to-end tested on a marshmallow-like layout, verdict and exit code for both cases (red before)"
+   ],
+   "limits": [],
+   "next_action": "measured usefulness for the persona beyond verify's held-out qualification (a developer-facing study, e.g. time to a correct pre-push answer), once a protocol and budget exist"
+  },
+  {
+   "id": "C23",
+   "title": "Community/reliability",
+   "status": "PASS",
+   "owner": "principal",
+   "code_sha": "0706700",
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "community files, branch protection",
+    "2026-11-05 re-checked at 0.12.x: SECURITY.md (private advisories; supported-versions table was stale at 0.9.x, now 'the latest release'), CONTRIBUTING, CODE_OF_CONDUCT, SUPPORT, LICENSE, bug/feature issue forms and a PR template present; main protected (12 required checks, strict, admins included, no force-push); release and rollback procedure added as docs/RELEASING.md (immutable tags and files, PyPI yank, fix forward)",
+    "2026-11-05 status moved from PASS_AT_0.9.0 to PASS on the 0.12.x re-check recorded above (community files, protected main, RELEASING.md with rollback)"
+   ],
+   "limits": [],
+   "next_action": "keep; exercise the rollback procedure only if a release ever needs it"
+  },
+  {
+   "id": "C24",
+   "title": "Final launch report",
+   "status": "IN_PROGRESS",
+   "owner": "principal",
+   "code_sha": null,
+   "test_run": null,
+   "environment": "macOS Darwin 25.5 arm64",
+   "observations": [
+    "docs/engineering/FINAL_REPORT.md filled with verified 0.10.0 release facts",
+    "2026-11-02 FINAL_REPORT.md brought up to 0.11.8: release facts re-read from PyPI and GitHub, the live site checked (20/20 sitemap URLs 200, real 404, 0.11.8 served), releases since 0.11.2, providers, security, evaluation, spend, gate statuses and what would prove each open item",
+    "2026-11-02: final report updated for the 0.12.0 work"
+   ],
+   "limits": [],
+   "next_action": "FINAL_REPORT.md at the end"
+  }
+ ]
 }
