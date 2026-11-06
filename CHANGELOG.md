@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- `repo-ai coverage` on a container mission can now verify requirements. A read-only command cannot re-check a
+  container image, so such a mission's freshness is always "not checked": `coverage` reported every requirement as
+  `UNVERIFIED_INCONCLUSIVE`, listed it under `follow_up_test_needed` and exited 2, even when its tests observed
+  fail-to-pass. When the image is the only open point and the mission passed (the rule `apply` and recovery already
+  use), the observed outcomes now count, and the report says so: an `Image:` line ("image not re-checked by this
+  read-only command; the observation ran in image <digest>"), `image_check` in the JSON (`checked: false` with the
+  image and digest), and a limit. Anything else that is not fresh still makes the headline `STALE` or `INCONCLUSIVE`.
+  (Found by the C11 attribution study on real projects.)
+- When there are no per-requirement changed lines, `coverage` now says why from what the mission recorded: the verdict
+  was not PASS (the change exercise runs only after a PASS), the measurement itself was UNMEASURED (with its reason),
+  no executable line changed, or no declaration was frozen with the mission. It used to always say "recorded for
+  pytest and node --test missions run with a frozen --requirements declaration", even for such a mission.
+- The `coverage` documentation no longer says Node missions and container runs are `not measured` (wrong since 0.12.5
+  and 0.12.8).
+
 ## 0.12.8 — requirement coverage for container runs; uninstall names what it removes
 
 - The change-exercise measurement now refuses to run on another sandbox backend than the verified run used (with

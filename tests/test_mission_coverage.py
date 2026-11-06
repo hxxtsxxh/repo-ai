@@ -381,3 +381,95 @@ def test_a_pytest_test_left_out_of_a_full_record_is_unavailable_not_zero_lines()
     [row] = out['requirements']
     assert row['changed_lines_unavailable'] == {'m_test.py::test_pick': 'its changed lines were cut from the record'}
     assert 'changed lines unavailable for its test m_test.py::test_pick' in cov.render(out)
+
+
+# -- container missions: the image is the only thing a read-only command cannot check -------------------------------
+
+DIGEST = 'sha256:' + 'c' * 64
+
+
+def _state(**over):
+    from repo_ai.mission.runtime import IMAGE_UNCHECKED
+    decl_ = cov._validated({'schema': cov.REQ_SCHEMA, 'requirements': [
+        {'text': 'negative input is negated', 'kind': 'change', 'tests': ['m_test.py::test_neg']}]})
+    state = {'id': 'm1', 'state': 'COMPLETE', 'passport': {'verdict': 'PASS'}, 'freshness': 'not checked',
+             'freshness_reasons': [IMAGE_UNCHECKED], 'effective_verdict': 'INCONCLUSIVE',
+             'baseline': {'outcomes': {T_NEG: 'fail'}},
+             'candidate': {'outcomes': {T_NEG: 'pass'}, 'executor': {
+                 'backend': 'podman', 'image': 'localhost/deps:1@' + DIGEST, 'image_digest': DIGEST}},
+             'exercise': dict(C11_EXERCISE),
+             'plan': {'requirements': {'requirements': decl_['requirements'], 'sha256': decl_['sha256']}}}
+    state.update(over)
+    return state
+
+
+def _for(monkeypatch, tmp_path, state, decl_=None):
+    from repo_ai.mission import runtime
+    monkeypatch.setattr(runtime, 'status', lambda root, mission: state)
+    return cov.for_mission(tmp_path, 'm1', decl_)
+
+
+def test_a_container_mission_whose_only_open_point_is_the_image_reaches_its_observed_status(monkeypatch, tmp_path):
+    """C11 study: the image of a container mission is never re-checked by a read-only command, so every requirement
+    was UNVERIFIED_INCONCLUSIVE and the headline INCONCLUSIVE even when its tests observed fail-to-pass."""
+    out = _for(monkeypatch, tmp_path, _state())
+    [row] = out['requirements']
+    assert row['status'] == 'VERIFIED_FAIL_TO_PASS' and out['headline'] == 'ACCEPTANCE_MAPPED_ALL', out
+    assert out['follow_up_test_needed'] == [] and out['freshness'] == 'not checked'
+    assert out['image_check'] == {'checked': False, 'image': 'localhost/deps:1@' + DIGEST, 'image_digest': DIGEST,
+                                  'note': f'image not re-checked by this read-only command; the observation ran in '
+                                          f'image {DIGEST}'}
+    text = cov.render(out)
+    assert f'Image: image not re-checked by this read-only command; the observation ran in image {DIGEST}' in text
+    assert any('was not re-checked' in x and DIGEST in x for x in out['limits'])
+
+
+@pytest.mark.parametrize('over, headline', [
+    ({'freshness_reasons': ['container image freshness was not checked by this read-only command',
+                            'source changed']}, 'INCONCLUSIVE'),                     # something else is open too
+    ({'passport': {'verdict': 'FAIL'}, 'effective_verdict': 'INCONCLUSIVE'}, 'INCONCLUSIVE'),  # it did not pass
+    ({'state': 'RUNNING'}, 'INCONCLUSIVE'),
+    ({'freshness': 'stale', 'freshness_reasons': ['source changed'], 'effective_verdict': 'STALE'}, 'STALE'),
+])
+def test_anything_beyond_an_unchecked_image_keeps_the_mission_unverified(monkeypatch, tmp_path, over, headline):
+    out = _for(monkeypatch, tmp_path, _state(**over))
+    assert out['headline'] == headline and out['requirements'][0]['status'].startswith('UNVERIFIED_'), out
+    assert 'image_check' not in out and 'Image:' not in cov.render(out)
+
+
+def test_not_measured_names_the_real_reason(monkeypatch, tmp_path):
+    """C11 study (marshmallow): a frozen declaration but a verdict that was not PASS read as "recorded for pytest and
+    node --test missions run with a frozen declaration"."""
+    no_pass = _state(passport={'verdict': 'FAIL'}, freshness='fresh', freshness_reasons=[], effective_verdict='FAIL')
+    del no_pass['exercise']
+    reason = _for(monkeypatch, tmp_path, no_pass)['changed_lines_by_requirement']['reason']
+    assert reason == "not measured: the change exercise runs only after a PASS verdict, and this mission's verdict was FAIL"
+    unmeasured = _state(exercise={'assurance': 'UNMEASURED', 'reason': 'measurement run timed out', 'changed_lines': 0})
+    assert _for(monkeypatch, tmp_path, unmeasured)['changed_lines_by_requirement']['reason'] == (
+        'not measured: the change-exercise measurement itself was UNMEASURED (measurement run timed out)')
+    no_code = _state(exercise={'assurance': 'NO_EXECUTABLE_CHANGE', 'changed_lines': 0})
+    assert _for(monkeypatch, tmp_path, no_code)['changed_lines_by_requirement']['reason'] == \
+        'not measured: no executable line changed'
+    unfrozen = _state(plan={}, exercise={'assurance': 'FULL', 'changed_lines': 2})
+    supplied = decl(req('negative input is negated', ['m_test.py::test_neg']))
+    assert 'no requirements declaration was frozen' in _for(monkeypatch, tmp_path, unfrozen, supplied)[
+        'changed_lines_by_requirement']['reason']
+    own = _state(exercise={'assurance': 'FULL', 'changed_lines': 2, 'per_test_reason': 'no changed python file'})
+    assert _for(monkeypatch, tmp_path, own)['changed_lines_by_requirement']['reason'] == \
+        'not measured: no changed python file', "the exercise record's own reason wins"
+
+
+def test_the_image_only_rule_needs_a_content_digest(monkeypatch, tmp_path):
+    """Review of the image-only rule: "pinned" must hold, so a record without a sha256 digest gets no observed status."""
+    for digest in ('unknown', '', 'sha256:short', None):
+        state = _state()
+        state['candidate']['executor']['image_digest'] = digest
+        out = _for(monkeypatch, tmp_path, state)
+        assert out['headline'] != 'ACCEPTANCE_MAPPED_ALL' and 'image_check' not in out, (digest, out['headline'])
+
+
+def test_no_frozen_declaration_is_named_first_among_not_measured_reasons():
+    for exercise, state in (({'assurance': 'UNMEASURED', 'reason': 'x'}, {'exercise': {}}),
+                            ({}, {'passport': {'verdict': 'FAIL'}})):
+        why = cov._why_no_per_test(state, exercise, frozen=False)
+        assert why.startswith('no requirements declaration was frozen'), why
