@@ -205,12 +205,35 @@ def _ranges(functions: Any, rel: str) -> Entry:
     return tuple(out)
 
 
+def inside_rel(path: str, inside_root: str) -> str | None:
+    """The repo-relative path of `path`, an absolute path as the sandboxed process saw it (on a host sandbox the
+    workspace's own path; in a container `/work/...`), or None unless it lies strictly inside `inside_root` in
+    canonical form: no `.` or `..` segment, no empty segment, no backslash or NUL. Exact, never normalised: a path
+    that only resolves into the workspace is not taken as one."""
+    root = inside_root.rstrip("/")
+    if not root.startswith("/") or not isinstance(path, str) or "\x00" in path or "\\" in path:
+        return None
+    prefix = root + "/"
+    if not path.startswith(prefix):
+        return None
+    rel = path[len(prefix):]
+    if not rel or len(rel) > 4096 or any(part in {"", ".", ".."} for part in rel.split("/")):
+        return None
+    return rel
+
+
+def safe_rel(path: Any) -> str | None:
+    """`path` when it is a canonical repo-relative path (what the tracer records), else None."""
+    if not isinstance(path, str) or path.startswith("/"):
+        return None
+    return inside_rel("/r/" + path, "/r")
+
+
 def scripts_for(reports: list[list[Any]], inside_root: str, wanted: set[str], *,
                 lenient: bool = False) -> dict[str, list[Entry]]:
     """{repo-relative path: the distinct script entries for it} for the `wanted` files only. An entry for a wanted
     file that is malformed makes the whole coverage unavailable; other scripts, and entries whose URL does not parse,
     are not looked at."""
-    prefix = inside_root.rstrip("/") + "/"
     out: dict[str, dict[Entry, None]] = {}
     for result in reports:
         for script in result:
@@ -218,13 +241,11 @@ def scripts_for(reports: list[list[Any]], inside_root: str, wanted: set[str], *,
             if not isinstance(url, str) or not url.startswith("file://"):
                 continue
             try:
-                path = unquote(urlparse(url).path)
+                parsed = urlparse(url)
             except ValueError:
                 continue
-            if not path.startswith(prefix):
-                continue
-            rel = path[len(prefix):]
-            if rel in wanted:
+            rel = inside_rel(unquote(parsed.path), inside_root) if parsed.netloc == "" else None
+            if rel is not None and rel in wanted:
                 try:
                     entry = _ranges(script.get("functions"), rel)
                 except Unavailable:

@@ -16,6 +16,13 @@ With ``per_test`` (a mission run with a frozen requirements declaration) a secon
 changed lines each test ran: per pytest test (``per_test_granularity: "test"``, a time-window tracer), or per
 ``node --test`` test FILE (``"file"``: each test file runs alone in its own sandboxed process under V8 coverage, and
 the lines it ran, module load included, belong to that file, so to every test in it). It never changes the level.
+
+Backends. The runs use the mission's own sandbox: a host sandbox, or a podman/docker container whose image is pinned
+to the digest the verified run recorded (a different digest is UNMEASURED, nothing run). In a container the workspace
+is mounted at ``/work`` and the root file system is read-only, so the tracer and V8 write only under
+``/work/.repo-ai/run`` (repo-ai's run directory in the workspace), and every path they report is mapped back to a
+repo-relative path exactly (`v8lines.inside_rel`, `v8lines.safe_rel`): anything outside the workspace or not in
+canonical form is ignored, never credited.
 """
 from __future__ import annotations
 
@@ -102,14 +109,24 @@ def _finalize(acc: dict[str, set[str]]) -> tuple[dict[str, list[str]], dict[str,
     return out, truncated, not truncated
 
 
+def _clean_files(files: Any) -> dict[str, list[int]]:
+    """{repo-relative path: line numbers} from a tracer record (untrusted): only canonical relative paths and
+    integer line numbers are kept (the sandbox reports paths relative to its own view of the workspace)."""
+    from .v8lines import safe_rel
+    if not isinstance(files, dict):
+        return {}
+    return {rel: [n for n in lines if isinstance(n, int) and not isinstance(n, bool)]
+            for rel, lines in files.items() if safe_rel(rel) == rel and isinstance(lines, list)}
+
+
 def _per_test(trace: dict[str, Any], eligible: dict[str, set[int]]) -> tuple[dict[str, list[str]], bool, dict[str, int]]:
     """({pytest node id: the changed executable lines ("path:line") it ran}, for tests that ran at least one; whether
     the record is complete; {test: true count} for tests whose lines were cut)."""
     acc: dict[str, set[str]] = {}
     complete = trace.get("per_test_complete") is True
     def changed(files: Any) -> set[str]:
-        return {f"{rel}:{int(n)}" for rel, lines in (files.items() if isinstance(files, dict) else ())
-                if isinstance(lines, list) for n in lines if isinstance(n, int) and n in eligible.get(rel, set())}
+        return {f"{rel}:{int(n)}" for rel, lines in _clean_files(files).items()
+                for n in lines if n in eligible.get(rel, set())}
 
     for test, files in trace["per_test"].items():  # lines each test ran itself come first (they fill the cap)
         if not isinstance(test, str) or not isinstance(files, dict) or len(test) > 1000:
@@ -168,11 +185,9 @@ def _per_test_run(record: dict[str, Any], bound: Any, ws: Any, runner: Any, env:
         record["per_test_truncated"] = truncated
     # a child process runs code this run cannot see, and an early stop leaves tests unrun
     record["per_test_complete"] = complete and not per_trace.get("spawned") and per_res.exit_code in (0, 1)
-    raw_outside = per_trace.get("outside_tests")
-    outside: dict[str, Any] = raw_outside if isinstance(raw_outside, dict) else {}
     record["changed_outside_tests"] = sorted(
-        f"{rel}:{int(n)}" for rel, lines in outside.items() if isinstance(lines, list)
-        for n in lines if isinstance(n, int) and n in eligible_by_file.get(rel, set()))[:MAX_LISTED]
+        f"{rel}:{n}" for rel, lines in _clean_files(per_trace.get("outside_tests")).items()
+        for n in lines if n in eligible_by_file.get(rel, set()))[:MAX_LISTED]
 
 
 MAX_NODE_TEST_FILES = 200  # node test files run one by one for the per-file record
@@ -299,10 +314,12 @@ def _per_file_node_run(record: dict[str, Any], template: Executor, runner: Any, 
 
 def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.0,
             project_root: Path | None = None, sandbox_preference: str = "auto", image: str = "",
-            per_test: bool = False, declared_files: list[str] | None = None) -> dict[str, Any]:
+            per_test: bool = False, declared_files: list[str] | None = None,
+            expected_image_digest: str = "") -> dict[str, Any]:
     """Run `command` once more over a pristine copy of `workspace` (the verified candidate) under a
     line tracer and compare with the lines `diff` added. Never raises: failure is ``UNMEASURED``.
-    `declared_files`: node test files holding declared tests, run first for the per-file record."""
+    `declared_files`: node test files holding declared tests, run first for the per-file record.
+    `expected_image_digest`: in a container, the image digest the verified run used; any other is refused."""
     from . import v8lines, verification
     record: dict[str, Any] = {"schema": SCHEMA, "assurance": "UNMEASURED", "reason": "", "changed_lines": 0,
                               "unexercised": [], "files": {}}
@@ -318,9 +335,15 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
         verification.container_layout(workspace, runner, listing[0], sandbox_preference)
         executor = execute.get_executor(workspace, sandbox_preference, runner.language, timeout_s=timeout_s,
                                         interpreter_root=project_root, image=image)
+        record["backend"] = executor.backend.name
         if executor.is_container:
-            record["reason"] = "line measurement is not implemented for container backends"
-            return record
+            # the same image bytes as the verified run, pinned so a moved tag cannot change them between runs
+            pinned = verification.pin_container_image(executor, runner.language)
+            record["container"] = pinned
+            if expected_image_digest and pinned["image_digest"] != expected_image_digest:
+                record["reason"] = ("the container image is not the one the verified run used "
+                                    f"({pinned['image_digest'][:19]} != {expected_image_digest[:19]}); nothing was run")
+                return record
         with isolate.materialize(workspace, label="mission-exercise", listing=listing) as ws:
             bound = executor.in_workspace(ws)
             started = time.monotonic()  # the per-file copy below counts against the measurement's time
@@ -378,17 +401,22 @@ def measure(workspace: Path, command: str, diff: str, *, timeout_s: float = 120.
             else:
                 raw = isolate.read_inside(ws.path, f"{RUN_DIR}/trace.json", MAX_RECORD_BYTES)
                 trace = json.loads(raw.decode("utf-8")) if raw else {}
-                lines = trace.get("lines") if isinstance(trace, dict) else None
-                if not isinstance(lines, dict):
+                raw_lines = trace.get("lines") if isinstance(trace, dict) else None
+                if not isinstance(raw_lines, dict):
                     record["reason"] = "tracer produced no line record"
                     return record
+                lines = _clean_files(raw_lines)
+                python, events = trace.get("python"), trace.get("line_events")
+                if isinstance(python, list) and len(python) == 3 and all(isinstance(x, int) for x in python) \
+                        and events in {"sys.monitoring", "settrace"}:
+                    record["tracer"] = {"python": ".".join(map(str, python)), "line_events": events}
                 for rel, text in texts.items():
                     executable = _python_executable(text)
                     if executable is None:
                         record["reason"] = "a changed python file does not compile"
                         return record
                     exec_by_file[rel] = executable
-                    executed_by_file[rel] = {int(x) for x in lines.get(rel, [])}
+                    executed_by_file[rel] = set(lines.get(rel, []))
                     never_by_file[rel] = executable - executed_by_file[rel]
             unexercised: list[str] = []
             total = 0
