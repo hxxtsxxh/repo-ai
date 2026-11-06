@@ -95,3 +95,16 @@ a file only they can read. `run_l2l.py --token-file PATH` passes it to repo-ai's
 refresh); it is never printed or recorded (records keep only the variable's name). Everything else is as predeclared
 above: the same fixture, roles, checks, at most 2 sessions at $0.50 each in a fresh work directory, and no retry after a
 model call. Attempt 1 ($0.00, no model turn) does not count against the 2 sessions.
+
+## Live-to-live attempt 2 so far (2026-11-05 UTC), and an amendment before its continuation
+
+repo-ai 0.12.7, `token_env` (the owner's setup token). **Source (session 1): FAIL, `partial_progress`, $0.024088
+(OBSERVED)**: Claude used Glob, Read, Read, Read, Edit and changed money.py only (units.py was not writable). The
+handoff capsule verified. **Session 2 was refused by repo-ai before any model call**: the harness asked for a fresh
+`--max-cost-usd 0.50`, and a continuation inherits only the source's remaining budget ("continuation exceeds
+remaining prior cost budget"). That is repo-ai enforcing C13's budget carried across a handoff, and a harness bug.
+
+**Amendment (before the continuation runs):** `run_l2l.py continue --work DIR` runs that one continuation from the
+same verified capsule, capped at the inherited remaining budget ($0.50 minus the source's reported cost, rounded down),
+with the same scope, checks and the 2-session limit (session 2 never reached a model); the `run` stage caps its
+continuation the same way from now on. No new source session.
