@@ -3,6 +3,7 @@ only; project code runs only in podman containers (repo-ai's podman backend, and
 
     python run.py prep    --work DIR                  # frozen tests + upstream ref, existing images, native check
     python run.py run     --work DIR --repo-ai PATH   # replay mission with a frozen declaration, then coverage
+    python run.py state   --work DIR                  # amendment 1: re-read the recorded missions' state files
     python run.py export  --work DIR --out FILE       # records with paths shortened -> results/run-1.jsonl
     python run.py package --work DIR --records FILE   # the reviewer's tables (markdown on stdout)
 
@@ -97,8 +98,24 @@ def workspaces() -> set[str]:
 
 
 def mission_state(checkout: Path, mid: str) -> dict:
+    """The mission record from repo-ai's store (`{"record": ..., "schema", "sha256"}` on disk; amendment 1)."""
     found = [p for p in (checkout / ".repo-ai").rglob(f"missions/{mid}.json")] if mid else []
-    return json.loads(found[0].read_text()) if found else {}
+    raw = json.loads(found[0].read_text()) if found else {}
+    return raw.get("record") if isinstance(raw.get("record"), dict) else raw
+
+
+def state(work: Path, names: list[str], log) -> None:
+    """Amendment 1: read each recorded mission's state file again (nothing is run) for the change-exercise record
+    and executors, which run-1's `mission` rows missed (the reader did not unwrap the store's `record`)."""
+    for name in names:
+        rows = [r for r in J.rows(work) if r["defect"] == name and r["step"] == "mission" and r.get("mission_id")]
+        if not rows:
+            continue
+        mid = rows[-1]["mission_id"]
+        st = mission_state(work / name / "mission", mid)
+        log(name, "mission-state", mission_id=mid, found=bool(st), exercise=st.get("exercise"),
+            candidate_executor=(st.get("candidate") or {}).get("executor"),
+            baseline_executor=(st.get("baseline") or {}).get("executor"))
 
 
 SUMMARY_KEYS = ("id", "state", "verdict", "effective_verdict", "standing", "freshness", "freshness_reasons", "reasons",
@@ -220,9 +237,14 @@ def numbered_diff(repo: Path, a: str, b: str, paths: list[str]) -> str:
 def test_source(repo: Path, rev: str, test_id: str) -> str:
     """The source of one declared test function at `rev` (with its line numbers), found by name in its file."""
     file, _, rest = test_id.partition("::")
-    func = re.sub(r"\[.*$", "", rest.split("::")[-1])
+    parts = rest.split("::")
+    func = re.sub(r"\[.*$", "", parts[-1])
     text = J.sh([*J.GIT, "show", f"{rev}:{file}"], repo, check=True).stdout.decode().split("\n")
-    start = next((i for i, l in enumerate(text) if re.match(rf"\s*def {re.escape(func)}\(", l)), None)
+    after = 0
+    for cls in parts[:-1]:  # a method: search after its class statement only
+        after = next((i for i, l in enumerate(text) if i >= after and re.match(rf"\s*class {re.escape(cls)}\b", l)),
+                     len(text))
+    start = next((i for i, l in enumerate(text) if i >= after and re.match(rf"\s*def {re.escape(func)}\(", l)), None)
     if start is None:
         return f"(def {func} not found in {file})"
     while start > 0 and text[start - 1].strip().startswith("@"):
@@ -247,7 +269,8 @@ def package(work: Path, records: Path) -> None:
         repo = work / name / "repo"
         print(f"\n## {name}\n")
         print("```diff")
-        print(numbered_diff(repo, frozen["frozen"], frozen["upstream_ref"], frozen["source_files"]))
+        print(numbered_diff(repo, frozen["frozen"], frozen["upstream_ref"],
+                            [f for f in frozen["source_files"] if f.endswith(".py")]))
         print("```\n")
         decl = json.loads((REQ_DIR / f"{name}.json").read_text())
         for i, r in enumerate(decl["requirements"], 1):
@@ -255,12 +278,16 @@ def package(work: Path, records: Path) -> None:
             for t in r["tests"]:
                 print(f"  - `{t}`")
         print()
-        for t in declared_tests(name):
-            print(f"`{t}` at the frozen commit:\n\n```python\n{test_source(repo, frozen['frozen'], t)}\n```\n")
+        shown: dict[str, list[str]] = {}
+        for t in declared_tests(name):  # one listing per test function (parametrized cases share one)
+            shown.setdefault(test_source(repo, frozen["frozen"], t), []).append(t)
+        for src, ids in shown.items():
+            print(", ".join(f"`{t}`" for t in ids) + f" at the frozen commit:\n\n```python\n{src}\n```\n")
         if not mission:
             print("(no mission record)\n")
             continue
-        ex = mission.get("exercise") or {}
+        st = ([r for r in mine if r["step"] == "mission-state"] or [{}])[-1]
+        ex = st.get("exercise") or mission.get("exercise") or {}
         per_test = ex.get("per_test") if isinstance(ex.get("per_test"), dict) else {}
         decl_ids = set(declared_tests(name))  # declared as pytest node ids, the per-test record's keys
         lines = sorted({l for v in per_test.values() for l in v} | set(ex.get("unexercised") or [])
@@ -281,7 +308,7 @@ def package(work: Path, records: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["prep", "run", "export", "package"])
+    ap.add_argument("stage", choices=["prep", "run", "state", "export", "package"])
     ap.add_argument("--work", required=True, type=Path)
     ap.add_argument("--repo-ai", dest="exe")
     ap.add_argument("--only", action="append")
@@ -299,6 +326,8 @@ def main() -> int:
         if not args.exe:
             raise SystemExit("--repo-ai PATH is required")
         run(args.work, names, args.exe, log)
+    elif args.stage == "state":
+        state(args.work, names, log)
     elif args.stage == "export":
         export(args.work, args.out, args.exe)
     else:

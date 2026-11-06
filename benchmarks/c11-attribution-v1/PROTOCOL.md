@@ -182,3 +182,14 @@ as a product issue; this study changes no code.
 
 macOS (Darwin 25.5, arm64), podman machine `podman-machine-default` (applehv, 7 CPUs, 2 GiB), Python 3.12 for the
 virtualenv. Results: `results/run-1.jsonl`, `REVIEW-PACKAGE.md`.
+
+## Amendments
+
+**Amendment 1 (2026-11-06, after the run stage, nothing re-run):** the `run` stage's reader of the mission state file
+did not unwrap repo-ai's on-disk envelope (`{"record": …, "schema", "sha256"}`), so run 1's `mission` rows carry
+`exercise: null` and no executors although the measurement was made (`coverage` read it). A new `state` stage reads
+the same four state files again and appends a `mission-state` row per defect (nothing is run; the missions are not
+repeated). The `package` stage's test-source lookup now searches inside the test's class (it had picked the first
+`def test_basic` in more-itertools' file) and lists each test function once. Prep showed every declared test ID
+collected with the expected outcomes, so no declaration was corrected. No defect, declaration, command or rubric
+changed.
